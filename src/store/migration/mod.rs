@@ -1,17 +1,21 @@
-//! The document tables' migrations, run by SeaORM's migrator, which keeps the ones it ran in its own
+//! The document tables' and the research profiles' migrations, run by SeaORM's migrator, which keeps the ones it ran in its own
 //! table beside them (`docs/layout.md`, "Storage").
 
 use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::DatabaseConnection;
 
 pub mod m20261016_000001_documents;
+pub mod m20261017_000001_research_profiles;
 
 pub struct Migrator;
 
 #[async_trait::async_trait]
 impl MigratorTrait for Migrator {
   fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-    vec![Box::new(m20261016_000001_documents::Migration)]
+    vec![
+      Box::new(m20261016_000001_documents::Migration),
+      Box::new(m20261017_000001_research_profiles::Migration),
+    ]
   }
 }
 

@@ -27,7 +27,7 @@ src/
   settings.rs              every setting (see "Settings")
   pool.rs                  connection pools and how a statement is bound and run on them
   store/                   the queries the carried code runs, and the clock its columns keep
-    migration/             the six document tables' migration and its migrator
+    migration/             the document tables' and the research profiles' migrations, and the migrator
     entity/                one SeaORM entity per document table
   plumbing/                errors, refusals, CLI and HTTP answers
   helpers/                 copied helpers and the Rust twins
@@ -92,8 +92,8 @@ The plumbing is what every verb and every route stands on, and it knows none of 
   with failure on it and prints its sentence. A route answers with its status, and the code is that
   status's own name in snake_case.
 - **The shell** is what a verb run from the CLI stands on: the settings it was started with, the
-  database they name, the document wording they name, the bmo-voice client, and the page reader that
-  reaches bmo-explorer through the tool host. The database is
+  database they name, the document wording they name, the bmo-voice client, the tool host client
+  that reaches bmo-explorer, and the bmo-agency client. The database is
   opened when a verb asks its first statement of it, and settled (see "Storage") before the first
   statement on the document tables. The wording is read when the shell is made, so a wording file that is
   refused stops every verb before it runs. Each later piece a verb needs (a client of another unit)
@@ -104,7 +104,8 @@ The plumbing is what every verb and every route stands on, and it knows none of 
 - **Each route registers itself** beside its own answer, so adding a route changes no file but its
   own. The server refuses to start where two routes name the same method and path.
 - **What the server stands on** is its settings and the database and the document wording they
-  name, opened and read the same way as the shell's.
+  name, opened and read the same way as the shell's, with the tool host client and the bmo-agency
+  client. The bmo-agency client is an interface, so a test hands the server or the shell a stand-in.
 
 ## Why the console screen sits in `client/`, not in bmo-web
 
@@ -117,14 +118,18 @@ contract and never reads its source. The screen's wording keys stay in bmo-web's
 ## Storage
 
 - **Database.** PostgreSQL, as today. The address is a setting, read from the settings files or the
-  environment, and is never written into source. The six document tables are this repository's own.
-  No other unit's table is read or written.
-- **Schema.** One migration makes the six tables and their four indexes in the shape the old archive
-  declares for them. It also gives `web_search_shares` the nullable `user_id` column that the old
-  archive added. In the old archive that column's default is read from another unit's settings
-  table; here it has no default, since no other unit's table is read. SeaORM keeps the migration's
-  record in its own table beside the six. The `migrate` verb brings the database the settings name
-  up to date with this migration.
+  environment, and is never written into source. The six document tables and `research_profiles`
+  are this repository's own. No other unit's table is read or written.
+- **Schema.** Two migrations, run in order:
+  - the first makes the six document tables and their four indexes in the shape the old archive
+    declares for them. It also gives `web_search_shares` the nullable `user_id` column that the old
+    archive added. In the old archive that column's default is read from another unit's settings
+    table; here it has no default, since no other unit's table is read;
+  - the second makes `research_profiles`, one row per research key, in the shape the old archive
+    declares for it.
+
+  SeaORM keeps the migrations' record in its own table beside them. The `migrate` verb brings the
+  database the settings name up to date with both.
 - **Settling.** Once in each process, before the first statement on the document tables, a row that
   names no kind is given its kind and its writer, and the pictures of `search_images` not yet among
   the attachments are copied there, as `docs/archive.md` sets out under "`searches`" and "The other
@@ -168,10 +173,24 @@ environment. `src/settings.rs` reads them all.
   them.
 - **The console's public address**, `address` under `[console]`. A document's console address and
   its share links stand under it. No value is committed.
-- **The research profiles and their seeds**, which carry the old research policy files.
+- **The research settings**, under `[research]` (`docs/research-runs.md`, "Research profiles"):
+  - `pool_capacity_most`, the most places one pool limit may hold;
+  - `[research.limits]`, the bounds each profile field is checked against, each a `min` and a `max`
+    either of which may be left out;
+  - `[[research.opens]]`, each capability a run's settings open with the run variable that opens it;
+  - `[research.search]`, the rulebooks a search is bound by, those given only on request, and the
+    heading of the section that decides whether one applies;
+  - `[[research.keys]]`, one per research key in the order the console lists them, each declaring its
+    `key`, its `line`, whether it is `clocked` and `branchless`, the `strategies` it accepts, and its
+    `[research.keys.seed]`.
+
+  All of it is committed: it is what every deployment's research runs are held to.
+- **The prompt tree,** `code` under `[prompts]`: the tree whose `prompts/agents/<agent>/` holds an
+  agent's documents, such as the branch's request. No value is committed; where none is set, a
+  branch is refused with "the prompt tree is not set: set code under [prompts] in the settings".
 - **The address of each unit this repository calls**, under `[units]`, by the unit's short name:
-  `voice` for bmo-voice, and `tool_host` for the tool host that bmo-explorer's page reading is
-  reached through. `docs/api.md` lists the calls. No address is committed.
+  `voice` for bmo-voice, `tool_host` for the tool host that bmo-explorer is reached through, and
+  `agency` for bmo-agency. `docs/api.md` lists the calls. No address is committed.
 
 ## Version
 
@@ -197,7 +216,7 @@ declaration document, so the testbed needs no knowledge of this repository. It n
 
 It declares no deployment root, so a deployment of this repository puts nothing live. The service
 is one unit, from the neutral template `deploy/bmo-artifact.service`. A backup of this unit must
-include the six document tables and the `searches/` folder under the file root. This repository runs
+include the six document tables, `research_profiles` and the `searches/` folder under the file root. This repository runs
 no backup itself. The whole-data-root backup and its restore drill belong to the testbed.
 
 ## Tests

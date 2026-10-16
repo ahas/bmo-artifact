@@ -32,6 +32,10 @@ pub struct Settings {
   /// Nothing set here leaves every unit's address unknown.
   #[serde(default)]
   pub units: Units,
+  pub research: Research,
+  /// Nothing set here leaves the prompt tree unknown.
+  #[serde(default)]
+  pub prompts: Prompts,
 }
 
 /// The HTTP server.
@@ -41,7 +45,7 @@ pub struct Server {
   pub listen: SocketAddr,
 }
 
-/// The database holding the six document tables.
+/// The database holding the document tables and the research profiles.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Database {
   /// The PostgreSQL address.
@@ -98,8 +102,143 @@ pub struct Console {
 pub struct Units {
   /// bmo-voice.
   pub voice: Option<String>,
-  /// The tool host, which bmo-explorer's page reading is reached through.
+  /// The tool host, which bmo-explorer is reached through.
   pub tool_host: Option<String>,
+  /// bmo-agency.
+  pub agency: Option<String>,
+}
+
+/// The tree an agent's documents are read from.
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Prompts {
+  /// The tree whose `prompts/agents/<agent>/` holds each agent's documents.
+  pub code: Option<PathBuf>,
+}
+
+impl Prompts {
+  /// The folder of one agent's own documents, refused where the tree is not set.
+  pub fn agent_dir(&self, agent: &str) -> Result<PathBuf, String> {
+    let code = self
+      .code
+      .as_ref()
+      .ok_or_else(|| "the prompt tree is not set: set code under [prompts] in the settings".to_owned())?;
+
+    Ok(code.join("prompts").join("agents").join(agent))
+  }
+}
+
+/// What every research run is held to (`docs/research-runs.md`, "Research profiles").
+#[derive(Clone, Debug, Deserialize)]
+pub struct Research {
+  /// The most places one pool limit may hold.
+  pub pool_capacity_most: i64,
+  pub limits: Limits,
+  /// The capabilities a run's research settings open, in capability order.
+  pub opens: Vec<Opens>,
+  pub search: SearchRulebooks,
+  /// Every research key, in the order the console lists them.
+  pub keys: Vec<ResearchKey>,
+}
+
+/// The bounds each profile field is checked against.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Limits {
+  pub cap_ms: Range,
+  pub synthesis_reserve_ms: Range,
+  pub research_ms: Range,
+  pub max_children: Range,
+  pub wait_limit_ms: Range,
+  pub interval_ms: Range,
+}
+
+/// A bound's least and most, either of which may be left open.
+#[derive(Clone, Copy, Debug, Default, Deserialize)]
+pub struct Range {
+  pub min: Option<i64>,
+  pub max: Option<i64>,
+}
+
+impl Range {
+  /// The least, 0 where none is set.
+  pub fn least(&self) -> i64 {
+    self.min.unwrap_or(0)
+  }
+
+  /// The most, unbounded where none is set.
+  pub fn most(&self) -> i64 {
+    self.max.unwrap_or(i64::MAX)
+  }
+}
+
+/// One capability a run's settings open, and the run variable that opens it.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Opens {
+  pub capability: String,
+  pub variable: String,
+}
+
+/// What a search run's standing instructions carry after its task.
+#[derive(Clone, Debug, Deserialize)]
+pub struct SearchRulebooks {
+  /// The rulebooks a search is bound by, in order.
+  pub rulebooks: Vec<String>,
+  /// Those given by their deciding section alone, and read whole only once it says they apply.
+  pub on_request: Vec<String>,
+  /// That section's heading.
+  pub applies_section: String,
+}
+
+/// One research key and what is true of it.
+#[derive(Clone, Debug, Deserialize)]
+pub struct ResearchKey {
+  pub key: String,
+  /// The line its provider must carry.
+  pub line: String,
+  /// Whether it is held to a ceiling and a research close.
+  pub clocked: bool,
+  /// Whether it opens no branches at all.
+  pub branchless: bool,
+  /// The ways it accepts a page being fetched.
+  pub strategies: Vec<String>,
+  pub seed: Seed,
+}
+
+/// What one research key starts on; a key with no clock names no ceiling and no reserve.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Seed {
+  pub cap_ms: Option<i64>,
+  pub synthesis_reserve_ms: Option<i64>,
+  pub child_role: String,
+  pub max_children: i64,
+  pub wait_limit_ms: i64,
+  pub strategy: String,
+  pub host_interval_ms: i64,
+  pub engine_interval_ms: i64,
+}
+
+impl Research {
+  /// A research key's declaration, none for a key the settings do not hold.
+  pub fn key(&self, key: &str) -> Option<&ResearchKey> {
+    self.keys.iter().find(|one| one.key == key)
+  }
+
+  /// The capabilities a run's settings leave closed, read through `variable`, in capability order:
+  /// every one for a run carrying no research setting at all, and otherwise those whose variable opens
+  /// nothing.
+  pub fn withheld<'v>(&self, carries_settings: bool, variable: impl Fn(&str) -> Option<&'v str>) -> Vec<&str> {
+    self
+      .opens
+      .iter()
+      .filter(|one| !carries_settings || !variable(&one.variable).is_some_and(opens))
+      .map(|one| one.capability.as_str())
+      .collect()
+  }
+}
+
+/// Whether a run variable's value opens the capability it is tied to: it names at least one
+/// comma-separated item that is neither empty nor `0`.
+pub fn opens(value: &str) -> bool {
+  value.split(',').map(str::trim).any(|item| !item.is_empty() && item != "0")
 }
 
 /// Why the settings could not be read.

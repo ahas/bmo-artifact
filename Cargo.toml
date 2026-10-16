@@ -43,7 +43,7 @@ inventory = "0.3.24"
 rand = "0.9.2"
 # A kept AVIF picture's AV1 frames decoded.
 rav1d = { version = "1.1.0", default-features = false, features = ["bitdepth_8", "bitdepth_16"] }
-# The bmo-voice and tool host clients.
+# The bmo-voice, tool host and bmo-agency clients.
 reqwest = { version = "0.13.5", features = ["json"] }
 # An SVG picture drawn into pixels before it is kept.
 resvg = "0.48.1"
@@ -51,7 +51,7 @@ resvg = "0.48.1"
 scraper = "0.25.0"
 # The helpers' patterns: a web address in a sentence, a document's marks, an MCP tool's name.
 regex = "1.13.1"
-# The document tables: their entities and statements, and their one migration.
+# The document tables and the research profiles: their entities and statements, and their migrations.
 sea-orm = { version = "1.1.20", default-features = false, features = ["macros", "runtime-tokio-rustls", "sqlx-postgres"] }
 sea-orm-migration = { version = "1.1.20", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -63,7 +63,7 @@ sqlx = { version = "0.8.6", default-features = false, features = ["postgres", "r
 # The digest a kept file's name carries.
 sha2 = "0.10.9"
 thiserror = "2.0.21"
-tokio = { version = "1.53.2", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { version = "1.53.2", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 # A kept file's name in its composed form.
 unicode-normalization = "0.1.25"
 # Whether a text reads as a web address, as a browser reads one; and a scratch database's address in the

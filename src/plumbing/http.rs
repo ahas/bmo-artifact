@@ -10,8 +10,10 @@ use axum::extract::{Query, Request, State};
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
-use serde_json::{Value, json};
+use serde_json::{Map, Value, json};
 
+use crate::clients::agency::{Agency, AgencyClient};
+use crate::clients::tool_host::ToolHost;
 use crate::pool::Archive;
 use crate::settings::Settings;
 use crate::wording::{Wording, WordingError};
@@ -93,6 +95,8 @@ pub struct Refused {
   pub code: String,
   /// The English sentence a person reads.
   pub error: String,
+  /// What else the body carries beside them, under the names the route gives it.
+  pub more: Map<String, Value>,
 }
 
 /// The code of a failure a route did not expect.
@@ -107,6 +111,7 @@ impl Refused {
       status,
       code: code.into(),
       error: error.into(),
+      more: Map::new(),
     }
   }
 
@@ -114,11 +119,22 @@ impl Refused {
   pub fn failed(error: impl std::fmt::Display) -> Self {
     Self::new(StatusCode::BAD_REQUEST, FAILED, error.to_string())
   }
+
+  /// The refusal with one more field in its body; `error` and `code` stay its own.
+  pub fn with(mut self, name: impl Into<String>, value: impl serde::Serialize) -> Self {
+    self.more.insert(name.into(), json!(value));
+    self
+  }
 }
 
 impl IntoResponse for Refused {
   fn into_response(self) -> Response {
-    (self.status, Json(json!({ "error": self.error, "code": self.code }))).into_response()
+    let mut body = self.more;
+
+    body.insert("error".into(), json!(self.error));
+    body.insert("code".into(), json!(self.code));
+
+    (self.status, Json(Value::Object(body))).into_response()
   }
 }
 
@@ -130,17 +146,26 @@ pub struct Standing {
   pub archive: Archive,
   /// The document wording the settings name, read when the server starts.
   pub wording: Wording,
+  /// The tool host bmo-explorer is reached through, at the address the settings name.
+  pub tool_host: ToolHost,
+  /// bmo-agency, at the address the settings name; a test hands a stand-in of its own.
+  pub agency: Arc<dyn Agency>,
 }
 
 impl Standing {
   pub fn new(settings: Settings) -> Result<Self, WordingError> {
     let archive = Archive::new(settings.database.url.clone());
     let wording = Wording::read(settings.wording.file.as_deref())?;
+    let tool_host =
+      ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
+    let agency = Arc::new(AgencyClient::new(settings.units.agency.clone()));
 
     Ok(Self {
       settings,
       archive,
       wording,
+      tool_host,
+      agency,
     })
   }
 }

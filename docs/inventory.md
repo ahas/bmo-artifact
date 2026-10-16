@@ -244,6 +244,7 @@ Each file is cleared in the step that carries it:
 | `search_images` | bmo-artifact |
 | `archive_attachments` | bmo-artifact |
 | `web_search_shares` | bmo-artifact |
+| `research_profiles` | bmo-artifact. bmo-explorer reads the browse profile through `GET /research-settings` |
 | `document_talk` | bmo-brain. Its `document` column is plain text with no foreign key to `searches`, and it serves the brain's document viewer |
 | `document_translations` | bmo-brain for the document viewer, and bmo-job for work-order translation. Same reason: plain text, no foreign key |
 | `collected_items` | bmo-receiver |

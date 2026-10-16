@@ -1,5 +1,6 @@
-//! The document tables as the migration makes them: their columns, keys and indexes as the old archive
-//! declares them, the entities that read and write them, and the `migrate` verb that makes them
+//! The document tables and the research profiles as the migrations make them: their columns, keys and
+//! indexes as the old archive declares them, the entities that read and write them, and the `migrate` verb
+//! that makes them
 //! (`docs/layout.md`, "Storage").
 
 mod support;
@@ -60,13 +61,14 @@ fn owned(lines: &[&str]) -> Vec<String> {
 }
 
 #[tokio::test]
-async fn the_migration_makes_the_six_tables_and_nothing_else() {
+async fn the_migrations_make_the_seven_tables_and_nothing_else() {
   let scratch = Scratch::new().await;
 
   assert_eq!(
     scratch.texts(TABLES).await,
     owned(&[
       "archive_attachments",
+      "research_profiles",
       "seaql_migrations",
       "search_findings",
       "search_images",
@@ -95,6 +97,18 @@ async fn the_columns_are_the_old_archives() {
       "archive_attachments.place bigint",
       "archive_attachments.kept_at bigint not null",
       "archive_attachments.rowid bigint generated as id",
+      "research_profiles.key text not null",
+      "research_profiles.cap_ms bigint",
+      "research_profiles.synthesis_reserve_ms bigint",
+      "research_profiles.effort text",
+      "research_profiles.child_role text not null",
+      "research_profiles.max_children bigint not null",
+      "research_profiles.wait_limit_ms bigint not null",
+      "research_profiles.strategy text not null",
+      "research_profiles.host_interval_ms bigint not null",
+      "research_profiles.engine_interval_ms bigint not null",
+      "research_profiles.set_at bigint not null",
+      "research_profiles.rowid bigint not null identity by default",
       "search_findings.id bigint not null identity by default",
       "search_findings.search_id bigint not null",
       "search_findings.run_id bigint",
@@ -157,6 +171,8 @@ async fn the_keys_are_the_old_archives() {
     owned(&[
       "archive_attachments primary key (id)",
       "archive_attachments unique (search_id, path)",
+      "research_profiles primary key (key)",
+      "research_profiles unique (rowid)",
       "search_findings primary key (id)",
       "search_images primary key (id)",
       "search_images unique (search_id, url)",
@@ -210,8 +226,8 @@ async fn the_migrate_verb_makes_the_schema_on_the_database_the_settings_name() {
   let first = migrate();
 
   assert!(first.status.success(), "{}", String::from_utf8_lossy(&first.stderr));
-  assert_eq!(String::from_utf8_lossy(&first.stdout), "migrations run: 1\n");
-  assert_eq!(scratch.texts(TABLES).await.len(), 7);
+  assert_eq!(String::from_utf8_lossy(&first.stdout), "migrations run: 2\n");
+  assert_eq!(scratch.texts(TABLES).await.len(), 8);
 
   let again = migrate();
 

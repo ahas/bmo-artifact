@@ -1,5 +1,6 @@
 //! The tool host, through which bmo-explorer reads a page whole and fetches a raster picture, each address
-//! checked and each request paced on its side (`docs/api.md`, "Read a page and fetch a picture").
+//! checked and each request paced on its side (`docs/api.md`, "Read a page and fetch a picture"), and
+//! reports the search engines a research run may query (`docs/api.md`, "Read the search engines").
 
 use std::future::Future;
 use std::pin::Pin;
@@ -169,6 +170,53 @@ impl ToolHost {
 
     Ok(result)
   }
+
+  /// The search engines a research run may query, in bmo-explorer's order, and the rest each refusal
+  /// earns (`docs/api.md`, "Read the search engines").
+  pub async fn search_engines(&self) -> Result<SearchEngines, String> {
+    let result = self.call("explorer/search_engines", json!({})).await?;
+
+    serde_json::from_value(result.structured_content.unwrap_or_default())
+      .map_err(|why| format!("the search engines' answer is not a list of engines: {why}"))
+  }
+}
+
+/// One search engine as bmo-explorer last saw it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+pub struct SearchEngine {
+  pub name: String,
+  #[serde(default)]
+  pub category: String,
+  #[serde(default)]
+  pub korean_native: bool,
+  /// `unknown` where it has not been read.
+  pub state: String,
+  #[serde(default)]
+  pub reason: Option<String>,
+  #[serde(default)]
+  pub observed_at: Option<i64>,
+  #[serde(default)]
+  pub suspended_until: Option<i64>,
+  #[serde(default)]
+  pub elapsed_ms: Option<i64>,
+  #[serde(default)]
+  pub result_count: Option<i64>,
+}
+
+/// How long an engine rests after one kind of refusal.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+pub struct Cooldown {
+  pub reason: String,
+  pub ms: i64,
+}
+
+/// The search engines and their rests.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+pub struct SearchEngines {
+  #[serde(default)]
+  pub engines: Vec<SearchEngine>,
+  #[serde(default)]
+  pub cooldowns: Vec<Cooldown>,
 }
 
 impl PageReader for ToolHost {

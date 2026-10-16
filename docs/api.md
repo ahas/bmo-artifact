@@ -76,10 +76,23 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
 - The run is queued through bmo-job. Its runner, `bmo runner search`, writes the document from the
   run's structure lines.
 - `bmo search branch --owner <owner> --source <search|browse> --role <role> --chat <chatId> --index <n> [--closes-at <ms>] [--strategy <strategy>] [--host-interval-ms <ms>] [--engine-interval-ms <ms>]`
-  - Runs one branch of a research run, reading the angle on stdin.
+  - Runs one branch of a research run, reading the angle on stdin (`docs/research-runs.md`,
+    "Branches are taken from the pool").
   - Holds a place in the co-worker pool, and answers with the branch's notes.
   - It keeps accepting both `--source` values, so bmo-explorer's browse runs call it across the
     boundary exactly as the search line does.
+  - Also run as `research-branch`.
+  - Every answer is one block on standard output, ending with success, so the parent's tool hands it
+    to the run as it stands:
+    - the notes, opening `BRANCH <n> REPORT` and closing `END OF BRANCH <n>`, with a last line saying
+      the branch was stopped at research close where it was;
+    - `RESEARCH CLOSED: …` where research had closed before the branch was asked;
+    - `BRANCH REFUSED: …` where the pool could not take it, stayed full until research closed, or the
+      run ended before it had a place or before it started;
+    - `BRANCH <n> FAILED: …` where it failed.
+  - An angle that cannot be read, and a line the verb does not take, are refused with failure.
+  - A stop signal (`SIGTERM` or `SIGINT`) stops the branch, which gives its place back and answers
+    with what it had written.
 
 ### Schema (CLI)
 
@@ -90,10 +103,80 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
 
 ### Research settings (HTTP)
 
-- `GET /research-settings` reads every research profile: its values, its resolved provider and
-  mapping, and its seed.
-- `POST /research-settings` saves a profile's values or puts a profile back to its seed.
-- A field that fails its check answers `422` with an English code per field.
+The agents screen's view of the research profiles, the common co-worker pool and the search engines,
+and every change it asks for (`docs/research-runs.md`, "Research profiles"). Its bodies keep the
+field names the console reads today.
+
+- `GET /research-settings` answers `200` with:
+  - `readAt`, when it was read;
+  - `pool`:
+    - `roles`, each pool role as bmo-agency lists it (`name`, `description`, `enabled`, `pooled`,
+      `control`), with its `tier` and `usedBy`, the keys whose branches take it;
+    - `tiers`, one for each co-worker tier of each provider that lends co-workers and has a place in
+      the pool's status: `provider`, `label`, `tier`, the `model` and `effort` the tier resolves to
+      or the `error` why it does not, `capacity`, `defaultCapacity`, `snapshotCapacities`,
+      `snapshotModels`, `active`, `reserved`, `waiting`, `yielding` (`active` and `waiting`),
+      `roles` (the enabled roles serving it, the control role left out), `reservations` (each with
+      `owner`, `source`, `role`, `wanted`, `held`, `waiting`, `createdAt` and `lastPing`) and the
+      tier's `lastPing`;
+    - `capacityLimit`, the most places a pool limit may hold;
+    - `defaults`, each co-worker tier's default capacity, by tier;
+    - `coworkerTiers`, the co-worker tiers in order;
+  - `profiles`, one per research key in the settings' order: `key`, the eight values (`capMs`,
+    `synthesisReserveMs`, `childRole`, `maxChildren`, `waitLimitMs`, `strategy`, `hostIntervalMs`,
+    `engineIntervalMs`), `setAt`, `seed` (the eight values it starts from), `strategies`, the key's
+    `tier`, the `provider`, `model` and `effort` it launches with or the `error` why it cannot, and
+    `room`, where a run of it opens branches, saying where a new optional request would stand:
+    `state` (`free`, `full`, `no-capacity`, `role-off` or `unresolved`), `provider`, `tier`, `model`,
+    `capacity`, `active`, `waiting`, `free` and `error`;
+  - `limits`, the bounds the form checks against: `capMs` (`min`, `max`), `synthesisReserveMs`
+    (`min`), `researchMs` (`min`), `maxChildren` (`max`), `waitLimitMs` (`max`), `intervalMs`
+    (`max`);
+  - `engines`, each search engine bmo-explorer reports: `engine`, `state`, `reason`, `observedAt`,
+    `suspendedUntil`, `elapsedMs`, `resultCount`, `category`, `korean` (whether it is native to Korean
+    pages) and `resting` (suspended until a time still to come);
+  - `cooldowns`, each a `reason` and its `ms`;
+  - `enginesError`, where bmo-explorer could not be read: the sentence why, with `engines` and
+    `cooldowns` left empty.
+- `POST /research-settings` takes one change as a JSON object naming its `action`, and answers `200`
+  with `ok: true`:
+  - `set-pool-limit`, with `provider`, `tier` and `capacity`, sets a co-worker tier's limit on a
+    provider;
+  - `reset-pool-limits` puts every limit back to its default;
+  - `set-profile`, with `key` and `values`, the eight values, saves a profile;
+  - `reset-profile`, with `key`, puts a profile back to its seed.
+- Refusals, each with its English sentence:
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `not_json` | The body is not JSON |
+| `400` | `bad_action` | The body is not an object, or names no action this route takes |
+| `400` | `bad_pool_limit` | The provider lends no co-workers or is not enabled, or the tier is not a co-worker tier |
+| `400` | `bad_capacity` | The capacity is not a whole number from 0 to the most a limit may hold |
+| `400` | `bad_key` | The key is not a research key in the settings |
+| `400` | `no_values` | `set-profile` carries no values |
+| `422` | `invalid_profile` | A value fails its check; `faults` names each (below) |
+| as bmo-agency answered | as bmo-agency answered | bmo-agency refused a limit |
+| `502` | `agency_failed` | bmo-agency could not be reached or answered out of its shape |
+
+- **A field's faults** come in the form's order, each with `field` (the value's name above), `code`
+  and `error`, the sentence the form shows. The refusal's own `error` is those sentences joined.
+
+| Field | Code | When |
+|---|---|---|
+| `capMs` | `no_clock` | The key holds no clock and a total time is given |
+| `capMs` | `cap_out_of_range` | The total time is not a whole number within its limits |
+| `synthesisReserveMs` | `no_clock` | The key holds no clock and a wrap-up time is given |
+| `synthesisReserveMs` | `reserve_too_short` | The wrap-up time is not a whole number of at least its least |
+| `synthesisReserveMs` | `research_too_short` | The wrap-up time leaves less research than its least |
+| `maxChildren` | `children_out_of_range` | The branch count is not a whole number from 0 to its most |
+| `maxChildren` | `branchless` | The key opens no branches and the count is not 0 |
+| `childRole` | `bad_role` | The role is not a role name |
+| `childRole` | `role_not_pooled` | Branches are allowed and the role is not enabled in the pool |
+| `waitLimitMs` | `wait_out_of_range` | The wait limit is not a whole number from 0 to its most |
+| `strategy` | `bad_strategy` | The key does not accept the strategy |
+| `hostIntervalMs`, `engineIntervalMs` | `interval_out_of_range` | The interval is not a whole number from 0 to its most |
+
 - Callers: the console's agents screen in bmo-web, and bmo-explorer, which reads the browse profiles.
 
 ### Room holding (HTTP)
@@ -242,12 +325,14 @@ room-holding answer (see "Room holding") before it removes a room.
 | Read the search-engine values a research profile chooses among | bmo-explorer, through the tool host |
 | Start a briefing of a finished document | bmo-voice |
 | Who sent the message that asked, and when | bmo-receiver |
-| Start, drive, read, stop and end the research session | bmo-agency |
-| Read and apply tiers, providers and their order and enablement | bmo-agency |
-| Take and give back places in the co-worker pool | bmo-agency |
-| Read the accounts a run is offered | bmo-agency |
+| Start, read and stop a research run apart, which bmo-agency carries on the accounts its road is offered | bmo-agency |
+| Read providers in their order and enablement, tiers, tier assignments and routes, and check an effort | bmo-agency |
+| Read the pool's roles and status; take, wait for, bind and give back places; reserve and release seats; set limits | bmo-agency |
+| Read and close a run of the ledger, count a run, write a note in a run's log | bmo-agency |
+| Which registration owns a home, and whether it keeps its research | bmo-agency |
 
-Each unit is reached at the address its name holds under `[units]` in the settings.
+Each unit is reached at the address its name holds under `[units]` in the settings: `voice`,
+`tool_host` and `agency`.
 
 - **Start a briefing of a finished document** (bmo-voice): `POST /briefings` with a JSON body.
   - The body carries:
@@ -280,3 +365,125 @@ Each unit is reached at the address its name holds under `[units]` in the settin
     that gets no answer is reported with the failure's own words.
   - A page is waited for 150 seconds and a picture 60. A call that takes longer is given up as
     failed.
+- **Read the search engines** (bmo-explorer, through the tool host): `explorer/search_engines`,
+  handed nothing, on the same `POST /calls`, refused the same ways and waited for 30 seconds. Its
+  structured content carries:
+  - `engines`, each engine a research run may query, in bmo-explorer's order: `name`, `category`,
+    `korean_native`, `state` (`unknown` where it has not been read), and `reason?`, `observed_at?`,
+    `suspended_until?`, `elapsed_ms?` and `result_count?`;
+  - `cooldowns`, each a `reason` and the `ms` an engine rests for it.
+
+### bmo-agency
+
+The research runs' model sessions, the providers, tiers and routes they resolve on, the co-worker pool,
+the run ledger, the agent log and the registrations are bmo-agency's. This repository reaches all of
+them through the calls below and nothing else. The trait `Agency` declares every call, and
+`AgencyClient` makes them over HTTP; a test hands the service a stand-in of its own.
+
+- **The address** is the base of every path below. Where `agency` under `[units]` is unset, every call
+  is refused with "the agency's address is not set: set agency under [units] in the settings".
+- **A body is JSON, both ways,** with snake_case keys. A time is epoch milliseconds, and a field written
+  with a question mark may be null.
+- **A path segment is an id as it stands,** percent-encoded where it needs to be.
+- **An answer with no body is 204.** An answer with a body is 200, or 201 where the call creates
+  something.
+- **A read of one thing by its id answers 404 where it does not exist,** and the client reads that as
+  nothing found.
+- **Any other refusal** carries `error` and `code`. The client hands both on with the status; a route
+  answers them as they stand.
+- **A call that does not reach bmo-agency,** or an answer that does not read as its shape, is a failure
+  naming the call; a route answers it `502` with `agency_failed`.
+
+#### Providers, tiers and routes
+
+| Call | Method and path | Request | Answer |
+|---|---|---|---|
+| List the providers | `GET /providers` | | a list of `name`, `label`, `enabled`, `registered`, `lines` (the work lines its program carries), `coworkers` (true where it lends co-workers) |
+| List the tiers | `GET /tiers` | | a list of `name`, `coworker` (true where a co-worker may run at it), `default_capacity?` (a co-worker tier's default pool capacity) |
+| List the tier assignments | `GET /tiers/assignments` | | a list of `key` (a work key) and `tier` |
+| Resolve a route | `POST /routes/resolve` | `work_key?`, `provider?`, `tier` | `provider`, `tier`, `model`, `effort?`, `answer_tokens?`; 404 where no route serves it. No work key resolves the tier on its own |
+| Check an effort | `POST /routes/check-effort` | `provider`, `model`, `effort` | 204; 422 with the sentence where that provider or that model does not accept it |
+
+- **The providers are listed in the provider order.** A research run of a line starts on the first that
+  is enabled and carries the line.
+
+#### The co-worker pool
+
+| Call | Method and path | Request | Answer |
+|---|---|---|---|
+| List the roles | `GET /pool/roles` | | a list of `name`, `description`, `enabled`, `pooled`, `control` (true for the worker's own control role, never lent) |
+| Read the status | `GET /pool/status` | | a list of places, one per provider and tier (below) |
+| Ask for a place | `POST /pool/requests` | an asking | 201, a pool request |
+| Read a request | `GET /pool/requests/{token}` | | a pool request |
+| List the open requests | `GET /pool/requests?owner={owner}` | | a list of pool requests waiting or active, every owner's where none is named |
+| Try for a place | `POST /pool/requests/{token}/lease` | | the pool request, `active` where a place was leased |
+| Bind it | `POST /pool/requests/{token}/bind` | `child` | the pool request |
+| Finish it | `POST /pool/requests/{token}/finish` | `outcome`, `cancel` | `finished` |
+| Reserve seats | `POST /pool/reservations` | a reservation asking | 201, a reservation |
+| List the held reservations | `GET /pool/reservations?owner={owner}` | | a list of reservations held, every owner's where none is named |
+| Read a reservation's seats | `GET /pool/reservations/{token}/seats` | | a list of `state` (`reserved` or `waiting`) |
+| Read a reservation's pings | `GET /pool/reservations/{token}/pings` | | a list of `place`, `at`, `outcome?`, `answered_at?` |
+| Release a reservation | `POST /pool/reservations/{token}/release` | `reason` | `released` |
+| Promote the reservations | `POST /pool/reservations/promote` | | 204 |
+| Record a place's write | `PUT /pool/places/{place}/write` | `provider`, `model`, `effort?`, `upstream?` | 204 |
+| Set a limit | `PUT /pool/limits/{provider}/{tier}` | `capacity` | 204; 422 with the sentence where it is refused |
+| Reset the limits | `DELETE /pool/limits` | | 204 |
+
+- **An asking:** `request_key`, `owner`, `source`, `role`, `work_key`, `provider`, `model`, `effort?`,
+  `tier`, `yielding`, `place_key?`, `turn?`, `reservation?`. A branch asks under the work key
+  `role:<role>` with the role's resolved model, effort and tier, not yielding, for no turn and naming
+  no reservation; bmo-agency hands it a seat its owner's reservation holds where there is one.
+- **A pool request** is the asking with `token`, `state` (`waiting`, `active` or `ended`),
+  `enqueued_at`, `leased_at?`, `child?`, `ended_at?` and `outcome?`.
+- **A reservation asking:** `reservation_key`, `owner`, `source`, `role`, `provider`, `model`,
+  `effort?`, `tier`, `wanted`. A reservation is the asking with `token`, `state` (`held` or
+  `released`) and `created_at`.
+- **A place in the status:** `provider`, `tier`, `capacity`, `default_capacity`,
+  `snapshot_capacities` (a list), `snapshot_models` (a list of `model` and `effort?`), `active`,
+  `reserved`, `waiting`, `yielding_active`, `yielding_waiting`.
+- **A place a branch answered on** is named `branch-line:<provider>:<model>:<effort>`, the effort empty
+  where there is none.
+
+#### Runs, the agent log and registrations
+
+| Call | Method and path | Request | Answer |
+|---|---|---|---|
+| Read a run | `GET /runs/{id}` | | `id`, `agent`, `chat_id?`, `unit`, `depth`, `started_at`, `finished_at?`, `outcome?`, `context_tokens?` |
+| Close a run | `POST /runs/{id}/close` | `finished_at`, `outcome`, `context_tokens?` | 204; 409 where it is already closed |
+| Count a run | `POST /agents/{agent}/runs` | | 204 |
+| Write a note | `POST /log/notes` | `agent`, `run`, `chat_id?`, `text` | 204 |
+| Find a home's registration | `GET /registrations/by-home?home={home}` | | `name`, `keeps_research`; 404 where no registration owns the home |
+
+- **A home** is the folder a run's program was handed as its own; a path inside it names the same
+  registration.
+
+#### Runs apart
+
+A run apart is one model session started for a research run or one of its branches, outside any room's
+conversation. bmo-agency composes the line's program and its web tools, walks the accounts its road is
+offered until one carries it, and records what it spent, its answer, the windows it read and the
+context it ended carrying.
+
+| Call | Method and path | Request | Answer |
+|---|---|---|---|
+| Start one | `POST /apart` | an apart asking | 201, `id` |
+| Read it | `GET /apart/{id}` | | a run apart |
+| Stop it | `POST /apart/{id}/stop` | | 204 |
+
+- **An apart asking:** `agent` (the agent it is counted under), `line`, `title`, `work_key`, `road`,
+  `instructions`, `environment`, `prompt` and `log?`.
+  - `road` holds `kind`: `key`, with `provider`, `model`, `effort?` and `tier`; or `registration`, with
+    `name`, the registration it goes out on with that registration's own model.
+  - `instructions` holds `name`, the instructions bmo-agency composes for the line (`search` for a
+    research run's own, `search-branch` for a branch's), and `text?`, the run's own where its caller
+    wrote them.
+  - `environment` is an object of the variables its web tools are told, each a string.
+  - `log` holds `run` and `chat_id?`: the run log every line the run writes is fed to. None keeps no
+    log.
+- **A run apart:** `id`, `state` (`running`, `answered`, `failed` or `stopped`), `streamed` (every line
+  its record has gained so far, in order), `reply?` and `failure?`.
+  - `reply` holds `text`, `model?`, `effort?`, `context_tokens?` and `live_tasks` (the names of its own
+    work still running as it ended).
+  - `failure` is the sentence why it gave no answer.
+- **This repository asks every half second** until the run is no longer `running`, and stops it the
+  moment its own run is stopped or its research closes.

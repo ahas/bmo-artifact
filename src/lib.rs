@@ -2,6 +2,7 @@
 //! over HTTP and filed through the CLI verbs (`docs/archive.md`, `docs/api.md`).
 
 pub mod clients;
+pub mod control;
 pub mod helpers;
 pub mod http;
 pub mod plumbing;
