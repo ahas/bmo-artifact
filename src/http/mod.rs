@@ -5,3 +5,4 @@ pub mod documents;
 pub mod files;
 pub mod hosted_page;
 pub mod rooms;
+pub mod shares;

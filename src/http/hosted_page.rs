@@ -8,8 +8,7 @@ use std::cell::Cell;
 
 use lol_html::html_content::ContentType;
 use lol_html::{RewriteStrSettings, element, rewrite_str};
-use scraper::{Html, Node, Selector};
-use serde::Serialize;
+use scraper::{Html, Selector};
 
 use crate::design::{DocumentScheme, PageDesign, default_scheme, page_sheet, scheme_cookie, viewer};
 
@@ -157,80 +156,6 @@ pub fn hosted_page(html: &str, scheme: DocumentScheme) -> String {
     Ok(page) if placed.get() => page,
     _ => format!("{prelude}{html}"),
   }
-}
-
-/// One preview tag a page writes itself.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
-#[serde(untagged)]
-pub enum DeclaredMeta {
-  Named { name: String, content: String },
-  Property { property: String, content: String },
-}
-
-/// The tags of the head a link previews by that a page writes itself: its title, its description and robots,
-/// its OpenGraph and Twitter tags and its canonical address. Each stands over the link's own tag of the same
-/// name.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
-pub struct DeclaredHead {
-  pub title: Option<String>,
-  pub meta: Vec<DeclaredMeta>,
-  pub canonical: Option<String>,
-}
-
-fn declared(name: &str) -> bool {
-  matches!(name, "description" | "robots")
-    || name.strip_prefix("og:").is_some_and(|rest| !rest.is_empty())
-    || name.strip_prefix("twitter:").is_some_and(|rest| !rest.is_empty())
-}
-
-/// What a page declares of the head a link previews by.
-pub fn page_head(html: &str) -> DeclaredHead {
-  let page = Html::parse_document(html);
-  let mut head = DeclaredHead {
-    title: page.select(&selector("title")).next().map(|title| {
-      title
-        .children()
-        .filter_map(|child| match child.value() {
-          Node::Text(text) => Some(text.to_string()),
-          _ => None,
-        })
-        .collect::<String>()
-        .trim()
-        .to_owned()
-    }),
-    ..DeclaredHead::default()
-  };
-
-  for meta in page.select(&selector("meta")) {
-    let attributes = meta.value();
-    let Some(content) = attributes.attr("content") else { continue };
-    let named = attributes.attr("name").unwrap_or("").to_lowercase();
-    let property = attributes.attr("property").unwrap_or("").to_lowercase();
-
-    if declared(&named) {
-      head.meta.push(DeclaredMeta::Named {
-        name: named,
-        content: content.to_owned(),
-      });
-    } else if declared(&property) {
-      head.meta.push(DeclaredMeta::Property {
-        property,
-        content: content.to_owned(),
-      });
-    }
-  }
-
-  head.canonical = page
-    .select(&selector("link"))
-    .find(|link| {
-      let rel = link.value().attr("rel").unwrap_or("").to_lowercase();
-
-      rel.split_whitespace().any(|one| one == "canonical")
-        && link.value().attr("href").is_some_and(|href| !href.is_empty())
-    })
-    .and_then(|link| link.value().attr("href").map(str::to_owned));
-
-  head
 }
 
 /// The scheme the reader reads in: the one the console's frame names in the address, else the screen mode

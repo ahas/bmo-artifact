@@ -29,6 +29,7 @@ src/
   store/                   the queries the carried code runs, and the clock its columns keep
     migration/             the document tables' and the research profiles' migrations, and the migrator
     entity/                one SeaORM entity per document table
+    shares.rs              the share link rows, the one module that writes them
   plumbing/                errors, refusals, CLI and HTTP answers
   helpers/                 copied helpers and the Rust twins
     js.rs                  JavaScript's white space and a text's characters
@@ -53,10 +54,11 @@ src/
   documents/
     read.rs                the list, one document, its files and its refs, as the read API answers them
     preview.rs             the previews and pictures of the pages a document points at, kept under the file root
-    ground.rs              a picture laid on white where its transparency would be lost
+    ground.rs              a picture laid on white where its transparency would be lost, and a link's card picture
   markup/
     markdown_structure.rs  a markdown text's headings and sections
     finding_markdown.rs    a finding's structure lines as the markdown the console draws
+    page_head.rs           the head a kept page declares, which a link to it previews by
   http/
     documents.rs           list, kinds, read, file, attachments, source previews and pictures, moved screens
     files.rs               a kept file sent as kept or as a hosted page, under its isolation

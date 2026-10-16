@@ -24,7 +24,9 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
   - `201`: created
   - `204`: removed
   - `400`: malformed input
-  - `404`: no such document, attachment or token, or a token that has expired or been removed
+  - `404`: no such document, attachment or token, or a token that has been removed
+  - `409`: what is asked conflicts with what stands, such as a second share link
+  - `410`: a share link whose time has passed
   - `413`: a file over its ceiling
   - `422`: a refusal by this repository's own rules
   - `502`: a call to another unit failed
@@ -289,19 +291,51 @@ reads.
 
 ### Share links (HTTP)
 
-- `GET /api/archive/{id}/share` reads a document's link.
-- `POST /api/archive/{id}/share` makes or renews it for a span.
-- `DELETE /api/archive/{id}/share` removes it.
-- `GET /api/share/{token}` reads the shared document in the same shape as the document read.
-- `GET /api/share/{token}/refs/{ref}/preview` and `GET /api/share/{token}/refs/{ref}/image` serve
-  a shared document's source previews and pictures.
-- `GET /api/share/{token}/attachments/{attachment}` serves a shared document's attachment.
-- `GET /api/share/{token}/head` serves the link preview head: title, description, picture and the
-  robots rule.
-- `GET /api/share/{token}/picture` serves the JPEG card picture made from the kept picture, for
-  link-preview crawlers.
-- Expired links are swept by the service itself.
-- Table: `web_search_shares`, not bmo-drive's `web_file_shares`.
+A link is a row of `web_search_shares` (not bmo-drive's `web_file_shares`): `token`, `searchId`,
+`createdBy`, `createdAt` and `expiresAt`, null for a link with no end. A document has at most one. Times
+are epoch seconds. The share API and the `archive` verbs write the rows through one module.
+
+Behind the console's sign-in, a document number that is not a whole number from 1 is refused
+`400 bad_id` on each of these:
+
+- `GET /api/archive/{id}/share` answers `200` with `share`: the live link, or null where there is none,
+  which is also what a link whose time has passed reads as.
+- `POST /api/archive/{id}/share` makes a link, taking `span` and `by`, and answers `200` with `share`.
+  - `span` is one of `1h`, `6h`, `24h`, `7d`, `30d` and `forever`; the link lives that long from now,
+    and `forever` makes one with no end. Any other span is refused `400 bad_expiry` before anything is
+    read.
+  - `by` is who makes it, which bmo-web names as the signed-in user; none is refused `400 bad_maker`.
+  - `404 document_not_found` for no such document; `409 nothing_to_share` for a search that left no
+    document; `409 already_shared` where a link already stands, which a new one never replaces.
+- `DELETE /api/archive/{id}/share` takes the link away at once, row and all, and answers `200` with
+  `removed`, whether there was one.
+
+Under a link, with no sign-in. The token is the whole permission, and no document number is taken from
+the request:
+
+- A token not shaped as one issued here (22 to 128 letters, digits, `-` and `_`), or one naming no link,
+  is refused `404 share_not_found`; one whose time has passed `410 share_expired`. Its expiry is read
+  each time.
+- `GET /api/share/{token}` answers `200` with the document the link opens, and nothing of the console:
+  `title` (its title, or its question where it wrote none), `runCount`, `kind`, `findings`, `opened` and
+  `attachments`, as the document read gives them. It is not to be stored.
+- `GET /api/share/{token}/refs/{ref}/preview` and `GET /api/share/{token}/refs/{ref}/image?as=` answer
+  as the console's own roads do, on the document the link opens.
+- `GET /api/share/{token}/attachments/{attachment}` serves one file of that document as the console's
+  road does, not to be stored.
+- `GET /api/share/{token}/head` answers `200` with what the link reads as before it is opened, not to be
+  stored:
+  - `title`;
+  - `description`: the body's opening prose as plain words, cut at 160 characters, or its topic where
+    the body has none;
+  - `image`: `api/share/<token>/picture` where the document has a picture, the first its body draws or
+    else the first it keeps; null otherwise;
+  - `declared`: for a page document, the head its page declares (`title`, `meta`, each a `name` or a
+    `property` with its `content`, and `canonical`); null for every other.
+- `GET /api/share/{token}/picture` sends that picture as a JPEG for a link's preview card: upright,
+  fitted inside 1200 pixels, never enlarged, laid on white. `404 image_unavailable` where the document
+  has none.
+- Every read and every making sweeps away the links whose time has passed.
 
 ### Wording
 

@@ -4,6 +4,7 @@
 pub mod documents;
 pub mod entity;
 pub mod migration;
+pub mod shares;
 
 use sea_orm::{ConnectionTrait, QueryResult, Value};
 

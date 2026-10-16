@@ -4,9 +4,10 @@
 
 use bmo_artifact::design::{DocumentScheme, PageDesign, page_sheet};
 use bmo_artifact::http::hosted_page::{
-  CLIPBOARD_BRIDGE, DeclaredHead, DeclaredMeta, LINK_BRIDGE, hosted_page, page_design, page_head,
-  page_prelude, picture_bridge, reader_scheme, scheme_bridge,
+  CLIPBOARD_BRIDGE, LINK_BRIDGE, hosted_page, page_design, page_prelude, picture_bridge, reader_scheme,
+  scheme_bridge,
 };
+use bmo_artifact::markup::page_head::{DeclaredHead, DeclaredMeta, page_head};
 
 use DocumentScheme::{Dark, Light, System};
 

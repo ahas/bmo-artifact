@@ -15,7 +15,7 @@ use percent_encoding::utf8_percent_encode;
 use super::hosted_page::{KEPT_FILE_POLICY, hosted_page, hosted_page_policy, reader_scheme};
 use crate::documents::read::KeptFile;
 use crate::helpers::js::URI_COMPONENT;
-use crate::plumbing::http::Refused;
+use crate::plumbing::http::{Call, Refused};
 
 /// How long a reader's own cache may keep what the console's road sends.
 pub const PRIVATE_DAY: &str = "private, max-age=86400";
@@ -118,23 +118,35 @@ pub async fn hosted_file(
 
 /// What a request for a kept attachment carries that decides how it is sent.
 #[derive(Clone, Debug, Default)]
-pub struct Sending<'a> {
+pub struct Sending {
   /// Whether it is asked for to keep rather than to show.
   pub download: bool,
-  pub range: Option<&'a str>,
+  pub range: Option<String>,
   /// The scheme the console's frame names, and the cookies the reader's mode is kept in.
-  pub scheme: Option<&'a str>,
-  pub cookies: Option<&'a str>,
+  pub scheme: Option<String>,
+  pub cookies: Option<String>,
+}
+
+impl Sending {
+  /// What a call asks: `download=1`, its `Range` header, the `scheme` its frame names and its cookies.
+  pub fn of(call: &Call) -> Self {
+    Self {
+      download: call.query("download").as_deref() == Some("1"),
+      range: call.header("range"),
+      scheme: call.query("scheme"),
+      cookies: call.header("cookie"),
+    }
+  }
 }
 
 /// An attachment sent under the isolation its type is let: a page as a hosted page unless it is asked for
 /// to keep, and every other file as a file nothing on which may run.
-pub async fn attachment(file: &KeptFile, sending: &Sending<'_>, cache: &str) -> Result<Response, Refused> {
+pub async fn attachment(file: &KeptFile, sending: &Sending, cache: &str) -> Result<Response, Refused> {
   let page = file.r#type == "text/html";
   let mut response = if page && !sending.download {
-    hosted_file(file, sending.scheme, sending.cookies, cache).await?
+    hosted_file(file, sending.scheme.as_deref(), sending.cookies.as_deref(), cache).await?
   } else {
-    kept_file(file, sending.download, sending.range, cache).await?
+    kept_file(file, sending.download, sending.range.as_deref(), cache).await?
   };
   let headers = response.headers_mut();
 

@@ -68,8 +68,13 @@ fn decode(bytes: &[u8], upright: bool) -> Result<DynamicImage, NotAPicture> {
   }
 }
 
-// The size a picture is brought inside a square of `limit` pixels at, never larger than it stands.
-fn inside(width: u32, height: u32, limit: u32) -> (u32, u32) {
+/// The picture bytes hold, turned upright as they ask: a raster picture, an AVIF or an SVG drawing.
+pub fn upright(bytes: &[u8]) -> Result<DynamicImage, NotAPicture> {
+  decode(bytes, true)
+}
+
+/// The size a picture is brought inside a square of `limit` pixels at, never larger than it stands.
+pub fn inside(width: u32, height: u32, limit: u32) -> (u32, u32) {
   if width <= limit && height <= limit {
     return (width, height);
   }

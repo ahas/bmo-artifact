@@ -11,6 +11,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 
+use percent_encoding::utf8_percent_encode;
 use pulldown_cmark::{Event, LinkType, Options, Parser, Tag, TagEnd};
 use regex::Regex;
 use sea_orm::{DatabaseConnection, QueryResult};
@@ -21,9 +22,11 @@ use super::preview::PreviewCache;
 use crate::clients::job::Job;
 use crate::clients::receiver::Receiver;
 use crate::clients::tool_host::Raster;
+use crate::helpers::js::URI_COMPONENT;
 use crate::helpers::web_address::web_addresses_in;
 use crate::kinds::{Outline, OutlineFinding, kind};
-use crate::markup::finding_markdown::picture_caption;
+use crate::markup::finding_markdown::{finding_excerpt, picture_caption};
+use crate::markup::page_head::{DeclaredHead, page_head};
 use crate::store::documents::SEARCHER;
 use crate::wording::search::Search;
 use crate::{Refusal, all, one};
@@ -163,6 +166,36 @@ pub struct SharedDetail {
   pub findings: Vec<FindingView>,
   pub opened: Vec<SourceView>,
   pub attachments: Vec<AttachmentView>,
+}
+
+/// About as much of a description as a chat app shows under a link's title.
+pub const SHARE_DESCRIPTION_CHARS: usize = 160;
+
+/// What a share link reads as before it is opened.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct SharedHead {
+  pub title: String,
+  pub description: String,
+  /// The address of its picture under the link's own road, relative to the console's root.
+  pub image: Option<String>,
+  pub declared: Option<DeclaredHead>,
+}
+
+// The picture a link shows for its document: one the body draws, by its ref, or one it keeps, by its number.
+enum SharedPicture {
+  Drawn(String),
+  Kept(i64),
+}
+
+fn shared_picture(detail: &Detail) -> Option<SharedPicture> {
+  let drawn = detail.findings.iter().flat_map(|finding| &finding.images).next();
+  let kept = detail.attachments.iter().find(|attachment| attachment.media == "image");
+
+  match (drawn, kept) {
+    (Some(drawn), _) => Some(SharedPicture::Drawn(drawn.r#ref.clone())),
+    (None, Some(kept)) => Some(SharedPicture::Kept(kept.id)),
+    (None, None) => None,
+  }
 }
 
 /// A kept file as it is served: where it is, its type, how long it is and what it is called.
@@ -852,6 +885,46 @@ impl Library {
       opened: detail.opened,
       attachments: detail.attachments,
     }))
+  }
+
+  /// What the link `token` to one document reads as before it is opened: the document's title, the opening
+  /// prose of its body — its topic where the body has none, as a page has none — the address of its picture
+  /// under the link's own road where it has one, and, for a page document, the tags its page declares of that
+  /// head itself.
+  pub async fn shared_head(&self, id: i64, token: &str, now: i64) -> Result<Option<SharedHead>, Refusal> {
+    let Some(detail) = self.detail(id, now).await? else { return Ok(None) };
+    let texts: Vec<&str> = detail.findings.iter().map(|finding| finding.text.as_str()).collect();
+    let excerpt = finding_excerpt(&texts, SHARE_DESCRIPTION_CHARS);
+    let declared = match self.hosted_page_file(id).await? {
+      Some(page) => std::fs::read_to_string(&page.path).ok().map(|html| page_head(&html)),
+      None => None,
+    };
+    let summary = &detail.search.summary;
+
+    Ok(Some(SharedHead {
+      title: summary.title.clone().unwrap_or_else(|| summary.query.clone()),
+      description: if excerpt.is_empty() { summary.topic.clone().unwrap_or_default() } else { excerpt },
+      image: shared_picture(&detail)
+        .map(|_| format!("api/share/{}/picture", utf8_percent_encode(token, URI_COMPONENT))),
+      declared,
+    }))
+  }
+
+  /// The bytes of the picture a link's card shows, as the archive keeps them: the first the body draws, else
+  /// the first the document keeps beside it; none where it has neither or its bytes cannot be read.
+  pub async fn shared_picture_bytes(&self, id: i64, now: i64) -> Result<Option<Vec<u8>>, Refusal> {
+    let Some(detail) = self.detail(id, now).await? else { return Ok(None) };
+
+    Ok(match shared_picture(&detail) {
+      None => None,
+      Some(SharedPicture::Drawn(reference)) => {
+        self.ref_image(id, &reference, RefPicture::Own).await?.map(|image| image.bytes)
+      }
+      Some(SharedPicture::Kept(attachment)) => match self.attachment_file(id, attachment).await? {
+        Some(file) => std::fs::read(file.path).ok(),
+        None => None,
+      },
+    })
   }
 
   /// The attachments of one document that stand in its attachment section: every file but a picture a

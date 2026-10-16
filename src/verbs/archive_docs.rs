@@ -11,14 +11,12 @@
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 
-use base64::Engine;
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use chrono::{Datelike, Timelike};
 use chrono_tz::Tz;
 use clap::Args;
 use regex::{Regex, RegexBuilder};
 use scraper::{Html, Node};
-use sea_orm::{ConnectionTrait, DatabaseConnection, TransactionTrait};
+use sea_orm::{DatabaseConnection, TransactionTrait};
 use sha2::{Digest, Sha256};
 use unicode_normalization::UnicodeNormalization;
 
@@ -28,6 +26,7 @@ use crate::helpers::marks::fill_marks;
 use crate::helpers::picture;
 use crate::plumbing::verb::{Answer, Shell, Verb, VerbError};
 use crate::store::documents::{Attachment, NewDocument, keep_attachment, start_document};
+use crate::store::shares;
 use crate::wording::archive_docs::{ArchiveDocs, Time};
 use crate::{Refusal, all, now_ms, one, run};
 
@@ -827,45 +826,26 @@ impl Documents {
 
     let now = now_ms() / 1000;
     let tx = self.db.begin().await?;
+    let share = match shares::read(&tx, id, now).await? {
+      Some(standing) if standing.expires_at.is_some() && life == ShareLife::Endless => {
+        shares::make_endless(&tx, id).await?;
 
-    run(
-      &tx,
-      r#"DELETE FROM "web_search_shares" WHERE "expires_at" IS NOT NULL AND "expires_at" <= $1"#,
-      vec![now.into()],
-    )
-    .await?;
-
-    let standing = live_share(&tx, id).await?;
-    let share = match standing {
-      Some((token, Some(_))) if life == ShareLife::Endless => {
-        run(
-          &tx,
-          r#"UPDATE "web_search_shares" SET "expires_at" = NULL WHERE "search_id" = $1"#,
-          vec![id.into()],
-        )
-        .await?;
-
-        (token, None)
+        (standing.token, None)
       }
-      Some(share) => share,
+      Some(standing) => (standing.token, standing.expires_at),
       None => {
-        let token = URL_SAFE_NO_PAD.encode(rand::random::<[u8; 32]>());
-        let expires = match life {
-          ShareLife::Seconds(seconds) => Some(now + seconds),
+        let seconds = match life {
+          ShareLife::Seconds(seconds) => Some(seconds),
           ShareLife::Endless => None,
         };
 
-        run(
-          &tx,
-          r#"INSERT INTO "web_search_shares" ("share_token", "search_id", "created_by", "created_at", "expires_at")
-             VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING"#,
-          vec![token.into(), id.into(), self.sender.clone().into(), now.into(), expires.into()],
-        )
-        .await?;
-
-        live_share(&tx, id)
-          .await?
-          .ok_or_else(|| Refusal::bad("the share link was not written"))?
+        match shares::create(&tx, id, &self.sender, now, seconds).await? {
+          Some(made) => (made.token, made.expires_at),
+          None => shares::standing(&tx, id)
+            .await?
+            .map(|standing| (standing.token, standing.expires_at))
+            .ok_or_else(|| Refusal::bad("the share link was not written"))?,
+        }
       }
     };
 
@@ -879,18 +859,6 @@ impl Documents {
   fn render(&self, plan: &Plan, written_at: i64, attachments: &[&str]) -> String {
     render(&self.wording, &plan.kind, &plan.title, &self.time(written_at), attachments, &plan.body)
   }
-}
-
-async fn live_share(db: &impl ConnectionTrait, id: i64) -> Result<Option<(String, Option<i64>)>, Refusal> {
-  one(
-    db,
-    r#"SELECT "share_token", "expires_at" FROM "web_search_shares" WHERE "search_id" = $1"#,
-    vec![id.into()],
-  )
-  .await?
-  .map(|row| Ok((row.try_get("", "share_token")?, row.try_get("", "expires_at")?)))
-  .transpose()
-  .map_err(|why: sea_orm::DbErr| Refusal::from(why))
 }
 
 // Owner-only from the moment the file exists.

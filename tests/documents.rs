@@ -8,14 +8,14 @@ mod support;
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use bmo_artifact::clients::job::Job;
 use bmo_artifact::clients::receiver::Receiver;
 use bmo_artifact::clients::tool_host::Raster;
-use bmo_artifact::documents::preview::{Fetching, PagePreview, PreviewCache, Previewing};
+use bmo_artifact::documents::preview::PreviewCache;
 use bmo_artifact::documents::read::{Asked, Library, RefKind, RefPicture, finding_outside};
 use bmo_artifact::http::documents::{list_asked, moved_screen, page_limit};
 use bmo_artifact::plumbing::http::{Standing, router};
@@ -25,46 +25,13 @@ use serde_json::{Value, json};
 use support::ROOT;
 use support::scratch::Scratch;
 use support::units::{self, Book, Units};
+use support::web::{FakeWeb, PNG};
 use tower::ServiceExt;
 
 const ROOM: i64 = 42;
 // The moment every reading below is made at, past every search here and past no link.
 const NOW: i64 = 2_000_000_000;
 const HOUR: i64 = 60 * 60;
-const PNG: [u8; 8] = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-
-// The web stood in for: every page previews with a picture and no icon, every picture is a PNG, and every
-// address asked is written down.
-#[derive(Default)]
-struct FakeWeb {
-  fetched: Mutex<Vec<String>>,
-}
-
-impl Previewing for FakeWeb {
-  fn page<'a>(&'a self, address: &'a str) -> Fetching<'a, PagePreview> {
-    self.fetched.lock().unwrap().push(format!("preview {address}"));
-
-    let host = url::Url::parse(address)
-      .ok()
-      .and_then(|url| url.host_str().map(str::to_owned))
-      .unwrap_or_default();
-
-    Box::pin(std::future::ready(Ok(PagePreview {
-      title: Some(format!("title {host}")),
-      image: Some("https://img.example.com/card.png".to_owned()),
-      ..PagePreview::default()
-    })))
-  }
-
-  fn picture<'a>(&'a self, address: &'a str) -> Fetching<'a, Raster> {
-    self.fetched.lock().unwrap().push(format!("image {address}"));
-
-    Box::pin(std::future::ready(Ok(Raster {
-      kind: "image/png".to_owned(),
-      bytes: PNG.to_vec(),
-    })))
-  }
-}
 
 // One archive of the test's own: four searches, as their rows and files stand.
 struct Shelf {
@@ -264,7 +231,7 @@ impl Shelf {
   }
 
   fn fetched(&self) -> Vec<String> {
-    std::mem::take(&mut *self.web.fetched.lock().unwrap())
+    self.web.taken()
   }
 
   async fn page(&self, asked: Asked) -> bmo_artifact::documents::read::Page {

@@ -18,16 +18,21 @@ use crate::helpers::js::parse_int;
 use crate::now_ms;
 use crate::plumbing::http::{Call, Refused, Route, answer};
 
-fn bad(code: &str, error: &str) -> Refused {
+pub(crate) fn bad(code: &str, error: &str) -> Refused {
   Refused::new(StatusCode::BAD_REQUEST, code, error)
 }
 
-fn absent(code: &str, error: &str) -> Refused {
+pub(crate) fn absent(code: &str, error: &str) -> Refused {
   Refused::new(StatusCode::NOT_FOUND, code, error)
 }
 
 // A number a road names, a whole number from 1.
-fn numbered(params: &HashMap<String, String>, name: &str, code: &str, error: &str) -> Result<i64, Refused> {
+pub(crate) fn numbered(
+  params: &HashMap<String, String>,
+  name: &str,
+  code: &str,
+  error: &str,
+) -> Result<i64, Refused> {
   params
     .get(name)
     .and_then(|value| value.parse::<i64>().ok())
@@ -35,12 +40,22 @@ fn numbered(params: &HashMap<String, String>, name: &str, code: &str, error: &st
     .ok_or_else(|| bad(code, error))
 }
 
-fn document_id(params: &HashMap<String, String>) -> Result<i64, Refused> {
+pub(crate) fn document_id(params: &HashMap<String, String>) -> Result<i64, Refused> {
   numbered(params, "id", "bad_id", "the document's number is not a whole number from 1")
 }
 
+/// The number of one attachment, as its road names it.
+pub(crate) fn attachment_id(params: &HashMap<String, String>) -> Result<i64, Refused> {
+  numbered(
+    params,
+    "attachment",
+    "bad_attachment_id",
+    "the attachment's number is not a whole number from 1",
+  )
+}
+
 // The moment a reading is made at, in the epoch seconds the archive keeps.
-fn now_seconds() -> i64 {
+pub(crate) fn now_seconds() -> i64 {
   now_ms() / 1000
 }
 
@@ -126,7 +141,7 @@ impl Route for ReadDocument {
 
 crate::route!(ReadDocument);
 
-fn with_headers(mut response: Response, headers: &[(header::HeaderName, String)]) -> Response {
+pub(crate) fn with_headers(mut response: Response, headers: &[(header::HeaderName, String)]) -> Response {
   for (name, value) in headers {
     if let Ok(value) = HeaderValue::from_str(value) {
       response.headers_mut().insert(name.clone(), value);
@@ -185,12 +200,7 @@ impl Route for DocumentAttachment {
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let params = call.path_params().await?;
     let id = document_id(&params)?;
-    let number = numbered(
-      &params,
-      "attachment",
-      "bad_attachment_id",
-      "the attachment's number is not a whole number from 1",
-    )?;
+    let number = attachment_id(&params)?;
     let file = call
       .standing()
       .library()
@@ -198,22 +208,14 @@ impl Route for DocumentAttachment {
       .attachment_file(id, number)
       .await?
       .ok_or_else(|| absent("attachment_not_found", "no such attachment"))?;
-    let (download, scheme) = (call.query("download"), call.query("scheme"));
-    let (range, cookies) = (call.header("range"), call.header("cookie"));
-    let sending = Sending {
-      download: download.as_deref() == Some("1"),
-      range: range.as_deref(),
-      scheme: scheme.as_deref(),
-      cookies: cookies.as_deref(),
-    };
 
-    attachment(&file, &sending, PRIVATE_DAY).await
+    attachment(&file, &Sending::of(&call), PRIVATE_DAY).await
   }
 }
 
 crate::route!(DocumentAttachment);
 
-fn reference(params: &HashMap<String, String>) -> String {
+pub(crate) fn reference(params: &HashMap<String, String>) -> String {
   params.get("ref").cloned().unwrap_or_default()
 }
 
