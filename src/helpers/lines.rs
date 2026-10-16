@@ -21,13 +21,6 @@ pub fn fault(detail: impl Into<String>) -> Refusal {
 pub struct Trees {
   /// Where the agent documents and the rulebooks are read: the tree the running code ships with.
   pub code: PathBuf,
-  /// The agents root: where a composed system prompt is written, and where the configurations a launch
-  /// is handed that no checkout holds are kept.
-  pub agents: PathBuf,
-  /// The checkout a run that is no worker's own works in.
-  pub source: PathBuf,
-  pub data: PathBuf,
-  pub home: PathBuf,
 }
 
 impl Trees {

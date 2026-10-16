@@ -194,10 +194,6 @@ fn a_required_document_is_read_trimmed_and_its_absence_is_a_fault() {
 fn the_trees_name_an_agent_s_documents_and_a_rulebook() {
   let trees = Trees {
     code: PathBuf::from("/code"),
-    agents: PathBuf::from("/agents"),
-    source: PathBuf::from("/source"),
-    data: PathBuf::from("/data"),
-    home: PathBuf::from("/home"),
   };
 
   assert_eq!(trees.agent_dir("scout"), PathBuf::from("/code/prompts/agents/scout"));

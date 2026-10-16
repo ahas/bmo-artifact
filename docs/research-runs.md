@@ -13,31 +13,32 @@
 
 ## The search
 
-### When BMO searches
+### When the agent searches
 
 - **A room's session searches through its `search` tool,** which launches a search as `bmo search`
   does from a shell; the console's search button runs `bmo search` itself. The session has no web
   tool of its own, so every search it wants goes through this launch.
 - **An answer that turns on facts that move is looked up rather than remembered,** and so is a word
-  BMO does not recognise in what somebody said: a tool, a product, a term. BMO looks it up before it
+  the agent does not recognise in what somebody said: a tool, a product, a term. The agent looks it
+  up before it
   asks what it means, since the web answers that in a minute and the question handed back costs the
   asker a round trip.
 - **What only the owner could know is still asked:** which of several things they mean, what they
   intend by it. A lookup that finds nothing is said plainly.
-- **When someone keeps circling a problem,** BMO offers in one short line to look it up, and searches
+- **When someone keeps circling a problem,** the agent offers in one short line to look it up, and searches
   only when the offer is taken.
 
 ### The depth ladder
 
 - **Three depths:** `basic`, `thorough` and `exhaustive`. Each has a research profile (see "Research
   profiles") and a tier assignment for its work key.
-- **BMO launches `basic` without asking** which depth anyone wants; the deeper rungs are reached by
+- **The agent launches `basic` without asking** which depth anyone wants; the deeper rungs are reached by
   escalation.
 - **Escalation.** When the person who asked comes back wanting more — asking again, calling the answer
   thin, saying to dig deeper — the next search on that question runs one rung up. Someone who names a
   depth outright gets it at once.
 - **The rung belongs to the question and the person who asked,** so a different question starts again
-  at `basic`. At `exhaustive` there is nothing above, and BMO says so rather than running the same
+  at `basic`. At `exhaustive` there is nothing above, and the agent says so rather than running the same
   depth again as though it were the next rung.
 - **That judgement is the room's session's,** made from the search procedure it reads before it
   launches. The launch passes the depth and whether the person insisted on it (see "A named depth, and
@@ -54,30 +55,32 @@
 - **A search on what an earlier search of the room covered carries that search on** rather than filing
   a new document: more pictures, more detail, a narrower look, or the same question a rung deeper. The
   owner reads one document per topic.
-- **The launch names the earlier search by its number** (`--into`). BMO is handed that number with
+- **The launch names the earlier search by its number** (`--into`). The agent is handed that number with
   every result.
 - **The new run joins the earlier search's row,** opened again for it. What it finds is added after
   what the earlier runs found, and the document is written again from all of it under the same number,
   so its share link and console address keep opening it.
 - **The head the first run gave stands;** a later run's head fills only what is still empty.
-- **A follow-up refuses** another room's search, a document BMO wrote, a page imported whole, and a
+- **A follow-up refuses** another room's search, a document the agent wrote, a page imported whole, and a
   search still running. A launch that never came up puts the earlier search back as it stood.
 
 ### The launch and the runner
 
-- **The launch sends nothing to the room.** It queues `bmo runner search` through bmo-job and returns
-  at once. The session that launched it says in that same turn, in its own voice, that it is looking
+- **The launch sends nothing to the room.** It opens the search's row, opens the run's row in
+  bmo-job's ledger, has bmo-job launch `bmo runner search`, and returns at once. The session that launched it says in that same turn, in its own voice, that it is looking
   something up, or stays silent where the room's persona wants a quiet lookup.
 - **The run stands outside the service,** so restarting the service cannot cut it short, and a slow
   search never holds the room's session open.
 - **The runner searches the web in a run apart,** which bmo-agency starts, drives and reads: web access
-  and pooled branches, no filesystem, no shell, no persona. It serves BMO and never speaks to the room.
+  and pooled branches, no filesystem, no shell, no persona. It serves the agent and never speaks to the room.
 - **Its instructions** are the search task, with the search-kinds rulebook appended and, of the other
   rulebooks the settings name, only the section that decides whether each applies. The run reads a
   whole rulebook through its web server's `read_rulebook` tool once one applies.
-- **Its prompt is the request:** the question, who asked and when, the options, and the depth.
+- **Its prompt is the request:** the question, who asked and when, the options, and the depth, with
+  the knowledge bmo-gate picks for the question in the room under it, in the shape a turn's reference
+  stands in.
 - **It hands what it found back to the agent that asked** as a quiet instruction carrying the result,
-  queued for that agent in the room it asked in. That agent's session answers in its own voice, and
+  queued through bmo-job for that agent in the room it asked in. That agent's session answers in its own voice, and
   until then neither waits nor answers from memory.
 - **Every web request goes through the web tools** bmo-explorer serves, never the run program's own. A
   search engine that refuses this machine is not an empty result: the search tool says the search
@@ -86,13 +89,14 @@
   through bmo-explorer by the tool host, so every outward request keeps its checks.
 - **Nothing is handed to background work:** work a run leaves running is killed when the run ends, so
   a run that finished on a note about work still going would leave the room waiting for nothing.
-- **The launch names the message that asked,** and the launcher reads its sender and time, so a
+- **The launch names the message that asked,** and the launcher reads its sender and time off
+  bmo-receiver, so a
   restaurant or delivery search applies the asker's own rule without anyone writing it into the query,
   and a delivery search judges whether a place is open at the moment the question was asked.
 
 ### The result
 
-- **Written for BMO to read and kept as a document people read,** in plain text with a fixed
+- **Written for the agent to read and kept as a document people read,** in plain text with a fixed
   structure: a head (title, topic, keywords, and the filtering rule where one applied), the core
   answer, a three-line summary, the body, and what could not be confirmed. `docs/archive.md` sets out
   each part.
@@ -114,11 +118,12 @@
 
 ### The run row
 
-- **Every search is recorded as a run** in bmo-agency's run ledger: the launch opens it naming the
-  agent, the room, the unit and the rung.
+- **Every search is recorded as a run** in bmo-job's run ledger: the launch opens it naming the
+  agent, the room, the unit, the rung and the search it carries, once the search's own row stands.
 - **The runner closes it** with how it ended — done, unanswered, stopped, failed, or refused for leaving
   its own work running — and with the context the run ended carrying. The close is sent once; a run
-  already closed keeps its first closing.
+  already closed keeps its first closing. A run that never came up is closed by its launcher as an
+  error.
 - **What the run cost** is recorded by bmo-agency, which walks the run's accounts and reads its reply.
   Nothing of the query or the result goes into the run; it is a record of a run, not of what was asked.
 
@@ -258,8 +263,9 @@ The settings also hold the bounds every check reads:
 2. **The branch limit.** A branch request beyond the profile's count is refused, finally. When the
    search engine refuses twice in a row, that process's web search stops the same way.
 3. **A person stopping it.** The owner presses Stop on the run in the console's live status screen, or
-   stops its unit from a shell. The runner receives SIGTERM, keeps the last structured result the run
-   wrote, returns it to the room, and closes the run as `stopped`. Where nothing was written, the room
+   stops its unit from a shell. The runner receives SIGTERM or SIGINT, stops its run apart through
+   bmo-agency, giving the work under way up to 30 seconds to come to rest, keeps the last structured
+   result the run wrote, returns it to the room, and closes the run as `stopped`. Where nothing was written, the room
    is told in one line that the search was stopped before it came to anything. A stop is not a failure.
 
 ### How a finished run is closed

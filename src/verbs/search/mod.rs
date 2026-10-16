@@ -1,7 +1,11 @@
-//! The search line (`docs/archive.md`): what a search is asked, what it comes back with, the record it stands
-//! as and the document a person reads.
+//! The search tool (`docs/research-runs.md`, "The launch and the runner"; `docs/archive.md`): `bmo search`, which sets
+//! a question off as a run of its own, and `bmo runner search`, the run, which researches it on the search
+//! line — or brings a page in whole — and hands what it found back to the chat's session. What a search
+//! shares with every research run is `verbs::research`; what is a search's own stands here.
 //!
 //! - `request` — the depths, the options, the request file and the run's prompt.
+//! - `launch` — the verb.
+//! - `runner` — the run.
 //! - `result` — what a run's result says of itself, and what the session is handed in each ending.
 //! - `document`, `record` — the record a search stands as, and the document a person reads.
 //! - `images` — the pictures a result names, kept as this repository's own copies.
@@ -14,8 +18,10 @@ pub mod document;
 pub mod gallery;
 pub mod images;
 pub mod import;
+pub mod launch;
 pub mod record;
 pub mod request;
 pub mod result;
+pub mod runner;
 pub mod share;
 pub mod web;

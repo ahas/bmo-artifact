@@ -106,6 +106,12 @@ pub struct Units {
   pub tool_host: Option<String>,
   /// bmo-agency.
   pub agency: Option<String>,
+  /// bmo-job.
+  pub job: Option<String>,
+  /// bmo-receiver.
+  pub receiver: Option<String>,
+  /// bmo-gate.
+  pub gate: Option<String>,
 }
 
 /// The tree an agent's documents are read from.
@@ -225,7 +231,11 @@ impl Research {
   /// The capabilities a run's settings leave closed, read through `variable`, in capability order:
   /// every one for a run carrying no research setting at all, and otherwise those whose variable opens
   /// nothing.
-  pub fn withheld<'v>(&self, carries_settings: bool, variable: impl Fn(&str) -> Option<&'v str>) -> Vec<&str> {
+  pub fn withheld<'v>(
+    &self,
+    carries_settings: bool,
+    variable: impl Fn(&str) -> Option<&'v str>,
+  ) -> Vec<&str> {
     self
       .opens
       .iter()

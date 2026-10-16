@@ -12,6 +12,9 @@ use sea_orm::{DatabaseConnection, DbErr};
 use tokio::sync::OnceCell;
 
 use crate::clients::agency::{Agency, AgencyClient, AgencyFault};
+use crate::clients::gate::Gate;
+use crate::clients::job::Job;
+use crate::clients::receiver::Receiver;
 use crate::clients::tool_host::ToolHost;
 use crate::clients::voice::Voice;
 use crate::plumbing::refusal::Refusal;
@@ -193,6 +196,12 @@ pub struct Shell {
   pub tool_host: ToolHost,
   /// bmo-agency, at the address the settings name; a test hands a stand-in of its own.
   pub agency: Arc<dyn Agency>,
+  /// bmo-job, at the address the settings name.
+  pub job: Job,
+  /// bmo-receiver, at the address the settings name.
+  pub receiver: Receiver,
+  /// bmo-gate, at the address the settings name.
+  pub gate: Gate,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
@@ -205,6 +214,9 @@ impl Shell {
     let tool_host =
       ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
     let agency = Arc::new(AgencyClient::new(settings.units.agency.clone()));
+    let job = Job::new(settings.units.job.clone());
+    let receiver = Receiver::new(settings.units.receiver.clone());
+    let gate = Gate::new(settings.units.gate.clone());
 
     Ok(Self {
       settings,
@@ -213,6 +225,9 @@ impl Shell {
       voice,
       tool_host,
       agency,
+      job,
+      receiver,
+      gate,
       settled: Arc::default(),
     })
   }

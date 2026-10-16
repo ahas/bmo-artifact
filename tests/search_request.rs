@@ -104,13 +104,8 @@ fn asked(query: &str, depth: &str, max_children: i64, request: Request) -> Strin
   std::fs::create_dir_all(&agent).unwrap();
   std::fs::write(agent.join("request.md"), REQUEST_TEMPLATE).unwrap();
 
-  let root = code.path().to_path_buf();
   let trees = Trees {
-    code: root.clone(),
-    agents: root.clone(),
-    source: root.clone(),
-    data: root.clone(),
-    home: root,
+    code: code.path().to_path_buf(),
   };
 
   task(

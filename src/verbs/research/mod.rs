@@ -21,11 +21,13 @@ use chrono_tz::Tz;
 use sea_orm::DatabaseConnection;
 use serde_json::{Map, Value, json};
 
+use crate::Refusal;
 use crate::clients::agency::{Agency, Reservation, ReservationAsking};
+use crate::clients::gate::Gate;
+use crate::clients::job::Job;
 use crate::control::research::{self as profiles, Values, child_mapping, research_provider};
 use crate::control::whole;
 use crate::settings::Research;
-use crate::Refusal;
 
 /// The line every research run of this module goes out on, and the agent it is counted under.
 pub const LINE: &str = "search";
@@ -316,7 +318,7 @@ pub async fn finish_leases(agency: &dyn Agency, owner: &str, outcome: &str) -> R
 
 // Whether the research run an owner names has ended: its run closed and its unit no longer running, or no run
 // at all. Time alone proves nothing, since a branch inside a standing unit may still be running.
-async fn ended<F, Fut>(agency: &dyn Agency, owner: &str, source: &str, running: &F) -> Result<bool, String>
+async fn ended<F, Fut>(job: &Job, owner: &str, source: &str, running: &F) -> Result<bool, String>
 where
   F: Fn(String) -> Fut,
   Fut: Future<Output = bool>,
@@ -332,14 +334,14 @@ where
   }
 
   let Ok(id) = id.parse::<i64>() else { return Ok(false) };
-  let Some(run) = agency.run(id).await.map_err(|fault| fault.to_string())? else { return Ok(true) };
+  let Some(run) = job.run(id).await? else { return Ok(true) };
 
   Ok(run.finished_at.is_some() && !running(run.unit).await)
 }
 
 /// What research runs left behind when their process died before they could give it back: only a run that
-/// is closed and whose unit no longer runs is reclaimed; how many places came back.
-pub async fn reclaim_leases<F, Fut>(agency: &dyn Agency, running: F) -> Result<i64, String>
+/// is closed in bmo-job's ledger and whose unit no longer runs is reclaimed; how many places came back.
+pub async fn reclaim_leases<F, Fut>(agency: &dyn Agency, job: &Job, running: F) -> Result<i64, String>
 where
   F: Fn(String) -> Fut,
   Fut: Future<Output = bool>,
@@ -348,7 +350,7 @@ where
   let mut reclaimed = 0;
 
   for held in agency.reservations(None).await.map_err(said)? {
-    if ended(agency, &held.asking.owner, &held.asking.source, &running).await?
+    if ended(job, &held.asking.owner, &held.asking.source, &running).await?
       && agency
         .release(&held.token, "research run ended without giving its seats back")
         .await
@@ -360,7 +362,7 @@ where
 
   for request in agency.requests(None).await.map_err(said)? {
     if request.asking.reservation.is_some()
-      || !ended(agency, &request.asking.owner, &request.asking.source, &running).await?
+      || !ended(job, &request.asking.owner, &request.asking.source, &running).await?
     {
       continue;
     }
@@ -407,6 +409,23 @@ impl Knowledge {
   }
 }
 
+/// A quiet instruction as one of the lines a piece of work's knowledge is picked for.
+pub fn instruction_line(text: &str) -> String {
+  format!("quiet instruction from the bot: {text}")
+}
+
+/// The knowledge bmo-gate picks for a piece of work called `noun` in a room, for its own lines; none where
+/// the gate picks nothing or cannot be asked, which costs the work its reference and nothing else.
+pub async fn work_knowledge(gate: &Gate, chat_id: i64, lines: &[String], noun: &str) -> Knowledge {
+  match gate.work_knowledge(chat_id, lines).await {
+    Ok(pieces) => Knowledge::of(noun, &pieces),
+    Err(why) => {
+      eprintln!("chat {chat_id}: the knowledge for a piece of work could not be picked: {why}");
+      Knowledge::default()
+    }
+  }
+}
+
 /// The picked pieces in the shape a turn's reference stands in, so nothing in them can pass for the work's own
 /// instructions, under one line saying whose they are and which way they cut.
 pub fn knowledge_block(noun: &str, pieces: &[Piece]) -> Option<String> {
@@ -415,7 +434,7 @@ pub fn knowledge_block(noun: &str, pieces: &[Piece]) -> Option<String> {
   }
 
   let mut lines = vec![format!(
-    "Reference for this {noun} ({}): what BMO's memory holds on its matter — facts as they stand now and the rules every room keeps. Where a document or a comment says otherwise, this is what is true.",
+    "Reference for this {noun} ({}): what the agent's memory holds on its matter — facts as they stand now and the rules every room keeps. Where a document or a comment says otherwise, this is what is true.",
     pieces.len()
   )];
 

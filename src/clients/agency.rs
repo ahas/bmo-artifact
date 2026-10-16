@@ -24,7 +24,11 @@ pub type Asked<'a, T> = Pin<Box<dyn Future<Output = Result<T, AgencyFault>> + Se
 pub enum AgencyFault {
   /// bmo-agency refused it, with its status, its code and its sentence.
   #[error("{error}")]
-  Refused { status: u16, code: String, error: String },
+  Refused {
+    status: u16,
+    code: String,
+    error: String,
+  },
   /// It did not reach bmo-agency, or the answer did not read as its shape.
   #[error("{0}")]
   Failed(String),
@@ -33,11 +37,11 @@ pub enum AgencyFault {
 impl From<AgencyFault> for Refused {
   fn from(fault: AgencyFault) -> Self {
     match fault {
-      AgencyFault::Refused { status, code, error } => Refused::new(
-        StatusCode::from_u16(status).unwrap_or(StatusCode::BAD_GATEWAY),
+      AgencyFault::Refused {
+        status,
         code,
         error,
-      ),
+      } => Refused::new(StatusCode::from_u16(status).unwrap_or(StatusCode::BAD_GATEWAY), code, error),
       AgencyFault::Failed(error) => Refused::new(StatusCode::BAD_GATEWAY, "agency_failed", error),
     }
   }
@@ -234,33 +238,6 @@ pub struct PlaceWrite {
   pub upstream: Option<String>,
 }
 
-/// One run of the ledger.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Run {
-  pub id: i64,
-  pub agent: String,
-  #[serde(default)]
-  pub chat_id: Option<i64>,
-  pub unit: String,
-  #[serde(default)]
-  pub depth: Option<String>,
-  pub started_at: i64,
-  #[serde(default)]
-  pub finished_at: Option<i64>,
-  #[serde(default)]
-  pub outcome: Option<String>,
-  #[serde(default)]
-  pub context_tokens: Option<i64>,
-}
-
-/// How a run ended.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RunClose {
-  pub finished_at: i64,
-  pub outcome: String,
-  pub context_tokens: Option<i64>,
-}
-
 /// A note in a run's log.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Note {
@@ -424,10 +401,6 @@ pub trait Agency: Send + Sync + Debug {
   /// Every limit put back to its default.
   fn reset_limits(&self) -> Asked<'_, ()>;
 
-  /// A run of the ledger.
-  fn run(&self, id: i64) -> Asked<'_, Option<Run>>;
-  /// A run closed; false where it was already closed.
-  fn close_run<'a>(&'a self, id: i64, close: &'a RunClose) -> Asked<'a, bool>;
   /// A run counted on its agent.
   fn count_run<'a>(&'a self, agent: &'a str) -> Asked<'a, ()>;
   /// A note written in a run's log.
@@ -574,8 +547,9 @@ impl AgencyClient {
 }
 
 fn shaped<T: DeserializeOwned>(what: &str, body: &[u8]) -> Result<T, AgencyFault> {
-  serde_json::from_slice(body)
-    .map_err(|why| AgencyFault::Failed(format!("bmo-agency could not {what}: its answer is out of shape: {why}")))
+  serde_json::from_slice(body).map_err(|why| {
+    AgencyFault::Failed(format!("bmo-agency could not {what}: its answer is out of shape: {why}"))
+  })
 }
 
 impl Agency for AgencyClient {
@@ -596,10 +570,12 @@ impl Agency for AgencyClient {
   }
 
   fn check_effort<'a>(&'a self, provider: &'a str, model: &'a str, effort: &'a str) -> Asked<'a, ()> {
-    Box::pin(self.done(
-      Call::new("check an effort", Method::POST, &["routes", "check-effort"])
-        .body(json!({ "provider": provider, "model": model, "effort": effort })),
-    ))
+    Box::pin(
+      self.done(
+        Call::new("check an effort", Method::POST, &["routes", "check-effort"])
+          .body(json!({ "provider": provider, "model": model, "effort": effort })),
+      ),
+    )
   }
 
   fn roles(&self) -> Asked<'_, Vec<Role>> {
@@ -616,19 +592,23 @@ impl Agency for AgencyClient {
 
   fn request<'a>(&'a self, token: &'a str) -> Asked<'a, Option<PoolRequest>> {
     Box::pin(async move {
-      self.found(Call::new("read a pool request", Method::GET, &["pool", "requests", token])).await
+      self
+        .found(Call::new("read a pool request", Method::GET, &["pool", "requests", token]))
+        .await
     })
   }
 
   fn requests<'a>(&'a self, owner: Option<&'a str>) -> Asked<'a, Vec<PoolRequest>> {
-    Box::pin(
-      self.read(Call::new("list the open pool requests", Method::GET, &["pool", "requests"]).query("owner", owner)),
-    )
+    Box::pin(self.read(
+      Call::new("list the open pool requests", Method::GET, &["pool", "requests"]).query("owner", owner),
+    ))
   }
 
   fn lease<'a>(&'a self, token: &'a str) -> Asked<'a, PoolRequest> {
     Box::pin(async move {
-      self.read(Call::new("try for a place", Method::POST, &["pool", "requests", token, "lease"])).await
+      self
+        .read(Call::new("try for a place", Method::POST, &["pool", "requests", token, "lease"]))
+        .await
     })
   }
 
@@ -636,7 +616,8 @@ impl Agency for AgencyClient {
     Box::pin(async move {
       self
         .read(
-          Call::new("bind a place", Method::POST, &["pool", "requests", token, "bind"]).body(json!({ "child": child })),
+          Call::new("bind a place", Method::POST, &["pool", "requests", token, "bind"])
+            .body(json!({ "child": child })),
         )
         .await
     })
@@ -660,17 +641,19 @@ impl Agency for AgencyClient {
   }
 
   fn reservations<'a>(&'a self, owner: Option<&'a str>) -> Asked<'a, Vec<Reservation>> {
-    Box::pin(
-      self.read(
-        Call::new("list the held reservations", Method::GET, &["pool", "reservations"]).query("owner", owner),
-      ),
-    )
+    Box::pin(self.read(
+      Call::new("list the held reservations", Method::GET, &["pool", "reservations"]).query("owner", owner),
+    ))
   }
 
   fn seats<'a>(&'a self, token: &'a str) -> Asked<'a, Vec<Seat>> {
     Box::pin(async move {
       self
-        .read(Call::new("read a reservation's seats", Method::GET, &["pool", "reservations", token, "seats"]))
+        .read(Call::new(
+          "read a reservation's seats",
+          Method::GET,
+          &["pool", "reservations", token, "seats"],
+        ))
         .await
     })
   }
@@ -678,7 +661,11 @@ impl Agency for AgencyClient {
   fn pings<'a>(&'a self, token: &'a str) -> Asked<'a, Vec<Ping>> {
     Box::pin(async move {
       self
-        .read(Call::new("read a reservation's pings", Method::GET, &["pool", "reservations", token, "pings"]))
+        .read(Call::new(
+          "read a reservation's pings",
+          Method::GET,
+          &["pool", "reservations", token, "pings"],
+        ))
         .await
     })
   }
@@ -697,13 +684,19 @@ impl Agency for AgencyClient {
   }
 
   fn promote(&self) -> Asked<'_, ()> {
-    Box::pin(self.done(Call::new("promote the reservations", Method::POST, &["pool", "reservations", "promote"])))
+    Box::pin(self.done(Call::new(
+      "promote the reservations",
+      Method::POST,
+      &["pool", "reservations", "promote"],
+    )))
   }
 
   fn write_place<'a>(&'a self, place: &'a str, write: &'a PlaceWrite) -> Asked<'a, ()> {
     Box::pin(async move {
       self
-        .done(Call::new("record a place's write", Method::PUT, &["pool", "places", place, "write"]).body(write))
+        .done(
+          Call::new("record a place's write", Method::PUT, &["pool", "places", place, "write"]).body(write),
+        )
         .await
     })
   }
@@ -723,27 +716,10 @@ impl Agency for AgencyClient {
     Box::pin(self.done(Call::new("reset the pool limits", Method::DELETE, &["pool", "limits"])))
   }
 
-  fn run(&self, id: i64) -> Asked<'_, Option<Run>> {
-    Box::pin(async move {
-      let id = id.to_string();
-
-      self.found(Call::new("read a run", Method::GET, &["runs", &id])).await
-    })
-  }
-
-  fn close_run<'a>(&'a self, id: i64, close: &'a RunClose) -> Asked<'a, bool> {
-    Box::pin(async move {
-      let id = id.to_string();
-      let closed = self
-        .send(Call::new("close a run", Method::POST, &["runs", &id, "close"]).body(close), Some(StatusCode::CONFLICT))
-        .await?;
-
-      Ok(closed.is_some())
-    })
-  }
-
   fn count_run<'a>(&'a self, agent: &'a str) -> Asked<'a, ()> {
-    Box::pin(async move { self.done(Call::new("count a run", Method::POST, &["agents", agent, "runs"])).await })
+    Box::pin(
+      async move { self.done(Call::new("count a run", Method::POST, &["agents", agent, "runs"])).await },
+    )
   }
 
   fn note<'a>(&'a self, note: &'a Note) -> Asked<'a, ()> {
@@ -753,14 +729,16 @@ impl Agency for AgencyClient {
   fn registration_by_home<'a>(&'a self, home: &'a str) -> Asked<'a, Option<Registration>> {
     Box::pin(
       self.found(
-        Call::new("find a home's registration", Method::GET, &["registrations", "by-home"]).query("home", Some(home)),
+        Call::new("find a home's registration", Method::GET, &["registrations", "by-home"])
+          .query("home", Some(home)),
       ),
     )
   }
 
   fn start_apart<'a>(&'a self, asking: &'a ApartAsking) -> Asked<'a, String> {
     Box::pin(async move {
-      let started: Started = self.read(Call::new("start a run apart", Method::POST, &["apart"]).body(asking)).await?;
+      let started: Started =
+        self.read(Call::new("start a run apart", Method::POST, &["apart"]).body(asking)).await?;
 
       Ok(started.id)
     })
@@ -771,6 +749,8 @@ impl Agency for AgencyClient {
   }
 
   fn stop_apart<'a>(&'a self, id: &'a str) -> Asked<'a, ()> {
-    Box::pin(async move { self.done(Call::new("stop a run apart", Method::POST, &["apart", id, "stop"])).await })
+    Box::pin(
+      async move { self.done(Call::new("stop a run apart", Method::POST, &["apart", id, "stop"])).await },
+    )
   }
 }

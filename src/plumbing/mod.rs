@@ -2,4 +2,5 @@
 
 pub mod http;
 pub mod refusal;
+pub mod signal;
 pub mod verb;

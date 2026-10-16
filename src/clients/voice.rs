@@ -23,6 +23,14 @@ struct Refused {
   error: String,
 }
 
+/// What a caller is told of a briefing started: the whole answer, so it lets go of it and does not say the
+/// briefing in text as well.
+pub fn launched(unit: &str, chat_id: i64) -> String {
+  format!(
+    "voice briefing launched as {unit}; it speaks to chat {chat_id} by itself when it is done. Do not wait for it and do not say the briefing in text as well."
+  )
+}
+
 /// bmo-voice at the address the settings name, where they name one.
 #[derive(Clone, Debug)]
 pub struct Voice {

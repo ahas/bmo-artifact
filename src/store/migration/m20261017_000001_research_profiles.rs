@@ -17,7 +17,10 @@ pub const TABLES: [&str; 1] = ["research_profiles"];
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
   async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
-    manager.get_connection().execute_unprepared(include_str!("research_profiles.sql")).await?;
+    manager
+      .get_connection()
+      .execute_unprepared(include_str!("research_profiles.sql"))
+      .await?;
 
     Ok(())
   }

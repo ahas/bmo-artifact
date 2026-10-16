@@ -12,8 +12,8 @@ use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post, put};
 use bmo_artifact::clients::agency::{
-  Agency, AgencyClient, Apart, ApartAsking, ApartReply, Assignment, Asking, Mapping, Note, Place, PlaceWrite,
-  PoolRequest, Provider, Registration, Reservation, ReservationAsking, Role, RouteAsked, Run, RunClose, Seat,
+  Agency, AgencyClient, Apart, ApartAsking, ApartReply, Asking, Assignment, Mapping, Note, Place,
+  PlaceWrite, PoolRequest, Provider, Registration, Reservation, ReservationAsking, Role, RouteAsked, Seat,
   Tier,
 };
 use serde_json::{Value, json};
@@ -42,8 +42,6 @@ pub struct Book {
   pub writes: Vec<(String, PlaceWrite)>,
   pub limits: Vec<(String, String, i64)>,
   pub limits_reset: usize,
-  pub runs: Vec<Run>,
-  pub closes: Vec<(i64, RunClose)>,
   pub counted: Vec<String>,
   pub notes: Vec<Note>,
   /// Each home and the registration that owns it.
@@ -62,8 +60,8 @@ pub struct Book {
 
 impl Book {
   /// One provider lending co-workers and carrying both research lines, a co-worker tier and a run tier
-  /// with a route each, a pooled role, a role that is not, the control role, two free places, run 9 open,
-  /// and every run apart answering at once.
+  /// with a route each, a pooled role, a role that is not, the control role, two free places, and every
+  /// run apart answering at once.
   pub fn lending() -> Self {
     let provider = |name: &str, enabled: bool| Provider {
       name: name.to_owned(),
@@ -125,14 +123,6 @@ impl Book {
       }],
       leasing: true,
       seat_state: "reserved".to_owned(),
-      runs: vec![Run {
-        id: 9,
-        agent: "search".to_owned(),
-        chat_id: Some(42),
-        unit: "search-run-9".to_owned(),
-        started_at: 1,
-        ..Run::default()
-      }],
       apart: answered("the answer"),
       ..Self::default()
     }
@@ -197,8 +187,6 @@ pub async fn serve(book: Book) -> (Stand, String) {
     .route("/pool/places/{place}/write", put(write_place))
     .route("/pool/limits/{provider}/{tier}", put(set_limit))
     .route("/pool/limits", delete(reset_limits))
-    .route("/runs/{id}", get(run))
-    .route("/runs/{id}/close", post(close_run))
     .route("/agents/{agent}/runs", post(count_run))
     .route("/log/notes", post(note))
     .route("/registrations/by-home", get(registration))
@@ -263,10 +251,9 @@ async fn assignments(State(stand): State<Stand>) -> Json<Vec<Assignment>> {
 
 async fn resolve(State(stand): State<Stand>, Json(asked): Json<RouteAsked>) -> Response {
   let book = stand.book();
-  let found = book
-    .mappings
-    .iter()
-    .find(|one| asked.provider.as_ref().is_none_or(|provider| *provider == one.provider) && one.tier == asked.tier);
+  let found = book.mappings.iter().find(|one| {
+    asked.provider.as_ref().is_none_or(|provider| *provider == one.provider) && one.tier == asked.tier
+  });
 
   match found {
     Some(mapping) => Json(mapping.clone()).into_response(),
@@ -361,7 +348,11 @@ async fn bind(State(stand): State<Stand>, Path(token): Path<String>, Json(body):
   })
 }
 
-async fn finish(State(stand): State<Stand>, Path(token): Path<String>, Json(body): Json<Value>) -> Response {
+async fn finish(
+  State(stand): State<Stand>,
+  Path(token): Path<String>,
+  Json(body): Json<Value>,
+) -> Response {
   let mut book = stand.book();
   let outcome = body["outcome"].as_str().unwrap_or_default().to_owned();
   let cancel = body["cancel"].as_bool().unwrap_or_default();
@@ -425,7 +416,11 @@ async fn pings(
   Json(stand.book().pings.get(&token).cloned().unwrap_or_default())
 }
 
-async fn release(State(stand): State<Stand>, Path(token): Path<String>, Json(body): Json<Value>) -> Response {
+async fn release(
+  State(stand): State<Stand>,
+  Path(token): Path<String>,
+  Json(body): Json<Value>,
+) -> Response {
   let mut book = stand.book();
   let reason = body["reason"].as_str().unwrap_or_default().to_owned();
   let Some(held) = book.reservations.iter_mut().find(|one| one.token == token) else {
@@ -439,7 +434,11 @@ async fn release(State(stand): State<Stand>, Path(token): Path<String>, Json(bod
   Json(json!({ "released": released })).into_response()
 }
 
-async fn write_place(State(stand): State<Stand>, Path(place): Path<String>, Json(write): Json<PlaceWrite>) -> Response {
+async fn write_place(
+  State(stand): State<Stand>,
+  Path(place): Path<String>,
+  Json(write): Json<PlaceWrite>,
+) -> Response {
   stand.book().writes.push((place, write));
 
   done()
@@ -463,31 +462,6 @@ async fn reset_limits(State(stand): State<Stand>) -> Response {
   done()
 }
 
-async fn run(State(stand): State<Stand>, Path(id): Path<i64>) -> Response {
-  match stand.book().runs.iter().find(|one| one.id == id) {
-    Some(run) => Json(run.clone()).into_response(),
-    None => absent("run"),
-  }
-}
-
-async fn close_run(State(stand): State<Stand>, Path(id): Path<i64>, Json(close): Json<RunClose>) -> Response {
-  let mut book = stand.book();
-  let Some(run) = book.runs.iter_mut().find(|one| one.id == id) else {
-    return absent("run");
-  };
-
-  if run.finished_at.is_some() {
-    return refuse(StatusCode::CONFLICT, "run_closed", "the run is already closed");
-  }
-
-  run.finished_at = Some(close.finished_at);
-  run.outcome = Some(close.outcome.clone());
-  run.context_tokens = close.context_tokens;
-  book.closes.push((id, close));
-
-  Json(json!({})).into_response()
-}
-
 async fn count_run(State(stand): State<Stand>, Path(agent): Path<String>) -> Response {
   stand.book().counted.push(agent);
 
@@ -500,7 +474,10 @@ async fn note(State(stand): State<Stand>, Json(note): Json<Note>) -> Response {
   done()
 }
 
-async fn registration(State(stand): State<Stand>, Query(query): Query<HashMap<String, String>>) -> Response {
+async fn registration(
+  State(stand): State<Stand>,
+  Query(query): Query<HashMap<String, String>>,
+) -> Response {
   let home = query.get("home").cloned().unwrap_or_default();
 
   match stand.book().registrations.iter().find(|(owned, _)| *owned == home) {

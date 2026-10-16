@@ -160,16 +160,17 @@ pub async fn await_place(
   cancelled: &(dyn Fn() -> bool + Send + Sync),
 ) -> Place {
   let started = now_ms();
-  let token = match reserve_places(agency, branches.owner, branches.source, branches.role, branches.count).await {
-    Ok(held) => held.token,
-    Err(reason) => {
-      return Place {
-        reservation: None,
-        waited_ms: 0,
-        reason: Some(reason),
-      };
-    }
-  };
+  let token =
+    match reserve_places(agency, branches.owner, branches.source, branches.role, branches.count).await {
+      Ok(held) => held.token,
+      Err(reason) => {
+        return Place {
+          reservation: None,
+          waited_ms: 0,
+          reason: Some(reason),
+        };
+      }
+    };
 
   loop {
     if let Err(why) = agency.promote().await {

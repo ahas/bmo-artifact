@@ -134,7 +134,12 @@ pub fn spoken(ms: i64) -> String {
 /// Every field that is wrong, in the order the form shows them; empty where the profile holds. A key the
 /// settings do not hold is refused before it reaches here, and reads as one with no clock, no branch
 /// limit of its own and no strategy.
-pub fn field_faults(research: &Research, key: &str, values: &Values, pooled_roles: &[String]) -> Vec<FieldFault> {
+pub fn field_faults(
+  research: &Research,
+  key: &str,
+  values: &Values,
+  pooled_roles: &[String],
+) -> Vec<FieldFault> {
   let limits = &research.limits;
   let declared = research.key(key);
   let mut faults = Vec::new();
@@ -193,7 +198,8 @@ pub fn field_faults(research: &Research, key: &str, values: &Values, pooled_role
   match values.child_role.as_str().filter(|role| role_shape(role)) {
     None => faults.push(FieldFault::new("childRole", "bad_role", "The branch role is not a role name.")),
     Some(role)
-      if whole(&values.max_children, 1, children_max).is_some() && !pooled_roles.iter().any(|one| one == role) =>
+      if whole(&values.max_children, 1, children_max).is_some()
+        && !pooled_roles.iter().any(|one| one == role) =>
     {
       faults.push(FieldFault::new(
         "childRole",
@@ -214,12 +220,14 @@ pub fn field_faults(research: &Research, key: &str, values: &Values, pooled_role
     ));
   }
 
-  if !values
-    .strategy
-    .as_str()
-    .is_some_and(|strategy| declared.is_some_and(|one| one.strategies.iter().any(|accepted| accepted == strategy)))
-  {
-    faults.push(FieldFault::new("strategy", "bad_strategy", "This run does not accept that fetch strategy."));
+  if !values.strategy.as_str().is_some_and(|strategy| {
+    declared.is_some_and(|one| one.strategies.iter().any(|accepted| accepted == strategy))
+  }) {
+    faults.push(FieldFault::new(
+      "strategy",
+      "bad_strategy",
+      "This run does not accept that fetch strategy.",
+    ));
   }
 
   let interval_max = limits.interval_ms.most();
@@ -251,7 +259,12 @@ fn whole_fault(value: &Value, what: &str, min: i64, max: i64) -> Option<String> 
 
 /// Everything a profile must satisfy on its own and against the pool's roles, as the store refuses it;
 /// nothing where it holds.
-pub fn profile_fault(research: &Research, key: &str, values: &Values, pooled_roles: &[String]) -> Option<String> {
+pub fn profile_fault(
+  research: &Research,
+  key: &str,
+  values: &Values,
+  pooled_roles: &[String],
+) -> Option<String> {
   let Some(declared) = research.key(key) else {
     return Some(format!("{key} is not a research key"));
   };
@@ -364,7 +377,11 @@ pub async fn profiles(db: &DatabaseConnection, research: &Research) -> Result<Ve
 }
 
 /// One key's profile, as `profiles` reads it; none for a key the settings do not hold.
-pub async fn profile(db: &DatabaseConnection, research: &Research, key: &str) -> Result<Option<Profile>, Refusal> {
+pub async fn profile(
+  db: &DatabaseConnection,
+  research: &Research,
+  key: &str,
+) -> Result<Option<Profile>, Refusal> {
   Ok(profiles(db, research).await?.into_iter().find(|profile| profile.key == key))
 }
 
@@ -455,7 +472,12 @@ pub async fn assigned_tier(agency: &dyn Agency, key: &str) -> Result<String, Str
 }
 
 /// The route a work key's tier takes on a provider.
-async fn resolve_key(agency: &dyn Agency, key: &str, provider: &str, tier: &str) -> Result<Mapping, String> {
+async fn resolve_key(
+  agency: &dyn Agency,
+  key: &str,
+  provider: &str,
+  tier: &str,
+) -> Result<Mapping, String> {
   let asked = RouteAsked {
     work_key: Some(key.to_owned()),
     provider: Some(provider.to_owned()),

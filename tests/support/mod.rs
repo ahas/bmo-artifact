@@ -6,6 +6,7 @@
 pub mod agency;
 pub mod cli;
 pub mod scratch;
+pub mod units;
 
 use std::fs;
 use std::path::{Path, PathBuf};

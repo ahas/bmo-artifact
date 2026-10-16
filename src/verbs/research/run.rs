@@ -3,7 +3,7 @@
 //! registration it is kept on; the run's research settings handed to its web tools in its environment; the run
 //! carried apart by bmo-agency, which walks the accounts its road is offered, feeds every line to the run's
 //! log and records what it spent; every line it gains kept here, so a run stopped from outside still has what
-//! it wrote; and the run's row closed once, with its pool places given back.
+//! it wrote; and the run's row closed once in bmo-job's ledger, with its pool places given back.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -13,8 +13,9 @@ use serde_json::Value;
 
 use super::{LINE, Profile, Told, clock, finish_leases, owner as research_owner};
 use crate::clients::agency::{
-  Agency, ApartAsking, ApartLog, ApartReply, Instructions, Note, Road as Going, RunClose,
+  Agency, ApartAsking, ApartLog, ApartReply, Instructions, Note, Road as Going,
 };
+use crate::clients::job::{Job, RunClose};
 use crate::control::research::{checked_effort, launch_mapping, research_provider};
 use crate::now_ms;
 
@@ -29,7 +30,9 @@ pub fn assistant_texts(stream: &str) -> Vec<String> {
     .filter(|line| line.starts_with('{'))
     .filter_map(|line| serde_json::from_str::<Value>(line).ok())
     .filter(|event| event.get("type").and_then(Value::as_str) == Some("assistant"))
-    .flat_map(|event| event.pointer("/message/content").and_then(Value::as_array).cloned().unwrap_or_default())
+    .flat_map(|event| {
+      event.pointer("/message/content").and_then(Value::as_array).cloned().unwrap_or_default()
+    })
     .filter(|block| block.get("type").and_then(Value::as_str) == Some("text"))
     .filter_map(|block| block.get("text").and_then(Value::as_str).map(str::to_owned))
     .collect()
@@ -68,12 +71,18 @@ pub enum Road {
   Kept(String),
 }
 
+/// The row a run's launcher opened for it, and bmo-job, whose ledger holds it.
+pub struct Row {
+  pub job: Job,
+  pub id: i64,
+}
+
 /// One run as its runner starts it: its room and row, the log its lines are fed to, and what it has written.
 pub struct Research {
   agency: Arc<dyn Agency>,
   source: &'static str,
   chat_id: i64,
-  run_id: Option<i64>,
+  row: Option<Row>,
   owner: Option<String>,
   log: Option<ApartLog>,
   streamed: Arc<Mutex<Vec<String>>>,
@@ -84,14 +93,20 @@ pub struct Research {
 
 impl Research {
   /// A run of `source` for the room, under its row and unit where its launcher opened them; a run with no
-  /// unit keeps no log.
-  pub fn new(agency: Arc<dyn Agency>, source: &'static str, chat_id: i64, run_id: Option<i64>, unit: &str) -> Self {
+  /// row opens no branch and closes nothing, and a run with no unit keeps no log.
+  pub fn new(
+    agency: Arc<dyn Agency>,
+    source: &'static str,
+    chat_id: i64,
+    row: Option<Row>,
+    unit: &str,
+  ) -> Self {
     Self {
       agency,
       source,
       chat_id,
-      run_id,
-      owner: run_id.map(|id| research_owner(source, id)),
+      owner: row.as_ref().map(|row| research_owner(source, row.id)),
+      row,
       log: (!unit.is_empty()).then(|| ApartLog {
         run: unit.to_owned(),
         chat_id: Some(chat_id),
@@ -221,10 +236,6 @@ impl Research {
 
     self.context_tokens = reply.context_tokens.or(self.context_tokens);
 
-    if !reply.live_tasks.is_empty() {
-      return Err("the run ended with its own work still running".to_owned());
-    }
-
     Ok(reply)
   }
 
@@ -283,7 +294,7 @@ impl Research {
       eprintln!("{} run pool places could not be given back: {why}", self.source);
     }
 
-    let Some(run_id) = self.run_id else { return false };
+    let Some(row) = &self.row else { return false };
 
     if self.closed {
       return false;
@@ -297,7 +308,7 @@ impl Research {
       context_tokens: self.context_tokens,
     };
 
-    match self.agency.close_run(run_id, &close).await {
+    match row.job.close_run(row.id, &close).await {
       Ok(closed) => closed,
       Err(why) => {
         eprintln!("the run's row could not be closed: {why}");

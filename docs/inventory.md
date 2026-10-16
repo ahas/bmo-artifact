@@ -55,9 +55,9 @@ The 4 files under `verbs/research/` are 2,145 lines.
 | `bot/bmo-server/tests/integration/search_verb.rs` | 350 | 9 |
 | `bot/bmo-server/tests/integration/search_runner.rs` | 878 | 9 |
 
-In-file test modules move with the file that holds them (9 modules). `archive_docs` moves in step 6.
+In-file test modules move with the file that holds them (10 modules). `archive_docs` moves in step 6.
 `request`, `share`, `import`, `images`, `result`, `gallery` and `document/tests` move in step 7.
-`control/research` moves in step 8.
+`control/research` moves in step 8, and `search/launch` in step 9.
 
 ## 3. Schema statements taken (6 tables, 4 indexes)
 
@@ -83,16 +83,20 @@ to the unit that owns it.
 | `lines::{Trees, read_required, render}`, `run_log::{json::Json, lines::BRANCH_TOOLS, lines::stream_lines}` | 6 | 5 | Copied helpers |
 | `room_record` | 1 | 7 | This repository's room-holding route |
 | `control::{harness, pool, tiers, claude_accounts}` | 4 | 8 | The bmo-agency client |
-| `runs`, `queue`, `job_run` | 3 | 9 | The bmo-job client |
-| `reference::road`, `places::Ground` | 2 | 9 | Settings or the bmo-agency client, whichever the code reads |
-| `lines::runner::Search` | 1 | 9 | The bmo-agency client |
+| `runs`, `queue`, `job_run` | 3 | 9 | The bmo-job client: a run's row opened, launched, read and closed in its ledger, the runs that carried a search, and an ending handed back; the stop's outcome word and the live task names are this repository's own |
+| `reference::road` | 1 | 9 | The quiet-instruction line is this repository's own; the knowledge a run is handed is picked by bmo-gate through its client |
+| `places::Ground` | 1 | 9 | Settings: the database, the file root, the prompt tree and each unit's address; the launching process's home and turn are read from its environment |
+| `lines::runner::Search` | 1 | 9 | The bmo-agency client: the run apart under the instructions bmo-agency composes for the search line |
 | `chat::voice`, `voice::brief` | 2 | 9 | The bmo-voice client |
-| `remote_browser::Stop` | 1 | 9 | The explorer client |
+| `remote_browser::Stop` | 1 | 9 | This repository's own stop listener: it hears the process's own signals, and nothing of it is bmo-explorer's |
 | `Shell::owner`, `providers::is_owner_room` | 2 | 6 | The owner's private room and the default asker, named in settings |
 | `AGENT_KEY`, `SENDER_NAME`, `OWNER_NAME` | 3 | 6 | The writer and sender names in settings; the owner's name is not carried |
 
 `archive_docs` starts a narration through `voice::brief`, so the bmo-voice client's briefing call
 lands in step 6, and step 9 adds the rest of that client.
+
+Beside these internals, the search launcher read bmo-receiver's `messages` table for who sent the
+asking message, when and on what road; that read becomes the bmo-receiver client.
 
 ## 5. Rust twins copied from internal crates (7 items)
 
@@ -111,8 +115,8 @@ Only these items are copied, with what they stand on:
 - `archived` stands on bmo-picture's picture decoding, its AVIF and SVG readers included, and on
   its fitting of a picture inside a side.
 
-The crates themselves are not depended on. `lines::Trees` comes without the constructor that reads
-`places::Ground`; whatever step 9 makes of `places::Ground` builds it.
+The crates themselves are not depended on. `lines::Trees` comes as the one tree the code reads, the
+prompt tree the settings name, without the constructor that read `places::Ground`.
 
 ## 6. TypeScript ported to Rust (16 files)
 

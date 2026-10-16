@@ -28,7 +28,8 @@ sender = "BMO"
 [console]
 
 # The address of each unit this repository calls, by its short name: `voice` for bmo-voice, `tool_host`
-# for the tool host bmo-explorer is reached through, `agency` for bmo-agency. A deployment sets them.
+# for the tool host bmo-explorer is reached through, `agency` for bmo-agency, `job` for bmo-job,
+# `receiver` for bmo-receiver and `gate` for bmo-gate. A deployment sets them.
 [units]
 
 # The tree whose prompts/agents/<agent>/ holds each agent's documents is `code` here; a deployment sets

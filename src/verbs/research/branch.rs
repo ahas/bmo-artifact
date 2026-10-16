@@ -10,7 +10,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use clap::Args;
-use tokio::signal::unix::{SignalKind, signal};
 
 use super::run::{Research, assistant_texts};
 use super::{LINE, Told};
@@ -18,6 +17,7 @@ use crate::clients::agency::{Agency, Asking, Instructions, PlaceWrite, PoolReque
 use crate::control::research::{child_mapping, research_provider};
 use crate::helpers::lines::render;
 use crate::now_ms;
+use crate::plumbing::signal::Stop;
 use crate::plumbing::verb::{Answer, Shell, Verb, VerbError};
 use crate::settings::Prompts;
 use crate::verbs::search::gallery::{looked_at, only_looked_at};
@@ -92,7 +92,8 @@ pub fn report(index: i64, text: &str, cut_off: bool) -> String {
   ];
 
   if cut_off {
-    lines.push("This branch was stopped when research closed; the notes above are as far as it got.".into());
+    lines
+      .push("This branch was stopped when research closed; the notes above are as far as it got.".into());
   }
 
   lines.join("\n")
@@ -261,6 +262,7 @@ async fn carry(
     name: INSTRUCTIONS.to_owned(),
     text: None,
   };
+  // A branch has no row of its own: its run's row is its parent's.
   let mut research = Research::new(agency, LINE, branch.chat_id, None, "");
   let flag = research.stop_flag();
   let closes_at = branch.closes_at;
@@ -355,7 +357,8 @@ impl Verb for SearchBranch {
     };
     let stopping = Arc::new(AtomicBool::new(false));
     let watch = stop_on_signal(Arc::clone(&stopping))?;
-    let answered = research_branch(Arc::clone(&shell.agency), &shell.settings.prompts, &branch, stopping).await;
+    let answered =
+      research_branch(Arc::clone(&shell.agency), &shell.settings.prompts, &branch, stopping).await;
 
     watch.abort();
 
@@ -367,17 +370,10 @@ crate::verb!(SearchBranch);
 
 // The flag set the moment the process is told to stop, by `SIGTERM` or `SIGINT`.
 fn stop_on_signal(stopping: Arc<AtomicBool>) -> Result<tokio::task::JoinHandle<()>, VerbError> {
-  let listen = |kind: SignalKind| {
-    signal(kind).map_err(|why| VerbError::Refused(format!("search branch: the stop signal cannot be heard: {why}")))
-  };
-  let (mut term, mut interrupt) = (listen(SignalKind::terminate())?, listen(SignalKind::interrupt())?);
+  let mut stop = Stop::listen()?;
 
   Ok(tokio::spawn(async move {
-    tokio::select! {
-      _ = term.recv() => {}
-      _ = interrupt.recv() => {}
-    }
-
+    stop.next().await;
     stopping.store(true, Ordering::SeqCst);
   }))
 }

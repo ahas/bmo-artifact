@@ -40,7 +40,7 @@ src/
     run_log/               the run log's JSON and the lines a run's stream leaves
     picture/               a picture's type read off its bytes, and a kept picture written as AVIF
   wording.rs               the document wording file and its English default
-  clients/                 bmo-job, bmo-agency, bmo-voice, bmo-receiver, and the tool host for bmo-explorer
+  clients/                 bmo-job, bmo-agency, bmo-voice, bmo-receiver, bmo-gate, and the tool host for bmo-explorer
   verbs/
     archive_docs.rs        archive doc and archive share
     html_read.rs           archive html-read
@@ -186,11 +186,17 @@ environment. `src/settings.rs` reads them all.
 
   All of it is committed: it is what every deployment's research runs are held to.
 - **The prompt tree,** `code` under `[prompts]`: the tree whose `prompts/agents/<agent>/` holds an
-  agent's documents, such as the branch's request. No value is committed; where none is set, a
-  branch is refused with "the prompt tree is not set: set code under [prompts] in the settings".
+  agent's documents, such as a search's request and a branch's. No value is committed; where none is
+  set, a search run and a branch are refused with "the prompt tree is not set: set code under
+  [prompts] in the settings".
 - **The address of each unit this repository calls**, under `[units]`, by the unit's short name:
-  `voice` for bmo-voice, `tool_host` for the tool host that bmo-explorer is reached through, and
-  `agency` for bmo-agency. `docs/api.md` lists the calls. No address is committed.
+  `voice` for bmo-voice, `tool_host` for the tool host that bmo-explorer is reached through,
+  `agency` for bmo-agency, `job` for bmo-job, `receiver` for bmo-receiver and `gate` for bmo-gate.
+  `docs/api.md` lists the calls. No address is committed; a call to a unit whose address is unset is
+  refused with "the <unit> address is not set: set <key> under [units] in the settings".
+- **A search's runner reads the same settings as its launcher.** The launcher hands bmo-job the
+  folder it started in and every variable of its own environment that begins with `BMO_ARTIFACT_`,
+  with `PATH` and `HOME`, so the runner reads the same files with the same values over them.
 
 ## Version
 

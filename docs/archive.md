@@ -1045,7 +1045,8 @@ alike, on the console and under a share link.
     search is the one handed out.
   - The CLI verbs and the HTTP API write share rows through one module of this repository, so they
     cannot disagree about what a link is.
-  - A search that left no document is answered with a summary alone.
+  - A search that left no document is answered with a summary alone, and so is one whose deployment
+    names no console address, since neither address can be made without it.
 
 ## Out of scope
 

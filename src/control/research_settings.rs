@@ -9,7 +9,9 @@ use axum::http::{Method, StatusCode};
 use axum::response::Response;
 use serde_json::{Map, Value, json};
 
-use super::research::{self, FieldFault, Profile, Values, child_mapping, coworker_providers, field_faults, profiles};
+use super::research::{
+  self, FieldFault, Profile, Values, child_mapping, coworker_providers, field_faults, profiles,
+};
 use crate::Refusal;
 use crate::clients::agency::{Agency, Ping, Place, Role, RouteAsked, Tier};
 use crate::clients::tool_host::SearchEngines;
@@ -112,9 +114,8 @@ async fn tier_views(
       let mut reservations = Vec::new();
       let mut last_pings = Vec::new();
 
-      for reservation in held
-        .iter()
-        .filter(|one| one.asking.provider == *provider && one.asking.tier == tier)
+      for reservation in
+        held.iter().filter(|one| one.asking.provider == *provider && one.asking.tier == tier)
       {
         let seats = agency.seats(&reservation.token).await?;
         let last = latest(&agency.pings(&reservation.token).await?);
@@ -174,7 +175,13 @@ async fn tier_views(
 /// Where a new optional request for a role would stand right now: the same count the runner's
 /// admission reads, so the screen and the launch never disagree.
 async fn child_room(agency: &dyn Agency, roles: &[RoleView], status: &[Place], role: &str) -> Value {
-  let room = |state: &str, provider: Value, tier: Value, model: Value, capacity: Value, counts: [i64; 3], error: Value| {
+  let room = |state: &str,
+              provider: Value,
+              tier: Value,
+              model: Value,
+              capacity: Value,
+              counts: [i64; 3],
+              error: Value| {
     json!({
       "state": state,
       "provider": provider,
@@ -188,10 +195,7 @@ async fn child_room(agency: &dyn Agency, roles: &[RoleView], status: &[Place], r
     })
   };
 
-  if !roles
-    .iter()
-    .any(|one| one.role.name == role && one.role.enabled && one.role.pooled)
-  {
+  if !roles.iter().any(|one| one.role.name == role && one.role.enabled && one.role.pooled) {
     return room("role-off", Value::Null, Value::Null, Value::Null, Value::Null, [0; 3], Value::Null);
   }
 
@@ -201,9 +205,7 @@ async fn child_room(agency: &dyn Agency, roles: &[RoleView], status: &[Place], r
       return room("unresolved", Value::Null, Value::Null, Value::Null, Value::Null, [0; 3], json!(error));
     }
   };
-  let place = status
-    .iter()
-    .find(|one| one.provider == mapping.provider && one.tier == mapping.tier);
+  let place = status.iter().find(|one| one.provider == mapping.provider && one.tier == mapping.tier);
   let (provider, tier, model) = (json!(mapping.provider), json!(mapping.tier), json!(mapping.model));
 
   match place {
@@ -282,9 +284,12 @@ async fn profile_views(
 
 /// The engines and their rests as the screen reads them, or why bmo-explorer could not be read.
 async fn engine_views(standing: &Standing, now: i64) -> (Vec<Value>, Vec<Value>, Option<String>) {
-  let read: Result<SearchEngines, String> = tokio::time::timeout(ENGINES_WAIT, standing.tool_host.search_engines())
-    .await
-    .unwrap_or_else(|_| Err(format!("bmo-explorer did not answer within {} seconds", ENGINES_WAIT.as_secs())));
+  let read: Result<SearchEngines, String> =
+    tokio::time::timeout(ENGINES_WAIT, standing.tool_host.search_engines())
+      .await
+      .unwrap_or_else(|_| {
+        Err(format!("bmo-explorer did not answer within {} seconds", ENGINES_WAIT.as_secs()))
+      });
 
   match read {
     Ok(read) => {
@@ -307,11 +312,8 @@ async fn engine_views(standing: &Standing, now: i64) -> (Vec<Value>, Vec<Value>,
           })
         })
         .collect();
-      let cooldowns = read
-        .cooldowns
-        .iter()
-        .map(|one| json!({ "reason": one.reason, "ms": one.ms }))
-        .collect();
+      let cooldowns =
+        read.cooldowns.iter().map(|one| json!({ "reason": one.reason, "ms": one.ms })).collect();
 
       (engines, cooldowns, None)
     }
@@ -350,7 +352,8 @@ impl Route for ResearchSettings {
     let roles = role_views(agency, &profiles).await?;
     let tiers = agency.tiers().await?;
     let status = agency.status().await?;
-    let coworker_tiers: Vec<&str> = tiers.iter().filter(|one| one.coworker).map(|one| one.name.as_str()).collect();
+    let coworker_tiers: Vec<&str> =
+      tiers.iter().filter(|one| one.coworker).map(|one| one.name.as_str()).collect();
     let defaults: Map<String, Value> = tiers
       .iter()
       .filter(|one| one.coworker)
@@ -406,9 +409,9 @@ async fn save_profile(standing: &Standing, key: &str, values: &Values, now: i64)
     return Err(invalid_profile(&faults));
   }
 
-  research::set_profile(db, research, key, values, &pooled, now)
-    .await?
-    .map_err(|fault| Refused::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_profile", fault).with("faults", json!([])))
+  research::set_profile(db, research, key, values, &pooled, now).await?.map_err(|fault| {
+    Refused::new(StatusCode::UNPROCESSABLE_ENTITY, "invalid_profile", fault).with("faults", json!([]))
+  })
 }
 
 fn research_key<'b>(research: &Research, body: &'b Value) -> Result<&'b str, Refused> {
@@ -491,7 +494,8 @@ impl Route for ResearchChange {
       }
       Some("reset-profile") => {
         let key = research_key(research, &body)?;
-        let seed = research::seed(research, key).ok_or_else(|| bad("bad_key", format!("{key} has no seed")))?;
+        let seed =
+          research::seed(research, key).ok_or_else(|| bad("bad_key", format!("{key} has no seed")))?;
 
         save_profile(standing, key, &seed, now).await?;
       }
