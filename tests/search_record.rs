@@ -3,6 +3,7 @@
 
 mod support;
 
+use bmo_artifact::store::documents::SEARCHER;
 use bmo_artifact::verbs::search::record::{
   Ending, NewSearch, finish_search, join_search, read_search, record_run, reopen_search, start_search,
 };
@@ -30,7 +31,7 @@ async fn opened(scratch: &Scratch, options: &Options) -> i64 {
       depth: "basic",
       asker_id: Some(5),
       options,
-      kind: "search",
+      kind: None,
     },
   )
   .await
@@ -125,6 +126,35 @@ async fn a_one_value_answer_keeps_its_row_and_head_and_writes_no_document() {
   assert!(search.findings.is_empty());
   assert!(search.options.is_empty());
   assert!(!artifacts.path().join(search_id.to_string()).exists());
+}
+
+#[tokio::test]
+async fn a_search_is_the_searchers_search_unless_it_says_otherwise() {
+  let scratch = Scratch::new().await;
+  let search_id = opened(&scratch, &Options::default()).await;
+  let imported = start_search(
+    scratch.db(),
+    &NewSearch {
+      chat_id: 1,
+      query: "import the page: https://c.example",
+      depth: "basic",
+      asker_id: None,
+      options: &Options::default(),
+      kind: Some("import"),
+    },
+  )
+  .await
+  .unwrap();
+  let row = async |id: i64| {
+    scratch
+      .texts(&format!(
+        r#"SELECT unnest(ARRAY["kind", "author", "status"]) FROM "searches" WHERE "id" = {id}"#
+      ))
+      .await
+  };
+
+  assert_eq!(row(search_id).await, ["search", SEARCHER, "open"]);
+  assert_eq!(row(imported).await, ["import", SEARCHER, "open"]);
 }
 
 #[tokio::test]

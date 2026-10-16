@@ -118,7 +118,9 @@ share links of every document already written hang on it. A row holds:
   - when it started and ended;
   - where its document file is.
 - **Its kind and its writer:** `searcher` for what the search runner recorded, and the agent's writer
-  name for what the agent wrote. Settings hold that name; the committed one is `bmo`.
+  name for what the agent wrote. Settings hold that name; the committed one is `bmo`. A search opens
+  with the status `open` and the writer `searcher`; it is of the kind its launch names (`import`,
+  `learning`), and of kind `search` where the launch names none.
 - **Who asked:** the chat id of the person whose message the document answers, where the launch named
   that message.
 - **The search options the launch gave:** period, region, excluded sources and result shape, as one

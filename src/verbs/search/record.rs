@@ -16,6 +16,7 @@ use super::document::{
 };
 use super::request::Options;
 use crate::http::rooms::Kept;
+use crate::store::documents::SEARCHER;
 use crate::wording::Wording;
 use crate::{Refusal, all, one, run};
 
@@ -28,8 +29,8 @@ crate::room_holding!(Kept {
 /// The status a search stands in while it is open.
 pub const OPEN_STATUS: &str = "open";
 
-/// Who writes a search's document: the searcher, not the agent by hand.
-pub const SEARCHER_AUTHOR: &str = "searcher";
+/// The kind a search is where its launch names none.
+pub const SEARCH_KIND: &str = "search";
 
 /// A search's row as its launcher opens it.
 pub struct NewSearch<'a> {
@@ -38,8 +39,9 @@ pub struct NewSearch<'a> {
   pub depth: &'a str,
   pub asker_id: Option<i64>,
   pub options: &'a Options,
-  /// The kind of document it is: a page imported whole, study material asked for by its shape, or a search.
-  pub kind: &'a str,
+  /// The kind of document it is: a page imported whole or study material asked for by its shape; a search
+  /// where none is named.
+  pub kind: Option<&'a str>,
 }
 
 /// The search's own row opened: its number.
@@ -60,8 +62,8 @@ pub async fn start_search(db: &DatabaseConnection, search: &NewSearch<'_>) -> Re
         (crate::now_ms() / 1000).into(),
         search.asker_id.into(),
         options.into(),
-        search.kind.into(),
-        SEARCHER_AUTHOR.into(),
+        search.kind.unwrap_or(SEARCH_KIND).into(),
+        SEARCHER.into(),
       ],
     )
     .await?
@@ -83,7 +85,7 @@ pub async fn reopen_search(
     db,
     r#"SELECT "status" FROM "searches" WHERE "id" = $1 AND "chat_id" = $2 AND COALESCE("author", $3) = $3
          AND COALESCE("kind", '') <> 'import' AND "status" <> $4"#,
-    vec![search_id.into(), chat_id.into(), SEARCHER_AUTHOR.into(), OPEN_STATUS.into()],
+    vec![search_id.into(), chat_id.into(), SEARCHER.into(), OPEN_STATUS.into()],
   )
   .await?
   else {

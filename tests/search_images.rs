@@ -196,7 +196,7 @@ async fn a_search(scratch: &Scratch) -> i64 {
       depth: "basic",
       asker_id: None,
       options: &Options::default(),
-      kind: "search",
+      kind: None,
     },
   )
   .await
