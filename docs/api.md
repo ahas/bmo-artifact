@@ -41,7 +41,9 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
   - Attaches files and a narration.
   - Answers with the document's number and the address the room may open: the console address in a
     room that can open the console, a share link otherwise.
-  - With no `--chat` and no `--by`, the room and the author come from settings.
+  - With no `--chat` and no `--by`, the room and the author come from settings. Where settings name
+    no default room, a call with no `--chat` is refused.
+  - Also run as `archive-doc`.
   - Refusals:
     - no title, or an empty body;
     - a kind this verb does not write;
@@ -54,6 +56,7 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
   - Makes or renews a document's share link for a room, and answers with the link and when it ends.
   - The owner's own private room, and a room that cannot open the console, are each given a plain
     reason that names no person.
+  - Also run as `archive-share`.
 - `bmo archive html-read <file> [--pictures <dir>] [--stem <name>] [--from <line>]`
   - Reads a filed HTML page for its words in order, cut at the answer ceiling; `--from` reads on
     from a numbered line.
@@ -235,3 +238,16 @@ room-holding answer (see "Room holding") before it removes a room.
 | Read and apply tiers, providers and their order and enablement | bmo-agency |
 | Take and give back places in the co-worker pool | bmo-agency |
 | Read the accounts a run is offered | bmo-agency |
+
+Each unit is reached at the address its name holds under `[units]` in the settings.
+
+- **Start a briefing of a finished document** (bmo-voice): `POST /briefings` with a JSON body.
+  - The body carries:
+    - `chat_id`, the room it is spoken to;
+    - `text`, the script;
+    - `started_by`, which names the verb and the document, as `archive-doc:<id>`;
+    - `document`, the document whose sound it is kept as.
+  - A `2xx` answer carries `unit`, the name of the run that speaks it.
+  - Any other answer is a refusal and carries its sentence under `error`.
+  - The filing verb passes that sentence on, after `voice: `.
+  - A call that gets no answer is reported with the failure's own words.

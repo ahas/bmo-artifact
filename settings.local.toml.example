@@ -15,3 +15,14 @@ file = "/srv/bmo-artifact/documents.yaml"
 
 [time]
 zone = "UTC"
+
+[documents]
+room = 1000
+asker = 1000
+kindless_import_prefix = "Import: "
+
+[console]
+address = "https://console.example.com"
+
+[units]
+voice = "http://127.0.0.1:3240"

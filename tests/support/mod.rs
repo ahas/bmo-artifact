@@ -3,6 +3,7 @@
 // Each test file is its own crate and uses only part of this module.
 #![allow(dead_code)]
 
+pub mod cli;
 pub mod scratch;
 
 use std::fs;

@@ -23,8 +23,8 @@ src/
   lib.rs
   bin/
     bmo-artifact.rs        the HTTP server
-    bmo-artifact-cli.rs    every CLI verb
-  settings.rs              listen address, storage address, file root, wording file, time zone
+    bmo-artifact-cli.rs    the CLI's line, built from every registered verb, and the version and migrate verbs
+  settings.rs              every setting (see "Settings")
   pool.rs                  connection pools and how a statement is bound and run on them
   store/                   the queries the carried code runs, and the clock its columns keep
     migration/             the six document tables' migration and its migrator
@@ -38,6 +38,7 @@ src/
     lines.rs               a launch's trees, its required documents and their {{name}} marks
     toolbook.rs            a toolbook proxy call read as the tool it reached
     run_log/               the run log's JSON and the lines a run's stream leaves
+    picture/               a picture's type read off its bytes, and a kept picture written as AVIF
   wording.rs               the document wording file and its English default
   clients/                 bmo-job, bmo-agency, bmo-voice, bmo-receiver, and the tool host for bmo-explorer
   verbs/
@@ -75,6 +76,10 @@ console's TypeScript server side. Their behaviour, cases included, follows the T
 
 The plumbing is what every verb and every route stands on, and it knows none of them.
 
+- **Each verb registers itself** beside its own answer, under the words a caller runs it by and any
+  other spelling it keeps. The CLI binary builds its command line from every verb linked in, and
+  takes a verb's two words given as two arguments as the one name. The binary refuses to start where
+  two verbs claim the same name or spelling.
 - **A verb** answers the lines it prints, or a verb error. A verb error is one of three:
   - a refusal, said in the verb's own sentence;
   - an end with a code of the verb's own, said in its own sentence;
@@ -87,8 +92,9 @@ The plumbing is what every verb and every route stands on, and it knows none of 
   with failure on it and prints its sentence. A route answers with its status, and the code is that
   status's own name in snake_case.
 - **The shell** is what a verb run from the CLI stands on: the settings it was started with, the
-  database they name, and the document wording they name. The database is opened when a verb asks
-  its first statement of it. The wording is read when the shell is made, so a wording file that is
+  database they name, the document wording they name, and the bmo-voice client. The database is
+  opened when a verb asks its first statement of it, and settled (see "Storage") before the first
+  statement on the document tables. The wording is read when the shell is made, so a wording file that is
   refused stops every verb before it runs. Each later piece a verb needs (a client of another unit)
   is added to the shell, not opened by the verb.
 - **A route** declares its method and its path and answers one call. A call carries the request,
@@ -118,6 +124,10 @@ contract and never reads its source. The screen's wording keys stay in bmo-web's
   table; here it has no default, since no other unit's table is read. SeaORM keeps the migration's
   record in its own table beside the six. The `migrate` verb brings the database the settings name
   up to date with this migration.
+- **Settling.** Once in each process, before the first statement on the document tables, a row that
+  names no kind is given its kind and its writer, and the pictures of `search_images` not yet among
+  the attachments are copied there, as `docs/archive.md` sets out under "`searches`" and "The other
+  five tables". `migrate` does not settle, since it may run before the tables exist.
 - **Statements.** Every statement binds each number at its widest width, so the driver never refuses
   a statement it has prepared because a value comes in a different width. A statement prepared
   before a table's shape changed under the process is run once more on a fresh connection, and no
@@ -146,8 +156,20 @@ environment. `src/settings.rs` reads them all.
   live wording under the same keys, which `docs/api.md` lists under "Wording".
 - **The time zone** used when a sentence or a document states a time, `zone` under `[time]`, by its
   IANA name. The committed default is UTC; a deployment sets its own.
+- **The documents the agent files**, under `[documents]`:
+  - `room`, the owner's private room, which is also the room a document goes to where none is named;
+  - `asker`, who asked where nobody is named;
+  - `writer`, the writer name a document the agent writes is recorded under;
+  - `sender`, the name a share link the verbs make is recorded as made by;
+  - `kindless_import_prefix`, the prefix that marks a row naming no kind as an import.
+
+  `writer` and `sender` are committed. The other three have no committed value: a deployment sets
+  them.
+- **The console's public address**, `address` under `[console]`. A document's console address and
+  its share links stand under it. No value is committed.
 - **The research profiles and their seeds**, which carry the old research policy files.
-- **The address of each unit this repository calls**, as `docs/api.md` lists them.
+- **The address of each unit this repository calls**, under `[units]`, by the unit's short name:
+  `voice` for bmo-voice. `docs/api.md` lists the calls. No address is committed.
 
 ## Version
 
@@ -192,6 +214,10 @@ no backup itself. The whole-data-root backup and its restore drill belong to the
     migrator.
   - Each test gets a copy of the template, which is dropped when the test ends.
   - The first template a binary makes drops every template and copy whose process is gone.
+- **Verbs.** A verb's test runs the CLI binary from the repository's root, with the settings it needs
+  given in the environment over the committed ones: the scratch database, a file root of the test's
+  own, and the rooms, console address and unit addresses the case is about. A unit the verb calls is
+  a stand-in the test serves on a local port.
 
 ## Dependency check
 

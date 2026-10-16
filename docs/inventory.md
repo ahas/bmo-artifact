@@ -71,7 +71,7 @@ supply them:
   nullable `user_id` column on `web_search_shares`. Its default reads another unit's settings table,
   so the default is not carried.
 
-## 4. Old bmo-server internals the carried files reach (31 members)
+## 4. Old bmo-server internals the carried files reach (36 members)
 
 None of these is copied as a dependency. Each is rebuilt in this repository or replaced by a call
 to the unit that owns it.
@@ -88,12 +88,18 @@ to the unit that owns it.
 | `lines::runner::Search` | 1 | 9 | The bmo-agency client |
 | `chat::voice`, `voice::brief` | 2 | 9 | The bmo-voice client |
 | `remote_browser::Stop` | 1 | 9 | The explorer client |
+| `Shell::owner`, `providers::is_owner_room` | 2 | 6 | The owner's private room and the default asker, named in settings |
+| `AGENT_KEY`, `SENDER_NAME`, `OWNER_NAME` | 3 | 6 | The writer and sender names in settings; the owner's name is not carried |
 
-## 5. Rust twins copied from internal crates (5 items, step 5)
+`archive_docs` starts a narration through `voice::brief`, so the bmo-voice client's briefing call
+lands in step 6, and step 9 adds the rest of that client.
 
-- `markup/bmo-markup/src/web_address.rs` (bmo-markup)
-- `fill_marks` (bmo-policy's library root)
-- `count_text`, `Said` and `cap_items` (bmo-tool's ceiling module)
+## 5. Rust twins copied from internal crates (7 items)
+
+- `markup/bmo-markup/src/web_address.rs` (bmo-markup), step 5
+- `fill_marks` (bmo-policy's library root), step 5
+- `count_text`, `Said` and `cap_items` (bmo-tool's ceiling module), step 5
+- `raster_type` and `archived` (bmo-picture), step 6
 
 Only these items are copied, with what they stand on:
 
@@ -101,7 +107,9 @@ Only these items are copied, with what they stand on:
   `run_log::lines::stream_lines` also trims with;
 - the ceiling module comes whole, `cap_value` and its constants with it;
 - `run_log::lines` reads a toolbook proxy call as the tool it reached, so harness-providers' toolbook
-  reading comes with it.
+  reading comes with it;
+- `archived` stands on bmo-picture's picture decoding, its AVIF and SVG readers included, and on
+  its fitting of a picture inside a side.
 
 The crates themselves are not depended on. `lines::Trees` comes without the constructor that reads
 `places::Ground`; whatever step 9 makes of `places::Ground` builds it.

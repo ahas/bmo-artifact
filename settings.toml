@@ -15,3 +15,18 @@ root = "data"
 
 [time]
 zone = "UTC"
+
+# The documents the agent files (docs/layout.md, "Settings"). A deployment sets `room`, the owner's
+# private room and the room a document goes to where none is named; `asker`, who asked where nobody is
+# named; and `kindless_import_prefix`, the prefix that marks a row naming no kind as an import.
+[documents]
+writer = "bmo"
+sender = "BMO"
+
+# The console's public address, which a document's console address and its share links stand under, is
+# `address` here; a deployment sets it.
+[console]
+
+# The address of each unit this repository calls, by its short name: `voice` for bmo-voice. A deployment
+# sets them.
+[units]

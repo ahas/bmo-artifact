@@ -1,6 +1,7 @@
 //! The queries the carried code runs, refused in its own terms, and the clock its columns keep
 //! (`docs/layout.md`, "Storage").
 
+pub mod documents;
 pub mod entity;
 pub mod migration;
 

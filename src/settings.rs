@@ -25,6 +25,13 @@ pub struct Settings {
   #[serde(default)]
   pub wording: WordingFile,
   pub time: Time,
+  pub documents: Documents,
+  /// Nothing set here leaves the console's address unknown.
+  #[serde(default)]
+  pub console: Console,
+  /// Nothing set here leaves every unit's address unknown.
+  #[serde(default)]
+  pub units: Units,
 }
 
 /// The HTTP server.
@@ -61,6 +68,36 @@ pub struct WordingFile {
 pub struct Time {
   /// The time zone, by its IANA name.
   pub zone: chrono_tz::Tz,
+}
+
+/// The documents the agent files (`docs/archive.md`, "A document the agent writes").
+#[derive(Clone, Debug, Deserialize)]
+pub struct Documents {
+  /// The owner's private room: handed the console address and never a share link, and the room a
+  /// document goes to where none is named.
+  pub room: Option<i64>,
+  /// Who asked, where nobody is named.
+  pub asker: Option<i64>,
+  /// The writer name a document the agent writes is recorded under.
+  pub writer: String,
+  /// The name a share link the verbs make is recorded as made by.
+  pub sender: String,
+  /// The prefix that marks a row naming no kind as an import; none marks no row so.
+  pub kindless_import_prefix: Option<String>,
+}
+
+/// The console the owner reads documents on.
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Console {
+  /// Its public address, which a document's console address and its share links stand under.
+  pub address: Option<String>,
+}
+
+/// The address of each unit this repository calls (`docs/api.md`, "What this repository calls").
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Units {
+  /// bmo-voice.
+  pub voice: Option<String>,
 }
 
 /// Why the settings could not be read.

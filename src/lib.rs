@@ -1,11 +1,13 @@
 //! The document archive: research documents, HTML pages, records, attachments and share links, served
 //! over HTTP and filed through the CLI verbs (`docs/archive.md`, `docs/api.md`).
 
+pub mod clients;
 pub mod helpers;
 pub mod plumbing;
 pub mod pool;
 pub mod settings;
 pub mod store;
+pub mod verbs;
 pub mod wording;
 
 pub use plumbing::refusal::Refusal;

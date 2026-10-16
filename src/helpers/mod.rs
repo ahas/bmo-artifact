@@ -5,6 +5,7 @@ pub mod ceiling;
 pub mod js;
 pub mod lines;
 pub mod marks;
+pub mod picture;
 pub mod run_log;
 pub mod toolbook;
 pub mod web_address;

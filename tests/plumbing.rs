@@ -4,13 +4,16 @@
 mod support;
 
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::path::Path;
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Method, Request, StatusCode};
 use axum::response::Response;
 use bmo_artifact::plumbing::http::{Call, Refused, Route, Standing, answer, route_faults, router};
-use bmo_artifact::plumbing::verb::{Answer, FAILURE, Finished, VerbError, finished};
+use bmo_artifact::plumbing::verb::{
+  Answer, FAILURE, Finished, VerbError, finished, joined, verb_faults, verbs,
+};
 use bmo_artifact::settings::Settings;
 use serde_json::{Value, json};
 use support::ROOT;
@@ -93,6 +96,34 @@ fn a_partial_answer_prints_what_it_did_and_fails() {
   };
 
   assert_eq!(finished(Err(quiet)).err, None);
+}
+
+#[test]
+fn no_verb_name_is_claimed_twice_and_each_says_what_it_does_in_its_own_words() {
+  assert_eq!(verb_faults(), Vec::<String>::new());
+
+  let filing = verbs().find(|verb| verb.name() == "archive doc").expect("archive doc is registered");
+  let about = filing.command().get_about().map(ToString::to_string).unwrap_or_default();
+
+  assert_eq!(filing.aliases(), ["archive-doc"]);
+  assert!(about.starts_with("Writes a document into the archive"), "{about}");
+}
+
+#[test]
+fn a_verbs_two_words_are_read_as_its_one_name_and_any_other_line_is_left_as_it_is() {
+  let line = |words: &[&str]| words.iter().map(OsString::from).collect::<Vec<_>>();
+  let names = ["archive doc", "version"];
+
+  assert_eq!(
+    joined(line(&["cli", "archive", "doc", "--title", "x"]), &names),
+    line(&["cli", "archive doc", "--title", "x"])
+  );
+  assert_eq!(
+    joined(line(&["cli", "archive-doc", "--title"]), &names),
+    line(&["cli", "archive-doc", "--title"])
+  );
+  assert_eq!(joined(line(&["cli", "version", "doc"]), &names), line(&["cli", "version", "doc"]));
+  assert_eq!(joined(line(&["cli", "archive"]), &names), line(&["cli", "archive"]));
 }
 
 /// Answers with the query parameter it is called with and the address the server stands on.

@@ -18,15 +18,35 @@ path = "src/bin/bmo-artifact-cli.rs"
 test = false
 
 [dependencies]
+# A kept AVIF picture's container.
+avif-parse = "2.1.0"
 axum = "0.8.9"
+# A share link's token.
+base64 = "0.22.1"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
 # The time zone a sentence or a document states a time in, read from the settings by its name.
 chrono-tz = { version = "0.10.4", features = ["serde"] }
 clap = { version = "4.6.7", features = ["derive"] }
 # The settings files and the environment, layered in that order.
 config = { version = "0.15", default-features = false, features = ["toml"] }
-# Each route registers itself beside its own answer.
+# A picture an HTML page carries inside itself as a data address.
+data-url = "0.3.2"
+# The tree an HTML page is read from.
+ego-tree = "0.10.0"
+# A kept picture decoded, brought inside its largest side and written as AVIF.
+image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "gif", "webp", "tiff", "avif"] }
+# Each route and each verb registers itself beside its own answer.
 inventory = "0.3.24"
+# A share link's token's bytes.
+rand = "0.9.2"
+# A kept AVIF picture's AV1 frames decoded.
+rav1d = { version = "1.1.0", default-features = false, features = ["bitdepth_8", "bitdepth_16"] }
+# The bmo-voice client.
+reqwest = { version = "0.13.5", features = ["json"] }
+# An SVG picture drawn into pixels before it is kept.
+resvg = "0.48.1"
+# An HTML page read for its title, its description and its words.
+scraper = "0.25.0"
 # The helpers' patterns: a web address in a sentence, a document's marks, an MCP tool's name.
 regex = "1.13.1"
 # The document tables: their entities and statements, and their one migration.
@@ -38,11 +58,17 @@ serde_json = "1.0.151"
 serde-saphyr = { version = "2.0.0", default-features = false, features = ["deserialize"] }
 # PostgreSQL's client under sea-orm, taken by itself for the pool's options and its error codes.
 sqlx = { version = "0.8.6", default-features = false, features = ["postgres", "runtime-tokio"] }
+# The digest a kept file's name carries.
+sha2 = "0.10.9"
 thiserror = "2.0.21"
 tokio = { version = "1.53.2", features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+# A kept file's name in its composed form.
+unicode-normalization = "0.1.25"
 # Whether a text reads as a web address, as a browser reads one; and a scratch database's address in the
 # tests, which is the test server's with another database in it.
 url = "2.5.8"
+# A decoded AV1 frame's YUV turned into RGB.
+yuv = "0.8.19"
 
 [dev-dependencies]
 # The repository checks read Rust files and manifests through their own libraries.

@@ -117,8 +117,8 @@ share links of every document already written hang on it. A row holds:
   - its current state, which is the run's own ending word as it stands;
   - when it started and ended;
   - where its document file is.
-- **Its kind and its writer:** `searcher` for what the search runner recorded, `bmo` for what the
-  agent wrote.
+- **Its kind and its writer:** `searcher` for what the search runner recorded, and the agent's writer
+  name for what the agent wrote. Settings hold that name; the committed one is `bmo`.
 - **Who asked:** the chat id of the person whose message the document answers, where the launch named
   that message.
 - **The search options the launch gave:** period, region, excluded sources and result shape, as one
@@ -145,11 +145,11 @@ Some rows need extra rules:
 - **A row that names no kind** is read by what it is:
   - A row whose question opens with the fixed prefix the import request was written with is an
     `import`. That prefix is data the rows carry, matched as it stands, never a sentence of the
-    wording file.
+    wording file. Settings name it; where they name none, no such row is an import.
   - Every other such row is a `search`.
   - All of them are the searcher's.
-  - The rule is written into the row each time the database is opened. A reader of an older copy
-    applies the same rule itself.
+  - The rule is written into the row each time a process opens the database, before its first
+    statement on the document tables. A reader of an older copy applies the same rule itself.
 
 ### The other five tables
 
@@ -173,8 +173,8 @@ Some rows need extra rules:
   - when it was kept.
 - **`search_images`**: the pictures searches kept, one row each, as they were first kept.
   - Current code never writes it. It stays standing for readers that still read it.
-  - Each time the database is opened, every row of it not yet in `archive_attachments` is copied
-    there as an `image`, named by its file. Nothing is copied twice.
+  - Each time a process opens the database, every row of it not yet in `archive_attachments` is
+    copied there as an `image`, named by its file, with no place. Nothing is copied twice.
   - A reader of a copy that has no `archive_attachments` reads its pictures from here.
   - A picture is looked up by the address it was found at. Where two rows carry the same address, the
     one kept last is the copy.
@@ -802,7 +802,8 @@ When the owner asks the agent to put some data in order and keep it, the agent w
 itself and files it with one verb.
 
 - **The launch** is `bmo archive doc`. It is given:
-  - the room and who asked. Where neither is named, both are the defaults in settings;
+  - the room and who asked. Each one not named is its default in settings. The default room is the
+    owner's private room; where settings name none, a launch that names no room is refused;
   - the title;
   - the kind: `record` unless `learning` or `import` is named;
   - the body, as markdown from a file or from standard input;
@@ -819,7 +820,7 @@ itself and files it with one verb.
   - The description taken from the page is the document's topic and its one finding.
   - No standard input is read for it.
 - **What it writes:**
-  - the row, with `bmo` as its writer and its title as the request;
+  - the row, with the agent's writer name as its writer and its title as the request;
   - the body, as the document's one finding;
   - the document file, headed by the title, the kind, the request, when it was written, and what is
     attached;
@@ -859,6 +860,9 @@ itself and files it with one verb.
     takes off.
   - The owner's private room never gets a link; it is given the console address. The refusal says so
     in plain words that name no person.
+  - Both addresses stand under the console's public address, which settings name. A launch is
+    refused before anything is written where settings name none.
+  - A link the verbs make is recorded as made by the agent's sender name, which settings hold.
 - **What it answers:**
   - the document's id;
   - the address to give the room, on a line of its own;
@@ -882,7 +886,7 @@ something works.
 
 - **Filing it:** `bmo archive doc` with a title and a body, or with `--html` for a page.
   - With no `--chat` and no `--by`, the document goes to the default room and author in settings.
-  - It is written by `bmo`, like every document the agent writes.
+  - It is written under the agent's writer name, like every document the agent writes.
   - `--replace <id>` writes it again under its number, as the design moves.
 - **A long reading takes a narration.** A document the owner reads as research carries `--narration
   <file>` as well.
