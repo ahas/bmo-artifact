@@ -1,5 +1,5 @@
 //! bmo-agency, which keeps the providers, tiers and routes a research run resolves on, the common
-//! co-worker pool, the run ledger, the agent log and the registrations, and carries every run apart
+//! co-worker pool, the agents' run counts, the agent log and the registrations, and carries every run apart
 //! (`docs/api.md`, "bmo-agency"). `Agency` declares every call this repository makes of it, and
 //! `AgencyClient` makes them over HTTP.
 

@@ -41,6 +41,8 @@ pub struct Book {
   pub promoted: usize,
   pub writes: Vec<(String, PlaceWrite)>,
   pub limits: Vec<(String, String, i64)>,
+  /// The status, code and sentence a limit is refused with; none sets every limit asked.
+  pub limit_refusal: Option<(u16, String, String)>,
   pub limits_reset: usize,
   pub counted: Vec<String>,
   pub notes: Vec<Note>,
@@ -450,8 +452,13 @@ async fn set_limit(
   Json(body): Json<Value>,
 ) -> Response {
   let capacity = body["capacity"].as_i64().unwrap_or_default();
+  let mut book = stand.book();
 
-  stand.book().limits.push((provider, tier, capacity));
+  if let Some((status, code, error)) = book.limit_refusal.clone() {
+    return refuse(StatusCode::from_u16(status).expect("a status"), &code, &error);
+  }
+
+  book.limits.push((provider, tier, capacity));
 
   done()
 }

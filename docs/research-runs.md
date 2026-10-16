@@ -360,7 +360,8 @@ Every refusal and failure is said as a line telling the parent to write its resu
 
 - **When a run ends,** the runner finishes every request and releases every reservation it held.
 - **A runner that died** leaves its requests and reservations behind. The next research run's start
-  reclaims only those whose owner has ended: its run is closed, or its unit no longer runs. An owner
+  reclaims only those whose owner has ended: its run is closed in bmo-job's ledger and its unit no
+  longer runs, or the ledger holds no such run. An owner
   that names neither a search nor a browse run, or whose number is not a number, is never taken as
   ended.
 - **Time alone reclaims nothing.**

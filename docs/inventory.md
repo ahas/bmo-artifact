@@ -55,9 +55,11 @@ The 4 files under `verbs/research/` are 2,145 lines.
 | `bot/bmo-server/tests/integration/search_verb.rs` | 350 | 9 |
 | `bot/bmo-server/tests/integration/search_runner.rs` | 878 | 9 |
 
-In-file test modules move with the file that holds them (10 modules). `archive_docs` moves in step 6.
+In-file test modules move with the file that holds them (14 modules). `archive_docs` moves in step 6.
 `request`, `share`, `import`, `images`, `result`, `gallery` and `document/tests` move in step 7.
-`control/research` moves in step 8, and `search/launch` in step 9.
+`control/research` and the four of `verbs/research` (`mod`, `admission`, `branch`, `run`) move in step
+8, and `search/launch` in step 9. Two cases of `verbs/research/mod` are not carried, since what they
+test is bmo-agency's: reading the registration a home names, and counting what a session spent.
 
 ## 3. Schema statements taken (6 tables, 4 indexes)
 

@@ -38,6 +38,8 @@ pub struct Book {
   pub briefings: Vec<Value>,
   /// What the tool host answers `explorer/import_page` with.
   pub page: Option<Value>,
+  /// What the tool host answers `explorer/search_engines` with.
+  pub engines: Option<Value>,
 }
 
 /// The stand-ins as a test reads and fills them.
@@ -211,10 +213,15 @@ async fn briefing(State(units): State<Units>, Json(asked): Json<Value>) -> Respo
 }
 
 async fn call(State(units): State<Units>, Json(asked): Json<Value>) -> Json<Value> {
-  let page = units.book().page.clone();
+  let book = units.book();
+  let served = match asked["tool"].as_str() {
+    Some("explorer/import_page") => book.page.clone(),
+    Some("explorer/search_engines") => book.engines.clone(),
+    _ => None,
+  };
 
-  Json(match (asked["tool"].as_str(), page) {
-    (Some("explorer/import_page"), Some(page)) => json!({ "content": [], "structuredContent": page }),
-    _ => json!({ "isError": true, "content": [{ "type": "text", "text": "nothing is served there" }] }),
+  Json(match served {
+    Some(content) => json!({ "content": [], "structuredContent": content }),
+    None => json!({ "isError": true, "content": [{ "type": "text", "text": "nothing is served there" }] }),
   })
 }
