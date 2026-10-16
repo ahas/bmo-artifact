@@ -1,246 +1,385 @@
-# Inventory: what bmo-artifact takes from the old repository
+# Inventory: what bmo-artifact takes from the old bmo repository
 
-Source for every item below is the old repository `~/repos/bmo` (read only, never edited).
-Counts and classifications are carried whole from this item's own investigation stage; where a
-decision resolves an open question that stage left standing, the resolution and its reasoning are
-given here and nowhere else needs to re-derive it.
+bmo-artifact is the document archive: research documents, imported pages, learning material,
+records, HTML pages, their attachments and pictures, and their share links. This inventory lists
+everything it takes from the old single bmo repository and everything near it that it leaves. Each
+member appears exactly once, and each excluded member names the unit that owns it. The split plan,
+archive document #301, settles which unit owns what. Its addendum also settles that the old
+`archive/` code is a facade over every table, and that each table goes to the service using it. Only
+the document tables come here.
 
-## 1. Rust crates and binaries taken whole
+Phase 1 carries behaviour unchanged. A TypeScript file is ported to Rust only where a new server has
+to exist, which is the HTTP API the console screen calls. Every other carried behaviour already has
+a Rust original, and that original is what comes.
 
-| Old path | Lines | New path | What it is |
+The "Step" column names the build step that carries a member: 1 inventory docs, 2 archive design,
+3 root skeleton, 4 schema and database, 5 helpers and wording, 6 document verb and HTML read,
+7 search document core, 8 research profiles, 9 search launch and runner, 10 document read API,
+11 share API, 12 console plugin bundle.
+
+## 1. Rust source taken (23 files, 7,979 lines)
+
+| Old file | Lines | Step | What it is |
 |---|---|---|---|
-| `archive/bmo-archive/` (29 files) | ~10,000 | `src/` (library + `bin/`) | Schema, migrations, archive-move tool, breaking-change analysis, row copy/verify/freeze, connection |
-| `archive/archive-read/` (6 files) | ~500 | folded into `src/` as the read path | Read-only access over either database engine, kind registry |
-| `archive/archive-pool/` (2 files) | ~200 | folded into `src/` as the pool module | Connection pooling |
-| `testbed/scratch-archive/` (2 files) | ~60 | `tests/support/` | Per-test scratch copy of the schema |
-| `bot/bmo-server/src/verbs/archive_docs.rs` | 1,476 | `src/controller/document.rs` + CLI verb | `bmo archive doc`, `bmo archive share` — document create, share-link create |
-| `bot/bmo-server/src/verbs/archive_readers.rs` | 411 | `src/service/read.rs` | Re-export of archive-read's read operations to the old monolith; folds into the service layer directly, no longer a separate re-export shim |
-| `bot/bmo-server/src/verbs/search/mod.rs` | 27 | `src/service/search/mod.rs` | module entry |
-| `bot/bmo-server/src/verbs/search/launch.rs` | 387 | `src/service/search/launch.rs` | search launch orchestration |
-| `bot/bmo-server/src/verbs/search/runner.rs` | 542 | `src/service/search/runner.rs` | search runner — supervises the run, writes the document |
-| `bot/bmo-server/src/verbs/search/request.rs` | 540 | `src/service/search/request.rs` | search request parsing |
-| `bot/bmo-server/src/verbs/search/result.rs` | 591 | `src/service/search/result.rs` | structure-line result parsing |
-| `bot/bmo-server/src/verbs/search/document.rs` + `document/tests.rs` | 778 + 617 | `src/service/search/document.rs` + `tests/document.rs` | TITLE/TOPIC/KEYWORDS/RULE parsing, finding/source parsing, document writing |
-| `bot/bmo-server/src/verbs/search/record.rs` | 445 | `src/service/search/record.rs` | search record management |
-| `bot/bmo-server/src/verbs/search/images.rs` | 330 | `src/service/search/images.rs` | kept-picture management (AVIF conversion, bounds) |
-| `bot/bmo-server/src/verbs/search/import.rs` | 210 | `src/service/search/import.rs` | page-import handling (the document side, not the fetch) |
-| `bot/bmo-server/src/verbs/search/gallery.rs` | 371 | `src/service/search/gallery.rs` | gallery/album assembly for the room |
-| `bot/bmo-server/src/verbs/search/share.rs` | 43 | `src/service/share.rs` | share-link creation, folded with archive_docs's own share path |
-| `bot/bmo-server/src/control/research.rs` | 517 | `src/controller/document.rs` (routes) | search operation HTTP routes — becomes this repository's own `controller/`, not a "control port" of a shared process |
-| `bot/bmo-server/src/control/research_settings.rs` | 457 | `src/controller/settings.rs` | search-settings HTTP routes |
+| `bot/bmo-server/src/verbs/archive_docs.rs` | 1,476 | 6 | The `archive doc` and `archive share` verbs: filing a record, learning or import document or an HTML page, with attachments, a narration and a share link |
+| `bot/bmo-server/src/verbs/html_read.rs` | 98 | 6 | Reading a filed HTML page for its words, with its embedded pictures taken out as files |
+| `bot/bmo-server/src/verbs/search/document.rs` | 778 | 7 | The structure lines of a search's result, and writing the document from them |
+| `bot/bmo-server/src/verbs/search/document/tests.rs` | 617 | 7 | `document.rs`'s test module, moved into `tests/` |
+| `bot/bmo-server/src/verbs/search/result.rs` | 591 | 7 | Reading a run's result |
+| `bot/bmo-server/src/verbs/search/request.rs` | 540 | 7 | Parsing a search request |
+| `bot/bmo-server/src/verbs/search/record.rs` | 445 | 7 | The search row's life, and the room-holding declaration for `searches` |
+| `bot/bmo-server/src/verbs/search/gallery.rs` | 371 | 7 | The picture album sent to the room |
+| `bot/bmo-server/src/verbs/search/images.rs` | 330 | 7 | Kept pictures |
+| `bot/bmo-server/src/verbs/search/import.rs` | 210 | 7 | The document side of a page import |
+| `bot/bmo-server/src/verbs/search/share.rs` | 43 | 7 | A search's share link |
+| `bot/bmo-server/src/verbs/search/web.rs` | 182 | 7 | Page reading, which becomes the page-reader client of the tool host |
+| `bot/bmo-server/src/verbs/search/mod.rs` | 27 | 9 | The search verb's entry |
+| `bot/bmo-server/src/verbs/search/launch.rs` | 387 | 9 | Launching a search: admission, depth, queueing the run |
+| `bot/bmo-server/src/verbs/search/runner.rs` | 542 | 9 | The search runner: the run's session, its branches, its document |
+| `bot/bmo-server/src/verbs/research/mod.rs` | 895 | 8 | The research base under the search line: profiles, the clock, places in the co-worker pool, knowledge, spend |
+| `bot/bmo-server/src/verbs/research/admission.rs` | 292 | 8 | Whether a deeper run goes as asked, and the wait for its first seat |
+| `bot/bmo-server/src/verbs/research/branch.rs` | 329 | 8 | The `search branch` verb behind the run's branch tool |
+| `bot/bmo-server/src/verbs/research/run.rs` | 629 | 8 | One research run's model, from its line to its record |
+| `bot/bmo-server/src/control/research.rs` | 517 | 8 | Research profiles, their fields and their checks |
+| `bot/bmo-server/src/control/research_settings.rs` | 457 | 8 | The research-settings routes |
+| `archive/archive-pool/src/lib.rs` | 167 | 4 | Connection pools |
+| `testbed/scratch-archive/src/lib.rs` | 201 | 4 | A scratch database per test |
 
-Commands behind the counts: `git ls-files archive/bmo-archive archive/archive-read archive/archive-pool testbed/scratch-archive bot/bmo-server/src/verbs/archive_docs.rs bot/bmo-server/src/verbs/archive_readers.rs bot/bmo-server/src/verbs/search bot/bmo-server/src/control/research.rs bot/bmo-server/src/control/research_settings.rs` (stage-0-0); file line counts from the same stage's reading of each file.
+The 4 files under `verbs/research/` are 2,145 lines.
 
-### Internal crates these files import, carried only where they are a base library
+## 2. Old integration tests moved into `tests/` (3 files)
 
-`bmo_lang::archive_docs`, `bmo_policy`, `bmo_tool`, `sea_orm`, `regex`, `scraper`, `chrono` (stage-0-0).
-Per `#301`'s principles section, only `bmo-chat`, `bmo-chat-client` and `bmo-ui` may be depended on
-directly once this repository stands on its own. `bmo_lang` (the language-pack crate) and
-`bmo_policy` (the shared policy-value crate) are both retired as shared crates by `#301`'s
-data-folders and policy sections:
-- `bmo_lang::archive_docs` — the human-language text the old verb sent into rooms moves out: this
-  repository returns English messages and status codes only (`#301`'s language-pack section); the
-  chat agent that receives them writes what the room reads. No language-pack crate is depended on.
-- `bmo_policy` — every policy value this repository's code reads is checked against the table in
-  §4 below and copied into this repository's own settings, not pulled from a shared crate.
-- `bmo_tool`, `sea_orm`, `regex`, `scraper`, `chrono` are ordinary crates.io dependencies, not
-  internal bmo crates, and are kept.
-
-## 2. TypeScript logic: what has a Rust twin, what is ported, what stays behind
-
-Stage-0-1 read all 175 files under `archive/archive` (124), `markup/markup` (32), `bot/bot/archive-*`
-and `bot/bot/research-*` (17), plus `scripts/html-read.ts` and `repo/repo/snapshot-backup.ts`.
-
-**Rule applied:** a TS file whose behaviour already has a Rust twin in `archive/bmo-archive` or
-`archive/archive-read` is dropped — the twin is what ships, not a re-port of the TS. A TS file with
-artifact-specific logic and no twin is ported to Rust inside this repository. A TS file that is a
-facade over a table another unit owns (messages, rooms, runs-as-a-bmo-job-concept, file shares) is
-excluded and left to that unit, named in §5.
-
-### 2a. Dropped — Rust twin already exists, nothing to port
-
-| TS file | Rust twin |
-|---|---|
-| `archive-schema.ts` | `archive/bmo-archive/src/shape.rs` |
-| `archive-lock.ts` | `archive/bmo-archive/src/freeze.rs` |
-| `archive-migrator.ts` (4,738 lines) | `archive/bmo-archive/src/migration/` |
-| `archive-place.ts` | `archive/archive-read/src/lib.rs` |
-| `archive-snapshot.ts` | `archive/bmo-archive/src/copy.rs` |
-| `postgres-archive-sql.ts` | `archive/bmo-archive/src/connect.rs` |
-
-`archive-sql.ts` and `sqlite-archive-sql.ts` fold into the same twin set: `bmo-archive`'s `connect.rs`
-and `cells.rs` already cover both engines through one Rust type, so neither SQL-dialect TS file is
-ported.
-
-### 2b. Ported — document-table logic with no existing twin
-
-These own document-table rows (`searches`, `search_findings`, `search_sources`, `archive_attachments`,
-`search_images`, `web_search_shares`, `document_translations`, `document_talk`) and have no Rust
-counterpart yet, so their behaviour is rewritten in Rust inside this repository's `src/service/`:
-- `search-store.ts` (527 lines) — createSearch, finishSearch, addFinding, addSource, addAttachment,
-  updateSearchTitle. Becomes `src/service/document.rs`'s write path (the Rust twin of this file is
-  what stage-0-0's `archive_docs.rs`/`document.rs` already does for the CLI/runner path; the
-  **console-facing** read/write that `search-store.ts` served through Nuxt server routes is the
-  piece with no existing twin, and is ported here).
-- `briefing-store.ts` (172 lines) — `voice_briefings` table methods. **Excluded**, not ported: see
-  §4, this table belongs to bmo-voice.
-- `search-share-rows.ts`, `query-rows.ts` — share-link and query-log row access for `web_search_shares`.
-  Ported into `src/service/share.rs`.
-- `archive-document-row.ts`, `archive-kinds.ts` + its 4 kind modules (search/import/learning/record,
-  page is the 5th) — the per-kind shape module described in `docs/archive.md` 「Kinds」. Ported into
-  `src/service/kinds/` as one Rust module per kind, matching the "one module answering one common
-  shape" rule already written into the document being carried forward; this is the one piece of
-  product logic in the TS layer with no Rust equivalent anywhere in the old tree.
-- `archive-seeding.ts` — initial-row seeding for a fresh archive. Folds into `bmo-archive`'s
-  migration bin as a seed step.
-
-### 2c. Excluded — not this unit's table
-
-`run-store.ts`, `run-rows.ts`, `file-share-rows.ts` and the "38 consumer stores" stage-0-1 found in
-`archive/archive` read or write tables this unit does not own (`runs` as bmo-job's run-queue concept,
-`web_file_shares` as bmo-drive's file-share table — see §4). None are copied; the service that owns
-each table ports its own logic from these files in its own build.
-
-### 2d. markup/markup (32 files) and scripts/html-read.ts, repo/repo/snapshot-backup.ts
-
-`markup/markup` is text/markdown formatting used by many units, not artifact-specific; it is a
-candidate for its own shared library and is out of this unit's scope to carry (`bmo-markup` already
-exists as a Rust crate and is the twin bmo-artifact depends on, same as bmo-server does today —
-stage-0-6: `bmo-markup` depends only on `bmo-policy`, so once `bmo-policy` is retired `bmo-markup`
-depends on nothing internal and may be a base-library-style dependency; left to that crate's own
-job to confirm, not decided here).
-
-`scripts/html-read.ts` (`bun scripts/html-read.ts <file> --pictures <dir>`, docs/archive.md 「An HTML
-page」 「Reading it」) has no Rust twin and is ported into this repository as a binary
-(`src/bin/html-read.rs`), since it is exactly this unit's own operation — reading a page BMO already
-filed, for BMO to learn what it says.
-
-`repo/repo/snapshot-backup.ts` is **excluded**: see §6, backup scope.
-
-## 3. Console plugin bundle
-
-Per `#301`'s section on which units stand as their own service and which do not, a service's
-screen is its own plugin bundle, not code living inside `bmo-web`'s client. Stage-0-2 found 57 files on the graph node `console/archive-screen`
-plus the 13 test files and 3 shared modules listed below; all of them move into this repository as
-its plugin bundle, not into bmo-web.
-
-### 3a. Taken into this repository (`client/` plugin bundle)
-
-- Pages (3): `pages/archive/index.vue`, `pages/archive/[id].vue`, `pages/share/[token].vue`
-- Components (11): `ArchiveBody.vue`, `ArchiveSources.vue`, `ArchiveShareDialog.vue`,
-  `ArchiveAttachments.vue`, `ArchiveSourceItem.vue`, `ArchiveTextPreview.vue`, `ArchiveRowSkeleton.vue`,
-  `ArchivePageFrame.vue`, `HostedPageFrame.vue`, `DocumentPictureViewer.vue`, `ShareLinkDialog.vue`
-- Domain/logic (3): `domain/archive.ts`, `domain/share-links.ts`, `domain/document-pictures.ts`
-- Shared, specific to documents (3): `shared/document-pictures.ts`, `shared/share-head.ts`,
-  `shared/document-design.ts` — these are not generic UI, they are this unit's own document
-  rendering rules (the palette, the picture viewer contract, the OpenGraph head), so they move here
-  rather than staying in bmo-web's shared folder.
-- Tests (13): the colocated tests for the above, moved into `tests/client/`.
-
-### 3b. Server routes and utils: reimplemented as this repository's own Rust HTTP API, not copied as Nuxt routes
-
-The 15 Nuxt server routes and 8 server utils stage-0-2 found (`client/server/api/archive/*`,
-`client/server/api/share/*`, `searches.ts`, `search-shares.ts`, `hosted-page.ts`, `card-picture.ts`,
-`page-bridges.ts`, `moved-screens.ts`) were a BFF layer proxying into the TS archive facade and the
-database directly. Once `bmo-web`'s own server is Rust (sumida-shaped, per `#301` 「web: bmo-web」)
-there is no Nuxt server layer to hold a BFF. These routes' *behaviour* is what `docs/api.md` §1–§8
-specifies as this repository's own HTTP API, served directly by this repository's binary; the plugin
-bundle's Vue pages call that API directly (or through bmo-web's thin reverse proxy, which is
-bmo-web's concern, not this repository's). No Nuxt `.ts` route file is copied; `moved-screens.ts`
-(the `/searches` → `/archive` redirect) becomes a route alias declared in this plugin bundle's own
-router config.
-
-### 3c. Depended on, not copied
-
-`client/shared` imports that are genuinely generic UI (not document-specific) — `SEARCHES_PAGE_SIZE`,
-`SEARCHES_PHRASE_LIMIT`, `searchTitle`, `SHARE_SPANS`, `HOSTED_PAGE_SANDBOX`, the `SearchPage` /
-`SearchSummary` / `SearchDetail` / `ArchiveAttachmentView` / `SearchFindingView` /
-`DocumentPicture` / `PictureRun` types, and `matchFields` / `searchPhrase` / `hitSnippet` /
-`searchHits` — are specific to this unit's own documents even though they sat in bmo-web's shared
-folder before. They move into this repository's plugin bundle alongside §3a, since no other unit
-reads them (per `#301`, a value only one unit reads does not stay in a shared location). The
-UI primitives (`UDashboardPanel`, `UDashboardNavbar`, `UInput`, `UButton`, `USelect`, `UIcon`,
-`UBadge`, `DeployMark`, `TodoOpenButton`, `ContentSkeleton`, `SearchText`, `SearchHit`) are kept as
-a dependency on `bmo-ui`, the base UI library, which this repository may depend on directly.
-
-### 3d. Language-pack keys
-
-The `archive.*` (25 keys) and the archive-relevant `common.*` keys stage-0-2 found stay out of this
-repository entirely. Per `#301`'s language-pack section, `lang/` lives only in `bmo-web`; this
-repository returns English messages and status codes, and `bmo-web`'s language pack is the one
-place these human-facing strings are declared and rendered.
-
-## 4. Tables this repository owns
-
-Resolving the disputed set the work order named, against `#301`'s own artifact section and its
-addendum: the document archive's own tables come here; every other table goes to the
-service that owns the chat/job/account concept it hangs on.
-
-| Table | Owner | Why |
+| Old file | Lines | Step |
 |---|---|---|
-| `searches` | **bmo-artifact** | the document row itself, every kind |
-| `search_findings` | **bmo-artifact** | one row per finding, FK to `searches` |
-| `search_sources` | **bmo-artifact** | one row per source, FK to `search_findings` |
-| `search_images` | **bmo-artifact** | legacy picture table, folded forward into `archive_attachments` on open, per `docs/archive.md` |
-| `archive_attachments` | **bmo-artifact** | one row per attached file, FK to `searches` |
-| `web_search_shares` | **bmo-artifact** | the document's own share-link table, FK to `searches` |
-| `document_translations` | **bmo-artifact** | `document` FK is `searches.id` (confirmed, stage-0-3); a document's translated text is the document's own data |
-| `document_talk` | **bmo-artifact** | `document` FK is `searches.id` (confirmed, stage-0-3); per-document conversation grounded in that document, not a chat-room table |
-| `collected_items` | bmo-receiver | keyed by `chat_id`/`message_id`, not by any document kind in `docs/archive.md` 「Kinds」; this is chat-scoped material collection, not an archive document, so it stays with the unit that owns messages and rooms |
-| `news_briefs` | bmo-voice | a per-chat *schedule* for when a voice briefing runs (`send_at`, `lead_minutes`, `enabled`), not a document; it configures bmo-voice's briefing synthesis. When a briefing produces a document, bmo-voice calls this repository's document-create API exactly as `bmo archive doc` does today |
-| `voice_briefings` | bmo-voice | run-associated narration audio, matching bmo-voice's voice-synthesis role per `#301`; when a narration is attached to a document, the finished sound file arrives here as an ordinary `archive_attachments` row through this repository's own API, same as any other attachment |
-| `page_read_failures` | bmo-explorer | `via`/`run` describe a page-reading attempt, the same mechanism `docs/archive.md`'s section on the tools a search reads before it searches assigns to the site-tools catalogue, not to the document archive; a failed import surfaces to this repository only as an error from bmo-explorer's read API, which this repository reports to the room, and the `todo_id` row is raised through bmo-job's API by whichever unit owns the read, not written here |
-| `web_file_shares` | bmo-drive | `#301`'s console feature-services section names file-share links as bmo-drive's (`docs/files.md`, file-share), distinct from this table's near-namesake `web_search_shares` |
+| `bot/bmo-server/tests/integration/verbs_archive.rs` | 679 | 6 |
+| `bot/bmo-server/tests/integration/search_verb.rs` | 350 | 9 |
+| `bot/bmo-server/tests/integration/search_runner.rs` | 878 | 9 |
 
-Commands: schema line numbers from `archive/bmo-archive/src/migration/archive.sql` as read by
-stage-0-3; FK confirmation for `document_translations`/`document_talk` from the same stage's grep of
-`archive.sql`.
+In-file test modules move with the file that holds them (9 modules). `archive_docs` moves in step 6.
+`request`, `share`, `import`, `images`, `result`, `gallery` and `document/tests` move in step 7.
+`control/research` moves in step 8.
 
-## 5. Data folders this repository owns
+## 3. Schema statements taken (6 tables, 4 indexes)
 
-| Folder | Size | Owner | Why |
+The six tables are `searches`, `search_findings`, `search_sources`, `search_images`,
+`archive_attachments` and `web_search_shares`. They are declared once, as the old archive declares
+them, together with their four indexes. All of it lands in step 4. Two of the old `bmo-archive` files
+supply them:
+
+- `src/migration/archive.sql` supplies the six tables' statements and the four indexes.
+- `src/migration/m20261006_000001_users.rs` supplies the one later change to these tables: the
+  rename of `web_search_shares.created_by`.
+
+## 4. Old bmo-server internals the carried files reach (31 members)
+
+None of these is copied as a dependency. Each is rebuilt in this repository or replaced by a call
+to the unit that owns it.
+
+| Members | Count | Step | Becomes |
 |---|---|---|---|
-| `searches/` | 435 MB | **bmo-artifact** | document markdown, HTML pages, images and attachments, named by document id |
-| `collected/` | 5.2 GB | bmo-receiver | `stored_path` of `collected_items`, excluded per §4 |
-| `news-brief/` | 1.5 MB | bmo-voice | audio/script storage for `news_briefs`/`voice_briefings`, excluded per §4 |
-| `archive-copies/` | 3.4 GB | none — not carried forward | pre-Postgres-migration source copies; `docs/archive-backup.md` already names these as transition artifacts excluded from backups, and the new repository starts with no migration history to copy from |
-| `archive-return/` | 3.5 GB | none — not carried forward | same transition basis as `archive-copies/` |
+| `Shell`, `VerbError`, `Call`, `Refused`, `Route`, `answer` | 6 | 3 | This repository's own error, CLI and HTTP plumbing |
+| `Refusal`, `all`, `one`, `run`, `now_ms` | 5 | 4 | Rebuilt over this repository's pool |
+| `lines::{Trees, read_required, render}`, `run_log::{json::Json, lines::BRANCH_TOOLS, lines::stream_lines}` | 6 | 5 | Copied helpers |
+| `room_record` | 1 | 7 | This repository's room-holding route |
+| `control::{harness, pool, tiers, claude_accounts}` | 4 | 8 | The bmo-agency client |
+| `runs`, `queue`, `job_run` | 3 | 9 | The bmo-job client |
+| `reference::road`, `places::Ground` | 2 | 9 | Settings or the bmo-agency client, whichever the code reads |
+| `lines::runner::Search` | 1 | 9 | The bmo-agency client |
+| `chat::voice`, `voice::brief` | 2 | 9 | The bmo-voice client |
+| `remote_browser::Stop` | 1 | 9 | The explorer client |
 
-## 6. Backup scope
+## 5. Rust twins copied from internal crates (5 items, step 5)
 
-`bmo-snapshot-backup` and `bmo-restore-drill` are **not copied into this repository**. Neither
-`repo/repo/snapshot-backup.ts` nor any Rust equivalent moves here. Reasoning: `#301` lists no
-top-level folder for a backup service, and the backup/restore mechanism runs over the whole data
-root (every unit's tables and files), not this unit's alone — it is a general facility, and
-`#301`'s policy section assigns a policy file to the service that owns what it governs only where
-the policy is itself unit-specific. What *is* this repository's own job is to state, in `docs/layout.md`'s
-deploy declaration, which local paths (`searches/`) and which tables (§4's bmo-artifact rows) must
-be included in any backup manifest — the same "neutral shape the testbed can read without knowing
-this repository" the deploy declaration already exists to provide. The backup service itself is a
-bmo-testbed-era concern to place in its own repository's build.
+- `markup/bmo-markup/src/web_address.rs` (bmo-markup)
+- `fill_marks` (bmo-policy's library root)
+- `count_text`, `Said` and `cap_items` (bmo-tool's ceiling module)
 
-## 7. Defects found on these paths (plain facts, not fixed by this document)
+Only these items are copied. The crates themselves are not depended on.
 
-1. `policy/bmo-policy/src/deployment.rs:8,11` — `AGENT_NAME` and `OWNER_NAME` are hardcoded
-   constants holding, respectively, the running agent's own name and the console owner's own name
-   as literal text. Per `#301`'s principles section these names are agent-registration data,
-   never code. **Resolution for this repository:** `bmo-policy` is not depended on at all (§1), so this defect
-   does not travel here; it is `bmo-policy`'s own repository's defect to fix, not re-created in this
-   one. Noted so the build-list does not drop it.
-2. `bot/bmo-server/src/verbs/archive_docs.rs:352,366` — error messages interpolate `OWNER_NAME`
-   directly into English text returned to a room (`"...this is {OWNER_NAME}'s private chat..."`).
-   **Build-list item for this repository:** when `archive_docs.rs` is ported to
-   `src/controller/document.rs` (§1), these two messages are rewritten to a generic phrase — "the
-   console owner's private chat" or an equivalent that names no person — with no constant
-   substitution, matching `#301`'s rule that comments and messages are read the same by anyone who
-   installs this repository.
-3. `archive/archive/nodes.ts:97` — `HUB_SEED` hardcodes `tokenFile: "~/.local/share/jake/hub.env"`,
-   a personal path under a different account name than this deployment's own. This file is excluded
-   from this repository entirely (§2c/§2a — `nodes.ts` is node-infrastructure, not a document-table
-   facade), so the defect does not travel here; it belongs to whichever repository inherits node
-   hub-seeding (`bmo-node`, per `#301`'s table).
-4. `bot/bmo-server/src/verbs/snapshot.rs:501` — hardcodes `.local/share/bmo/` into a named root. Not
-   copied here (§6 — the snapshot binary is not carried into this repository at all).
-5. Stage-0-0 and stage-0-2 report no code defects inside the Rust and console files that *are*
-   taken into this repository. The three defects above all sit in files this repository excludes;
-   none remain to fix inside what is actually copied.
+## 6. TypeScript ported to Rust (16 files)
+
+| Old file | Step |
+|---|---|
+| `archive/archive/archive-kinds.ts` | 10 |
+| `archive/archive/archive-kinds.test.ts` | 10 |
+| `archive/archive/archive-kinds/kind.ts` | 10 |
+| `archive/archive/archive-kinds/search.ts` | 10 |
+| `archive/archive/archive-kinds/search.test.ts` | 10 |
+| `archive/archive/archive-kinds/import.ts` | 10 |
+| `archive/archive/archive-kinds/learning.ts` | 10 |
+| `archive/archive/archive-kinds/record.ts` | 10 |
+| `archive/archive/archive-kinds/page.ts` | 10 |
+| `archive/archive/archive-document-row.ts` | 10 |
+| `markup/markup/finding-markdown.ts` | 10 |
+| `markup/markup/markdown-structure.ts` | 10 |
+| `chat/chat/page-preview.ts` | 10 (its fetch goes through the page reader) |
+| `chat/chat/picture-ground.ts` | 10 |
+| `client/server/utils/media.ts` (only the parts the archive routes use) | 10 |
+| `archive/archive/search-share-rows.ts` | 11 |
+
+### TypeScript tests whose cases become Rust tests (4 files)
+
+These test the behaviour carried above, and no earlier list named them.
+
+| Old file | Step |
+|---|---|
+| `bot/bot/archive-documents.test.ts` | 6 |
+| `bot/bot/archive-kinds/kinds.test.ts` | 10 |
+| `markup/markup/finding-markdown.test.ts` | 10 |
+| `markup/markup/markdown-structure.test.ts` | 10 |
+
+## 7. Console graph node `console/archive-screen` (58 entries)
+
+`docs/archive.md` lands in step 2. The 57 code files split as follows.
+
+**Copied into `client/` in step 12 (28 files).**
+
+- Pages (3): `client/app/pages/archive/index.vue`, `client/app/pages/archive/[id].vue`,
+  `client/app/pages/share/[token].vue`.
+- Components (11): `ArchiveSourceItem.vue`, `ArchiveBody.vue`, `ArchiveSources.vue`,
+  `ArchiveShareDialog.vue`, `ArchiveAttachments.vue`, `ArchiveTextPreview.vue`,
+  `ArchiveRowSkeleton.vue`, `ArchivePageFrame.vue`, `HostedPageFrame.vue`,
+  `DocumentPictureViewer.vue`, `ShareLinkDialog.vue`.
+- Domain (3): `client/app/domain/archive.ts`, `client/app/domain/document-pictures.ts`,
+  `client/app/domain/share-links.ts`.
+- Shared (3): `client/shared/document-pictures.ts`, `client/shared/share-head.ts`,
+  `client/shared/document-design.ts`.
+- Tests (8), moved to `client/tests`: `client/app/pages/archive/index.test.ts`,
+  `client/app/components/ArchiveBody.test.ts`, `client/app/components/ShareLinkDialog.test.ts`,
+  `client/app/domain/archive.test.ts`, `client/shared/document-pictures.test.ts`,
+  `client/browser/document-pictures.test.ts`, `client/shared/share-head.test.ts`,
+  `client/shared/document-design.test.ts`.
+
+**Reimplemented in Rust as the document read API, step 10 (15 files).**
+
+- `client/server/utils/searches.ts` and `searches.test.ts`.
+- `client/server/utils/moved-screens.ts`, `moved-screens.test.ts` and
+  `client/server/middleware/moved-screens.ts`.
+- `client/server/utils/hosted-page.ts` and `hosted-page.test.ts`.
+- `client/server/utils/page-bridges.ts`.
+- Six routes under `client/server/api/archive/`: `index.get.ts`, `[id]/index.get.ts`,
+  `[id]/document.get.ts`, `[id]/refs/[ref]/preview.get.ts`, `[id]/refs/[ref]/image.get.ts` and
+  `[id]/attachments/[attachment].get.ts`.
+- `client/server/api/archive/archive.test.ts`.
+
+**Reimplemented in Rust as the share API, step 11 (14 files).**
+
+- `client/server/utils/search-shares.ts` and `search-shares.test.ts`.
+- `client/server/utils/card-picture.ts`.
+- `client/server/api/archive/[id]/share.get.ts`, `share.post.ts` and `share.delete.ts`.
+- `client/server/api/archive/share-routes.test.ts`.
+- Six routes under `client/server/api/share/[token]/`: `index.get.ts`,
+  `refs/[ref]/preview.get.ts`, `refs/[ref]/image.get.ts`, `attachments/[attachment].get.ts`,
+  `head.get.ts` and `picture.get.ts`.
+- `client/server/api/share/share.test.ts`.
+
+**What the bundle depends on.** UI primitives come from `bmo-ui`. Language-pack keys stay in
+bmo-web's language pack: the screen calls `t()` with the same keys it uses today.
+
+## 8. Policy files (5)
+
+| Old file | Where it goes |
+|---|---|
+| `policy/bmo-policy/policy/research.toml` | Here, as this repository's own settings (step 8) |
+| `policy/bmo-policy/policy/research-seeds.toml` | Here, as this repository's own settings (step 8) |
+| `policy/bmo-policy/policy/tiers.toml` | bmo-agency. Step 8 reads it through bmo-agency's API |
+| `policy/bmo-policy/policy/search-engines.toml` | bmo-explorer. Step 8 reads its values through the tool host |
+| `policy/bmo-policy/policy/archive-seeds.toml` | bmo-agency (agent seeds). Not read here |
+
+## 9. Language-pack files with Korean text (3)
+
+| Old file | Step | Becomes |
+|---|---|---|
+| `lang/bmo-lang/lang/ko/archive-docs.yaml` (3 groups) | 5 | The document wording file, with an English default |
+| `lang/bmo-lang/lang/ko/search.yaml` (8 groups) | 5 | The document wording file, with an English default |
+| `lang/bmo-lang/lang/ko/control-answers.yaml`, its `request` key only | 8 | English messages and codes |
+
+## 10. Hangul in carried code (4 files)
+
+Each file is cleared in the step that carries it:
+
+- `control/research.rs`, 21 lines (step 8)
+- `control/research_settings.rs`, 4 lines (step 8)
+- `verbs/search/document/tests.rs`, 2 lines (step 7)
+- `tests/integration/search_runner.rs`, 2 lines (step 9)
+
+## 11. Documents (2)
+
+- `docs/archive.md` (984 lines, 83 of them with Hangul) is restated in English in step 2.
+- The search-run parts of `docs/research-runs.md` (686 lines, 15 of them with Hangul) are restated
+  in English in step 8. Its browse-only parts go to bmo-explorer.
+
+## 12. Service units (1 new)
+
+- `bmo-artifact.service` is a new neutral unit template, added in step 3.
+- `bmo-snapshot-backup` and `bmo-restore-drill` are not carried. The backup runs over the whole data
+  root, not one unit's part of it. This repository only declares, in its deploy declaration, which
+  tables and which data folder a backup must include.
+
+## 13. Tables
+
+| Table | Owner |
+|---|---|
+| `searches` | bmo-artifact |
+| `search_findings` | bmo-artifact |
+| `search_sources` | bmo-artifact |
+| `search_images` | bmo-artifact |
+| `archive_attachments` | bmo-artifact |
+| `web_search_shares` | bmo-artifact |
+| `document_talk` | bmo-brain. Its `document` column is plain text with no foreign key to `searches`, and it serves the brain's document viewer |
+| `document_translations` | bmo-brain for the document viewer, and bmo-job for work-order translation. Same reason: plain text, no foreign key |
+| `collected_items` | bmo-receiver |
+| `news_briefs` | bmo-voice |
+| `voice_briefings` | bmo-voice |
+| `page_read_failures` | bmo-explorer |
+| `web_file_shares` | bmo-drive |
+
+## 14. Data folders
+
+| Folder | Owner |
+|---|---|
+| `searches/` (document files, `images/`, `attachments/`, per document id) | bmo-artifact |
+| `collected/` | bmo-receiver |
+| `news-brief/` | bmo-voice |
+| `archive-copies/`, `archive-return/` | Not carried. Database-move transition copies |
+
+## 15. Excluded: each line names the owning unit
+
+### Old Rust crates and server files
+
+- `archive/bmo-archive`, the other 49 of its 51 tracked files. This is the whole bot archive's
+  PostgreSQL tooling: shape, cells, check, connect, copy, freeze, reverse, rights, verify, breaks,
+  the `archive-move` binary, the migrations over every table, `todos_merge.sql`, its manifest, its
+  library root and its three integration test files. It stays with the old repository for the
+  switch-over's data move.
+- `archive/archive-read` (6 files: its manifest, `lib.rs`, `registry.rs` and three integration test
+  files) is a reader any tool uses across both database engines, so it is not carried. Its
+  `registry.rs` is the model registry and goes to bmo-agency.
+- `archive/archive-pool/Cargo.toml` and `testbed/scratch-archive/Cargo.toml` are replaced by this
+  repository's root manifest.
+- `bot/bmo-server/src/verbs/archive_readers.rs` is the output gate's casebook plus a co-work timing
+  read. It stays with the units that own those: the gate and bmo-job.
+- `bot/bmo-server/src/verbs/snapshot.rs` belongs to the backup facility and is not carried.
+- `bot/bmo-server/src/verbs/browse.rs` and `browse_runner.rs` go to bmo-explorer. They call the
+  research base carried here and reach it through this repository's `search branch` verb and
+  settings routes.
+- `bot/bmo-server/src/verbs/news_brief_runner/` (6 files) goes to bmo-voice.
+- `bot/bmo-server/src/editors/` (26 files) are the brain's editors and go to bmo-brain.
+- `web/web-layer` (42 files) goes to bmo-explorer. Page import, picture fetch, address checks,
+  pacing and search engines are reached through the tool host.
+
+### `archive/archive` (124 files)
+
+- **Ported (11 files):** `archive-kinds.ts`, `archive-kinds.test.ts`, the seven files under
+  `archive-kinds/`, `archive-document-row.ts` and `search-share-rows.ts` (all in §6).
+- **Rust twin carried, so not ported (4 files):**
+  - `search-store.ts` and `search-store.test.ts`: the twin is `record.rs` and `archive_docs.rs`.
+  - `research-fields.ts` and `research-profile.ts`: the twin is `verbs/research` and
+    `control/research.rs`. The console form's copy of the field checks stays with the console's
+    agents screen in bmo-web, which calls this repository's research-settings routes.
+- **bmo-voice (6 files):** `briefing-store.ts`, `briefing-store.test.ts`, `news-brief-store.ts`,
+  `news-brief-store.test.ts`, `voice-store.ts`, `voice-store.test.ts`.
+- **bmo-drive (1 file):** `file-share-rows.ts`.
+- **bmo-node (3 files):** `nodes.ts`, `node-state.ts`, `node-state.test.ts`.
+- **Whole-archive database tooling, which stays with the old repository for the switch-over
+  (13 files):** `archive-schema.ts`, `archive-migrator.ts`, `archive-lock.ts`,
+  `archive-lock.test.ts`, `archive-place.ts`, `archive-snapshot.ts`, `archive-sql.ts`,
+  `archive-sql.test.ts`, `sqlite-archive-sql.ts`, `postgres-archive-sql.ts`, `postgres-client.ts`,
+  `postgres-reconnect.test.ts`, `archive.ts`.
+- **Package configuration, replaced by this repository's own (3 files):** `package.json`,
+  `tsconfig.json`, `bunfig.toml`.
+- **Facade over tables other units own (83 files).** Each one goes to the unit that owns its table,
+  in that unit's own split item:
+  - `account-seed.ts`, `account-store.ts`, `agent-rest.test.ts`, `agent-store.ts`
+  - `archive-seeding.ts`, `base-prompts.ts`, `bmo-events.ts`
+  - `chat-store.ts`, `checkout-lease-store.ts`, `claude-account-store.ts`, `clock-hold-store.ts`
+  - `companion-rooms.ts`, `companion-settings.ts`, `conversational.ts`
+  - `coworker-pool.ts`, `native-coworker-pool.ts`
+  - `deploy-store.ts`, `deploy-store.test.ts`
+  - `execution-store.ts`, `fallback-store.ts`
+  - `fragment-row-store.ts`, `fragment-titles.ts`
+  - `gate-rows.ts`, `gate-store.ts`
+  - `hardware-tables.ts`, `holiday-store.ts`, `instruction-store.ts`
+  - `job-store.ts`, `job-store.test.ts`
+  - `laya-health-store.ts`, `laya-rows.ts`, `laya-verdicts.ts`
+  - `legacy-routes-fixture.ts`, `media-store.ts`, `memory-row-store.ts`
+  - `message-arrival.test.ts`, `message-store.ts`, `message-store.test.ts`
+  - `model-catalogue.ts`, `model-registry.ts`, `model-registry.test.ts`, `model-tiers.ts`
+  - `note-store.ts`, `outcomes.ts`, `outcomes.test.ts`
+  - `provider-names.ts`, `provider-number-store.ts`, `provider-numbers.ts`
+  - `query-rows.ts`, `question-store.ts`
+  - `random-draw-store.ts`, `random-draw-store.test.ts`
+  - `reference-verdicts.ts`, `reminder-store.ts`
+  - `room-session-store.ts`, `route-modes.ts`
+  - `row-copy.ts`, `row-steps.ts`
+  - `run-rows.ts`, `run-store.ts`
+  - `seed-refresh.test.ts`, `session-context-store.ts`, `session-resets.ts`, `setting-store.ts`
+  - `talk-store.ts`
+  - `test-databases.ts`, `test-engine.ts`, `test-server.ts`, `test-sql-thread.ts`
+  - `todo-merge.test.ts`, `todo-note-store.ts`, `todo-store.ts`
+  - `usage-store.ts`, `verdict-store.ts`, `watch-store.ts`
+  - `web-policy.ts`, `web-policy.test.ts`
+  - `work-node-store.ts`, `work-node-store.test.ts`
+  - `work-order-lock-store.ts`, `work-order-mark.ts`, `work-order-shape.ts`
+  - `worker-session-store.ts`
+
+### `markup/markup` (32 files)
+
+- **Ported (4 files):** `finding-markdown.ts`, `finding-markdown.test.ts`, `markdown-structure.ts`,
+  `markdown-structure.test.ts` (§6).
+- **Rust twin carried (4 files):**
+  - `web-address.ts` and `web-address.test.ts`: the twin is `web_address.rs`, step 5.
+  - `html-reading.ts` and `html-reading.test.ts`: the twin is `html_read.rs`, step 6.
+- **The shared text library, left to its own unit (24 files):**
+  - `answer-cap-cases.json`, `answer-cap.ts`, `answer-cap.test.ts`, `answer-language.ts`
+  - `dashes.ts`, `dashes.test.ts`, `format.ts`, `format.test.ts`
+  - `korean-in-code-ledger.json`, `korean-in-code.ts`, `korean-in-code.test.ts`
+  - `markdown.ts`, `markdown.test.ts`, `policy-reads.ts`, `policy-reads.test.ts`
+  - `rust-reading.ts`, `telegram-parts.ts`, `translation-parts.ts`, `wording.ts`
+  - `written-dashes.ts`, `written-dashes.test.ts`
+  - `package.json`, `tsconfig.json`, `bunfig.toml`
+
+### `bot/bot` archive and research files (18)
+
+- **Cases moved to Rust tests (2 files):** `archive-documents.test.ts` and
+  `archive-kinds/kinds.test.ts` (§6).
+- **bmo-agency (2 files):** `archive-seeds.ts`, `archive-seeds.test.ts`.
+- **Whole-archive start-up and shape checks, which stay with the old repository for the switch-over
+  (6 files):** `archive-start.ts`, `archive-start.test.ts`, `archive-numbering.test.ts`,
+  `archive-open.test.ts`, `archive-schema.test.ts`, `archive-todo-shape.test.ts`.
+- **Rust twin carried in step 8 (6 files):** `research-controls.ts`, `research-defaults.ts`,
+  `research-effort.ts`, `research-effort.test.ts`, `research-profile.test.ts`,
+  `research-mcp.test.ts`.
+- **The tool host (2 files):** `research-environment.ts` and `research-environment.test.ts`. They
+  state what a research run's web tools are told, and the tool host reads them.
+
+### Scripts
+
+- `scripts/html-read.ts`: the Rust twin `html_read.rs` is carried in step 6.
+- `repo/repo/snapshot-backup.ts`: the backup facility, not carried (§12).
+
+### Console files outside the archive-screen node
+
+- `client/server/utils/archive.ts` goes to bmo-receiver (rooms, messages, judgements).
+- `client/server/utils/document-records.ts`, `client/server/utils/document-fragments.ts` and the
+  nine routes under `client/server/api/documents/` go to bmo-brain: the document viewer.
+- `client/server/api/todos/[id]/work-order/translation.get.ts` and `translation.post.ts` go to
+  bmo-job: work-order translation.
+- `client/server/utils/code-reviews.ts` goes to bmo-review.
+- The twelve routes under `client/server/api/files/` and the two under `client/server/api/share/files/`
+  go to bmo-drive: file shares.
+- The console's research-settings form (`ResearchSettings.vue`, its test, `domain/research.ts`, its
+  test, `domain/research-settings.ts`, and the `research-settings` get and post routes with the post
+  route's test) stays on the console's agents screen in bmo-web, which calls this repository's
+  research-settings routes.
+
+## 16. Facts on these paths
+
+- bmo-policy's deployment module holds the agent's name and the owner's name as constants. This
+  repository depends on no bmo-policy, so the constants do not travel here.
+- `archive_docs.rs` puts the owner's name into two refusal messages. Step 6 rewrites both so that
+  they name no person, and takes the default room and author from settings.
+- `nodes.ts` holds a personal path for the node hub's token file. Its owner is named in section 15,
+  so the path does not travel here.
+- `snapshot.rs` fixes the deploy tree's directory layout into a named root. It is not carried (see
+  section 15), so the layout does not travel here.

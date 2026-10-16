@@ -1,148 +1,150 @@
 # Boundary API: bmo-artifact
 
-This is the whole surface this repository exposes to the rest of bmo, and the whole surface it
-calls on others. Built from Trace artifact consumers (stage-0-4 of this item), grouped by
-operation rather than by old file, since the old files (Nuxt BFF routes, `bmo-server` verbs) do not
-survive as such — see `docs/inventory.md` §3b.
+This document is the whole surface bmo-artifact exposes and the whole surface it calls. Other
+repositories match against it, and so does the switch-over that points the console and the other
+units at this service. Phase 1 keeps today's behaviour: every path, flag, field and answer below
+mirrors what the old bmo serves today, so the two can be compared side by side.
 
 ## Conventions
 
-- **Transport:** HTTP, served by this repository's own binary. One CLI verb exists only where an
-  agent calls this API directly instead of through HTTP — `bmo archive doc` and `bmo archive
-  share` keep their shape as CLI verbs of this repository's own thin binary, which is itself an
-  HTTP client of the routes below.
-- **Caller identity:** every request carries the caller's account id, set by whichever unit
-  authenticated the human or the agent (`bmo-web`'s login, or the agent session's own account) —
-  this repository does not perform login itself.
-- **Ownership rule:** every read and every list is filtered to documents the caller's account owns.
-  A document's `owner_account_id` is the account of the room that asked for it, or the console
-  owner's account for a document BMO wrote with no asking room. A request naming a document id the
-  caller's account does not own answers `404 not_found`, the same answer a non-existent id gets, so
-  a caller cannot learn that a document exists by probing ids it does not own.
-- **Messages:** every response body on an error is `{ "error": "<english message>", "code":
-  "<snake_case code>" }`. No Korean, no agent name, no person's name in any message or code —
-  `docs/inventory.md` §7 item 2 is the one place this rule's old violation is tracked.
-- **Status codes:** `200` read ok, `201` created, `204` deleted with no body, `400` malformed
-  input, `404` not found or not owned, `409` a conflicting write (e.g. `--replace` on a document
-  this repository did not write), `413` an attachment or narration over its ceiling, `422` a
-  refusal this repository's own rules make (empty body, wrong kind for the verb), `502` a call to
-  another unit failed.
+- **Transport.** The service serves HTTP. The CLI verbs are this repository's own binary, which an
+  agent runs exactly as it runs the old ones.
+- **Visibility.** A console caller, signed in through bmo-web, sees every document. A share token
+  opens exactly the one document it was made for, without signing in. Per-account ownership is not
+  part of this phase.
+- **Errors.** An error body carries an English message and a snake_case code. No message or code
+  holds Korean, a person's name or an agent's name. Wording a person reads in a room comes from the
+  document wording file (see "Wording").
+- **Status codes.**
+  - `200`: read
+  - `201`: created
+  - `204`: removed
+  - `400`: malformed input
+  - `404`: no such document, attachment or token, or a token that has expired or been removed
+  - `413`: a file over its ceiling
+  - `422`: a refusal by this repository's own rules
+  - `502`: a call to another unit failed
+- **Internal dependencies.** Only `bmo-chat`, `bmo-chat-client` and `bmo-ui` may be depended on
+  directly. Every other unit is reached by the calls under "What this repository calls", never by an
+  import, a shared table or a shared path.
 
-## 1. Create a document
+## What this repository exposes
 
-- **HTTP:** `POST /v1/documents`
-- **CLI:** `bmo archive doc --title <title> [--kind record|learning|import] [--body <file>]
-  [--attach <path>]... [--html <file>] [--narration <file>] [--share-days <n>|--share-forever]
-  [--replace <id>] [--room <roomId>] [--by <accountId>]`
-- **Payload:** `{ title, kind: "record"|"learning"|"import"|"page", body?, attachments?: [...],
-  html_file?, narration_file?, share: { days?: number, forever?: boolean }, room_id?,
-  by_account_id?, replace_document_id? }`. `room_id`/`by_account_id` default to the console owner's
-  own account when neither is given, matching the old verb's default.
-- **Response `201`:** `{ document_id, address: { console_url, share_url? }, share: { url?,
-  expires_at? } }`.
-- **Refusals (`422`):** no title; empty body; a kind this verb does not write; `page` named as
-  `kind` instead of given through `html_file`; a page given a body, attachments or a narration; a
-  `replace_document_id` for a document this repository did not write, or that does not exist; a
-  file this document already keeps, handed back to it; a file unreadable or over the attachment
-  ceiling (`413`); a narration unreadable or empty.
-- **Called by:** any unit that wants a result "put in order and kept" shown to a person —
-  `bmo-job` (a document a job shows the owner), `bmo-voice` (a finished briefing's document; the
-  `--narration` path is also how this repository itself attaches an already-synthesized sound,
-  see §9).
-- **Consumer units named by the old trace:** `bot/bot/worker-english.ts`, `bot/bot/code-settle.ts`,
-  `bot/bot/agents.ts`, `scripts/setup/archive-roles.ts`, `jobs/jobs/work-order.ts`.
+### Filing a document (CLI)
 
-## 2. Create or read a share link for an existing document
+- `bmo archive doc [--chat <chatId>] [--by <userId>] --title '<title>' [--kind record|learning|import] [--body <file> | stdin] [--attach <path>]… [--html <file>] [--narration <file>] [--share-days <n> | --share-forever] [--replace <id>]`
+  - Files a record, learning material or an import, or files an HTML page given as `--html`.
+  - Attaches files and a narration.
+  - Answers with the document's number and the address the room may open: the console address in a
+    room that can open the console, a share link otherwise.
+  - With no `--chat` and no `--by`, the room and the author come from settings.
+  - Refusals:
+    - no title, or an empty body;
+    - a kind this verb does not write;
+    - a page given a body, attachments or a narration;
+    - `--replace` naming a document this verb did not write;
+    - a file the document already keeps;
+    - a file that cannot be read, or one over the ceiling;
+    - an empty narration.
+- `bmo archive share <id> --chat <chatId> [--days <n> | --forever]`
+  - Makes or renews a document's share link for a room, and answers with the link and when it ends.
+  - The owner's own private room, and a room that cannot open the console, are each given a plain
+    reason that names no person.
+- `bmo archive html-read <file> --pictures <dir>`
+  - Reads a filed HTML page for its words in order, and writes each picture embedded as a data
+    address out as a file of its own.
+- Callers:
+  - bmo-job, for a document a job shows the owner;
+  - bmo-voice, for a briefing's document and its narration;
+  - any agent session that puts a result in order and keeps it.
 
-- **HTTP:** `POST /v1/documents/{id}/share` (create or renew), `GET /v1/documents/{id}/share`
-  (read the current link), `DELETE /v1/documents/{id}/share` (remove it)
-- **CLI:** `bmo archive share <id> --room <roomId> [--days <n>|--forever]`
-- **Payload (`POST`):** `{ days?: number, forever?: boolean }`.
-- **Response:** `{ url, expires_at }` or `{ url: null, reason: "<english reason>" }` for a document
-  with no body to share (§3 below), or for the console owner's own room, which never gets a share
-  link and is told the console address instead.
-- **Refusal (`404`):** a document id that names nothing, or a search that kept none.
-- **Table:** `web_search_shares` (`docs/inventory.md` §4) — not `web_file_shares`, which is
-  bmo-drive's.
+### Searching (CLI)
 
-## 3. List documents
+- `bmo search --chat <chatId> --query <what to find out> [--message <messageId>] [--depth <depth>] [--demand explicit|optional] [--period <span>] [--region <region>] [--exclude <sources>] [--shape <shape>] [--into <searchId>]`
+  starts a search.
+- `bmo search --chat <chatId> --import <url> [--query <what was asked>]` imports a page.
+- The run is queued through bmo-job. Its runner, `bmo runner search`, writes the document from the
+  run's structure lines.
+- `bmo search branch --owner <owner> --source <search|browse> --role <role> --chat <chatId> --index <n> [--closes-at <ms>] [--strategy <strategy>] [--host-interval-ms <ms>] [--engine-interval-ms <ms>]`
+  - Runs one branch of a research run, reading the angle on stdin.
+  - Holds a place in the co-worker pool, and answers with the branch's notes.
+  - It keeps accepting both `--source` values, so bmo-explorer's browse runs call it across the
+    boundary exactly as the search line does.
 
-- **HTTP:** `GET /v1/documents?kind=&phrase=&shared_only=&cursor=`
-- **Response `200`:** `{ items: [{ id, title, kind, topic, keywords, rule, state, started_at,
-  ended_at, shared: bool }], next_cursor? }`.
-- **Rule:** a search that left no document (`docs/archive.md` 「A search that leaves no document」)
-  is never in this list.
-- **Consumers:** the console plugin bundle's `pages/archive/index.vue` (`docs/inventory.md` §3a).
+### Research settings (HTTP)
 
-## 4. Read one document
+- `GET /research-settings` reads every research profile: its values, its resolved provider and
+  mapping, and its seed.
+- `POST /research-settings` saves a profile's values or puts a profile back to its seed.
+- A field that fails its check answers `422` with an English code per field.
+- Callers: the console's agents screen in bmo-web, and bmo-explorer, which reads the browse profiles.
 
-- **HTTP:** `GET /v1/documents/{id}`
-- **Response `200`:** the row's head (question, topic, keywords, rule, options, state, timing),
-  plus the outline its kind module builds (`docs/inventory.md` §2b, the five kind modules) — the
-  table of contents entries, whether a summary stands, which head properties show.
-- **Kind `page`:** this same route also returns `{ page: true, html_url }`; the body fields above
-  are empty, matching `docs/archive.md` 「An HTML page」 — "no summary and no contents, since the
-  page is read as its author drew it."
+### Room holding (HTTP)
 
-## 5. Read a document's file, attachments and pictures
+- `GET /rooms/{chatId}/holding` answers what this repository keeps for a room: its documents, which
+  are kept when the room is removed, never deleted with it.
+- Caller: bmo-receiver, before it removes a room.
 
-- **HTTP:** `GET /v1/documents/{id}/file` (the markdown or HTML file as kept), `GET
-  /v1/documents/{id}/attachments/{attachment_id}` (one attachment's bytes), `GET
-  /v1/documents/{id}/refs/{ref}/preview`, `GET /v1/documents/{id}/refs/{ref}/image` (inline
-  reference previews the body's markdown points at by name, `docs/archive.md` 「Where it stands in
-  the document」).
-- **Bound:** every address stays inside that document's own folder; no route takes a path that
-  reaches another document's files.
+### Documents (HTTP)
 
-## 6. Read, create and remove a document via a share token (no account)
+- `GET /api/archive?kind=&q=&shared=1&before=&limit=`
+  - Lists documents, newest first.
+  - Filters by kind, by a phrase (its length capped) and by shared-only.
+  - Answers with a cursor for the next page.
+  - A search that left no document is never listed.
+- `GET /api/archive/{id}` reads one document: its head (question, topic, keywords, rule, options,
+  state, timing), the outline its kind builds, its findings, sources, attachments and pictures, and
+  its share state. A page answers with no summary and no contents.
+- `GET /api/archive/{id}/document` serves the document's file.
+  - A markdown document is served as kept.
+  - An HTML page is served as a hosted page: sandboxed, with its link and picture bridges and the
+    reader's colour scheme.
+- `GET /api/archive/{id}/attachments/{attachment}` serves one attachment's bytes.
+- `GET /api/archive/{id}/refs/{ref}/preview` and `GET /api/archive/{id}/refs/{ref}/image` serve
+  the preview and the picture of a source the body points at.
+- Moved screens:
+  - `/searches` and `/searches/<rest>` answer with the matching `/archive` address, query kept.
+  - `/collected` answers with `/archive`.
+- Every address stays inside its own document's folder.
+- Caller: the console plugin bundle in this repository's `client/`.
 
-- **HTTP:** `GET /v1/share/{token}` (resolves to the same shape as §4), `GET
-  /v1/share/{token}/attachments/{attachment_id}`, `GET /v1/share/{token}/head` (the OpenGraph/
-  Twitter head, `docs/archive.md` 「Where a person reads it」), `GET /v1/share/{token}/picture`
-  (the JPEG made from the kept AVIF for link-preview crawlers).
-- **No caller identity required** — a token stands in for ownership, exactly as `docs/archive.md`
-  describes a share link doing. A token past its `expires_at`, or one that was removed, answers
-  `404`.
+### Share links (HTTP)
 
-## 7. Translate a document
+- `GET /api/archive/{id}/share` reads a document's link.
+- `POST /api/archive/{id}/share` makes or renews it for a span.
+- `DELETE /api/archive/{id}/share` removes it.
+- `GET /api/share/{token}` reads the shared document in the same shape as the document read.
+- `GET /api/share/{token}/refs/{ref}/preview` and `GET /api/share/{token}/refs/{ref}/image` serve
+  a shared document's source previews and pictures.
+- `GET /api/share/{token}/attachments/{attachment}` serves a shared document's attachment.
+- `GET /api/share/{token}/head` serves the link preview head: title, description, picture and the
+  robots rule.
+- `GET /api/share/{token}/picture` serves the JPEG card picture made from the kept picture, for
+  link-preview crawlers.
+- Expired links are swept by the service itself.
+- Table: `web_search_shares`, not bmo-drive's `web_file_shares`.
 
-- **HTTP:** `GET /v1/documents/{id}/translation?target=&part=`, `POST
-  /v1/documents/{id}/translation` with `{ target, part, text, failed: bool }`
-- **Table:** `document_translations`, owned here per `docs/inventory.md` §4.
-- **Consumer named by the old trace:** `bot/bot/worker-english.ts`'s `recalledWorkerEnglish()` —
-  this becomes a caller of this HTTP route rather than a direct table read; which account/unit is
-  allowed to write a translation for which document is this route's own check, not something the
-  caller enforces on its side.
+### Wording
 
-## 8. Talk about a document
+- Sentences a room reads (a filed document's reply, a search's notices) come from the document
+  wording file.
+- Its path is a setting, and an English default ships with this repository.
+- bmo-web's language pack supplies the live wording under the same keys.
+- The time zone used in those sentences is a setting.
 
-- **HTTP:** `GET /v1/documents/{id}/talk`, `POST /v1/documents/{id}/talk` with `{ speaker, text,
-  passage?, heading?, version }`
-- **Table:** `document_talk`, owned here per `docs/inventory.md` §4.
+## What this repository calls
 
-## 9. Search within documents
+Each call is HTTP or the tool host's standard call shape. bmo-receiver also reads this repository's
+room-holding answer (see "Room holding") before it removes a room.
 
-- **HTTP:** `GET /v1/documents/search?q=`, `POST /v1/documents/seek` with `{ q, document_id? }`
-  for a narrower, single-document seek.
-- **Response:** matches with the snippet and the hit positions, the same shape
-  `client/shared/search.ts`'s `matchFields`/`searchPhrase`/`hitSnippet`/`searchHits` produce today
-  (`docs/inventory.md` §3c) — this route is the server-side computation those client functions
-  were duplicating against rows fetched directly; the client functions now only render what this
-  route returns.
-
-## What this repository itself calls
-
-Per `#301`'s principles section, only `bmo-chat`, `bmo-chat-client` and `bmo-ui` may be a direct
-dependency; every other unit is reached by a standard API call, never an import, a shared path, or
-a shared table.
-
-| Call | To | Why |
-|---|---|---|
-| Start an agent session, send it the search task, read its output, abort/fold/end it | **bmo-agency**, agent-session API | the search run is an agent session; `#301`'s agency section names exactly these verbs as the abstraction over herdr this repository must use instead of calling herdr itself |
-| Run a web search, open and read a page, run a browse step | **bmo-explorer**, the search/browse tool, through the standard tool-host call | `#301`'s section on units that are not their own service names bmo-explorer as the search-and-browse tool; this repository's runner supervises a run and writes the document the run's output describes, but does not fetch pages itself — see `docs/inventory.md` §1's note on `verbs/search/web.rs`, which is rewritten to make this call instead of importing `web-layer` directly |
-| Who sent the message that asked, and when | **bmo-receiver**, message-read API | `docs/archive.md`'s restaurant rule reads "that message's sender and its time from the archive"; once messages and rooms are bmo-receiver's own tables (`#301`'s artifact section and its addendum), this repository asks bmo-receiver's API for the same facts instead of reading the row directly |
-| Synthesize a narration's audio | **bmo-voice**, briefing-synthesis API | `docs/archive.md`'s section on a narration — this repository hands the script to bmo-voice and receives the finished sound file back, which it then stores as an ordinary `archive_attachments` row through its own write path (§1), not by writing into bmo-voice's own tables |
-| Read a worker's co-worker pool, if a document-writing step ever needs one | **bmo-agency**, co-worker API | `#301`'s agency section names the co-worker pool as bmo-agency's to supply; this repository does not manage one itself |
-
-No call in this table is a crate import, a shared database connection, or a shared filesystem path.
-Everything above is HTTP or the tool-host's standard call shape.
+| Purpose | Unit |
+|---|---|
+| Queue a search run, mark it stopped, read and set its live task names, read the instruction line | bmo-job |
+| Import a page, fetch a raster picture, check an address, pace requests per host and engine, stop a remote browse | bmo-explorer, through the tool host |
+| Read the search-engine values a research profile chooses among | bmo-explorer, through the tool host |
+| Start a briefing of a finished document | bmo-voice |
+| Who sent the message that asked, and when | bmo-receiver |
+| Start, drive, read, stop and end the research session | bmo-agency |
+| Read and apply tiers, providers and their order and enablement | bmo-agency |
+| Take and give back places in the co-worker pool | bmo-agency |
+| Read the accounts a run is offered | bmo-agency |
