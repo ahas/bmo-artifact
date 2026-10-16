@@ -2,7 +2,12 @@
 //! over HTTP and filed through the CLI verbs (`docs/archive.md`, `docs/api.md`).
 
 pub mod plumbing;
+pub mod pool;
 pub mod settings;
+pub mod store;
+
+pub use plumbing::refusal::Refusal;
+pub use store::{all, now_ms, one, run, statement};
 
 /// The repository's version, as `VERSION` holds it.
 pub const VERSION: &str = env!("BMO_ARTIFACT_VERSION");

@@ -67,8 +67,9 @@ them, together with their four indexes. All of it lands in step 4. Two of the ol
 supply them:
 
 - `src/migration/archive.sql` supplies the six tables' statements and the four indexes.
-- `src/migration/m20261006_000001_users.rs` supplies the one later change to these tables: the
-  rename of `web_search_shares.created_by`.
+- `src/migration/m20261006_000001_users.rs` supplies the one later change to these tables: a
+  nullable `user_id` column on `web_search_shares`. Its default reads another unit's settings table,
+  so the default is not carried.
 
 ## 4. Old bmo-server internals the carried files reach (31 members)
 

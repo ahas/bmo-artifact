@@ -12,6 +12,7 @@ use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
 use serde_json::{Value, json};
 
+use crate::pool::Archive;
 use crate::settings::Settings;
 
 pub use inventory;
@@ -124,6 +125,16 @@ impl IntoResponse for Refused {
 #[derive(Clone, Debug)]
 pub struct Standing {
   pub settings: Settings,
+  /// The database the settings name, opened on the first statement a route asks of it.
+  pub archive: Archive,
+}
+
+impl Standing {
+  pub fn new(settings: Settings) -> Self {
+    let archive = Archive::new(settings.database.url.clone());
+
+    Self { settings, archive }
+  }
 }
 
 /// One request a route answers.

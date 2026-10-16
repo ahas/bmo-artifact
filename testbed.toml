@@ -6,6 +6,10 @@ name = "bmo-artifact"
 [test]
 languages = ["cargo"]
 
+[test.database]
+migrations = ["src/store/migration/**"]
+migrate = "BMO_ARTIFACT_DATABASE__URL=\"$BMO_TEST_TEMPLATE_URL\" cargo run --quiet --bin bmo-artifact-cli -- migrate"
+
 [check]
 quick = ["layout", "dependencies"]
 base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui"]

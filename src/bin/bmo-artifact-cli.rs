@@ -4,6 +4,7 @@ use std::process::ExitCode;
 
 use bmo_artifact::plumbing::verb::{Answer, FAILURE, Shell, VerbError, finished};
 use bmo_artifact::settings::Settings;
+use bmo_artifact::store::migration;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -17,9 +18,12 @@ struct Cli {
 enum Verb {
   /// Prints the repository's version.
   Version,
+  /// Brings the database the settings name up to this repository's schema.
+  Migrate,
 }
 
-fn main() -> ExitCode {
+#[tokio::main]
+async fn main() -> ExitCode {
   let cli = Cli::parse();
   let shell = match Settings::load() {
     Ok(settings) => Shell::new(settings),
@@ -28,7 +32,7 @@ fn main() -> ExitCode {
       return ExitCode::from(FAILURE);
     }
   };
-  let ended = finished(run(cli.verb, &shell));
+  let ended = finished(run(cli.verb, &shell).await);
 
   for line in ended.out {
     println!("{line}");
@@ -41,8 +45,13 @@ fn main() -> ExitCode {
   ExitCode::from(ended.code)
 }
 
-fn run(verb: Verb, _shell: &Shell) -> Result<Answer, VerbError> {
+async fn run(verb: Verb, shell: &Shell) -> Result<Answer, VerbError> {
   match verb {
     Verb::Version => Ok(vec![bmo_artifact::VERSION.to_owned()].into()),
+    Verb::Migrate => {
+      let ran = migration::migrate(shell.archive.db()?).await?;
+
+      Ok(vec![format!("migrations run: {ran}")].into())
+    }
   }
 }

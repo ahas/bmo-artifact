@@ -25,8 +25,10 @@ src/
     bmo-artifact.rs        the HTTP server
     bmo-artifact-cli.rs    every CLI verb
   settings.rs              listen address, storage address, file root, wording file, time zone
-  pool.rs                  connection pools
-  store/                   schema, migrations and the queries the carried code runs
+  pool.rs                  connection pools and how a statement is bound and run on them
+  store/                   the queries the carried code runs, and the clock its columns keep
+    migration/             the six document tables' migration and its migrator
+    entity/                one SeaORM entity per document table
   plumbing/                errors, refusals, CLI and HTTP answers
   helpers/                 copied helpers and the five Rust twins
   wording.rs               the document wording file and its English default
@@ -73,14 +75,20 @@ The plumbing is what every verb and every route stands on, and it knows none of 
 
   The CLI binary prints the lines on standard output and a refusal on standard error. It ends with
   success, with the verb's own code for an end, and with failure otherwise.
-- **The shell** is what a verb run from the CLI stands on: the settings it was started with. Each
-  later piece a verb needs (the database, a client of another unit) is added to it, not opened by
-  the verb.
+- **A refusal of the carried code** is a status and an English sentence. A failure of the database
+  is one: status 500, with "the archive's database" and the failure as its sentence. A verb ends
+  with failure on it and prints its sentence. A route answers with its status, and the code is that
+  status's own name in snake_case.
+- **The shell** is what a verb run from the CLI stands on: the settings it was started with, and the
+  database they name. The database is opened when a verb asks its first statement of it. Each later
+  piece a verb needs (a client of another unit) is added to the shell, not opened by the verb.
 - **A route** declares its method and its path and answers one call. A call carries the request,
   its query and its JSON body, and what the server stands on. A route answers a response or a
   refusal: a status, a snake_case code and an English message.
 - **Each route registers itself** beside its own answer, so adding a route changes no file but its
   own. The server refuses to start where two routes name the same method and path.
+- **What the server stands on** is its settings and the database they name, opened the same way as
+  the shell's.
 
 ## Why the console screen sits in `client/`, not in bmo-web
 
@@ -95,6 +103,16 @@ contract and never reads its source. The screen's wording keys stay in bmo-web's
 - **Database.** PostgreSQL, as today. The address is a setting, read from the settings files or the
   environment, and is never written into source. The six document tables are this repository's own.
   No other unit's table is read or written.
+- **Schema.** One migration makes the six tables and their four indexes in the shape the old archive
+  declares for them. It also gives `web_search_shares` the nullable `user_id` column that the old
+  archive added. In the old archive that column's default is read from another unit's settings
+  table; here it has no default, since no other unit's table is read. SeaORM keeps the migration's
+  record in its own table beside the six. The `migrate` verb brings the database the settings name
+  up to date with this migration.
+- **Statements.** Every statement binds each number at its widest width, so the driver never refuses
+  a statement it has prepared because a value comes in a different width. A statement prepared
+  before a table's shape changed under the process is run once more on a fresh connection, and no
+  connection opened before that change is handed out again.
 - **File root.** The folder holding `searches/<document id>/` is a setting. Each document's folder
   holds its markdown or HTML file, `images/` and `attachments/`. The default lies under the data
   root the deploy declaration names.
@@ -138,6 +156,8 @@ declaration document, so the testbed needs no knowledge of this repository. It n
 - how the suite runs: the Cargo package's tests;
 - the static check, in order: the compile check, the linter and the formatter;
 - the quick checks for the layout and the dependencies, with the three base libraries allowed;
+- the test database: the migration files that name its template, and the `migrate` verb that makes
+  it;
 - the two binaries a release carries.
 
 It declares no deployment root, so a deployment of this repository puts nothing live. The service
@@ -155,7 +175,12 @@ no backup itself. The whole-data-root backup and its restore drill belong to the
 - **Client.** The client tests live in `client/tests/`.
 - **Scope.** A change confined to these two trees runs only `cargo test` here and the client's test
   command under `client/`.
-- **Database.** A test that needs a database gets a scratch PostgreSQL database of its own.
+- **Database.** A test that needs a database gets a scratch PostgreSQL database of its own. It is
+  made on the server `BMO_TEST_POSTGRES` names, which the suite sets to its own test server.
+  - The first test of a binary that asks for one migrates a template with this repository's
+    migrator.
+  - Each test gets a copy of the template, which is dropped when the test ends.
+  - The first template a binary makes drops every template and copy whose process is gone.
 
 ## Dependency check
 

@@ -78,6 +78,13 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
   - It keeps accepting both `--source` values, so bmo-explorer's browse runs call it across the
     boundary exactly as the search line does.
 
+### Schema (CLI)
+
+- `bmo-artifact-cli migrate` brings the database the settings name up to this repository's schema,
+  and answers with how many migrations it ran. A database that is already up to date is left as it
+  is.
+- Callers: the deployment, and the testbed when it makes the test database's template.
+
 ### Research settings (HTTP)
 
 - `GET /research-settings` reads every research profile: its values, its resolved provider and

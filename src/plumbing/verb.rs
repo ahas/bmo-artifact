@@ -1,5 +1,9 @@
 //! A verb's answer and its errors, the shell it runs on, and how the CLI ends with them.
 
+use sea_orm::DbErr;
+
+use crate::plumbing::refusal::Refusal;
+use crate::pool::{Archive, Fault};
 use crate::settings::Settings;
 
 /// What a verb answers: the lines it prints, and the code it ends with where that is not success.
@@ -27,17 +31,42 @@ pub enum VerbError {
   /// The verb did part of what it was asked: the lines it prints of that, and the refusal of the rest.
   #[error("{refusal}")]
   Partly { lines: Vec<String>, refusal: String },
+  /// The carried code refused, or the archive's database failed under it.
+  #[error(transparent)]
+  Archive(#[from] Refusal),
+}
+
+impl From<DbErr> for VerbError {
+  fn from(error: DbErr) -> Self {
+    Refusal::from(error).into()
+  }
+}
+
+impl From<Fault> for VerbError {
+  fn from(fault: Fault) -> Self {
+    Refusal::from(fault).into()
+  }
+}
+
+impl From<sqlx::Error> for VerbError {
+  fn from(error: sqlx::Error) -> Self {
+    Fault::from(error).into()
+  }
 }
 
 /// What a verb run from the CLI stands on.
 #[derive(Clone, Debug)]
 pub struct Shell {
   pub settings: Settings,
+  /// The database the settings name, opened on the first statement a verb asks of it.
+  pub archive: Archive,
 }
 
 impl Shell {
   pub fn new(settings: Settings) -> Self {
-    Self { settings }
+    let archive = Archive::new(settings.database.url.clone());
+
+    Self { settings, archive }
   }
 }
 
@@ -69,6 +98,11 @@ pub fn finished(answered: Result<Answer, VerbError>) -> Finished {
       out: Vec::new(),
       err: Some(said),
       code,
+    },
+    Err(VerbError::Archive(refusal)) => Finished {
+      out: Vec::new(),
+      err: Some(refusal.detail),
+      code: FAILURE,
     },
     Err(VerbError::Refused(said)) => Finished {
       out: Vec::new(),
