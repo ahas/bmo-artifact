@@ -50,9 +50,12 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
   - Makes or renews a document's share link for a room, and answers with the link and when it ends.
   - The owner's own private room, and a room that cannot open the console, are each given a plain
     reason that names no person.
-- `bmo archive html-read <file> --pictures <dir>`
-  - Reads a filed HTML page for its words in order, and writes each picture embedded as a data
-    address out as a file of its own.
+- `bmo archive html-read <file> [--pictures <dir>] [--stem <name>] [--from <line>]`
+  - Reads a filed HTML page for its words in order, cut at the answer ceiling; `--from` reads on
+    from a numbered line.
+  - Names each picture embedded as a data address after `picture`, or after `--stem`, and with
+    `--pictures` writes each out as a file of its own.
+  - Refuses a `--from` that is not a line number from 1, and a `--stem` that is not a short name.
 - Callers:
   - bmo-job, for a document a job shows the owner;
   - bmo-voice, for a briefing's document and its narration;
