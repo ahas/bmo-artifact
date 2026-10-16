@@ -1,0 +1,11 @@
+# The service's settings (docs/layout.md, "Settings"). A deployment overrides them in
+# settings.local.toml, which git ignores, or in the environment.
+
+[server]
+listen = "127.0.0.1:3230"
+
+[database]
+url = "postgres://localhost/bmo_artifact"
+
+[files]
+root = "data"

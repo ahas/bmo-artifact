@@ -1,0 +1,28 @@
+# How the testbed tests, checks and builds this repository, in the testbed's declaration format. No
+# deploy root is declared, so a deployment of this repository puts nothing live.
+testbed = 0
+name = "bmo-artifact"
+
+[test]
+languages = ["cargo"]
+
+[check]
+quick = ["layout", "dependencies"]
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui"]
+
+[[check.step]]
+id = "check"
+command = "cargo check --all-targets"
+lane = "wide"
+
+[[check.step]]
+id = "clippy"
+command = "cargo clippy --all-targets -- -D warnings"
+lane = "wide"
+
+[[check.step]]
+id = "fmt"
+command = "cargo fmt --all --check"
+
+[build]
+binaries = ["bmo-artifact", "bmo-artifact-cli"]

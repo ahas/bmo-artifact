@@ -1,0 +1,37 @@
+# The document archive as one service: the HTTP server, the CLI verbs and the repository checks in
+# `tests/`. The only manifest at the root; the console plugin bundle keeps its own under `client/`.
+[package]
+name = "bmo-artifact"
+description = "The document archive: research documents, HTML pages, records, attachments and share links."
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "bmo-artifact"
+path = "src/bin/bmo-artifact.rs"
+test = false
+
+[[bin]]
+name = "bmo-artifact-cli"
+path = "src/bin/bmo-artifact-cli.rs"
+test = false
+
+[dependencies]
+axum = "0.8.9"
+clap = { version = "4.6.7", features = ["derive"] }
+# The settings files and the environment, layered in that order.
+config = { version = "0.15", default-features = false, features = ["toml"] }
+# Each route registers itself beside its own answer.
+inventory = "0.3.24"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.21"
+tokio = { version = "1.53.2", features = ["macros", "net", "rt-multi-thread", "signal"] }
+
+[dev-dependencies]
+# The repository checks read Rust files and manifests through their own libraries.
+syn = { version = "2.0.119", features = ["full", "visit"] }
+tempfile = "3.27.0"
+toml = { version = "0.8.23", default-features = false, features = ["parse"] }
+tower = { version = "0.5.2", features = ["util"] }

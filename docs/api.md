@@ -7,14 +7,18 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
 
 ## Conventions
 
-- **Transport.** The service serves HTTP. The CLI verbs are this repository's own binary, which an
-  agent runs exactly as it runs the old ones.
+- **Transport.** The service serves HTTP. The CLI verbs are this repository's `bmo-artifact-cli`
+  binary. After the binary's name, an agent runs each verb exactly as it runs the old one.
+- **CLI answers.** A verb prints its answer on standard output and ends with success. A refusal is
+  printed on standard error and ends with failure. A verb that did part of what it was asked prints
+  that part on standard output and the refusal of the rest on standard error, and ends with failure.
+  A verb that ends with a code of its own ends with that code.
 - **Visibility.** A console caller, signed in through bmo-web, sees every document. A share token
   opens exactly the one document it was made for, without signing in. Per-account ownership is not
   part of this phase.
-- **Errors.** An error body carries an English message and a snake_case code. No message or code
-  holds Korean, a person's name or an agent's name. Wording a person reads in a room comes from the
-  document wording file (see "Wording").
+- **Errors.** An error body is a JSON object carrying the English message under `error` and the
+  snake_case code under `code`. No message or code holds Korean, a person's name or an agent's name.
+  Wording a person reads in a room comes from the document wording file (see "Wording").
 - **Status codes.**
   - `200`: read
   - `201`: created
