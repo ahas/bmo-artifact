@@ -437,6 +437,7 @@ dependencies = [
  "config",
  "data-url",
  "ego-tree",
+ "futures-util",
  "image",
  "inventory",
  "rand 0.9.5",

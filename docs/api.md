@@ -100,6 +100,14 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
 
 - `GET /rooms/{chatId}/holding` answers what this repository keeps for a room: its documents, which
   are kept when the room is removed, never deleted with it.
+  - The answer is `200` with `kept`, one entry for each table here that holds a room's rows:
+    - `table`, the table's name;
+    - `rows`, how many of the room's rows it holds, none included;
+    - `why`, the English sentence saying why those rows outlive the room.
+  - Each table declares its own entry beside the code that writes it. `searches` is the one table
+    naming a room, and its rows are the room's documents. Nothing this repository holds goes
+    with a room, so the answer names nothing to remove.
+  - A `chatId` that is not a whole number is refused with `400` and `bad_room`.
 - Caller: bmo-receiver, before it removes a room.
 
 ### Documents (HTTP)
@@ -229,7 +237,7 @@ room-holding answer (see "Room holding") before it removes a room.
 
 | Purpose | Unit |
 |---|---|
-| Queue a search run, mark it stopped, read and set its live task names, read the instruction line | bmo-job |
+| Queue a search run naming the search it carries, list the runs that have carried a search, mark a run stopped, read and set its live task names, read the instruction line | bmo-job |
 | Import a page, fetch a raster picture, check an address, pace requests per host and engine, stop a remote browse | bmo-explorer, through the tool host |
 | Read the search-engine values a research profile chooses among | bmo-explorer, through the tool host |
 | Start a briefing of a finished document | bmo-voice |
@@ -251,3 +259,24 @@ Each unit is reached at the address its name holds under `[units]` in the settin
   - Any other answer is a refusal and carries its sentence under `error`.
   - The filing verb passes that sentence on, after `voice: `.
   - A call that gets no answer is reported with the failure's own words.
+- **Read a page and fetch a picture** (bmo-explorer, through the tool host): `POST /calls` at the
+  tool host's address, with a JSON body naming the entry under `tool` and what it is handed under
+  `arguments`.
+  - `explorer/import_page`, handed `address`, draws the page in a browser and reads it whole. Its
+    structured content carries:
+    - `page`: `url`, the address after every redirect; `title`; `keywords`, a list; `body`, the
+      page's text; `references`, each with its `text` and `url`; and `figures`, each figure the page
+      draws with its number `n`, its `caption` and, where the page drew it as one, its `svg`;
+    - `captured`: each figure captured as a picture, by its number `n`, with the PNG's bytes in
+      base64 under `png`. A figure that would not capture is not among them.
+  - `explorer/fetch_raster`, handed `address` and `pacing`, fetches the raster picture behind an
+    address. Its content is one image block: the bytes in base64 under `data`, and their type under
+    `mimeType`.
+  - bmo-explorer checks each address before it connects, refusing one that resolves inside this
+    network, and paces its requests per host. `pacing` names whose requests are paced together: one
+    name for each search run's reading.
+  - A `2xx` answer is the entry's tool result. A result marked `isError` is a refusal, and its text
+    is the sentence. Any other answer is a refusal and carries its sentence under `error`. A call
+    that gets no answer is reported with the failure's own words.
+  - A page is waited for 150 seconds and a picture 60. A call that takes longer is given up as
+    failed.

@@ -27,6 +27,6 @@ sender = "BMO"
 # `address` here; a deployment sets it.
 [console]
 
-# The address of each unit this repository calls, by its short name: `voice` for bmo-voice. A deployment
-# sets them.
+# The address of each unit this repository calls, by its short name: `voice` for bmo-voice, `tool_host`
+# for the tool host bmo-explorer's page reading is reached through. A deployment sets them.
 [units]

@@ -488,7 +488,8 @@ repository decides only these things:
 - **The question, with the options the launch gave:** period, region, excluded sources and result
   shape. An option not given is left to the run's own judgement from the question.
 - **Who asked, and when.** The launch names the message that asked. The launcher asks bmo-receiver
-  who sent it and when, and the run is told. Nobody writes this into the query by hand.
+  who sent it and when, and the run is told. Nobody writes this into the query by hand. The moment
+  is told in the time zone the settings name, with the zone's abbreviation and the weekday.
 - **The result shape it reads back:** everything this document sets out.
 
 ## Attachments

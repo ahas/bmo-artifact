@@ -98,6 +98,8 @@ pub struct Console {
 pub struct Units {
   /// bmo-voice.
   pub voice: Option<String>,
+  /// The tool host, which bmo-explorer's page reading is reached through.
+  pub tool_host: Option<String>,
 }
 
 /// Why the settings could not be read.

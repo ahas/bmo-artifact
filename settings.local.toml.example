@@ -26,3 +26,4 @@ address = "https://console.example.com"
 
 [units]
 voice = "http://127.0.0.1:3240"
+tool_host = "http://127.0.0.1:3290"

@@ -92,7 +92,8 @@ The plumbing is what every verb and every route stands on, and it knows none of 
   with failure on it and prints its sentence. A route answers with its status, and the code is that
   status's own name in snake_case.
 - **The shell** is what a verb run from the CLI stands on: the settings it was started with, the
-  database they name, the document wording they name, and the bmo-voice client. The database is
+  database they name, the document wording they name, the bmo-voice client, and the page reader that
+  reaches bmo-explorer through the tool host. The database is
   opened when a verb asks its first statement of it, and settled (see "Storage") before the first
   statement on the document tables. The wording is read when the shell is made, so a wording file that is
   refused stops every verb before it runs. Each later piece a verb needs (a client of another unit)
@@ -169,7 +170,8 @@ environment. `src/settings.rs` reads them all.
   its share links stand under it. No value is committed.
 - **The research profiles and their seeds**, which carry the old research policy files.
 - **The address of each unit this repository calls**, under `[units]`, by the unit's short name:
-  `voice` for bmo-voice. `docs/api.md` lists the calls. No address is committed.
+  `voice` for bmo-voice, and `tool_host` for the tool host that bmo-explorer's page reading is
+  reached through. `docs/api.md` lists the calls. No address is committed.
 
 ## Version
 
@@ -218,6 +220,8 @@ no backup itself. The whole-data-root backup and its restore drill belong to the
   given in the environment over the committed ones: the scratch database, a file root of the test's
   own, and the rooms, console address and unit addresses the case is about. A unit the verb calls is
   a stand-in the test serves on a local port.
+- **Page reading.** Every piece of the search line that reads a page or fetches a picture is handed
+  the page reader as an interface, so its tests hand it a fake reader and reach no tool host.
 
 ## Dependency check
 

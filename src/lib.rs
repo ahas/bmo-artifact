@@ -3,6 +3,7 @@
 
 pub mod clients;
 pub mod helpers;
+pub mod http;
 pub mod plumbing;
 pub mod pool;
 pub mod settings;

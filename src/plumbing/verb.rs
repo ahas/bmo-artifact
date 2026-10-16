@@ -11,6 +11,7 @@ use clap::{ArgMatches, Args, Command, FromArgMatches};
 use sea_orm::{DatabaseConnection, DbErr};
 use tokio::sync::OnceCell;
 
+use crate::clients::tool_host::ToolHost;
 use crate::clients::voice::Voice;
 use crate::plumbing::refusal::Refusal;
 use crate::pool::{Archive, Fault};
@@ -180,6 +181,9 @@ pub struct Shell {
   pub wording: Wording,
   /// bmo-voice, at the address the settings name.
   pub voice: Voice,
+  /// The tool host bmo-explorer's page reading is reached through, at the address the settings name, its
+  /// requests paced under this process's own name.
+  pub tool_host: ToolHost,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
@@ -189,12 +193,15 @@ impl Shell {
     let archive = Archive::new(settings.database.url.clone());
     let wording = Wording::read(settings.wording.file.as_deref())?;
     let voice = Voice::new(settings.units.voice.clone());
+    let tool_host =
+      ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
 
     Ok(Self {
       settings,
       archive,
       wording,
       voice,
+      tool_host,
       settled: Arc::default(),
     })
   }
