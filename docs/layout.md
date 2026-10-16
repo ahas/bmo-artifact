@@ -49,12 +49,23 @@ src/
   control/
     research.rs            research profiles and their checks
     research_settings.rs   the research-settings routes
+  design.rs                the document design read from design/document.json, and a page's sheet
+  documents/
+    read.rs                the list, one document, its files and its refs, as the read API answers them
+    preview.rs             the previews and pictures of the pages a document points at, kept under the file root
+    ground.rs              a picture laid on white where its transparency would be lost
+  markup/
+    markdown_structure.rs  a markdown text's headings and sections
+    finding_markdown.rs    a finding's structure lines as the markdown the console draws
   http/
-    documents.rs           list, read, file, attachments, source previews and pictures, moved screens
-    hosted_page.rs         the sandboxed HTML page and its bridges
+    documents.rs           list, kinds, read, file, attachments, source previews and pictures, moved screens
+    files.rs               a kept file sent as kept or as a hosted page, under its isolation
+    hosted_page.rs         the sandboxed HTML page, its prelude and its bridges, and the head it declares
     shares.rs              share links and the token routes
     rooms.rs               the room-holding answer
-  kinds/                   the five kinds: search, import, learning, record, page
+  kinds/                   the catalogue, and the five kinds: search, import, learning, record, page
+design/
+  document.json            the palettes, the page sheet's rules and which pictures open the viewer
 lang/
   documents.en.yaml        the document wording file's English default
 tests/

@@ -30,6 +30,8 @@ pub struct Book {
   pub handed: Vec<HandBack>,
   /// The messages bmo-receiver holds, by room and message.
   pub messages: HashMap<(i64, i64), Value>,
+  /// What bmo-receiver says each room is called.
+  pub rooms: Vec<(i64, String)>,
   /// The knowledge bmo-gate picks for any piece of work.
   pub pieces: Vec<Value>,
   /// The lines each piece of work's knowledge was asked for.
@@ -63,6 +65,7 @@ pub async fn serve(book: Book) -> (Units, String) {
     .route("/runs/{id}/launch", post(launch))
     .route("/runs/{id}/close", post(close_run))
     .route("/instructions", post(hand_back))
+    .route("/rooms", get(rooms))
     .route("/rooms/{room}/messages/{message}", get(message))
     .route("/knowledge/work", post(knowledge))
     .route("/briefings", post(briefing))
@@ -181,6 +184,17 @@ async fn hand_back(State(units): State<Units>, Json(back): Json<HandBack>) -> Re
   book.handed.push(back);
 
   (StatusCode::CREATED, Json(json!({ "id": book.handed.len() }))).into_response()
+}
+
+async fn rooms(State(units): State<Units>) -> Json<Value> {
+  let rooms: Vec<Value> = units
+    .book()
+    .rooms
+    .iter()
+    .map(|(chat_id, title)| json!({ "chat_id": chat_id, "title": title }))
+    .collect();
+
+  Json(json!({ "rooms": rooms }))
 }
 
 async fn message(State(units): State<Units>, Path((room, message)): Path<(i64, i64)>) -> Response {

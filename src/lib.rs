@@ -3,8 +3,12 @@
 
 pub mod clients;
 pub mod control;
+pub mod design;
+pub mod documents;
 pub mod helpers;
 pub mod http;
+pub mod kinds;
+pub mod markup;
 pub mod plumbing;
 pub mod pool;
 pub mod settings;

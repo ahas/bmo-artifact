@@ -900,7 +900,8 @@ something works.
 ## How a document is drawn
 
 One design draws every document, a markdown one and a page alike, on the console and under a share
-link, in a light and a dark scheme. The design lives in this repository's console plugin bundle.
+link, in a light and a dark scheme. The design is one data file of this repository, which the server
+reads to write a page's sheet and the console plugin bundle reads to draw a document.
 
 - **The palette** is one set of document colours per scheme. It holds:
   - a warm paper, with a raised and a sunk surface;
@@ -909,7 +910,7 @@ link, in a light and a dark scheme. The design lives in this repository's consol
   - an accent;
   - a calm tone and a caution tone.
 
-  It is kept in one module, which the document screen and the page sheet both read.
+  It is kept in that one file, which the document screen and the page sheet both read.
 - **The reader's scheme** is the console's screen mode: light, dark, or whatever the system asks.
   - A reader who never chose one reads dark, and so does a share link's holder.
   - The mode is kept in a cookie, so the server knows it when it sends a page.
@@ -970,8 +971,8 @@ alike, on the console and under a share link.
     over the web or written into the page as data.
   - The page's file is never touched for this.
   - A page opened alone, in a tab of its own, has no frame to ask, and its pictures are left to it.
-- **One rule for both.** Which pictures open is one rule, which the console and the page's lines both
-  read.
+- **One rule for both.** Which pictures open is one rule, kept in the design's file, which the console
+  and the page's lines both read.
 
 ## Where a person reads it
 

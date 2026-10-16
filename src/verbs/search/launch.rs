@@ -87,17 +87,8 @@ pub struct Asked {
   pub home: Option<String>,
 }
 
-/// A whole number read off the front of a text, its digits up to the first that is none: none where it
-/// opens with no number at all.
-pub fn whole(text: &str) -> Option<i64> {
-  let digits = text.trim();
-  let end = digits
-    .char_indices()
-    .find(|(at, one)| !(one.is_ascii_digit() || (*at == 0 && *one == '-')))
-    .map_or(digits.len(), |(at, _)| at);
-
-  digits[..end].parse().ok()
-}
+/// A whole number read off the front of a text, as the verbs read one.
+pub use crate::helpers::js::parse_int as whole;
 
 /// What the runner is started with: the room, the file holding the question, the depth, the rows it carries
 /// and its unit, who set it off, the demand, the settings it launches on, its road and its registration —

@@ -1,21 +1,29 @@
 //! Routes, the calls they answer, their refusals, and the router the server stands them on.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::{Query, Request, State};
+use axum::extract::{FromRequestParts, Query, RawPathParams, Request, State};
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
 use serde_json::{Map, Value, json};
 
+use tokio::sync::OnceCell;
+
 use crate::clients::agency::{Agency, AgencyClient};
+use crate::clients::job::Job;
+use crate::clients::receiver::Receiver;
 use crate::clients::tool_host::ToolHost;
+use crate::documents::preview::PreviewCache;
+use crate::documents::read::Library;
+use crate::plumbing::refusal::Refusal;
 use crate::pool::Archive;
 use crate::settings::Settings;
+use crate::store::documents::settle;
 use crate::wording::{Wording, WordingError};
 
 pub use inventory;
@@ -150,6 +158,15 @@ pub struct Standing {
   pub tool_host: ToolHost,
   /// bmo-agency, at the address the settings name; a test hands a stand-in of its own.
   pub agency: Arc<dyn Agency>,
+  /// bmo-job, at the address the settings name.
+  pub job: Job,
+  /// bmo-receiver, at the address the settings name.
+  pub receiver: Receiver,
+  /// The previews of the pages a document points at, fetched through the tool host and kept under the file
+  /// root; a test hands a cache of its own.
+  pub previews: Arc<PreviewCache>,
+  // Whether the document tables have been settled in this process.
+  settled: Arc<OnceCell<()>>,
 }
 
 impl Standing {
@@ -159,6 +176,10 @@ impl Standing {
     let tool_host =
       ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
     let agency = Arc::new(AgencyClient::new(settings.units.agency.clone()));
+    let job = Job::new(settings.units.job.clone());
+    let receiver = Receiver::new(settings.units.receiver.clone());
+    let previews =
+      Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::new(tool_host.clone())));
 
     Ok(Self {
       settings,
@@ -166,6 +187,28 @@ impl Standing {
       wording,
       tool_host,
       agency,
+      job,
+      receiver,
+      previews,
+      settled: Arc::default(),
+    })
+  }
+
+  /// The archive as the read API reads it, its document tables settled before the first statement asked of
+  /// them (`docs/layout.md`, "Storage").
+  pub async fn library(&self) -> Result<Library, Refused> {
+    let db = self.archive.db().map_err(Refusal::from)?;
+    let prefix = self.settings.documents.kindless_import_prefix.as_deref();
+
+    self.settled.get_or_try_init(|| settle(db, prefix)).await.map_err(Refused::from)?;
+
+    Ok(Library {
+      db: db.clone(),
+      root: self.settings.files.root.clone(),
+      words: self.wording.search.clone(),
+      job: self.job.clone(),
+      receiver: self.receiver.clone(),
+      previews: Arc::clone(&self.previews),
     })
   }
 }
@@ -187,6 +230,28 @@ impl Call {
   /// What the server stands on.
   pub fn standing(&self) -> &Standing {
     &self.standing
+  }
+
+  /// The parameters the route's path names, by name.
+  pub async fn path_params(&mut self) -> Result<HashMap<String, String>, Refused> {
+    let (mut parts, body) = std::mem::take(&mut self.request).into_parts();
+    let read = RawPathParams::from_request_parts(&mut parts, &()).await;
+
+    self.request = Request::from_parts(parts, body);
+
+    let params = read.map_err(Refused::failed)?;
+
+    Ok(params.iter().map(|(name, value)| (name.to_owned(), value.to_owned())).collect())
+  }
+
+  /// One header's value, where it is given and reads as text.
+  pub fn header(&self, name: &str) -> Option<String> {
+    self
+      .request
+      .headers()
+      .get(name)
+      .and_then(|value| value.to_str().ok())
+      .map(str::to_owned)
   }
 
   /// One query parameter, the first where it is given more than once.

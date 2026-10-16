@@ -213,26 +213,79 @@ field names the console reads today.
 
 ### Documents (HTTP)
 
-- `GET /api/archive?kind=&q=&shared=1&before=&limit=`
-  - Lists documents, newest first.
-  - Filters by kind, by a phrase (its length capped) and by shared-only.
-  - Answers with a cursor for the next page.
+Times here are epoch seconds, as the archive's rows keep them. Field names are the ones the console
+reads.
+
+- `GET /api/archive?kind=&q=&shared=1&before=&limit=` answers `200` with a page of documents, newest
+  first: `items` and `hasMore`.
+  - `limit` is read as a whole number off the front of its text; one from 1 is held to 200, and
+    anything else reads 30.
+  - `before` is the number of the last row the caller has; the page ends just before it. One that is
+    not a whole number is refused `400 bad_cursor`.
+  - `shared=1`, and nothing else, holds the page to documents with a live share link: one with no end,
+    or one whose end is still to come.
+  - `kind` holds it to one kind of the catalogue; a word the catalogue does not know is no filter.
+  - `q`, cut to 200 characters, holds it to documents saying the phrase, matched whole and without
+    regard to case in the title, the question, the topic, the keywords, the rule, the room's name and
+    the body. An empty or blank phrase is no search.
+  - Each filter is done in the reading itself, so a filtered page is a full page.
   - A search that left no document is never listed.
-- `GET /api/archive/{id}` reads one document: its head (question, topic, keywords, rule, options,
-  state, timing), the outline its kind builds, its findings, sources, attachments and pictures, and
-  its share state. A page answers with no summary and no contents.
-- `GET /api/archive/{id}/document` serves the document's file.
-  - A markdown document is served as kept.
-  - An HTML page is served as a hosted page: sandboxed, with its link and picture bridges and the
-    reader's colour scheme.
-- `GET /api/archive/{id}/attachments/{attachment}` serves one attachment's bytes.
-- `GET /api/archive/{id}/refs/{ref}/preview` and `GET /api/archive/{id}/refs/{ref}/image` serve
-  the preview and the picture of a source the body points at.
-- Moved screens:
-  - `/searches` and `/searches/<rest>` answer with the matching `/archive` address, query kept.
-  - `/collected` answers with `/archive`.
-- Every address stays inside its own document's folder.
-- Caller: the console plugin bundle in this repository's `client/`.
+  - An item: `id`, `chatId`, `room` (the room's name as bmo-receiver gives it, or null), `query`,
+    `startedDepth`, `endedDepth`, `status`, `startedAt`, `finishedAt`, `findings` and `sources` (their
+    counts), `title`, `topic`, `keywords` (a list), `rule`, `options` (an object of strings), `kind`,
+    `author`, `documented` and `shared` (`expiresAt`, null for a link with no end; null for a document
+    with no live link). A searched list adds `excerpt`: the body's words around the first hit, or null
+    where only the head said the phrase.
+- `GET /api/archive/kinds` answers `200` with `kinds`, the catalogue in its order, each `id`,
+  `labelKey` (the key the console's language packs name its label by), `summary`, `hosted`,
+  `searched` and `head` (the properties its head shows).
+- `GET /api/archive/{id}` answers `200` with one document whole, or `404 document_not_found`; a number
+  that is not a whole number from 1 is refused `400 bad_id`.
+  - `search`: the item's fields, `shared` as the list reads it, `runs` (every run that carried it, as
+    bmo-job lists them) and `document` (whether its file is there to read).
+  - `kind`: the document's kind as the catalogue answers it. A word the catalogue does not know reads
+    as `search`.
+  - `outline`: `entries`, the table of contents its kind makes, each `slug`, `text`, `depth` and
+    `level` (`part`, `chapter`, `section` or null); and `marks`, the marks each finding's headings are
+    stamped with, by the finding's place. A page has no entries and no marks.
+  - `findings`: each `place`, `runId`, `branch`, `text`, `images` (each `ref`, `url`, `caption`),
+    `links` (each `ref`, `url`, `label`) and `sources` (each `ref`, `url`, `title`, `supports`,
+    `mark`). A link that is one of the document's sources, or a picture's address, is not listed as a
+    link. The label of a link from a map, street-view or review line is the wording file's.
+  - `opened`: the pages it opened and cited under nothing, as sources.
+  - `attachments`: each `id`, `media`, `type`, `bytes` and `name`, every file but a picture a result
+    named by its address.
+- A ref names a place in a document's record: `s<id>` a source row, `i<place>.<n>` the `n`th picture
+  and `l<place>.<n>` the `n`th link of the finding at `place`.
+- `GET /api/archive/{id}/document` serves the document's file as it was written, to keep:
+  `text/markdown`, named `search-<id>.md`, never cached. `404 document_not_found` where the document has
+  no file inside its folder.
+- `GET /api/archive/{id}/attachments/{attachment}` serves one file the document keeps, looked up under
+  that document. `404 attachment_not_found` for a number that is not its; `400 bad_attachment_id` for
+  one that is not a whole number from 1.
+  - `download=1` sends it to keep, under its name.
+  - A `Range` header is answered `206` with the stretch asked; one no file holds is answered with the
+    whole file.
+  - An HTML page is sent as a hosted page (see "An HTML page" in `docs/archive.md`) unless it is asked
+    for to keep: its prelude ahead of its first element, in the scheme `scheme` names, else the one the
+    console's cookie keeps, else dark. It goes out under the sandboxed page policy.
+  - Every other file goes out under the policy that lets nothing on it run.
+- `GET /api/archive/{id}/refs/{ref}/preview` answers `200` with what a source or a link shows of
+  itself: `title`, `thumbnail` and `favicon` (whether it has each picture). `404 no_such_source` for a
+  picture's ref and for a ref the record does not hold.
+- `GET /api/archive/{id}/refs/{ref}/image?as=` sends a picture: the picture itself for a picture's ref,
+  its kept copy first; `as=thumb` and `as=favicon` the page's picture and icon for a source or a link.
+  It goes out as the type its bytes are, not sniffed and sandboxed. `404 image_unavailable` where there
+  is none.
+  - A preview and a picture are fetched through bmo-explorer (see "Fetch a page's head") and kept under
+    the file root's `web-cache`: a preview for a week, a picture for a month, a failure for a day, and
+    a fetch that ran out of time not at all.
+- Moved screens, each answered `301` under the console address's own path, the query kept:
+  - `/searches` and `/searches/` to `/archive`, and `/searches/<rest>` to `/archive/<rest>`;
+  - `/collected` and `/collected/` to `/archive`.
+- Every file is served only from inside its own document's folder, every link resolved.
+- Caller: the console plugin bundle in this repository's `client/`, through bmo-web, which signs the
+  caller in.
 
 ### Share links (HTTP)
 
@@ -323,6 +376,21 @@ A key is its groups joined by dots. The marks are those its line is filled in wi
 | `search.fields.review_link` | `{page}` | The link to the page a review stands on |
 | `search.fields.no_rating` | none | The rating written where there is none |
 | `search.fields.original` | `{address}` | Where a picture kept as the archive's own copy came from |
+| `search.reading.address` | none | The label of an entry's address, as the console's reading draws a finding |
+| `search.reading.map` | none | The label of a map link, and of a link a finding points at from its map line |
+| `search.reading.street_view` | none | The label of a street view link, the same way |
+| `search.reading.menu` | none | What a menu is folded under |
+| `search.reading.dish` | none | A menu's first column |
+| `search.reading.price` | none | A menu's price column |
+| `search.reading.notes` | none | A menu's column for notes, where a dish has one |
+| `search.reading.released` | none | The label of when a product was released |
+| `search.reading.newer` | none | The label of a newer model |
+| `search.reading.stock` | none | The label of a product's state |
+| `search.reading.product_page` | none | The link to a product's page |
+| `search.reading.deal` | none | The label of a deal |
+| `search.reading.usual` | `{usual}` | What a deal stands against |
+| `search.reading.review` | none | The link to the page a review stands on, and the label of a link a finding points at from its review |
+| `search.reading.untitled` | `{place}` | What a finding with no words of its own is called in the contents |
 | `search.import.answered` | none | That a page was brought in whole |
 | `search.import.topic` | `{host}` | Its topic, by the page's host |
 | `search.import.missing` | `{n}`, `{caption}` | A figure that could not be captured |
@@ -343,7 +411,8 @@ room-holding answer (see "Room holding") before it removes a room.
 | Import a page, fetch a raster picture, check an address, pace requests per host and engine | bmo-explorer, through the tool host |
 | Read the search-engine values a research profile chooses among | bmo-explorer, through the tool host |
 | Start a briefing of a finished document | bmo-voice |
-| Who sent the message that asked, when, and on what road | bmo-receiver |
+| Who sent the message that asked, when, and on what road; what each room is called | bmo-receiver |
+| Fetch the head of a page a document cites, for its preview | bmo-explorer, through the tool host |
 | Pick the knowledge a piece of work is handed | bmo-gate |
 | Start, read and stop a research run apart, which bmo-agency carries on the accounts its road is offered | bmo-agency |
 | Read providers in their order and enablement, tiers, tier assignments and routes, and check an effort | bmo-agency |
@@ -398,6 +467,13 @@ The calls to bmo-job, bmo-receiver and bmo-gate share one shape:
     that gets no answer is reported with the failure's own words.
   - A page is waited for 150 seconds and a picture 60. A call that takes longer is given up as
     failed.
+- **Fetch a page's head** (bmo-explorer, through the tool host): `explorer/fetch_page`, handed
+  `address` and `pacing`, on the same `POST /calls` and refused the same ways. bmo-explorer fetches
+  the page directly, checking the address and each redirect, and reads at most 512 KiB of it. Its
+  structured content carries `url`, the address after every redirect; `type`, the content type as the
+  server sent it; and `html`, the page decoded as its charset says, where it is markup, null otherwise.
+  The read API reads a preview out of it, and fetches the preview's pictures by `explorer/fetch_raster`.
+  A fetch is waited for 10 seconds.
 - **Read the search engines** (bmo-explorer, through the tool host): `explorer/search_engines`,
   handed nothing, on the same `POST /calls`, refused the same ways and waited for 30 seconds. Its
   structured content carries:
@@ -438,8 +514,12 @@ hands back for the room's session.
 | Call | Method and path | Request | Answer |
 |---|---|---|---|
 | Read a message | `GET /rooms/{room}/messages/{message}` | | `sender_id?`, `sender_name?`, `sent_at`, `via`; 404 where the room holds no such message |
+| List the rooms' names | `GET /rooms` | | `rooms`, each `chat_id` and `title?` |
 
 - **`via`** is the road the message came in on, which bmo-receiver always names.
+- **The rooms' names** are read once for each list or document read: they stand on each row and a
+  phrase is matched in them. Where bmo-receiver cannot be asked, rows carry no room's name and no row
+  is found by one.
 - **A message whose sender is unknown** leaves the search's asker unknown, and the launcher says so in
   a note.
 

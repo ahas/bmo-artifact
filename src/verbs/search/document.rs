@@ -16,13 +16,10 @@ use crate::helpers::marks::fill_marks;
 use crate::helpers::run_log::json::Json;
 use crate::helpers::run_log::lines::{BRANCH_TOOLS, stream_lines};
 use crate::helpers::toolbook::mcp_call_of;
+use crate::kinds::known;
 use crate::verbs::archive_docs::document_time;
 use crate::wording::Wording;
 use crate::wording::search::Search;
-
-/// The archive's kinds a search may write itself, on its result's `KIND:` line; any other word leaves the
-/// row's own kind standing, since a run cannot make its result a page or an import by saying so.
-pub const SEARCHED_KINDS: [&str; 2] = ["search", "learning"];
 
 // The line that separates one entry of a set from the next, and the line a claim's page arrives on.
 static ITEM_BREAK: LazyLock<Regex> =
@@ -106,7 +103,9 @@ pub fn result_head(result: &str) -> ResultHead {
       "KIND" if head.kind.is_none() => {
         let lower = value.to_lowercase();
 
-        head.kind = SEARCHED_KINDS.iter().find(|kind| **kind == lower).map(|kind| (*kind).to_owned());
+        // Only a kind a search may write itself is taken; any other word leaves the row's own kind
+        // standing, since a run cannot make its result a page or an import by saying so.
+        head.kind = known(Some(&lower)).filter(|kind| kind.searched()).map(|kind| kind.id().to_owned());
       }
       "KEYWORDS" if head.keywords.is_empty() => {
         head.keywords = KEYWORD_BREAK

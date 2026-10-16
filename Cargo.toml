@@ -27,18 +27,31 @@ chrono = { version = "0.4.45", default-features = false, features = ["std", "clo
 # The time zone a sentence or a document states a time in, read from the settings by its name.
 chrono-tz = { version = "0.10.4", features = ["serde"] }
 clap = { version = "4.6.7", features = ["derive"] }
+# The reader's scheme, read off the cookie the console keeps it in.
+cookie = "0.18.2"
 # The settings files and the environment, layered in that order.
 config = { version = "0.15", default-features = false, features = ["toml"] }
 # A picture an HTML page carries inside itself as a data address.
 data-url = "0.3.2"
 # The tree an HTML page is read from.
 ego-tree = "0.10.0"
+# The inline marks a heading's or a title's words lose, ported as the console reads them: the patterns
+# need look-around and back-references.
+fancy-regex = "0.19.2"
 # A search's pictures fetched in a few lanes at once.
 futures-util = { version = "0.3.34", default-features = false, features = ["alloc"] }
+# The stretch of a kept file a player asks for, read off its Range header.
+headers = "0.4.2"
 # A kept picture decoded, brought inside its largest side and written as AVIF.
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "gif", "webp", "tiff", "avif"] }
 # Each route and each verb registers itself beside its own answer.
 inventory = "0.3.24"
+# A hosted page's prelude put ahead of its first element, after its doctype.
+lol_html = "3.0.1"
+# A footnote's in-page address, and the words a map link searches for.
+percent-encoding = "2.3.2"
+# The headings of a document's markdown.
+pulldown-cmark = { version = "0.13.4", default-features = false }
 # A share link's token's bytes.
 rand = "0.9.2"
 # A kept AVIF picture's AV1 frames decoded.

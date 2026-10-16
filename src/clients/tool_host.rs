@@ -171,6 +171,17 @@ impl ToolHost {
     Ok(result)
   }
 
+  /// The head of a page a document cites, fetched for its preview: the address after every redirect, its
+  /// content type and its markup, cut at the preview's bound (`docs/api.md`, "Fetch a page's head").
+  pub async fn fetch_page(&self, address: &str) -> Result<crate::documents::preview::FetchedPage, String> {
+    let result = self
+      .call("explorer/fetch_page", json!({ "address": address, "pacing": self.pacing }))
+      .await?;
+
+    serde_json::from_value(result.structured_content.unwrap_or_default())
+      .map_err(|why| format!("explorer/fetch_page answered no page: {why}"))
+  }
+
   /// The search engines a research run may query, in bmo-explorer's order, and the rest each refusal
   /// earns (`docs/api.md`, "Read the search engines").
   pub async fn search_engines(&self) -> Result<SearchEngines, String> {

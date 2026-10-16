@@ -102,6 +102,27 @@ search:
     no_rating: "none"
     original: "Original: {address}"
 
+  # What the console's reading of a finding draws in its own words: the labels of an entry's lines, the
+  # columns of a menu, the link to a product page and to a review, the {usual} price a deal stands against,
+  # and what a finding with no words of its own is called by its {place}. The map, street-view and review
+  # labels also name the links a finding points at.
+  reading:
+    address: "Address"
+    map: "Map"
+    street_view: "Street view"
+    menu: "Menu"
+    dish: "Dish"
+    price: "Price"
+    notes: "Notes"
+    released: "Released"
+    newer: "Newest model"
+    stock: "Availability"
+    product_page: "Product page"
+    deal: "Deal"
+    usual: "usually {usual}"
+    review: "Review"
+    untitled: "Part {place}"
+
   # A page brought in whole, as its result: the line that says it was answered, its topic by the page's
   # {host}, the figure {n} with its {caption} that could not be captured, and what each source line says of
   # the page kept, of the address asked that moved to it, and of a work the page cites with its {text}
