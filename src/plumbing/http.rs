@@ -14,6 +14,7 @@ use serde_json::{Value, json};
 
 use crate::pool::Archive;
 use crate::settings::Settings;
+use crate::wording::{Wording, WordingError};
 
 pub use inventory;
 
@@ -127,13 +128,20 @@ pub struct Standing {
   pub settings: Settings,
   /// The database the settings name, opened on the first statement a route asks of it.
   pub archive: Archive,
+  /// The document wording the settings name, read when the server starts.
+  pub wording: Wording,
 }
 
 impl Standing {
-  pub fn new(settings: Settings) -> Self {
+  pub fn new(settings: Settings) -> Result<Self, WordingError> {
     let archive = Archive::new(settings.database.url.clone());
+    let wording = Wording::read(settings.wording.file.as_deref())?;
 
-    Self { settings, archive }
+    Ok(Self {
+      settings,
+      archive,
+      wording,
+    })
   }
 }
 

@@ -30,7 +30,14 @@ src/
     migration/             the six document tables' migration and its migrator
     entity/                one SeaORM entity per document table
   plumbing/                errors, refusals, CLI and HTTP answers
-  helpers/                 copied helpers and the five Rust twins
+  helpers/                 copied helpers and the Rust twins
+    js.rs                  JavaScript's white space and a text's characters
+    web_address.rs         the web addresses a text names
+    marks.rs               a wording line's {name} marks filled in
+    ceiling.rs             the answer ceiling and its counts
+    lines.rs               a launch's trees, its required documents and their {{name}} marks
+    toolbook.rs            a toolbook proxy call read as the tool it reached
+    run_log/               the run log's JSON and the lines a run's stream leaves
   wording.rs               the document wording file and its English default
   clients/                 bmo-job, bmo-agency, bmo-voice, bmo-receiver, and the tool host for bmo-explorer
   verbs/
@@ -79,16 +86,18 @@ The plumbing is what every verb and every route stands on, and it knows none of 
   is one: status 500, with "the archive's database" and the failure as its sentence. A verb ends
   with failure on it and prints its sentence. A route answers with its status, and the code is that
   status's own name in snake_case.
-- **The shell** is what a verb run from the CLI stands on: the settings it was started with, and the
-  database they name. The database is opened when a verb asks its first statement of it. Each later
-  piece a verb needs (a client of another unit) is added to the shell, not opened by the verb.
+- **The shell** is what a verb run from the CLI stands on: the settings it was started with, the
+  database they name, and the document wording they name. The database is opened when a verb asks
+  its first statement of it. The wording is read when the shell is made, so a wording file that is
+  refused stops every verb before it runs. Each later piece a verb needs (a client of another unit)
+  is added to the shell, not opened by the verb.
 - **A route** declares its method and its path and answers one call. A call carries the request,
   its query and its JSON body, and what the server stands on. A route answers a response or a
   refusal: a status, a snake_case code and an English message.
 - **Each route registers itself** beside its own answer, so adding a route changes no file but its
   own. The server refuses to start where two routes name the same method and path.
-- **What the server stands on** is its settings and the database they name, opened the same way as
-  the shell's.
+- **What the server stands on** is its settings and the database and the document wording they
+  name, opened and read the same way as the shell's.
 
 ## Why the console screen sits in `client/`, not in bmo-web
 
@@ -128,13 +137,15 @@ environment. `src/settings.rs` reads them all.
   key, sets that key: `BMO_ARTIFACT_DATABASE__URL` sets the database address.
 - **The listen address** of the HTTP server.
 - **Storage address and file root**, as above.
-- **The document wording file's path.** Sentences a room reads come from this file:
+- **The document wording file's path,** `file` under `[wording]`. Sentences a room reads come from
+  this file:
   - a filed document's reply;
   - a search's notices.
 
-  The English default ships in `lang/`. bmo-web's language pack supplies the live wording under the
-  same keys.
-- **The time zone** used when a sentence or a document states a time.
+  Where no path is set, the English default in `lang/` is read. bmo-web's language pack supplies the
+  live wording under the same keys, which `docs/api.md` lists under "Wording".
+- **The time zone** used when a sentence or a document states a time, `zone` under `[time]`, by its
+  IANA name. The committed default is UTC; a deployment sets its own.
 - **The research profiles and their seeds**, which carry the old research policy files.
 - **The address of each unit this repository calls**, as `docs/api.md` lists them.
 

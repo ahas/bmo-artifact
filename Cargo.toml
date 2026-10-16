@@ -20,20 +20,29 @@ test = false
 [dependencies]
 axum = "0.8.9"
 chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
+# The time zone a sentence or a document states a time in, read from the settings by its name.
+chrono-tz = { version = "0.10.4", features = ["serde"] }
 clap = { version = "4.6.7", features = ["derive"] }
 # The settings files and the environment, layered in that order.
 config = { version = "0.15", default-features = false, features = ["toml"] }
 # Each route registers itself beside its own answer.
 inventory = "0.3.24"
+# The helpers' patterns: a web address in a sentence, a document's marks, an MCP tool's name.
+regex = "1.13.1"
 # The document tables: their entities and statements, and their one migration.
 sea-orm = { version = "1.1.20", default-features = false, features = ["macros", "runtime-tokio-rustls", "sqlx-postgres"] }
 sea-orm-migration = { version = "1.1.20", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
+# The document wording file.
+serde-saphyr = { version = "2.0.0", default-features = false, features = ["deserialize"] }
 # PostgreSQL's client under sea-orm, taken by itself for the pool's options and its error codes.
 sqlx = { version = "0.8.6", default-features = false, features = ["postgres", "runtime-tokio"] }
 thiserror = "2.0.21"
 tokio = { version = "1.53.2", features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+# Whether a text reads as a web address, as a browser reads one; and a scratch database's address in the
+# tests, which is the test server's with another database in it.
+url = "2.5.8"
 
 [dev-dependencies]
 # The repository checks read Rust files and manifests through their own libraries.
@@ -41,5 +50,3 @@ syn = { version = "2.0.119", features = ["full", "visit"] }
 tempfile = "3.27.0"
 toml = { version = "0.8.23", default-features = false, features = ["parse"] }
 tower = { version = "0.5.2", features = ["util"] }
-# A scratch database's address is the test server's with another database in it.
-url = "2.5.8"

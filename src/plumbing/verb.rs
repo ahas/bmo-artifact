@@ -5,6 +5,7 @@ use sea_orm::DbErr;
 use crate::plumbing::refusal::Refusal;
 use crate::pool::{Archive, Fault};
 use crate::settings::Settings;
+use crate::wording::{Wording, WordingError};
 
 /// What a verb answers: the lines it prints, and the code it ends with where that is not success.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -60,13 +61,20 @@ pub struct Shell {
   pub settings: Settings,
   /// The database the settings name, opened on the first statement a verb asks of it.
   pub archive: Archive,
+  /// The document wording the settings name, read when the shell is made.
+  pub wording: Wording,
 }
 
 impl Shell {
-  pub fn new(settings: Settings) -> Self {
+  pub fn new(settings: Settings) -> Result<Self, WordingError> {
     let archive = Archive::new(settings.database.url.clone());
+    let wording = Wording::read(settings.wording.file.as_deref())?;
 
-    Self { settings, archive }
+    Ok(Self {
+      settings,
+      archive,
+      wording,
+    })
   }
 }
 

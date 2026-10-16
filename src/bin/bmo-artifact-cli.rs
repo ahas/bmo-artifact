@@ -25,8 +25,8 @@ enum Verb {
 #[tokio::main]
 async fn main() -> ExitCode {
   let cli = Cli::parse();
-  let shell = match Settings::load() {
-    Ok(settings) => Shell::new(settings),
+  let shell = match shell() {
+    Ok(shell) => shell,
     Err(why) => {
       eprintln!("{why}");
       return ExitCode::from(FAILURE);
@@ -43,6 +43,13 @@ async fn main() -> ExitCode {
   }
 
   ExitCode::from(ended.code)
+}
+
+// The shell the settings of the starting directory make, or the sentence saying why there is none.
+fn shell() -> Result<Shell, String> {
+  let settings = Settings::load().map_err(|why| why.to_string())?;
+
+  Shell::new(settings).map_err(|why| why.to_string())
 }
 
 async fn run(verb: Verb, shell: &Shell) -> Result<Answer, VerbError> {

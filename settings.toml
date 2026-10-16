@@ -9,3 +9,9 @@ url = "postgres://localhost/bmo_artifact"
 
 [files]
 root = "data"
+
+# The document wording file is the English default in lang/ until `file` names another.
+[wording]
+
+[time]
+zone = "UTC"

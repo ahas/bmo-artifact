@@ -130,7 +130,7 @@ async fn a_shell_opens_the_database_its_settings_name() {
   let scratch = Scratch::new().await;
   let environment = HashMap::from([("BMO_ARTIFACT_DATABASE__URL".to_owned(), scratch.address())]);
   let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
-  let shell = Shell::new(settings);
+  let shell = Shell::new(settings).expect("the shell stands");
 
   assert_eq!(shell.archive.place(), scratch.address());
 

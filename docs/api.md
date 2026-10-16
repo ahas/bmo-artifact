@@ -140,11 +140,84 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
 
 ### Wording
 
-- Sentences a room reads (a filed document's reply, a search's notices) come from the document
-  wording file.
-- Its path is a setting, and an English default ships with this repository.
-- bmo-web's language pack supplies the live wording under the same keys.
-- The time zone used in those sentences is a setting.
+- Sentences a room reads (a filed document's reply, a search's notices) and the lines a document
+  says of itself come from the document wording file.
+- Its path is a setting. Where none is set, the English default that ships with this repository is
+  read.
+- bmo-web's language pack supplies the live wording under the same keys. A file holds every key
+  below and no other. The server does not start, and no verb runs, on a file that cannot be read,
+  lacks a key or holds one more; the refusal names the file and the key.
+- Each line is filled in by its `{name}` marks. A mark nothing is named for stays as written.
+- The time zone those lines state a time in is a setting, by its IANA name. A document's moment is
+  told in it on a twelve-hour clock.
+
+A key is its groups joined by dots. The marks are those its line is filled in with.
+
+| Key | Marks | What the line says |
+|---|---|---|
+| `archive_docs.header.kind` | `{kind}` | A filed document's kind, by its label under `archive_docs.kinds` |
+| `archive_docs.header.request` | `{request}` | What the document was written for |
+| `archive_docs.header.written` | `{time}` | When it was written, as `archive_docs.time.line` tells it |
+| `archive_docs.header.attached` | `{names}` | The files it keeps, where it keeps any |
+| `archive_docs.kinds.record` | none | What a record is called |
+| `archive_docs.kinds.learning` | none | What learning material is called |
+| `archive_docs.kinds.import` | none | What a page brought in whole is called |
+| `archive_docs.kinds.page` | none | What an HTML page is called |
+| `archive_docs.time.line` | `{year}`, `{month}`, `{day}`, `{half}`, `{hour}`, `{minute}` | A moment, with the hour on a twelve-hour clock |
+| `archive_docs.time.morning` | none | The `{half}` before noon |
+| `archive_docs.time.afternoon` | none | The `{half}` from noon |
+| `search.archive_name` | none | What the console's collection of documents is called |
+| `search.import_query` | `{source}` | The question a page brought in whole stands under |
+| `search.head.untitled` | `{query}` | A search document's title where the result gave none |
+| `search.head.query` | `{value}` | The head's question line |
+| `search.head.topic` | `{value}` | The head's topic line |
+| `search.head.keywords` | `{value}` | The head's keywords line |
+| `search.head.rule` | `{value}` | The rule the search applied |
+| `search.head.option` | `{name}`, `{value}` | One option the search was given |
+| `search.head.depth` | `{value}` | The search's depth |
+| `search.head.status` | `{value}` | The search's status |
+| `search.head.started` | `{value}` | When it started |
+| `search.head.finished` | `{value}` | When it finished |
+| `search.head.runs` | `{value}` | The runs it took |
+| `search.result.heading` | none | The result's heading |
+| `search.result.empty` | none | What stands under it while nothing is written |
+| `search.result.branch` | `{branch}` | The branch a finding came out of |
+| `search.result.sources` | none | The heading of the pages the result cites |
+| `search.trail.heading` | none | The heading of the trail folded under the result |
+| `search.trail.summary` | none | The line that opens the trail |
+| `search.trail.own` | none | The run's own section |
+| `search.trail.run` | `{run}` | The run a branch was opened in, where the search took several |
+| `search.trail.asked` | none | What one branch asked |
+| `search.trail.opened` | none | The pages one branch opened |
+| `search.trail.found` | none | What one branch found |
+| `search.parts.VERDICT` | none | The short answer part of a result's body |
+| `search.parts.SUMMARY` | none | The summary part |
+| `search.parts.INTRO` | none | The introduction part |
+| `search.parts.BODY` | none | The body part |
+| `search.parts.CONCLUSION` | none | The conclusion part |
+| `search.parts.UNCONFIRMED` | none | What could not be confirmed |
+| `search.parts.MORE` | none | The part in detail |
+| `search.fields.ADDRESS` | `{value}` | An entry's address line |
+| `search.fields.MAP` | `{value}` | An entry's map line |
+| `search.fields.ROADVIEW` | `{value}` | An entry's street view line |
+| `search.fields.MENU` | `{value}` | An entry's menu line |
+| `search.fields.menu_alone` | none | A menu line with the menu under it |
+| `search.fields.RELEASED` | `{value}` | When a product was released |
+| `search.fields.NEWER` | `{value}` | A newer model of it |
+| `search.fields.STOCK` | `{value}` | Its state, when it was read and where, joined |
+| `search.fields.deal` | `{now}`, `{usual}`, `{real}` | A deal: its price now, then the two pieces below |
+| `search.fields.deal_usual` | `{usual}` | A deal's usual price, where given |
+| `search.fields.deal_real` | `{real}` | The real word on a deal, where given |
+| `search.fields.review_link` | `{page}` | The link to the page a review stands on |
+| `search.fields.no_rating` | none | The rating written where there is none |
+| `search.fields.original` | `{address}` | Where a picture kept as the archive's own copy came from |
+| `search.import.answered` | none | That a page was brought in whole |
+| `search.import.topic` | `{host}` | Its topic, by the page's host |
+| `search.import.missing` | `{n}`, `{caption}` | A figure that could not be captured |
+| `search.import.kept` | none | The source line of the page kept |
+| `search.import.moved` | none | The source line of the address asked, which moved to the page kept |
+| `search.import.cited` | none | The source line of a work the page cites |
+| `search.import.cited_text` | `{text}` | The same, with the work's own words |
 
 ## What this repository calls
 

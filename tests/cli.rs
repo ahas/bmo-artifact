@@ -25,6 +25,24 @@ fn the_version_verb_prints_the_version() {
 }
 
 #[test]
+fn a_wording_file_that_cannot_be_read_stops_every_verb() {
+  let output = Command::new(env!("CARGO_BIN_EXE_bmo-artifact-cli"))
+    .arg("version")
+    .env("BMO_ARTIFACT_WORDING__FILE", "no-such-wording.yaml")
+    .current_dir(ROOT)
+    .output()
+    .expect("the CLI runs");
+
+  assert_eq!(output.status.code(), Some(1));
+  assert!(output.stdout.is_empty());
+  assert!(
+    String::from_utf8_lossy(&output.stderr).starts_with("the document wording file no-such-wording.yaml: "),
+    "{}",
+    String::from_utf8_lossy(&output.stderr)
+  );
+}
+
+#[test]
 fn an_unknown_verb_fails() {
   let output = cli(&["no-such-verb"]);
 

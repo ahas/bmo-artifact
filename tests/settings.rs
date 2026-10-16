@@ -31,6 +31,25 @@ fn the_committed_settings_read() {
   assert_eq!(settings.server.listen.to_string(), "127.0.0.1:3230");
   assert_eq!(settings.database.url, "postgres://localhost/bmo_artifact");
   assert_eq!(settings.files.root, Path::new("data"));
+  assert_eq!(settings.wording.file, None);
+  assert_eq!(settings.time.zone, chrono_tz::UTC);
+}
+
+#[test]
+fn the_wording_file_and_the_time_zone_are_set_like_any_key() {
+  let dir = dir_with(Some("[time]\nzone = \"America/New_York\"\n"));
+  let environment = HashMap::from([("BMO_ARTIFACT_WORDING__FILE".to_owned(), "documents.yaml".to_owned())]);
+  let settings = Settings::read(dir.path(), Some(environment)).expect("the settings read");
+
+  assert_eq!(settings.time.zone, chrono_tz::America::New_York);
+  assert_eq!(settings.wording.file.as_deref(), Some(Path::new("documents.yaml")));
+}
+
+#[test]
+fn a_time_zone_no_one_names_is_refused() {
+  let dir = dir_with(Some("[time]\nzone = \"Nowhere/Town\"\n"));
+
+  assert!(Settings::read(dir.path(), Some(HashMap::new())).is_err());
 }
 
 #[test]

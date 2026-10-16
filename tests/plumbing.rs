@@ -141,7 +141,7 @@ bmo_artifact::route!(Taken);
 
 async fn call(method: Method, uri: &str, body: &str) -> (StatusCode, Value) {
   let settings = Settings::read(Path::new(ROOT), Some(HashMap::new())).expect("the settings read");
-  let router = router(Standing::new(settings)).expect("the routes stand");
+  let router = router(Standing::new(settings).expect("the server stands")).expect("the routes stand");
   let request = Request::builder()
     .method(method)
     .uri(uri)

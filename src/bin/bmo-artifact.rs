@@ -17,7 +17,14 @@ async fn main() -> ExitCode {
     }
   };
   let listen = settings.server.listen;
-  let router = match router(Standing::new(settings)) {
+  let standing = match Standing::new(settings) {
+    Ok(standing) => standing,
+    Err(why) => {
+      eprintln!("{why}");
+      return ExitCode::FAILURE;
+    }
+  };
+  let router = match router(standing) {
     Ok(router) => router,
     Err(faults) => {
       eprintln!("the routes cannot be served: {}", faults.join("; "));

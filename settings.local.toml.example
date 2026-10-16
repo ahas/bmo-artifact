@@ -9,3 +9,9 @@ url = "postgres://artifact:secret@localhost:5432/bmo_artifact"
 
 [files]
 root = "/srv/bmo-artifact/files"
+
+[wording]
+file = "/srv/bmo-artifact/documents.yaml"
+
+[time]
+zone = "UTC"

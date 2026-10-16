@@ -21,6 +21,10 @@ pub struct Settings {
   pub server: Server,
   pub database: Database,
   pub files: Files,
+  /// Nothing set here reads the English default.
+  #[serde(default)]
+  pub wording: WordingFile,
+  pub time: Time,
 }
 
 /// The HTTP server.
@@ -42,6 +46,21 @@ pub struct Database {
 pub struct Files {
   /// The folder holding `searches/<document id>/`; a relative one is read from where the process starts.
   pub root: PathBuf,
+}
+
+/// The document wording file (`docs/api.md`, "Wording").
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct WordingFile {
+  /// The file a document's lines and a search's notices are read from; a relative one is read from where
+  /// the process starts, and none reads the English default in `lang/`.
+  pub file: Option<PathBuf>,
+}
+
+/// How a sentence or a document states a time.
+#[derive(Clone, Debug, Deserialize)]
+pub struct Time {
+  /// The time zone, by its IANA name.
+  pub zone: chrono_tz::Tz,
 }
 
 /// Why the settings could not be read.

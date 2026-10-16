@@ -95,7 +95,16 @@ to the unit that owns it.
 - `fill_marks` (bmo-policy's library root)
 - `count_text`, `Said` and `cap_items` (bmo-tool's ceiling module)
 
-Only these items are copied. The crates themselves are not depended on.
+Only these items are copied, with what they stand on:
+
+- `web_address.rs` stands on bmo-markup's JavaScript white space and character helpers, which
+  `run_log::lines::stream_lines` also trims with;
+- the ceiling module comes whole, `cap_value` and its constants with it;
+- `run_log::lines` reads a toolbook proxy call as the tool it reached, so harness-providers' toolbook
+  reading comes with it.
+
+The crates themselves are not depended on. `lines::Trees` comes without the constructor that reads
+`places::Ground`; whatever step 9 makes of `places::Ground` builds it.
 
 ## 6. TypeScript ported to Rust (16 files)
 
