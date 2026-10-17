@@ -52,12 +52,16 @@ fn opens_on_the_sheet_of_the_readers_scheme_the_clipboard_picture_and_link_bridg
 fn the_picture_bridge_reads_the_one_rule_the_console_reads() {
   let bridge = picture_bridge();
 
+  assert!(bridge.starts_with("<script>((viewer) => {"), "{bridge}");
   assert!(
-    bridge.contains(r#"const q="img:not(a[href] img, button img, [role=\"button\"] img"#),
+    bridge.contains(r#"})({"pictures":"img:not(a[href] img, button img, [role=\"button\"] img"#),
     "{bridge}"
   );
-  assert!(bridge.contains(r"const a=/^(?:https?:|data:image\/)/i;const n=500;"), "{bridge}");
-  assert!(bridge.contains(r#"type:"bmo-pictures""#), "{bridge}");
+  assert!(
+    bridge.contains(r#""address":"^(?:https?:|data:image\\/)","address_flags":"i","message":"bmo-pictures","most_pictures":500"#),
+    "{bridge}"
+  );
+  assert!(bridge.ends_with("})</script>"), "{bridge}");
 }
 
 // ---------------------------------------------------------------- the design a page is drawn in

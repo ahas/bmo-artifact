@@ -676,6 +676,9 @@ written in its place.
     - The one thing it can ask of its frame is to open pictures in the viewer.
   - **Framing:** it is framed only by the console, and only as the whole of a document's screen or of
     a share link's window. No other site may frame it.
+  - **One sandbox for both.** The sandbox, the rest of the policy and the lines that go ahead of the
+    page are kept in the design's files. The server sends the page under them, and the console's
+    frame gives the page the same sandbox.
   - Every other attachment keeps the policy that lets nothing on it run.
 
 ## Diagrams

@@ -198,7 +198,11 @@ These test the behaviour carried above, and no earlier list named them.
 - `client/server/api/share/share.test.ts`.
 
 **What the bundle depends on.** UI primitives come from `bmo-ui`. Language-pack keys stay in
-bmo-web's language pack: the screen calls `t()` with the same keys it uses today.
+bmo-web's language pack: the screen calls `t()` with the same keys it uses today. The console's own
+components the screen stands on, which bmo-ui does not carry, are the host's: the markdown renderer
+that draws a finding, the table of contents and the three pieces of the title bar (`docs/layout.md`,
+"The console plugin bundle"). The kinds' outlines, a finding's name, title and fold, and the page
+bridges come from this repository's server side rather than from the bundle.
 
 ## 8. Policy files (5)
 

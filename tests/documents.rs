@@ -633,6 +633,16 @@ async fn puts_cited_sources_under_their_finding_and_opened_pages_apart_with_its_
   assert_eq!(detail["kind"]["summary"], true);
   assert_eq!(detail["outline"]["entries"][0]["text"], "GEM12");
   assert_eq!(detail["outline"]["marks"]["1"], json!(["1-gem12"]));
+  // Each finding says what it is called and where it folds, so the console reads neither rule for itself.
+  assert_eq!(
+    (&detail["findings"][0]["name"], &detail["findings"][0]["title"]),
+    (&json!("GEM12"), &json!("GEM12"))
+  );
+  assert_eq!(detail["findings"][0]["open"], detail["findings"][0]["text"]);
+  assert_eq!(detail["findings"][0]["folded"], Value::Null);
+  assert_eq!(detail["findings"][1]["name"], Value::Null);
+  // A label with words on its own line opens no part, so the finding is called by its place.
+  assert_eq!(detail["findings"][1]["title"], "Part 2");
   assert!(shelf.library.detail(9999, NOW).await.unwrap().is_none());
 }
 
@@ -887,10 +897,17 @@ async fn read_for_somebody_outside_is_the_document_and_nothing_of_the_console() 
   let mut keys: Vec<&str> = shared.as_object().unwrap().keys().map(String::as_str).collect();
 
   keys.sort_unstable();
-  assert_eq!(keys, ["attachments", "findings", "kind", "opened", "runCount", "title"]);
+  assert_eq!(
+    keys,
+    ["attachments", "findings", "kind", "kindEntry", "opened", "outline", "runCount", "title"]
+  );
   assert_eq!(shared["title"], "Mini PCs are cheapest at the official store");
   assert_eq!(shared["findings"], whole["findings"]);
   assert_eq!(shared["opened"], whole["opened"]);
+  // The kind and the contents a link's reader is drawn by are the console's own.
+  assert_eq!(shared["kind"], whole["search"]["kind"]);
+  assert_eq!(shared["kindEntry"], whole["kind"]);
+  assert_eq!(shared["outline"], whole["outline"]);
 
   // The question stands as the name where the search wrote none, as it does on the console.
   let second = json!(shelf.library.shared(shelf.second, NOW).await.unwrap().unwrap());

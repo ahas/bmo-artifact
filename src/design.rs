@@ -4,7 +4,7 @@
 
 use std::sync::LazyLock;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// What a reader asked to read in: the console's screen mode, where `system` is whatever the reader's own
 /// system asks for.
@@ -54,7 +54,7 @@ struct Palettes {
 }
 
 /// Which pictures open the viewer, and the message a page in the console's frame asks for it by.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Viewer {
   /// The selector a picture that opens the viewer matches.
   pub pictures: String,

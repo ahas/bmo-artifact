@@ -2,38 +2,38 @@
 //! the file as kept, with only a few lines put ahead of its own — the archive's sheet for the reader's scheme,
 //! for a page with a dark scheme of its own the bridge that answers its scheme queries, and the clipboard,
 //! picture and link bridges a page in a sandbox of its own origin needs. The file on the disk stays as it was
-//! handed over; only what is served carries the lines, and a download is the file itself.
+//! handed over; only what is served carries the lines, and a download is the file itself. The sandbox, the
+//! policy and the bridges are read from `design/`, which the console plugin bundle reads too.
 
 use std::cell::Cell;
+use std::sync::LazyLock;
 
 use lol_html::html_content::ContentType;
 use lol_html::{RewriteStrSettings, element, rewrite_str};
 use scraper::{Html, Selector};
+use serde::Deserialize;
 
 use crate::design::{DocumentScheme, PageDesign, default_scheme, page_sheet, scheme_cookie, viewer};
 
-/// The sandbox a page runs in: one list of permissions, which the policy carries and which the console's
-/// own frame gives the page it stands; neither grants the same origin.
-pub const HOSTED_PAGE_SANDBOX: &str =
-  "allow-scripts allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads";
+#[derive(Deserialize)]
+struct Hosting {
+  sandbox: String,
+  policy: Vec<String>,
+}
+
+static HOSTING: LazyLock<Hosting> = LazyLock::new(|| {
+  serde_json::from_str(include_str!("../../design/hosted-page.json")).expect("the hosted page file reads")
+});
 
 /// What a hosted page is let do: run its own scripts and draw what it carries or loads over https, open no
-/// connection, submit no form, and be framed only by the console.
+/// connection, submit no form, and be framed only by the console. It opens on the sandbox the page runs in,
+/// the one list of permissions the console's own frame gives the page it stands too; neither grants the
+/// same origin.
 pub fn hosted_page_policy() -> String {
-  [
-    format!("sandbox {HOSTED_PAGE_SANDBOX}"),
-    "default-src 'none'".to_owned(),
-    "script-src 'unsafe-inline' https:".to_owned(),
-    "style-src 'unsafe-inline' data: https:".to_owned(),
-    "img-src data: blob: https:".to_owned(),
-    "media-src data: blob: https:".to_owned(),
-    "font-src data: https:".to_owned(),
-    "connect-src 'none'".to_owned(),
-    "form-action 'none'".to_owned(),
-    "base-uri 'none'".to_owned(),
-    "frame-ancestors 'self'".to_owned(),
-  ]
-  .join("; ")
+  std::iter::once(format!("sandbox {}", HOSTING.sandbox))
+    .chain(HOSTING.policy.iter().cloned())
+    .collect::<Vec<_>>()
+    .join("; ")
 }
 
 /// What every other kept file is let be: a sound, a video, a picture or a file to keep, and never code.
@@ -41,25 +41,25 @@ pub const KEPT_FILE_POLICY: &str = "default-src 'none'; script-src 'none'; img-s
 
 /// A copy through a selection, which needs no permission an opaque origin lacks, put ahead of the page's own
 /// `writeText`, the Clipboard API kept as its fallback.
-pub const CLIPBOARD_BRIDGE: &str = r#"<script>(()=>{const c=navigator.clipboard;if(!c||!c.writeText)return;const w=c.writeText.bind(c);c.writeText=(t)=>{const a=document.createElement("textarea");a.value=String(t);a.setAttribute("readonly","");a.style.cssText="position:fixed;top:0;left:0;opacity:0";document.body.append(a);a.select();let ok=false;try{ok=document.execCommand("copy")}catch{}a.remove();return ok?Promise.resolve():w(t)}})()</script>"#;
+pub const CLIPBOARD_BRIDGE: &str =
+  concat!("<script>", include_str!("../../design/bridges/clipboard.js"), "</script>");
 
 /// A link the page opens in its own window, opened in a tab of its own instead while the page stands in the
 /// console's frame; a link within the page still moves the page, and one the page aimed elsewhere keeps its
 /// aim.
-pub const LINK_BRIDGE: &str = r##"<script>(()=>{if(window.parent===window)return;addEventListener("click",(e)=>{const l=e.target instanceof Element?e.target.closest("a[href]"):null;if(e.defaultPrevented||!l||(l.target!==""&&l.target!=="_self"))return;if((l.getAttribute("href")??"").startsWith("#")||l.protocol==="javascript:")return;l.target="_blank"})})()</script>"##;
+pub const LINK_BRIDGE: &str =
+  concat!("<script>", include_str!("../../design/bridges/link.js"), "</script>");
 
 /// A page's pictures opened in the console's picture viewer while it stands in the console's frame: the
 /// pictures the shared rule lets open take the pointer that says so, and a plain press on one the page has
 /// not taken for itself is handed to the frame as every such picture the page draws, in order, with the
-/// pressed one among them.
+/// pressed one among them. The bridge is the design's script called with the design's viewer.
 pub fn picture_bridge() -> String {
-  let viewer = viewer();
-  let selector = serde_json::to_string(&viewer.pictures).unwrap_or_default();
-  let message = serde_json::to_string(&viewer.message).unwrap_or_default();
+  let rule = serde_json::to_string(viewer()).unwrap_or_default().replace('<', "\\u003c");
 
   format!(
-    r#"<script>(()=>{{if(window.parent===window)return;const q={selector};const a=/{}/{};const n={};const s=document.createElement("style");s.textContent=q+"{{cursor:zoom-in}}";document.head.append(s);const v=(i)=>{{const src=i.currentSrc||i.src;if(!a.test(src)||i.getClientRects().length===0)return null;const f=i.closest("figure")?.querySelector("figcaption");return{{src,caption:i.alt.trim()||(f?.textContent??"").trim()}}}};addEventListener("click",(e)=>{{const t=e.target;if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||!(t instanceof HTMLImageElement)||!t.matches(q))return;const all=[];let at=-1;for(const i of document.querySelectorAll(q)){{const p=v(i);if(p===null)continue;if(i===t)at=all.length;all.push(p)}}if(at<0)return;const from=Math.max(0,Math.min(at-n/2,all.length-n));setTimeout(()=>{{if(!e.defaultPrevented)parent.postMessage({{type:{message},at:at-from,pictures:all.slice(from,from+n)}},"*")}})}})}})()</script>"#,
-    viewer.address, viewer.address_flags, viewer.most_pictures,
+    "<script>{}({rule})</script>",
+    include_str!("../../design/bridges/picture.js").trim_end()
   )
 }
 

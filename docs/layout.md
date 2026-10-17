@@ -68,13 +68,24 @@ src/
   kinds/                   the catalogue, and the five kinds: search, import, learning, record, page
 design/
   document.json            the palettes, the page sheet's rules and which pictures open the viewer
+  hosted-page.json         the sandbox a kept page runs in and the rest of the policy it is sent under
+  bridges/                 the clipboard, link and picture scripts written ahead of a kept page
 lang/
   documents.en.yaml        the document wording file's English default
 tests/
-client/
+client/                    the console plugin bundle (see "The console plugin bundle")
   package.json
-  app/                     pages, components and domain code of the archive screen
-  shared/
+  bun.lock
+  nuxt.config.ts
+  vendor/                  the packed bmo-ui the manifest takes
+  patches/                 bmo-ui's patch to a dependency, applied in this install
+  app/
+    pages/                 the archive list, one document, and the share page
+    components/            the document body, its sources, its attachments, its pictures and the share dialog
+    domain/                what the screen reads off a document, and the catalogue of kinds
+    assets/css/            the masthead's stylesheet
+  host/                    the components the host owes, declared for the bundle's own typecheck
+  shared/                  the API's types, the head a share link previews by, and the design files read
   tests/
 deploy/
   bmo-artifact.service     the neutral service unit template
@@ -125,8 +136,40 @@ The plumbing is what every verb and every route stands on, and it knows none of 
 The split plan lists each service's own plugin bundle as a kind of client, distinct from bmo-web's
 own client. A worker is fixed per repository. If the archive screen lived in bmo-web, a change to
 it would be a bmo-web diff, reviewed and tested against bmo-web's unrelated code. Keeping the bundle
-here means this repository's tests cover its own screen. bmo-web loads the bundle through the plugin
-contract and never reads its source. The screen's wording keys stay in bmo-web's language pack.
+here means this repository's tests cover its own screen. bmo-web takes the bundle as a package and
+extends it, and reaches nothing else of this repository but its API. The screen's wording keys stay
+in bmo-web's language pack.
+
+## The console plugin bundle
+
+`client/` is a Bun project of its own: its manifest, its lockfile and its Nuxt configuration stand
+there, one level below the root.
+
+- **A Nuxt layer on bmo-ui.** It extends bmo-ui and adds the archive screen's pages, components,
+  domain modules and stylesheet. A host extends it the way it extends bmo-ui.
+- **bmo-ui is a packed copy** kept under `client/vendor/`, named by version, and the manifest takes it
+  from that file, since no registry carries bmo-ui. Moving to another bmo-ui version replaces the
+  copy and the manifest's line together. The lockfile holds the packages bmo-ui and the bundle share
+  at the versions bmo-ui's own lockfile holds, so bmo-ui's patch under `client/patches/` applies.
+- **Its own files by relative path.** In a host, Nuxt binds `~`, `@` and `#shared` to the host's
+  folders, so no file of the bundle reaches another through them. bmo-ui's modules are imported by
+  the package's path.
+- **The design files.** The palette, the rule of which pictures open the viewer and the sandbox a
+  kept page runs in are read from `design/` at the root, the same files the server reads.
+- **Calls.** The screen calls this repository's read API and share API (`docs/api.md`) under the
+  console's own base path. The host proxies them to this service behind its sign-in, and names the
+  signed-in user as `by` when a link is made. The share page's roads take no sign-in.
+- **What the host owes.** Beside what bmo-ui asks of it:
+  - its i18n module, and a language pack answering the keys the screen reads;
+  - the console's markdown renderer, `MarkdownText`, drawing a finding in the archive's document
+    design, its folds, galleries and maps included;
+  - the console's table of contents, `DocumentToc`;
+  - the three pieces of the console's title bar, `DeployMark`, `TodoOpenButton` and `UsageMeters`.
+
+  `client/host/` declares each component by the props the screen hands it, and the bundle's typecheck
+  reads the screen once more with those declarations, so it holds the screen to what it may ask of
+  the host. The folder stands outside `app/`, so a host extending the bundle reads none of it and
+  keeps its own components' types.
 
 ## Storage
 
@@ -226,7 +269,8 @@ environment. `src/settings.rs` reads them all.
 `testbed.toml` at the root is the declaration bmo-testbed reads, in the schema of the testbed's own
 declaration document, so the testbed needs no knowledge of this repository. It names:
 
-- how the suite runs: the Cargo package's tests;
+- how the suite runs: the Cargo package's tests, and the install a fresh tree's console plugin
+  bundle needs before its check runs;
 - the static check, in order: the compile check, the linter and the formatter;
 - the quick checks for the layout and the dependencies, with the three base libraries allowed;
 - the test database: the migration files that name its template, and the `migrate` verb that makes
@@ -245,7 +289,10 @@ no backup itself. The whole-data-root backup and its restore drill belong to the
 - **Repository checks.** Tests in `tests/` also hold the repository to its rules: no Hangul in code
   or tests, no folder named after its parent, Cargo's manifest as the only manifest at the root, no
   test module in `src/`, and the dependency check below.
-- **Client.** The client tests live in `client/tests/`.
+- **Client.** The client tests live in `client/tests/`, every one run with happy-dom's document
+  registered. The bundle's `check` script runs its typecheck and its tests, and is what the testbed
+  runs for it as a project of its own. The files under `client/tests/browser/` drive a real Chromium
+  through playwright-core, and are skipped where the browser it pins is not on the machine.
 - **Scope.** A change confined to these two trees runs only `cargo test` here and the client's test
   command under `client/`.
 - **Database.** A test that needs a database gets a scratch PostgreSQL database of its own. It is
@@ -267,5 +314,6 @@ no backup itself. The whole-data-root backup and its restore drill belong to the
   `bmo-ui` among internal dependencies, and no other `bmo-*` package.
 - **Enforced.** A test in `tests/` fails the moment any other internal name appears in any
   `Cargo.toml` or `package.json` of the repository, or as the first segment of a path in a Rust
-  file. A manifest's path dependency that reaches outside the repository fails it too.
+  file. A manifest's path dependency that reaches outside the repository fails it too. The same test
+  holds `client/package.json` to taking bmo-ui from a file inside the repository.
 - **Other units.** Every other unit is reached through the calls `docs/api.md` lists.

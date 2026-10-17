@@ -1,0 +1,16 @@
+{
+  "about": "How a kept HTML page stands when it is opened (docs/archive.md, \"An HTML page\"): the sandbox it runs in, which the server's policy carries and the console plugin bundle's frame gives the page it stands, and the rest of the policy the server sends it under. The scripts under bridges/ are the lines the server writes ahead of the page's own: link.js and clipboard.js each stand as one script, and picture.js is a function the server calls with this design's viewer.",
+  "sandbox": "allow-scripts allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads",
+  "policy": [
+    "default-src 'none'",
+    "script-src 'unsafe-inline' https:",
+    "style-src 'unsafe-inline' data: https:",
+    "img-src data: blob: https:",
+    "media-src data: blob: https:",
+    "font-src data: https:",
+    "connect-src 'none'",
+    "form-action 'none'",
+    "base-uri 'none'",
+    "frame-ancestors 'self'"
+  ]
+}

@@ -5,6 +5,9 @@ name = "bmo-artifact"
 
 [test]
 languages = ["cargo"]
+# The console plugin bundle under client/ is a project of its own, found by its manifest and lockfile;
+# its check script runs its typecheck and its tests.
+setup = ["cd client && bun install --frozen-lockfile"]
 
 [test.database]
 migrations = ["src/store/migration/**"]

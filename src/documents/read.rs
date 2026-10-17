@@ -24,7 +24,8 @@ use crate::clients::receiver::Receiver;
 use crate::clients::tool_host::Raster;
 use crate::helpers::js::URI_COMPONENT;
 use crate::helpers::web_address::web_addresses_in;
-use crate::kinds::{Outline, OutlineFinding, kind};
+use crate::kinds::kind::folded_parts;
+use crate::kinds::{Outline, OutlineFinding, finding_name, finding_title, kind};
 use crate::markup::finding_markdown::{finding_excerpt, picture_caption};
 use crate::markup::page_head::{DeclaredHead, page_head};
 use crate::store::documents::SEARCHER;
@@ -118,6 +119,13 @@ pub struct FindingView {
   pub run_id: Option<i64>,
   pub branch: Option<String>,
   pub text: String,
+  /// The name it gave itself on its title or name line, none where it gave none.
+  pub name: Option<String>,
+  /// What it is called where it stands as a line of its own.
+  pub title: String,
+  /// Its text split where its long explanation begins: what stands open, and what is folded under it.
+  pub open: String,
+  pub folded: Option<String>,
   pub images: Vec<ImageView>,
   pub links: Vec<LinkView>,
   pub sources: Vec<SourceView>,
@@ -156,13 +164,17 @@ pub struct Detail {
 }
 
 /// One document as somebody holding its share link reads it.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedDetail {
   /// Its title, or its question where it wrote none.
   pub title: String,
   pub run_count: usize,
   pub kind: String,
+  /// Its kind as the catalogue answers it, and how that kind outlines its body, as the console's own read
+  /// gives both.
+  pub kind_entry: Value,
+  pub outline: Outline,
   pub findings: Vec<FindingView>,
   pub opened: Vec<SourceView>,
   pub attachments: Vec<AttachmentView>,
@@ -809,12 +821,21 @@ impl Library {
       .iter()
       .map(|finding| {
         let (images, links) = finding_outside(&finding.text, finding.place, &source_urls, &self.words);
+        let outlined = OutlineFinding {
+          text: finding.text.clone(),
+          place: finding.place,
+        };
+        let (open, folded) = folded_parts(&finding.text);
 
         FindingView {
           place: finding.place,
           run_id: finding.run_id,
           branch: finding.branch.clone(),
           text: finding.text.clone(),
+          name: finding_name(&finding.text),
+          title: finding_title(&outlined, &self.words),
+          open,
+          folded,
           images,
           links,
           sources: material
@@ -881,6 +902,8 @@ impl Library {
       title: summary.title.unwrap_or(summary.query),
       run_count: detail.search.runs.len(),
       kind: summary.kind,
+      kind_entry: detail.kind,
+      outline: detail.outline,
       findings: detail.findings,
       opened: detail.opened,
       attachments: detail.attachments,

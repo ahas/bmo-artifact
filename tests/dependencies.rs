@@ -219,6 +219,28 @@ fn manifests_name_no_other_unit_and_stay_in_the_repository() {
   assert!(found.is_empty(), "these dependencies break the rules: {found:?}");
 }
 
+// The console plugin bundle's manifest is one of those the check above reads, and it takes bmo-ui from a
+// file inside the repository.
+#[test]
+fn the_clients_manifest_is_read_and_takes_bmo_ui_from_inside() {
+  let root = lexical(Path::new(ROOT));
+  let path = root.join("client").join("package.json");
+
+  assert!(files_under(&root).contains(&path), "{} is not among the files read", shown(&path));
+
+  let manifest: Json = serde_json::from_str(&fs::read_to_string(&path).expect("the manifest is readable"))
+    .expect("the manifest reads");
+  let spec = manifest["dependencies"]["bmo-ui"].as_str().expect("bmo-ui is a dependency");
+  let file = spec.strip_prefix("file:").expect("bmo-ui is taken from a file");
+
+  assert!(!reaches_outside(&root, &root.join("client"), file), "{spec}");
+  assert!(root.join("client").join(file).is_file(), "{spec} names no file");
+  assert_eq!(
+    npm_violations(&root, &root.join("client"), &manifest, "client/package.json"),
+    Vec::<String>::new()
+  );
+}
+
 #[test]
 fn rust_files_name_no_other_unit() {
   let found: Vec<String> = rust_files(Path::new(ROOT))

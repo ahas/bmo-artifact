@@ -250,10 +250,17 @@ reads.
   - `outline`: `entries`, the table of contents its kind makes, each `slug`, `text`, `depth` and
     `level` (`part`, `chapter`, `section` or null); and `marks`, the marks each finding's headings are
     stamped with, by the finding's place. A page has no entries and no marks.
-  - `findings`: each `place`, `runId`, `branch`, `text`, `images` (each `ref`, `url`, `caption`),
-    `links` (each `ref`, `url`, `label`) and `sources` (each `ref`, `url`, `title`, `supports`,
-    `mark`). A link that is one of the document's sources, or a picture's address, is not listed as a
-    link. The label of a link from a map, street-view or review line is the wording file's.
+  - `findings`: each `place`, `runId`, `branch`, `text`, `name`, `title`, `open`, `folded`, `images`
+    (each `ref`, `url`, `caption`), `links` (each `ref`, `url`, `label`) and `sources` (each `ref`,
+    `url`, `title`, `supports`, `mark`). A link that is one of the document's sources, or a picture's
+    address, is not listed as a link. The label of a link from a map, street-view or review line is the
+    wording file's.
+    - `name` is the name the finding gave itself on its title or name line, null where it gave none.
+    - `title` is what it is called as a line of its own: its name, else the part or the section it
+      opens with in the wording file's words, else the first thing it says, cut to 60 characters,
+      else the wording file's untitled line.
+    - `open` and `folded` are its text split where its long explanation begins: what stands open, and
+      what is folded under it, null where nothing is.
   - `opened`: the pages it opened and cited under nothing, as sources.
   - `attachments`: each `id`, `media`, `type`, `bytes` and `name`, every file but a picture a result
     named by its address.
@@ -317,8 +324,9 @@ the request:
   is refused `404 share_not_found`; one whose time has passed `410 share_expired`. Its expiry is read
   each time.
 - `GET /api/share/{token}` answers `200` with the document the link opens, and nothing of the console:
-  `title` (its title, or its question where it wrote none), `runCount`, `kind`, `findings`, `opened` and
-  `attachments`, as the document read gives them. It is not to be stored.
+  `title` (its title, or its question where it wrote none), `runCount`, `kind` (its kind's word),
+  `kindEntry` (its kind as the catalogue answers it), `outline`, `findings`, `opened` and `attachments`,
+  as the document read gives them. It is not to be stored.
 - `GET /api/share/{token}/refs/{ref}/preview` and `GET /api/share/{token}/refs/{ref}/image?as=` answer
   as the console's own roads do, on the document the link opens.
 - `GET /api/share/{token}/attachments/{attachment}` serves one file of that document as the console's

@@ -696,9 +696,22 @@ async fn the_answer_carries_no_state_room_question_options_rule_depth_times_or_f
   let mut keys: Vec<&str> = shared.as_object().unwrap().keys().map(String::as_str).collect();
 
   keys.sort_unstable();
-  assert_eq!(keys, ["attachments", "findings", "kind", "opened", "runCount", "title"]);
+  assert_eq!(
+    keys,
+    ["attachments", "findings", "kind", "kindEntry", "opened", "outline", "runCount", "title"]
+  );
 
-  let written = shared.to_string();
+  // The kind's catalogue entry names the properties a head may show, which are words of the catalogue
+  // rather than the document's own; the rest of the answer names none of them.
+  let catalogue = desk.get("/api/archive/kinds").await.1;
+
+  assert!(catalogue["kinds"].as_array().unwrap().contains(&shared["kindEntry"]));
+
+  let mut rest = shared.clone();
+
+  rest.as_object_mut().unwrap().remove("kindEntry");
+
+  let written = rest.to_string();
 
   for absent in [
     "status",
