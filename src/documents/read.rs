@@ -26,7 +26,7 @@ use crate::helpers::js::URI_COMPONENT;
 use crate::helpers::web_address::web_addresses_in;
 use crate::kinds::kind::folded_parts;
 use crate::kinds::{Outline, OutlineFinding, finding_name, finding_title, kind};
-use crate::markup::finding_markdown::{finding_excerpt, picture_caption};
+use crate::markup::finding_markdown::{finding_excerpt, finding_markdown, picture_caption};
 use crate::markup::page_head::{DeclaredHead, page_head};
 use crate::store::documents::SEARCHER;
 use crate::wording::search::Search;
@@ -123,9 +123,10 @@ pub struct FindingView {
   pub name: Option<String>,
   /// What it is called where it stands as a line of its own.
   pub title: String,
-  /// Its text split where its long explanation begins: what stands open, and what is folded under it.
-  pub open: String,
-  pub folded: Option<String>,
+  /// What stands open of its text, and what is folded under the line where its long explanation begins,
+  /// each as the markdown its structure lines stand for.
+  pub markdown: String,
+  pub folded_markdown: Option<String>,
   pub images: Vec<ImageView>,
   pub links: Vec<LinkView>,
   pub sources: Vec<SourceView>,
@@ -834,8 +835,8 @@ impl Library {
           text: finding.text.clone(),
           name: finding_name(&finding.text),
           title: finding_title(&outlined, &self.words),
-          open,
-          folded,
+          markdown: finding_markdown(&open, &self.words),
+          folded_markdown: folded.map(|folded| finding_markdown(&folded, &self.words)),
           images,
           links,
           sources: material

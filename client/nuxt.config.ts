@@ -8,7 +8,10 @@ export default defineNuxtConfig({
   extends: ["bmo-ui"],
   // The layer's stylesheet, named from the layer's own folder: an alias in a layer's configuration
   // is read against the host that extends it.
-  css: [fileURLToPath(new URL("./app/assets/css/document.css", import.meta.url))],
+  css: [
+    fileURLToPath(new URL("./app/assets/css/document.css", import.meta.url)),
+    fileURLToPath(new URL("./app/assets/css/finding.css", import.meta.url))
+  ],
   compatibilityDate: "2025-09-01",
   devtools: { enabled: false }
 });

@@ -638,12 +638,48 @@ async fn puts_cited_sources_under_their_finding_and_opened_pages_apart_with_its_
     (&detail["findings"][0]["name"], &detail["findings"][0]["title"]),
     (&json!("GEM12"), &json!("GEM12"))
   );
-  assert_eq!(detail["findings"][0]["open"], detail["findings"][0]["text"]);
-  assert_eq!(detail["findings"][0]["folded"], Value::Null);
+  // Its markdown is its structure lines in the wording file's words, ready for the console to draw.
+  let first = detail["findings"][0]["markdown"].as_str().unwrap();
+
+  assert!(first.contains("\n### GEM12\n"), "{first}");
+  assert!(first.contains("[a review](https://review.example.com/r)"), "{first}");
+  assert!(!first.contains("NAME:") && !first.contains("IMAGE:"), "{first}");
+  assert_eq!(detail["findings"][0]["foldedMarkdown"], Value::Null);
+  assert_eq!(detail["findings"][1]["markdown"], "\n**Summary** Buy it at the official store.");
   assert_eq!(detail["findings"][1]["name"], Value::Null);
   // A label with words on its own line opens no part, so the finding is called by its place.
   assert_eq!(detail["findings"][1]["title"], "Part 2");
   assert!(shelf.library.detail(9999, NOW).await.unwrap().is_none());
+}
+
+// What is folded under a finding's fold line is markdown of its own, its blocks written as the console
+// reads them.
+#[tokio::test]
+async fn answers_a_findings_folded_part_as_markdown_of_its_own() {
+  let shelf = Shelf::new().await;
+  let text = [
+    "SUMMARY:",
+    "1. Short.",
+    "MORE:",
+    "IMAGE: https://cdn.example.com/a.jpg :: one",
+    "IMAGE: https://cdn.example.com/b.jpg :: two",
+  ]
+  .join("\n");
+
+  finding(&shelf.scratch, shelf.third, 1, &text).await;
+
+  let detail = json!(shelf.library.detail(shelf.third, NOW).await.unwrap().unwrap());
+  let open = detail["findings"][0]["markdown"].as_str().unwrap();
+  let folded = detail["findings"][0]["foldedMarkdown"].as_str().unwrap();
+
+  assert!(open.contains("#### Summary"), "{open}");
+  assert!(!open.contains("cdn.example.com"), "{open}");
+  assert!(
+    folded.contains(
+      "::: gallery\n![one](<https://cdn.example.com/a.jpg>)\n![two](<https://cdn.example.com/b.jpg>)\n:::"
+    ),
+    "{folded}"
+  );
 }
 
 #[tokio::test]

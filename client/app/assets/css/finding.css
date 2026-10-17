@@ -1,0 +1,391 @@
+/* A finding's text as the bundle draws it (docs/archive.md, "How a document is drawn"). Every rule
+   is written under the finding's own container, which also carries `markdown` so bmo-ui draws its
+   fenced blocks, their copy button and its diagrams; the two classes together outweigh a host's own
+   rules for its markdown, so a finding reads the same in any console that extends the bundle. Every
+   colour is one of the document palette's or one of the console's tokens. */
+
+/* What a finding stands on, before what makes it a finding: the blocks' spacing, the headings, the
+   lists, the links, inline code, quotations, tables, rules and pictures. */
+.markdown.markdown--finding {
+  overflow-wrap: break-word;
+}
+
+.markdown.markdown--finding > :first-child {
+  margin-top: 0;
+}
+
+.markdown.markdown--finding > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown.markdown--finding h1,
+.markdown.markdown--finding h2,
+.markdown.markdown--finding h3,
+.markdown.markdown--finding h4,
+.markdown.markdown--finding h5,
+.markdown.markdown--finding h6 {
+  margin: 1.6em 0 0.6em;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* A heading the table of contents steers to stops clear of the top edge rather than flush against
+   it, so the line above it says which section was arrived at. */
+.markdown.markdown--finding [data-heading] {
+  scroll-margin-top: 1rem;
+}
+
+.markdown.markdown--finding h1 {
+  font-size: 1.5em;
+}
+
+.markdown.markdown--finding h2 {
+  font-size: 1.25em;
+}
+
+.markdown.markdown--finding h1,
+.markdown.markdown--finding h2 {
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--ui-border);
+}
+
+.markdown.markdown--finding strong {
+  font-weight: 600;
+}
+
+.markdown.markdown--finding ul {
+  list-style: disc;
+}
+
+.markdown.markdown--finding ol {
+  list-style: decimal;
+}
+
+/* A list inside a list is part of its own item rather than a new block of text, so it keeps the
+   spacing of an item and not that of a paragraph. */
+.markdown.markdown--finding li > ul,
+.markdown.markdown--finding li > ol {
+  margin: 0.25em 0;
+}
+
+.markdown.markdown--finding a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown.markdown--finding code {
+  border-radius: var(--ui-radius);
+  font-family: var(--font-mono);
+}
+
+/* A table stands in a box that scrolls it sideways, and is laid out in that box at the width its
+   contents ask for, up to a reading width of ten em a column or the text's own column, whichever is
+   wider. A cell keeps a readable width however short its words, and a word in it breaks at a space,
+   so a Korean word is not folded a syllable to a line; only a run longer than its whole column
+   breaks inside itself. A collapsed border stands half outside the table, so the table is laid out a
+   pixel short of the column, or a table that fits would scroll by that pixel. */
+.markdown.markdown--finding .markdown-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.markdown.markdown--finding table {
+  width: max-content;
+  max-width: max(100% - 1px, var(--columns, 4) * 10em);
+  border-collapse: collapse;
+}
+
+.markdown.markdown--finding th,
+.markdown.markdown--finding td {
+  min-width: 7em;
+  text-align: left;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.markdown.markdown--finding th {
+  font-weight: 600;
+}
+
+.markdown.markdown--finding hr {
+  border: 0;
+  border-top: 1px solid var(--doc-rule);
+}
+
+/* A picture stands on a line of its own, in the middle of the column. */
+.markdown.markdown--finding img {
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+/* A finding is a document read at length, one finding after another in a reading column, so it says
+   its own size, spacing and colour in the console's type scale and on its 4px grid rather than in
+   proportions of the place around it: the body at the normal body size with a loose line, one block
+   gap between paragraphs, lists, tables, boxes and pictures, and a heading scale of three steps — an
+   entry's name, a section or part, and a heading the search wrote inside a section. Its headings,
+   emphasis, links, code and rules take the document palette rather than the console's tokens. */
+.markdown.markdown--finding {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--doc-ink);
+}
+
+.markdown.markdown--finding h1,
+.markdown.markdown--finding h2,
+.markdown.markdown--finding h3,
+.markdown.markdown--finding h4,
+.markdown.markdown--finding h5,
+.markdown.markdown--finding h6,
+.markdown.markdown--finding strong {
+  color: var(--doc-ink);
+}
+
+.markdown.markdown--finding h3 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.markdown.markdown--finding a {
+  color: var(--doc-accent);
+}
+
+/* A link takes the ink on hover and on press, so it answers the pointer as every control does. */
+.markdown.markdown--finding a:not([data-mark]):hover,
+.markdown.markdown--finding a:not([data-mark]):active {
+  color: var(--doc-ink);
+  text-decoration-thickness: 2px;
+}
+
+.markdown.markdown--finding code {
+  padding: 0 0.25rem;
+  background-color: var(--doc-sunk);
+  font-size: 0.875rem;
+  color: var(--doc-ink);
+}
+
+.markdown.markdown--finding p,
+.markdown.markdown--finding ul,
+.markdown.markdown--finding ol,
+.markdown.markdown--finding pre,
+.markdown.markdown--finding blockquote,
+.markdown.markdown--finding .markdown-code,
+.markdown.markdown--finding .markdown-table,
+.markdown.markdown--finding .finding-fold,
+.markdown.markdown--finding .finding-gallery,
+.markdown.markdown--finding .finding-map {
+  margin: 1rem 0;
+}
+
+.markdown.markdown--finding h3,
+.markdown.markdown--finding h4,
+.markdown.markdown--finding h5,
+.markdown.markdown--finding h6 {
+  line-height: 1.4;
+}
+
+.markdown.markdown--finding h3 {
+  margin: 3rem 0 1rem;
+  font-size: 1.5rem;
+}
+
+/* A section or a part is ruled off under its heading, which is what makes a long finding read as
+   sections. */
+.markdown.markdown--finding h4 {
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--doc-rule);
+  font-size: 1.25rem;
+}
+
+.markdown.markdown--finding h5 {
+  margin: 2rem 0 0.75rem;
+  font-size: 1.125rem;
+}
+
+.markdown.markdown--finding h6 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+.markdown.markdown--finding ul,
+.markdown.markdown--finding ol {
+  padding-left: 1.5rem;
+}
+
+.markdown.markdown--finding li {
+  margin: 0.25rem 0;
+}
+
+.markdown.markdown--finding hr {
+  margin: 2rem 0;
+}
+
+/* A quotation is a box of its own: a boxed aside the text was written with, or somebody else's
+   words. It stands on the sunk surface with the accent ruled down its left, it carries its own
+   surface, so it says its own text colour with it, and a box that opens with a line of its own over
+   what follows — the aside's title — sets that line in the heading's weight. */
+.markdown.markdown--finding blockquote {
+  padding: 1rem;
+  border: 0;
+  border-left: 4px solid var(--doc-accent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  background-color: var(--doc-sunk);
+  color: var(--doc-ink);
+}
+
+.markdown.markdown--finding blockquote > * {
+  margin: 0.75rem 0;
+}
+
+.markdown.markdown--finding blockquote > :first-child {
+  margin-top: 0;
+}
+
+.markdown.markdown--finding blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown.markdown--finding blockquote > p:first-child:not(:only-child) {
+  font-weight: 600;
+  color: var(--doc-ink);
+}
+
+/* A table is a box of its own at the width it is laid out at, on the raised surface: a rounded
+   border around it, the head row on the sunk surface in the muted ink and letter-spaced, the rows
+   parted by hairlines, figures in tabular form and the cells at the smaller body size. The box draws
+   the outer edge, so the cells draw only the lines between the rows. */
+.markdown.markdown--finding .markdown-table {
+  width: fit-content;
+  border: 1px solid var(--doc-rule);
+  border-radius: 0.5rem;
+  background-color: var(--doc-surface);
+}
+
+.markdown.markdown--finding table {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.markdown.markdown--finding th,
+.markdown.markdown--finding td {
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--doc-rule-soft);
+}
+
+.markdown.markdown--finding th {
+  border-bottom-color: var(--doc-rule);
+  background-color: var(--doc-sunk);
+  color: var(--doc-muted);
+  letter-spacing: 0.04em;
+}
+
+.markdown.markdown--finding tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* A fenced block folds its lines where it ends, since what a finding fences is as often a quoted
+   passage as it is code. */
+.markdown.markdown--finding pre {
+  padding: 0.75rem 1rem;
+  border-color: var(--doc-rule);
+  background-color: var(--doc-sunk);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.markdown.markdown--finding pre code {
+  padding: 0;
+  color: var(--doc-ink);
+}
+
+.markdown.markdown--finding .markdown-code-head {
+  padding-left: 1rem;
+}
+
+/* A diagram stands on a line of its own, apart from the words around it. */
+.markdown.markdown--finding .markdown-diagram {
+  margin: 1.5rem 0;
+}
+
+/* A picture stands on a line of its own at no more than the column's width and a screen's worth of
+   height, centred in the column, its caption centred under it in the muted colour. The ground is
+   white in either theme: a diagram is drawn for paper, black lines on a transparent ground that
+   vanish on a dark one, and an opaque photo covers it wholly. */
+.markdown.markdown--finding .markdown-figure {
+  display: block;
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.markdown.markdown--finding .markdown-figure img {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  max-height: 24rem;
+  height: auto;
+  border-radius: var(--ui-radius);
+  border: 1px solid var(--ui-border);
+  background: #ffffff;
+  color: #171717;
+}
+
+.markdown.markdown--finding .markdown-caption {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--ui-text-muted);
+}
+
+/* A footnote mark in a finding's text: a raised number that brings its source forward. A value read
+   only in a search snippet carries a dagger and the warning colour, so it is told apart at a glance. */
+.markdown.markdown--finding .search-mark {
+  font-variant-numeric: tabular-nums;
+  line-height: 0;
+}
+
+.markdown.markdown--finding .search-mark a {
+  padding: 0 0.15em;
+  border-radius: 0.25rem;
+  color: var(--doc-accent);
+  text-decoration: none;
+}
+
+.markdown.markdown--finding .search-mark a:hover {
+  background: var(--ui-bg-elevated);
+}
+
+.markdown.markdown--finding .search-mark a:active {
+  background: var(--ui-bg-accented);
+}
+
+.markdown.markdown--finding .search-mark-snippet a {
+  color: var(--ui-warning);
+}
+
+/* A rise and a fall a search marks with an up and a down triangle, in the colours a Korean market
+   reads them in: red up, blue down. Each theme takes the shade that still reads at 4.5:1 on every
+   surface of the document palette a finding's words stand on: the 700 in the light theme and the 300
+   in the dark one. */
+.markdown.markdown--finding .search-rise {
+  color: var(--color-red-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.markdown.markdown--finding .search-fall {
+  color: var(--color-blue-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .markdown.markdown--finding .search-rise {
+  color: var(--color-red-300);
+}
+
+.dark .markdown.markdown--finding .search-fall {
+  color: var(--color-blue-300);
+}

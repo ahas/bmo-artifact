@@ -1,6 +1,7 @@
 import { countText } from "bmo-ui/app/domain/numbers";
 
 import { MOST_PICTURES, VIEWER_ADDRESS, VIEWER_PICTURES, pictureAddress } from "../../shared/document-pictures";
+import { isWebAddress } from "./web-address";
 
 import type { BarProperty } from "bmo-ui/app/domain/tabs";
 import type { Size } from "bmo-ui/app/domain/zoom";
@@ -9,6 +10,12 @@ import type { DocumentPicture, PictureRun } from "../../shared/document-pictures
 
 // A document's pictures as the viewer walks them (`docs/archive.md`, "Pictures open whole"): every
 // picture the document draws on the screen that the shared rule lets open, in the order they stand.
+
+// The web address a document's picture was found at, which a picture the console shows from its own
+// copy carries beside it, and null for one the document names by a kept file's name.
+export function webPicture(href: string): string | null {
+  return isWebAddress(href) ? new URL(href).toString() : null;
+}
 
 // One picture as the viewer shows it, or null where it is not drawn or stands at an address the viewer
 // cannot load. Its caption is its own alternative text, else the caption of the figure it stands in;

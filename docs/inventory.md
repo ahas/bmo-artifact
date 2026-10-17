@@ -199,10 +199,27 @@ These test the behaviour carried above, and no earlier list named them.
 
 **What the bundle depends on.** UI primitives come from `bmo-ui`. Language-pack keys stay in
 bmo-web's language pack: the screen calls `t()` with the same keys it uses today. The console's own
-components the screen stands on, which bmo-ui does not carry, are the host's: the markdown renderer
-that draws a finding, the table of contents and the three pieces of the title bar (`docs/layout.md`,
-"The console plugin bundle"). The kinds' outlines, a finding's name, title and fold, and the page
-bridges come from this repository's server side rather than from the bundle.
+components the screen stands on, which bmo-ui does not carry, are the host's: the table of contents
+and the three pieces of the title bar (`docs/layout.md`, "The console plugin bundle"). The kinds'
+outlines, a finding's name, title, fold and markdown, and the page bridges come from this
+repository's server side rather than from the bundle.
+
+**Drawing a finding, carried into `client/` beside the 20 files.** A finding is the archive's own, so
+the part of the console's renderer that draws one comes with the screen rather than staying with the
+host:
+
+- the finding reading of `client/app/domain/markdown.ts`, its address helpers out of
+  `markup/markup/web-address.ts` (the two it calls), `client/app/domain/markdown-load.ts` and
+  `client/app/domain/finding-blocks.ts`;
+- `client/app/components/MarkdownText.vue`, as the finding's own text component, and
+  `FindingFold.vue`, `FindingGallery.vue` and `FindingMap.vue`;
+- the finding's rules of `client/app/assets/css/main.css`, with the markdown rules they stand on;
+- the finding cases of `client/app/domain/markdown.test.ts`, `client/app/components/MarkdownText.test.ts`
+  and `client/browser/markdown.test.ts`, moved to `client/tests`. A case about turning structure
+  lines into markdown stays with the Rust reading's own tests; the bundle's cases start from that
+  reading's markdown.
+
+The console's other readings (a document, words, a line, a book) stay with the host.
 
 ## 8. Policy files (5)
 

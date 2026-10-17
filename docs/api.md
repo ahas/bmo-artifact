@@ -250,17 +250,23 @@ reads.
   - `outline`: `entries`, the table of contents its kind makes, each `slug`, `text`, `depth` and
     `level` (`part`, `chapter`, `section` or null); and `marks`, the marks each finding's headings are
     stamped with, by the finding's place. A page has no entries and no marks.
-  - `findings`: each `place`, `runId`, `branch`, `text`, `name`, `title`, `open`, `folded`, `images`
-    (each `ref`, `url`, `caption`), `links` (each `ref`, `url`, `label`) and `sources` (each `ref`,
-    `url`, `title`, `supports`, `mark`). A link that is one of the document's sources, or a picture's
-    address, is not listed as a link. The label of a link from a map, street-view or review line is the
-    wording file's.
+  - `findings`: each `place`, `runId`, `branch`, `text`, `name`, `title`, `markdown`, `foldedMarkdown`,
+    `images` (each `ref`, `url`, `caption`), `links` (each `ref`, `url`, `label`) and `sources` (each
+    `ref`, `url`, `title`, `supports`, `mark`). A link that is one of the document's sources, or a
+    picture's address, is not listed as a link. The label of a link from a map, street-view or review
+    line is the wording file's.
     - `name` is the name the finding gave itself on its title or name line, null where it gave none.
     - `title` is what it is called as a line of its own: its name, else the part or the section it
       opens with in the wording file's words, else the first thing it says, cut to 60 characters,
       else the wording file's untitled line.
-    - `open` and `folded` are its text split where its long explanation begins: what stands open, and
-      what is folded under it, null where nothing is.
+    - `markdown` is what stands open of its text, and `foldedMarkdown` what is folded under the line
+      where its long explanation begins, null where nothing is; each is its structure lines turned
+      into markdown in the wording file's words, the same reading the outline's marks are made from.
+      Besides plain markdown, the reading writes three blocks of its own, each opening on a line of
+      its own after a blank line: `::: fold <label>` and `::: gallery`, each closed by a line `:::`,
+      holding a fold's body or a gallery's pictures, and `::: map <words>` alone, naming the place a
+      map is to be drawn of. A footnote mark is a link to `#mark-<mark>`, the mark percent-encoded.
+      A line the search itself wrote in a block's form stands escaped, so it opens no block.
   - `opened`: the pages it opened and cited under nothing, as sources.
   - `attachments`: each `id`, `media`, `type`, `bytes` and `name`, every file but a picture a result
     named by its address.

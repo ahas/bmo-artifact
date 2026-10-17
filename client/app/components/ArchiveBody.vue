@@ -59,13 +59,13 @@
               : $t("archive.label.branch", { branch: finding.branch })
           }}
         </span>
-        <MarkdownText :text="finding.open" kind="finding" :images="props.pictures.get(finding.place)" :files="files" :slugs="props.marks.get(finding.place)" />
+        <FindingText :markdown="finding.markdown" :images="props.pictures.get(finding.place)" :files="files" :slugs="props.marks.get(finding.place)" />
 
-        <UCollapsible v-if="finding.folded !== null" class="flex flex-col gap-1">
+        <UCollapsible v-if="finding.foldedMarkdown !== null" class="flex flex-col gap-1">
           <UButton color="neutral" variant="ghost" size="sm" :label="$t('archive.action.details')" trailing-icon="i-material-symbols-keyboard-arrow-down" class="self-start group" :ui="{ trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform' }" />
 
           <template #content>
-            <MarkdownText :text="finding.folded ?? ''" kind="finding" :images="props.pictures.get(finding.place)" :files="files" />
+            <FindingText :markdown="finding.foldedMarkdown ?? ''" :images="props.pictures.get(finding.place)" :files="files" />
           </template>
         </UCollapsible>
       </section>

@@ -81,9 +81,9 @@ client/                    the console plugin bundle (see "The console plugin bu
   patches/                 bmo-ui's patch to a dependency, applied in this install
   app/
     pages/                 the archive list, one document, and the share page
-    components/            the document body, its sources, its attachments, its pictures and the share dialog
-    domain/                what the screen reads off a document, and the catalogue of kinds
-    assets/css/            the masthead's stylesheet
+    components/            the document body and its findings, sources, attachments, pictures and share dialog
+    domain/                what the screen reads off a document, a finding's reading, and the catalogue of kinds
+    assets/css/            the masthead's and the finding's stylesheets
   host/                    the components the host owes, declared for the bundle's own typecheck
   shared/                  the API's types, the head a share link previews by, and the design files read
   tests/
@@ -159,10 +159,18 @@ there, one level below the root.
 - **Calls.** The screen calls this repository's read API and share API (`docs/api.md`) under the
   console's own base path. The host proxies them to this service behind its sign-in, and names the
   signed-in user as `by` when a link is made. The share page's roads take no sign-in.
+- **A finding is drawn by the bundle.** The read API answers each finding as markdown, its structure
+  lines already turned into words and its folds, galleries and maps written as the blocks
+  `docs/api.md` names. The bundle's own reading, built on marked and cleaned by DOMPurify, turns
+  that markdown into the finding's HTML: a heading takes the outline's mark, a footnote mark becomes
+  a raised link, a picture the record keeps is drawn from the console's copy and any other is a
+  link, and a block becomes a place the bundle fills with its fold, gallery or map component.
+  bmo-ui's code modules colour its code, give its fenced blocks their copy button and draw its
+  diagrams. The finding's stylesheet is the bundle's, so the host knows neither the finding's
+  syntax nor its design. The reading is loaded in the browser alone, since DOMPurify cleans against
+  a real document.
 - **What the host owes.** Beside what bmo-ui asks of it:
   - its i18n module, and a language pack answering the keys the screen reads;
-  - the console's markdown renderer, `MarkdownText`, drawing a finding in the archive's document
-    design, its folds, galleries and maps included;
   - the console's table of contents, `DocumentToc`;
   - the three pieces of the console's title bar, `DeployMark`, `TodoOpenButton` and `UsageMeters`.
 

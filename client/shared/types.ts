@@ -102,9 +102,10 @@ export interface SearchFindingView {
   // The name it gave itself, and what it is called as a line of its own.
   name: string | null;
   title: string;
-  // Its text split where its long explanation begins.
-  open: string;
-  folded: string | null;
+  // What stands open of its text, and what is folded under the line where its long explanation
+  // begins, each as the markdown its structure lines stand for.
+  markdown: string;
+  foldedMarkdown: string | null;
   images: SearchImageView[];
   links: SearchLinkView[];
   sources: SearchSourceView[];

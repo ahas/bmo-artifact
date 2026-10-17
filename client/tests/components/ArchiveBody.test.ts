@@ -106,11 +106,14 @@ describe("a document read by somebody who is not the owner", () => {
     expect(body).not.toContain("SearchDetail");
   });
 
-  // What a finding is called and where it folds are the read API's to say.
-  test("each finding is named and folded as the read API answers it", () => {
+  // What a finding is called, where it folds and the markdown it stands as are the read API's to say,
+  // and the bundle draws it with its own text component.
+  test("each finding is named, folded and drawn as the read API answers it", () => {
     expect(bodyTemplate).toContain(':aria-label="finding.title"');
-    expect(bodyTemplate).toContain(':text="finding.open"');
-    expect(bodyTemplate).toContain('v-if="finding.folded !== null"');
+    expect(bodyTemplate).toContain('<FindingText :markdown="finding.markdown"');
+    expect(bodyTemplate).toContain('v-if="finding.foldedMarkdown !== null"');
+    expect(bodyTemplate).toContain('<FindingText :markdown="finding.foldedMarkdown ?? \'\'"');
+    expect(bodyTemplate).not.toContain("MarkdownText");
   });
 });
 
