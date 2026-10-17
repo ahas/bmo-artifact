@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { chromium } from "playwright-core";
 
-import design from "../../../design/document.json";
-import hosting from "../../../design/hosted-page.json";
+import design from "../../design/document.json";
+import hosting from "../../design/hosted-page.json";
 import { HOSTED_PAGE_SANDBOX } from "../../shared/config";
 
 import type { Browser, Page } from "playwright-core";
@@ -27,7 +27,7 @@ const ready = browserReady();
 const built = ready ? await Bun.build({ entrypoints: [new URL("../../app/domain/document-pictures.ts", import.meta.url).pathname], target: "browser" }) : null;
 const script = built === null ? "" : await built.outputs[0]!.text();
 
-const bridge = async (name: string): Promise<string> => (await Bun.file(new URL(`../../../design/bridges/${name}.js`, import.meta.url)).text()).trimEnd();
+const bridge = async (name: string): Promise<string> => (await Bun.file(new URL(`../../design/bridges/${name}.js`, import.meta.url)).text()).trimEnd();
 const PICTURE_BRIDGE = `<script>${await bridge("picture")}(${JSON.stringify(design.viewer).replaceAll("<", "\\u003c")})</script>`;
 const LINK_BRIDGE = `<script>${await bridge("link")}</script>`;
 const POLICY = [`sandbox ${hosting.sandbox}`, ...hosting.policy].join("; ");

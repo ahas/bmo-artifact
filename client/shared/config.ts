@@ -1,4 +1,4 @@
-import hosting from "../../design/hosted-page.json";
+import hosting from "../design/hosted-page.json";
 
 // The settings the archive screen keeps for itself.
 

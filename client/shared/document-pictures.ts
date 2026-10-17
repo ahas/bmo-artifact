@@ -1,4 +1,4 @@
-import design from "../../design/document.json";
+import design from "../design/document.json";
 
 // Which pictures of a document open the console's picture viewer, and the one message a page standing
 // in the console's frame asks for it by (`docs/archive.md`, "Pictures open whole"). A markdown document

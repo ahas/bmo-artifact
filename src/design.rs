@@ -1,6 +1,6 @@
 //! The archive's one document design (`docs/archive.md`, "How a document is drawn"), read from
-//! `design/document.json`, which the console plugin bundle reads too: the palette of each scheme, the sheet
-//! a page document goes out with, and which pictures open the picture viewer.
+//! `client/design/document.json`, which the console plugin bundle carries and reads too: the palette of each
+//! scheme, the sheet a page document goes out with, and which pictures open the picture viewer.
 
 use std::sync::LazyLock;
 
@@ -80,7 +80,7 @@ struct Design {
 }
 
 static DESIGN: LazyLock<Design> = LazyLock::new(|| {
-  serde_json::from_str(include_str!("../design/document.json")).expect("the design file reads")
+  serde_json::from_str(include_str!("../client/design/document.json")).expect("the design file reads")
 });
 
 /// Which pictures open the viewer.

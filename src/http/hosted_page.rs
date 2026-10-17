@@ -3,7 +3,8 @@
 //! for a page with a dark scheme of its own the bridge that answers its scheme queries, and the clipboard,
 //! picture and link bridges a page in a sandbox of its own origin needs. The file on the disk stays as it was
 //! handed over; only what is served carries the lines, and a download is the file itself. The sandbox, the
-//! policy and the bridges are read from `design/`, which the console plugin bundle reads too.
+//! policy and the bridges are read from `client/design/`, which the console plugin bundle carries and reads
+//! too.
 
 use std::cell::Cell;
 use std::sync::LazyLock;
@@ -22,7 +23,8 @@ struct Hosting {
 }
 
 static HOSTING: LazyLock<Hosting> = LazyLock::new(|| {
-  serde_json::from_str(include_str!("../../design/hosted-page.json")).expect("the hosted page file reads")
+  serde_json::from_str(include_str!("../../client/design/hosted-page.json"))
+    .expect("the hosted page file reads")
 });
 
 /// What a hosted page is let do: run its own scripts and draw what it carries or loads over https, open no
@@ -42,13 +44,13 @@ pub const KEPT_FILE_POLICY: &str = "default-src 'none'; script-src 'none'; img-s
 /// A copy through a selection, which needs no permission an opaque origin lacks, put ahead of the page's own
 /// `writeText`, the Clipboard API kept as its fallback.
 pub const CLIPBOARD_BRIDGE: &str =
-  concat!("<script>", include_str!("../../design/bridges/clipboard.js"), "</script>");
+  concat!("<script>", include_str!("../../client/design/bridges/clipboard.js"), "</script>");
 
 /// A link the page opens in its own window, opened in a tab of its own instead while the page stands in the
 /// console's frame; a link within the page still moves the page, and one the page aimed elsewhere keeps its
 /// aim.
 pub const LINK_BRIDGE: &str =
-  concat!("<script>", include_str!("../../design/bridges/link.js"), "</script>");
+  concat!("<script>", include_str!("../../client/design/bridges/link.js"), "</script>");
 
 /// A page's pictures opened in the console's picture viewer while it stands in the console's frame: the
 /// pictures the shared rule lets open take the pointer that says so, and a plain press on one the page has
@@ -59,7 +61,7 @@ pub fn picture_bridge() -> String {
 
   format!(
     "<script>{}({rule})</script>",
-    include_str!("../../design/bridges/picture.js").trim_end()
+    include_str!("../../client/design/bridges/picture.js").trim_end()
   )
 }
 

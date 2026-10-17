@@ -1,4 +1,4 @@
-import design from "../../design/document.json";
+import design from "../design/document.json";
 
 // The archive's one document design (`docs/archive.md`, "How a document is drawn"), read from the
 // design file the server reads too: the palette every document is drawn in, in a light and a dark

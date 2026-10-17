@@ -50,7 +50,7 @@ src/
   control/
     research.rs            research profiles and their checks
     research_settings.rs   the research-settings routes
-  design.rs                the document design read from design/document.json, and a page's sheet
+  design.rs                the document design read from client/design/document.json, and a page's sheet
   documents/
     read.rs                the list, one document, its files and its refs, as the read API answers them
     preview.rs             the previews and pictures of the pages a document points at, kept under the file root
@@ -66,10 +66,6 @@ src/
     shares.rs              share links and the token routes
     rooms.rs               the room-holding answer
   kinds/                   the catalogue, and the five kinds: search, import, learning, record, page
-design/
-  document.json            the palettes, the page sheet's rules and which pictures open the viewer
-  hosted-page.json         the sandbox a kept page runs in and the rest of the policy it is sent under
-  bridges/                 the clipboard, link and picture scripts written ahead of a kept page
 lang/
   documents.en.yaml        the document wording file's English default
 tests/
@@ -77,8 +73,12 @@ client/                    the console plugin bundle (see "The console plugin bu
   package.json
   bun.lock
   nuxt.config.ts
-  vendor/                  the packed bmo-ui the manifest takes
+  vendor/                  the packed bmo-ui the bundle's own install takes
   patches/                 bmo-ui's patch to a dependency, applied in this install
+  design/                  the document design the server and the bundle both read (see "The design files")
+    document.json          the palettes, the page sheet's rules and which pictures open the viewer
+    hosted-page.json       the sandbox a kept page runs in and the rest of the policy it is sent under
+    bridges/               the clipboard, link and picture scripts written ahead of a kept page
   app/
     pages/                 the archive list, one document, and the share page
     components/            the document body and its findings, sources, attachments, pictures and share dialog
@@ -147,15 +147,37 @@ there, one level below the root.
 
 - **A Nuxt layer on bmo-ui.** It extends bmo-ui and adds the archive screen's pages, components,
   domain modules and stylesheet. A host extends it the way it extends bmo-ui.
-- **bmo-ui is a packed copy** kept under `client/vendor/`, named by version, and the manifest takes it
-  from that file, since no registry carries bmo-ui. Moving to another bmo-ui version replaces the
-  copy and the manifest's line together. The lockfile holds the packages bmo-ui and the bundle share
-  at the versions bmo-ui's own lockfile holds, so bmo-ui's patch under `client/patches/` applies.
+- **bmo-ui is a peer.** The manifest names bmo-ui as a peer at the one version the bundle is built
+  against, marked optional so no install looks for it in a registry, which carries none. The host
+  supplies it, as it extends bmo-ui itself. For the bundle's own install, a packed copy kept under
+  `client/vendor/`, named by version, is a development dependency taken from that file. Moving to
+  another bmo-ui version replaces the copy and both manifest lines together. The lockfile holds the
+  packages bmo-ui and the bundle share at the versions bmo-ui's own lockfile holds, so bmo-ui's patch
+  under `client/patches/` applies.
 - **Its own files by relative path.** In a host, Nuxt binds `~`, `@` and `#shared` to the host's
   folders, so no file of the bundle reaches another through them. bmo-ui's modules are imported by
   the package's path.
-- **The design files.** The palette, the rule of which pictures open the viewer and the sandbox a
-  kept page runs in are read from `design/` at the root, the same files the server reads.
+- **The design files.** The palette, the rule of which pictures open the viewer, the sandbox a kept
+  page runs in and the scripts written ahead of a kept page are one set of files, kept in
+  `client/design/` inside the bundle's own package. The bundle reads them by relative path, and the
+  server compiles them into its binaries from the same folder, so there is one copy and no step
+  that makes another. No file of the bundle reaches anything outside `client/`, which a test in
+  `client/tests/` holds by reading the imports of every file the package carries.
+- **How a host takes it.** The bundle is packed from `client/` with `bun pm pack`, which prepares
+  Nuxt's types first and writes `bmo-artifact-client-<version>.tgz`. The package carries what a host
+  extends and nothing of the bundle's own tests, its typecheck declarations or its copy of bmo-ui:
+  the manifest, the Nuxt configuration, `app/`, `shared/`, `design/` and `patches/`. A host:
+  - keeps the packed bundle in its own tree and depends on it by that file;
+  - depends on bmo-ui itself, at the version the bundle's peer names, as it takes any base library;
+  - names `bmo-artifact-client` in its Nuxt configuration's `extends`, which brings bmo-ui's layer
+    with it;
+  - installs `@nuxtjs/i18n` as its module, and applies the patch in `patches/` in its own install,
+    its lockfile holding the patched package at the version the patch names;
+  - registers the components it owes (below).
+
+  A host built this way serves the three pages as they stand in this repository: the design files
+  and the stylesheets travel inside the package, so the host's build reads nothing outside its own
+  install.
 - **Calls.** The screen calls this repository's read API and share API (`docs/api.md`) under the
   console's own base path. The host proxies them to this service behind its sign-in, and names the
   signed-in user as `by` when a link is made. The share page's roads take no sign-in.
@@ -323,5 +345,6 @@ no backup itself. The whole-data-root backup and its restore drill belong to the
 - **Enforced.** A test in `tests/` fails the moment any other internal name appears in any
   `Cargo.toml` or `package.json` of the repository, or as the first segment of a path in a Rust
   file. A manifest's path dependency that reaches outside the repository fails it too. The same test
-  holds `client/package.json` to taking bmo-ui from a file inside the repository.
+  holds `client/package.json` to naming bmo-ui as an optional peer, and to taking it for its own
+  install from a file inside the repository.
 - **Other units.** Every other unit is reached through the calls `docs/api.md` lists.

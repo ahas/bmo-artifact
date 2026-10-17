@@ -219,8 +219,8 @@ fn manifests_name_no_other_unit_and_stay_in_the_repository() {
   assert!(found.is_empty(), "these dependencies break the rules: {found:?}");
 }
 
-// The console plugin bundle's manifest is one of those the check above reads, and it takes bmo-ui from a
-// file inside the repository.
+// The console plugin bundle's manifest is one of those the check above reads. It names bmo-ui as an optional
+// peer, which a host supplies, and takes it for its own install from a file inside the repository.
 #[test]
 fn the_clients_manifest_is_read_and_takes_bmo_ui_from_inside() {
   let root = lexical(Path::new(ROOT));
@@ -230,8 +230,22 @@ fn the_clients_manifest_is_read_and_takes_bmo_ui_from_inside() {
 
   let manifest: Json = serde_json::from_str(&fs::read_to_string(&path).expect("the manifest is readable"))
     .expect("the manifest reads");
-  let spec = manifest["dependencies"]["bmo-ui"].as_str().expect("bmo-ui is a dependency");
+
+  assert!(
+    manifest["dependencies"].get("bmo-ui").is_none(),
+    "a host cannot resolve a file a package names"
+  );
+  assert!(manifest["peerDependencies"]["bmo-ui"].is_string(), "bmo-ui is a peer");
+  assert_eq!(manifest["peerDependenciesMeta"]["bmo-ui"]["optional"], true);
+
+  let spec = manifest["devDependencies"]["bmo-ui"]
+    .as_str()
+    .expect("bmo-ui is a development dependency");
   let file = spec.strip_prefix("file:").expect("bmo-ui is taken from a file");
+  let peer = manifest["peerDependencies"]["bmo-ui"].as_str().unwrap_or_default();
+
+  // The copy the bundle is built against is the version a host is asked for.
+  assert!(file.ends_with(&format!("bmo-ui-{peer}.tgz")), "{spec} is not bmo-ui {peer}");
 
   assert!(!reaches_outside(&root, &root.join("client"), file), "{spec}");
   assert!(root.join("client").join(file).is_file(), "{spec} names no file");
