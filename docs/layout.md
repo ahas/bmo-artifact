@@ -177,7 +177,11 @@ there, one level below the root.
 
   A host built this way serves the three pages as they stand in this repository: the design files
   and the stylesheets travel inside the package, so the host's build reads nothing outside its own
-  install.
+  install. A host's install keeps a package taken from a file by the integrity its lockfile holds,
+  so a new bundle reaches a host as a new version, or by updating that one package in the host's
+  lockfile; reinstalling alone keeps the old one.
+- **The host's proxy** hands on `/api/archive` itself as well as every road under it, and every road
+  under `/api/share/`.
 - **Calls.** The screen calls this repository's read API and share API (`docs/api.md`) under the
   console's own base path. The host proxies them to this service behind its sign-in, and names the
   signed-in user as `by` when a link is made. The share page's roads take no sign-in.

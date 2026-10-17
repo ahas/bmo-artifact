@@ -35,7 +35,7 @@
         <UButton icon="i-material-symbols-chevron-left" color="neutral" variant="ghost" :aria-label="$t('common.action.previous_picture')" :disabled="current === 0" @click="step(-1)" />
       </UTooltip>
 
-      <span class="text-sm text-muted tabular-nums">{{ current + 1 }} / {{ props.slides.length }}</span>
+      <span class="text-sm text-muted tabular-nums">{{ countText(current + 1) }} / {{ countText(props.slides.length) }}</span>
 
       <UTooltip :text="$t('common.action.next_picture')">
         <UButton icon="i-material-symbols-chevron-right" color="neutral" variant="ghost" :aria-label="$t('common.action.next_picture')" :disabled="current === props.slides.length - 1" @click="step(1)" />
@@ -45,6 +45,8 @@
 </template>
 
 <script setup lang="ts">
+import { countText } from "bmo-ui/app/domain/numbers";
+
 import { webPicture } from "../domain/document-pictures";
 
 import type { GallerySlide } from "../domain/finding-markdown";

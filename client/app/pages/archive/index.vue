@@ -101,7 +101,13 @@
               :to="`/archive/${item.id}`"
               class="flex gap-3 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50"
             >
-              <UIcon :name="statusView($t, item.status).icon" class="mt-0.5 size-5 shrink-0" :class="STATUS_TEXT[statusView($t, item.status).color]" />
+              <!-- A row's state is its compact icon, named in its tooltip and to a reader that cannot see
+                   it; the state as a chip of words is the document's own page's. -->
+              <UTooltip :text="statusView($t, item.status).label">
+                <span role="img" :aria-label="statusView($t, item.status).label" class="mt-0.5 flex size-5 shrink-0" data-row-status>
+                  <UIcon :name="statusView($t, item.status).icon" class="size-5" :class="STATUS_TEXT[statusView($t, item.status).color]" />
+                </span>
+              </UTooltip>
 
               <span class="flex min-w-0 grow flex-col gap-2">
               <SearchText class="line-clamp-2 text-sm font-medium break-words text-highlighted" :text="searchTitle(item)" :query="searched" />
@@ -113,12 +119,6 @@
               <SearchHit :match="rowMatch(item)" :query="searched" />
 
               <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <UBadge
-                  :color="statusView($t, item.status).color"
-                  variant="subtle"
-                  size="sm"
-                  :label="statusView($t, item.status).label"
-                />
                 <UBadge v-if="kindOf(item) !== null" color="neutral" variant="outline" size="sm" :label="$t(kindOf(item)!.labelKey)" />
                 <UBadge v-if="kindOf(item)?.head.includes('depth')" color="neutral" variant="outline" size="sm" :label="depthText($t, item.startedDepth, item.endedDepth)" />
                 <UBadge

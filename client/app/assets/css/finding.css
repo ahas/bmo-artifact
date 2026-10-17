@@ -342,9 +342,11 @@
   color: var(--ui-text-muted);
 }
 
-/* A footnote mark in a finding's text: a raised number that brings its source forward. A value read
-   only in a search snippet carries a dagger and the warning colour, so it is told apart at a glance. */
+/* A footnote mark in a finding's text: a raised number that brings its source forward, at the caption
+   size rather than the smaller size a browser gives raised text. A value read only in a search snippet
+   carries a dagger and the warning colour, so it is told apart at a glance. */
 .markdown.markdown--finding .search-mark {
+  font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   line-height: 0;
 }

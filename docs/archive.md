@@ -991,6 +991,8 @@ alike, on the console and under a share link.
 - **The list:**
   - It shows each document by its title, with its kind. The topic, the keywords and the rule stand on
     one line under it.
+  - A row's state stands as its compact icon, named in a tooltip; the state as a chip of words is the
+    document's own page's.
   - It can be narrowed to one kind, to the shared ones, and to the documents holding a phrase. Each
     narrowing is held in the address. A phrase is matched in the title, the question, the head, the
     room's name and the body.

@@ -101,6 +101,18 @@ describe("holding the list to what is shared", () => {
   });
 });
 
+// In a list a state stands as a compact icon; the chip of words is the document page's own.
+describe("the state of each row", () => {
+  test("is its icon, named in a tooltip and to a reader that cannot see it", () => {
+    expect(page).toContain('<UTooltip :text="statusView($t, item.status).label">');
+    expect(page).toContain('<span role="img" :aria-label="statusView($t, item.status).label"');
+  });
+
+  test("stands as no chip of words among the row's own", () => {
+    expect(page).not.toContain(':label="statusView($t, item.status).label"');
+  });
+});
+
 // Every document has a kind, and the list both names it on each row and can be held to one. The kinds
 // come out of the catalogue the read API answers, so the screen keeps no list of its own and branches
 // on none.
