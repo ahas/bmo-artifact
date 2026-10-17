@@ -119,6 +119,8 @@ export interface ArchiveAttachmentView {
   type: string;
   bytes: number;
   name: string;
+  // Whether the body already draws it by the name it is kept under.
+  drawn: boolean;
 }
 
 // One document read whole on the console.

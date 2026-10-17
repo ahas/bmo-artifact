@@ -252,28 +252,10 @@ export function attachmentAddresses(base: string, attachments: readonly Pick<Arc
   };
 }
 
-// The address of a picture a line of the body draws, angle brackets and all.
-const MARKDOWN_PICTURE = /!\[[^\]]*\]\(\s*(<[^>]*>|[^\s)]+)/g;
-
-// The attachments a body draws where it names them: a picture the text shows by the name it is kept
-// under does not stand again in the attachment section. A link naming a file leaves it there, since a
-// link is not the file shown.
-export function undrawnAttachments<T extends Pick<ArchiveAttachmentView, "media" | "name">>(attachments: readonly T[], texts: readonly string[]): T[] {
-  const named = new Set<string>();
-
-  for (const text of texts) {
-    for (const match of text.matchAll(MARKDOWN_PICTURE)) {
-      const target = match[1]!.replace(/^<|>$/g, "");
-
-      try {
-        named.add(decodeURIComponent(target));
-      } catch {
-        named.add(target);
-      }
-    }
-  }
-
-  return attachments.filter((attachment) => !(attachment.media === "image" && named.has(attachment.name)));
+// The attachments that stand in the attachment section: every one but a picture the body already draws
+// by the name it is kept under, which the read API says of each (`docs/api.md`, "Documents (HTTP)").
+export function undrawnAttachments<T extends Pick<ArchiveAttachmentView, "drawn">>(attachments: readonly T[]): T[] {
+  return attachments.filter((attachment) => !attachment.drawn);
 }
 
 // The topic and keywords of a document as one line under its title, and nothing for one that wrote

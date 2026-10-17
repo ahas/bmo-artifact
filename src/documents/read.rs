@@ -140,6 +140,39 @@ pub struct AttachmentView {
   pub r#type: String,
   pub bytes: i64,
   pub name: String,
+  /// Whether the body already draws it where it stands, so it is not shown again among the attachments.
+  pub drawn: bool,
+}
+
+/// The names the pictures of some markdown draw, read the way CommonMark reads a picture: its target with
+/// any angle brackets taken off and its percent-encoding undone, where it is the encoding of words. A link
+/// names no picture, and nothing inside a code block is a picture.
+pub fn drawn_names<'a>(markdowns: impl IntoIterator<Item = &'a str>) -> HashSet<String> {
+  markdowns
+    .into_iter()
+    .flat_map(|markdown| Parser::new_ext(markdown, Options::ENABLE_TABLES))
+    .filter_map(|event| match event {
+      Event::Start(Tag::Image { dest_url, .. }) => Some(dest_url.into_string()),
+      _ => None,
+    })
+    .map(|target| {
+      percent_encoding::percent_decode_str(&target)
+        .decode_utf8()
+        .map_or(target.clone(), |decoded| decoded.into_owned())
+    })
+    .collect()
+}
+
+/// Each attachment marked drawn where it is a picture the findings' markdown, open or folded, draws by the
+/// name it is kept under.
+pub fn mark_drawn(attachments: &mut [AttachmentView], findings: &[FindingView]) {
+  let named = drawn_names(findings.iter().flat_map(|finding| {
+    std::iter::once(finding.markdown.as_str()).chain(finding.folded_markdown.as_deref())
+  }));
+
+  for attachment in attachments {
+    attachment.drawn = attachment.media == "image" && named.contains(&attachment.name);
+  }
 }
 
 /// The document's own row read whole: the row's head, the runs that carried it, and whether its file is
@@ -869,6 +902,9 @@ impl Library {
       })
       .collect();
     let document = self.document_path(&material).is_some();
+    let mut attachments = self.attachments(id).await?;
+
+    mark_drawn(&mut attachments, &findings);
 
     Ok(Some(Detail {
       kind: kind.view(),
@@ -880,7 +916,7 @@ impl Library {
         .filter(|source| source.finding_place.is_none())
         .map(source_view)
         .collect(),
-      attachments: self.attachments(id).await?,
+      attachments,
       search: DetailHead {
         summary: Summary {
           shared,
@@ -952,7 +988,8 @@ impl Library {
   }
 
   /// The attachments of one document that stand in its attachment section: every file but a picture a
-  /// result named by its address, which the body's own line draws where it stands.
+  /// result named by its address, which the body's own line draws where it stands. Each is read as not drawn;
+  /// the document read marks the ones its findings draw by name.
   pub async fn attachments(&self, id: i64) -> Result<Vec<AttachmentView>, Refusal> {
     let rows = all(
       &self.db,
@@ -971,6 +1008,7 @@ impl Library {
           r#type: row.try_get("", "type")?,
           bytes: row.try_get("", "bytes")?,
           name: row.try_get("", "name")?,
+          drawn: false,
         })
       })
       .collect()

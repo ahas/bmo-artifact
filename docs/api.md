@@ -268,8 +268,12 @@ reads.
       map is to be drawn of. A footnote mark is a link to `#mark-<mark>`, the mark percent-encoded.
       A line the search itself wrote in a block's form stands escaped, so it opens no block.
   - `opened`: the pages it opened and cited under nothing, as sources.
-  - `attachments`: each `id`, `media`, `type`, `bytes` and `name`, every file but a picture a result
-    named by its address.
+  - `attachments`: each `id`, `media`, `type`, `bytes`, `name` and `drawn`, every file but a picture a
+    result named by its address. `drawn` says whether the body already draws the file where it stands:
+    true for a picture that a picture of the findings' markdown, open or folded, names by the name it is
+    kept under, read the way CommonMark reads a picture and with its percent-encoding undone. A link
+    naming a file leaves it undrawn, since a link is not the file shown, and so does a name inside a
+    code block. The console stands an undrawn file in the attachment section.
 - A ref names a place in a document's record: `s<id>` a source row, `i<place>.<n>` the `n`th picture
   and `l<place>.<n>` the `n`th link of the finding at `place`.
 - `GET /api/archive/{id}/document` serves the document's file as it was written, to keep:

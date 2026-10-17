@@ -151,7 +151,7 @@ const emit = defineEmits<{ mark: [mark: string] }>();
 // A picture or a link in the body may name one of the document's files by its name, and a picture
 // the body draws that way does not stand again among the attachments.
 const files = computed(() => (props.attachmentBase === null ? undefined : attachmentAddresses(props.attachmentBase, props.attachments)));
-const standing = computed(() => undrawnAttachments(props.attachments, props.findings.map((finding) => finding.text)));
+const standing = computed(() => undrawnAttachments(props.attachments));
 const split = computed(() => soundsFirst(standing.value));
 
 // The document's colours, in the scheme the console stands in, and the pointer that says a picture

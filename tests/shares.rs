@@ -912,8 +912,8 @@ async fn stand_in_the_answer_by_number_name_kind_and_size_never_by_where_they_ar
   assert_eq!(
     shared["attachments"],
     json!([
-      { "id": desk.first_sound, "media": "audio", "type": "audio/ogg", "bytes": 10, "name": "meeting.ogg" },
-      { "id": desk.stray_note, "media": "text", "type": "text/plain", "bytes": 13, "name": "moved note.txt" },
+      { "id": desk.first_sound, "media": "audio", "type": "audio/ogg", "bytes": 10, "name": "meeting.ogg", "drawn": false },
+      { "id": desk.stray_note, "media": "text", "type": "text/plain", "bytes": 13, "name": "moved note.txt", "drawn": false },
     ])
   );
   assert!(!shared.to_string().contains(&desk.root.path().display().to_string()));

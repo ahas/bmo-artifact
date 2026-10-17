@@ -122,10 +122,10 @@ describe("the preview of an attached text", () => {
 
 describe("the files a body names", () => {
   const attachments = [
-    { id: 7, media: "page" as const, name: "gallery.html" },
-    { id: 8, media: "image" as const, name: "palette-01.webp" },
-    { id: 9, media: "image" as const, name: "receipt photo.png" },
-    { id: 10, media: "text" as const, name: "note.txt" }
+    { id: 7, media: "page" as const, name: "gallery.html", drawn: false },
+    { id: 8, media: "image" as const, name: "palette-01.webp", drawn: true },
+    { id: 9, media: "image" as const, name: "receipt photo.png", drawn: true },
+    { id: 10, media: "text" as const, name: "note.txt", drawn: false }
   ];
 
   test("are served under the document's own road by the name they are kept under", () => {
@@ -137,15 +137,14 @@ describe("the files a body names", () => {
     expect(files("other.html")).toBeNull();
   });
 
-  test("a picture the body draws does not stand again among the attachments, and a linked file does", () => {
-    const texts = ["# Palette\n\n![01](palette-01.webp)\n\n[open the page](gallery.html) ![](<receipt photo.png>)", "see note.txt"];
-
-    expect(undrawnAttachments(attachments, texts).map((attachment) => attachment.id)).toEqual([7, 10]);
-    expect(undrawnAttachments(attachments, []).map((attachment) => attachment.id)).toEqual([7, 8, 9, 10]);
+  // Which pictures the body draws is the read API's to say; the screen only leaves those out.
+  test("a picture the body draws does not stand again among the attachments, and the rest keep their order", () => {
+    expect(undrawnAttachments(attachments).map((attachment) => attachment.id)).toEqual([7, 10]);
+    expect(undrawnAttachments(attachments.map((one) => ({ ...one, drawn: false }))).map((attachment) => attachment.id)).toEqual([7, 8, 9, 10]);
   });
 
   test("a sound is set apart to stand at the head, the rest keeping their order after the body", () => {
-    const kept = [...attachments, { id: 11, media: "audio" as const, name: "briefing.ogg" }];
+    const kept = [...attachments, { id: 11, media: "audio" as const, name: "briefing.ogg", drawn: false }];
     const { sounds, others } = soundsFirst(kept);
 
     expect(sounds.map((one) => one.id)).toEqual([11]);

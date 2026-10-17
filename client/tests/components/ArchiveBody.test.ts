@@ -58,7 +58,7 @@ describe("a document read by somebody who is not the owner", () => {
   // already draws by its name is not one of them.
   test("the attachment section stands only where there are attachments and a road to them", () => {
     expect(bodyTemplate).toContain('<ArchiveAttachments v-if="split.others.length > 0 && props.attachmentBase !== null" :attachments="split.others"');
-    expect(body).toContain("undrawnAttachments(props.attachments, props.findings.map((finding) => finding.text))");
+    expect(body).toContain("undrawnAttachments(props.attachments)");
   });
 
   // A sound the document keeps is its listening band under the masthead, on a share page as well, and

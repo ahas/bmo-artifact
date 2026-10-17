@@ -16,7 +16,10 @@ use bmo_artifact::clients::job::Job;
 use bmo_artifact::clients::receiver::Receiver;
 use bmo_artifact::clients::tool_host::Raster;
 use bmo_artifact::documents::preview::PreviewCache;
-use bmo_artifact::documents::read::{Asked, Library, RefKind, RefPicture, finding_outside};
+use bmo_artifact::documents::read::{
+  Asked, AttachmentView, FindingView, Library, RefKind, RefPicture, drawn_names, finding_outside,
+  mark_drawn,
+};
 use bmo_artifact::http::documents::{list_asked, moved_screen, page_limit};
 use bmo_artifact::plumbing::http::{Standing, router};
 use bmo_artifact::settings::Settings;
@@ -650,6 +653,111 @@ async fn puts_cited_sources_under_their_finding_and_opened_pages_apart_with_its_
   // A label with words on its own line opens no part, so the finding is called by its place.
   assert_eq!(detail["findings"][1]["title"], "Part 2");
   assert!(shelf.library.detail(9999, NOW).await.unwrap().is_none());
+}
+
+// ---------------------------------------------------------------- the files a body draws
+
+#[test]
+fn a_body_draws_the_files_its_pictures_name_by_their_kept_names() {
+  let names = drawn_names([
+    "# Palette\n\n![01](palette-01.webp)\n\n[open the page](gallery.html) ![](<receipt photo.png>)",
+    "see note.txt, and ![](cut%20out.png)",
+    "```\n![](fenced.png)\n```",
+  ]);
+  let mut names: Vec<&str> = names.iter().map(String::as_str).collect();
+
+  names.sort_unstable();
+  // A link is not the file shown, and nothing inside a code block is a picture.
+  assert_eq!(names, ["cut out.png", "palette-01.webp", "receipt photo.png"]);
+}
+
+#[test]
+fn a_file_the_body_draws_is_marked_drawn_and_one_it_links_or_never_names_is_not() {
+  let view = |id: i64, media: &str, name: &str| AttachmentView {
+    id,
+    media: media.to_owned(),
+    r#type: String::new(),
+    bytes: 3,
+    name: name.to_owned(),
+    drawn: false,
+  };
+  let finding = |markdown: &str, folded: Option<&str>| FindingView {
+    place: 1,
+    run_id: None,
+    branch: None,
+    text: String::new(),
+    name: None,
+    title: String::new(),
+    markdown: markdown.to_owned(),
+    folded_markdown: folded.map(str::to_owned),
+    images: Vec::new(),
+    links: Vec::new(),
+    sources: Vec::new(),
+  };
+  let mut attachments = [
+    view(7, "page", "gallery.html"),
+    view(8, "image", "palette-01.webp"),
+    view(9, "image", "receipt photo.png"),
+    view(10, "text", "note.txt"),
+    view(11, "image", "linked.png"),
+    // A file that is not a picture stands among the attachments even where a picture names it.
+    view(12, "file", "drawn.bin"),
+  ];
+
+  mark_drawn(
+    &mut attachments,
+    &[
+      finding("![01](palette-01.webp)\n\n[the page](gallery.html) [a picture](linked.png)", None),
+      finding("words", Some("![](<receipt photo.png>) ![](drawn.bin)")),
+    ],
+  );
+
+  assert_eq!(
+    attachments.iter().map(|one| (one.id, one.drawn)).collect::<Vec<_>>(),
+    [(7, false), (8, true), (9, true), (10, false), (11, false), (12, false)]
+  );
+}
+
+#[tokio::test]
+async fn a_document_read_says_which_of_its_files_its_body_draws() {
+  let shelf = Shelf::new().await;
+  let kept = |name: &str| shelf.root.path().join(name);
+
+  finding(&shelf.scratch, shelf.third, 1, "![01](palette-01.webp)\n\n[the page](gallery.html)").await;
+
+  let drawn = keep(
+    &shelf.scratch,
+    shelf.third,
+    "image",
+    None,
+    &kept("palette-01.webp"),
+    "image/webp",
+    "palette-01.webp",
+  )
+  .await;
+  let other =
+    keep(&shelf.scratch, shelf.third, "image", None, &kept("other.png"), "image/png", "other.png").await;
+  let page = keep(
+    &shelf.scratch,
+    shelf.third,
+    "page",
+    None,
+    &kept("gallery.html"),
+    "text/html",
+    "gallery.html",
+  )
+  .await;
+  let detail = json!(shelf.library.detail(shelf.third, NOW).await.unwrap().unwrap());
+
+  assert_eq!(
+    detail["attachments"]
+      .as_array()
+      .unwrap()
+      .iter()
+      .map(|one| (one["id"].as_i64().unwrap(), one["drawn"].as_bool().unwrap()))
+      .collect::<Vec<_>>(),
+    [(drawn, true), (other, false), (page, false)]
+  );
 }
 
 // What is folded under a finding's fold line is markdown of its own, its blocks written as the console
