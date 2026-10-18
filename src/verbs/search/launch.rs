@@ -1,7 +1,8 @@
 //! `bmo search` (`docs/research-runs.md`, "The launch and the runner"): a question set off as a search run of
 //! its own, which answers the room by itself. The launcher checks what it was asked, asks bmo-receiver who
 //! asked, settles the depth the pool lets it run at, writes the question to a file only the owner can read,
-//! opens the search's row here and the run's in bmo-job's ledger, and has bmo-job launch `bmo runner search`.
+//! opens the search's row here and the run's in bmo-agency's ledger, and has bmo-agency launch
+//! `bmo runner search`.
 //! What was asked never travels in an argument, which the process list shows.
 
 use std::collections::BTreeMap;

@@ -1,8 +1,8 @@
 //! `bmo runner search` (`docs/research-runs.md`, "The launch and the runner"): one search carried to its end
 //! apart from whoever launched it. It reads the question its launcher wrote and deletes the file, carries one
 //! research run apart on the search line — or, for a page asked for whole, has the page read with no model at
-//! all — and hands what it found back to the chat's own session as a quiet instruction queued in bmo-job, so
-//! the agent in that room answers in its own voice. It never speaks to the room itself.
+//! all — and hands what it found back to the chat's own session as a quiet instruction queued in
+//! bmo-receiver, so the agent in that room answers in its own voice. It never speaks to the room itself.
 //!
 //! Every ending is written once: the run's row closed with how it ended, the search closed with the same
 //! word and what it found put away beside it, and the room told. A stop from outside salvages the last thing
@@ -32,7 +32,7 @@ use super::result::{
 use super::share::{is_long, room_link};
 use super::web::WebLayer;
 use crate::clients::agency::Instructions;
-use crate::clients::job::HandBack;
+use crate::clients::receiver::{HandBack, Said};
 use crate::clients::voice::{Briefing, launched};
 use crate::helpers::lines::Trees;
 use crate::now_ms;
@@ -133,15 +133,17 @@ impl Run<'_> {
     self.handed_back = true;
 
     let back = HandBack {
-      run_id: self.started.run_id,
-      chat_id: self.started.chat_id,
       agent: self.started.asked_by.clone(),
-      text: text.to_owned(),
+      chat: self.started.chat_id,
+      said: Said {
+        order: text.to_owned(),
+      },
       sort: SORT.to_owned(),
       via: self.started.via.clone(),
+      run: self.started.run_id,
     };
 
-    if let Err(why) = self.shell.job.hand_back(&back).await {
+    if let Err(why) = self.shell.receiver.hand_back(&back).await {
       eprintln!("the search's ending could not be handed to the session: {why}");
     }
   }

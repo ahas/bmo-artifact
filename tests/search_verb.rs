@@ -1,5 +1,5 @@
 //! `bmo search` as a caller runs it (`docs/research-runs.md`, "The launch and the runner"), against a scratch
-//! database and stand-ins for bmo-job, bmo-receiver and bmo-agency: every refusal made before a row exists,
+//! database and stand-ins for bmo-receiver and bmo-agency: every refusal made before a row exists,
 //! a launch whose run never came up closing its own row and the search it opened and taking the question's
 //! file with it, who asked read off bmo-receiver, and the runner handed the question in a file of the
 //! owner's alone and never in its words.
@@ -314,7 +314,7 @@ async fn a_launch_reads_who_asked_off_bmo_receiver_and_hands_bmo_agency_the_runn
     launch.command.args
   );
   assert_eq!(launch.command.cwd, ROOT);
-  assert!(launch.command.environment.keys().any(|name| name == "BMO_ARTIFACT_UNITS__JOB"));
+  assert!(launch.command.environment.contains_key("BMO_ARTIFACT_UNITS__RECEIVER_TOKEN"));
   assert!(!launch.command.environment.contains_key("BMO_TURN_AGENT"));
   assert_eq!(space.searches().await[0]["asker_id"], 5);
 

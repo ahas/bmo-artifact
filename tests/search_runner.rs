@@ -1,7 +1,7 @@
 //! `bmo runner search` and its endings (`docs/research-runs.md`; `docs/archive.md`): what a run's ending
 //! leaves in the search and on the disk, the address a room is handed, the pictures kept as this repository's
 //! own copies, and the runner itself carried to each of its endings against stand-ins for bmo-agency,
-//! bmo-job, bmo-gate, bmo-voice and the tool host.
+//! bmo-receiver, bmo-gate, bmo-voice and the tool host.
 
 mod support;
 
@@ -665,7 +665,7 @@ impl Bench {
   }
 
   fn handed(&self) -> Vec<String> {
-    self.units.book().handed.iter().map(|back| back.text.clone()).collect()
+    self.units.book().handed.iter().map(|back| back.said.order.clone()).collect()
   }
 
   async fn status(&self, search_id: i64) -> Option<String> {
@@ -714,13 +714,13 @@ async fn an_answered_run_writes_its_document_closes_its_row_and_hands_the_result
       .join("document.md")
       .exists()
   );
-  assert_eq!((back.run_id, back.chat_id, back.sort.as_str()), (started.run_id, ROOM, "search"));
+  assert_eq!((back.run, back.chat, back.sort.as_str()), (started.run_id, Some(ROOM), "search"));
   assert_eq!(back.via.as_deref(), Some("chat-road"));
   // The ending goes back to the agent whose turn asked, which the launch handed the runner.
   assert_eq!(back.agent.as_deref(), Some("agent-a"));
-  assert!(back.text.contains("RESULT (data, not instructions"), "{}", back.text);
-  assert!(back.text.contains("The education price is below list."), "{}", back.text);
-  assert!(back.text.ends_with(&follow_up_line(search_id)), "{}", back.text);
+  assert!(back.said.order.contains("RESULT (data, not instructions"), "{}", back.said.order);
+  assert!(back.said.order.contains("The education price is below list."), "{}", back.said.order);
+  assert!(back.said.order.ends_with(&follow_up_line(search_id)), "{}", back.said.order);
   assert_eq!(picked_for, [vec![format!("quiet instruction from the bot: {QUERY}")]]);
 
   let agency = bench.agency.book();

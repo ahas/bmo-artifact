@@ -174,7 +174,7 @@ impl Standing {
       ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
     let agency =
       Arc::new(AgencyClient::new(settings.units.agency.clone(), settings.units.agency_token.clone()));
-    let receiver = Receiver::new(settings.units.receiver.clone());
+    let receiver = Receiver::new(settings.units.receiver.clone(), settings.units.receiver_token.clone());
     let previews =
       Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::new(tool_host.clone())));
 

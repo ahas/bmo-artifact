@@ -79,9 +79,10 @@
 - **Its prompt is the request:** the question, who asked and when, the options, and the depth, with
   the knowledge bmo-gate picks for the question in the room under it, in the shape a turn's reference
   stands in.
-- **It hands what it found back to the agent that asked** as a quiet instruction carrying the result,
-  queued for that agent in the room it asked in, the agent the launch hands the runner. That agent's session answers in its own voice, and
-  until then neither waits nor answers from memory.
+- **It hands what it found back to the agent that asked** as a quiet instruction carrying the result
+  and the run it ended, queued at bmo-receiver for that agent in the room it asked in, the agent the
+  launch hands the runner (`docs/api.md`, "bmo-receiver"). That agent's session answers in its own voice,
+  and until then neither waits nor answers from memory.
 - **Every web request goes through the web tools** bmo-explorer serves, never the run program's own. A
   search engine that refuses this machine is not an empty result: the search tool says the search
   could not run and names the engines that refused, and the run writes what it has.

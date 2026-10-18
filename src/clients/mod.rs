@@ -3,7 +3,6 @@
 
 pub mod agency;
 pub mod gate;
-pub mod job;
 pub mod json;
 pub mod receiver;
 pub mod tool_host;

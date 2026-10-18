@@ -1,24 +1,48 @@
 //! Stand-ins for the units a search calls besides bmo-agency (`docs/api.md`, "What this repository calls"):
-//! the queue an ending is handed back through, bmo-receiver's messages, bmo-gate's knowledge, bmo-voice's
-//! briefings and the tool host's page reading, all served on one local port from a book the test fills and
-//! reads back. The service's own clients reach it, so a run goes through the same calls the service makes.
+//! bmo-receiver's instruction queue, messages and room names, bmo-gate's knowledge, bmo-voice's briefings and
+//! the tool host's page reading, all served on one local port from a book the test fills and reads back. The
+//! service's own clients reach it, so a run goes through the same calls the service makes. The receiver's
+//! routes refuse a call without its token, and its queue takes an instruction only in the shape it reads.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use axum::Json;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
-use bmo_artifact::clients::job::HandBack;
+use serde::Deserialize;
 use serde_json::{Value, json};
+
+/// The token the receiver stand-in takes.
+pub const RECEIVER_TOKEN: &str = "receiver-token";
+
+/// One instruction as bmo-receiver's queue takes it from this repository (`docs/api.md`, "bmo-receiver"):
+/// any other field, or a `said` holding anything but an order, is refused.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Instruction {
+  pub agent: Option<String>,
+  pub chat: Option<i64>,
+  pub said: Said,
+  pub sort: String,
+  pub via: Option<String>,
+  pub run: Option<i64>,
+}
+
+/// What an instruction hands the session.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Said {
+  pub order: String,
+}
 
 /// What the stand-ins hold, and every call they were asked to act on.
 #[derive(Debug, Default)]
 pub struct Book {
   /// Each ending handed back to a room's session.
-  pub handed: Vec<HandBack>,
+  pub handed: Vec<Instruction>,
   /// The messages bmo-receiver holds, by room and message.
   pub messages: HashMap<(i64, i64), Value>,
   /// What bmo-receiver says each room is called.
@@ -67,8 +91,8 @@ pub async fn serve(book: Book) -> (Units, String) {
 /// The settings that point every unit a search calls at the stand-ins, as environment variables.
 pub fn pointed_at(address: &str, agency: &str) -> Vec<(&'static str, String)> {
   vec![
-    ("BMO_ARTIFACT_UNITS__JOB", address.to_owned()),
     ("BMO_ARTIFACT_UNITS__RECEIVER", address.to_owned()),
+    ("BMO_ARTIFACT_UNITS__RECEIVER_TOKEN", RECEIVER_TOKEN.to_owned()),
     ("BMO_ARTIFACT_UNITS__GATE", address.to_owned()),
     ("BMO_ARTIFACT_UNITS__VOICE", address.to_owned()),
     ("BMO_ARTIFACT_UNITS__TOOL_HOST", address.to_owned()),
@@ -76,15 +100,34 @@ pub fn pointed_at(address: &str, agency: &str) -> Vec<(&'static str, String)> {
   ]
 }
 
-fn absent(what: &str) -> Response {
-  (
-    StatusCode::NOT_FOUND,
-    Json(json!({ "error": format!("no such {what}"), "code": "not_found" })),
-  )
-    .into_response()
+fn refusal(status: StatusCode, error: &str, code: &str) -> Response {
+  (status, Json(json!({ "error": error, "code": code }))).into_response()
 }
 
-async fn hand_back(State(units): State<Units>, Json(back): Json<HandBack>) -> Response {
+fn absent(what: &str) -> Response {
+  refusal(StatusCode::NOT_FOUND, &format!("no such {what}"), "not_found")
+}
+
+// The receiver's refusal of a call that does not carry its token; none where it does.
+fn unauthorized(headers: &HeaderMap) -> Option<Response> {
+  let carried = headers.get(header::AUTHORIZATION).and_then(|value| value.to_str().ok());
+
+  if carried == Some(format!("Bearer {RECEIVER_TOKEN}").as_str()) {
+    return None;
+  }
+
+  Some(refusal(StatusCode::UNAUTHORIZED, "the token is missing or wrong", "unauthorized"))
+}
+
+async fn hand_back(State(units): State<Units>, headers: HeaderMap, Json(body): Json<Value>) -> Response {
+  if let Some(refused) = unauthorized(&headers) {
+    return refused;
+  }
+
+  let back = match serde_json::from_value::<Instruction>(body) {
+    Ok(back) => back,
+    Err(why) => return refusal(StatusCode::BAD_REQUEST, &why.to_string(), "bad_request"),
+  };
   let mut book = units.book();
 
   book.handed.push(back);
@@ -92,7 +135,11 @@ async fn hand_back(State(units): State<Units>, Json(back): Json<HandBack>) -> Re
   (StatusCode::CREATED, Json(json!({ "id": book.handed.len() }))).into_response()
 }
 
-async fn rooms(State(units): State<Units>) -> Json<Value> {
+async fn rooms(State(units): State<Units>, headers: HeaderMap) -> Response {
+  if let Some(refused) = unauthorized(&headers) {
+    return refused;
+  }
+
   let rooms: Vec<Value> = units
     .book()
     .rooms
@@ -100,10 +147,18 @@ async fn rooms(State(units): State<Units>) -> Json<Value> {
     .map(|(chat_id, title)| json!({ "chat_id": chat_id, "title": title }))
     .collect();
 
-  Json(json!({ "rooms": rooms }))
+  Json(json!({ "rooms": rooms })).into_response()
 }
 
-async fn message(State(units): State<Units>, Path((room, message)): Path<(i64, i64)>) -> Response {
+async fn message(
+  State(units): State<Units>,
+  headers: HeaderMap,
+  Path((room, message)): Path<(i64, i64)>,
+) -> Response {
+  if let Some(refused) = unauthorized(&headers) {
+    return refused;
+  }
+
   match units.book().messages.get(&(room, message)) {
     Some(held) => Json(held.clone()).into_response(),
     None => absent("message"),

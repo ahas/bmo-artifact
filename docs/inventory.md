@@ -85,7 +85,7 @@ to the unit that owns it.
 | `lines::{Trees, read_required, render}`, `run_log::{json::Json, lines::BRANCH_TOOLS, lines::stream_lines}` | 6 | 5 | Copied helpers |
 | `room_record` | 1 | 7 | This repository's room-holding route |
 | `control::{harness, pool, tiers, claude_accounts}` | 4 | 8 | The bmo-agency client |
-| `runs`, `queue`, `job_run` | 3 | 9 | The bmo-agency client for a run's row opened, launched, read and closed in its ledger and the runs that carried a search, and the bmo-job client for an ending handed back; the stop's outcome word and the live task names are this repository's own |
+| `runs`, `queue`, `job_run` | 3 | 9 | The bmo-agency client for a run's row opened, launched, read and closed in its ledger and the runs that carried a search, and the bmo-receiver client for an ending handed back; the stop's outcome word and the live task names are this repository's own |
 | `reference::road` | 1 | 9 | The quiet-instruction line is this repository's own; the knowledge a run is handed is picked by bmo-gate through its client |
 | `places::Ground` | 1 | 9 | Settings: the database, the file root, the prompt tree and each unit's address; the launching process's home and turn are read from its environment |
 | `lines::runner::Search` | 1 | 9 | The bmo-agency client: the run apart under the instructions bmo-agency composes for the search line |

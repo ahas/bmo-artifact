@@ -406,7 +406,7 @@ pub struct Record {
   pub finished_at: Option<i64>,
   pub options: Vec<(String, String)>,
   pub head: ResultHead,
-  /// The runs that have carried the search, as bmo-job keeps them, in the order they were queued.
+  /// The runs that have carried the search, as bmo-agency keeps them, in the order they were queued.
   pub runs: Vec<i64>,
   pub findings: Vec<HeldFinding>,
   pub pages: Vec<HeldSource>,

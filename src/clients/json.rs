@@ -1,6 +1,7 @@
 //! One unit reached with JSON both ways (`docs/api.md`, "What this repository calls"): a `2xx` answer read
 //! as its shape, a read of one thing answering nothing on `404`, and any other answer a refusal in the
-//! unit's own sentence under `error`.
+//! unit's own sentence under `error`. A unit whose server takes a token is handed it as a bearer on every
+//! call.
 
 use reqwest::{Method, StatusCode};
 use serde::Serialize;
@@ -17,6 +18,8 @@ struct Refused {
 pub struct Unit {
   http: reqwest::Client,
   address: Option<String>,
+  /// The token the unit's server takes, where it takes one and the settings name it.
+  token: Option<String>,
   /// The unit's name, as a sentence about it says it.
   name: &'static str,
   /// The key its address is set under.
@@ -28,9 +31,15 @@ impl Unit {
     Self {
       http: reqwest::Client::new(),
       address: address.map(|address| address.trim_end_matches('/').to_owned()),
+      token: None,
       name,
       key,
     }
+  }
+
+  /// The same unit, its token carried as a bearer on every call; none carries none.
+  pub fn with_token(self, token: Option<String>) -> Self {
+    Self { token, ..self }
   }
 
   // The answer's status and body, or why there was none.
@@ -50,6 +59,10 @@ impl Unit {
     let url = reqwest::Url::parse_with_params(&format!("{address}{path}"), query)
       .map_err(|why| format!("the {} address cannot be read: {why}", self.name))?;
     let mut request = self.http.request(method, url);
+
+    if let Some(token) = &self.token {
+      request = request.bearer_auth(token);
+    }
 
     if let Some(body) = body {
       request = request.json(&body);

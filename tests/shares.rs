@@ -352,8 +352,8 @@ impl Desk {
     let settings = HashMap::from([
       ("BMO_ARTIFACT_DATABASE__URL".to_owned(), scratch.address()),
       ("BMO_ARTIFACT_FILES__ROOT".to_owned(), root.path().display().to_string()),
-      ("BMO_ARTIFACT_UNITS__JOB".to_owned(), address.clone()),
       ("BMO_ARTIFACT_UNITS__RECEIVER".to_owned(), address),
+      ("BMO_ARTIFACT_UNITS__RECEIVER_TOKEN".to_owned(), units::RECEIVER_TOKEN.to_owned()),
     ]);
 
     Self {

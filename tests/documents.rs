@@ -209,7 +209,7 @@ impl Shelf {
       root: root.path().to_path_buf(),
       words: Wording::english().unwrap().search,
       agency: agency::client(&ledger),
-      receiver: Receiver::new(Some(address.clone())),
+      receiver: Receiver::new(Some(address.clone()), Some(units::RECEIVER_TOKEN.to_owned())),
       previews,
     };
     let settings = HashMap::from([
@@ -217,6 +217,7 @@ impl Shelf {
       ("BMO_ARTIFACT_FILES__ROOT".to_owned(), root.path().display().to_string()),
       ("BMO_ARTIFACT_UNITS__AGENCY".to_owned(), ledger),
       ("BMO_ARTIFACT_UNITS__RECEIVER".to_owned(), address),
+      ("BMO_ARTIFACT_UNITS__RECEIVER_TOKEN".to_owned(), units::RECEIVER_TOKEN.to_owned()),
       ("BMO_ARTIFACT_CONSOLE__ADDRESS".to_owned(), "https://console.example/bmo".to_owned()),
     ]);
 

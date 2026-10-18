@@ -2,7 +2,7 @@
 //! question, the depth of the run carrying it noted on it, and at the run's end the claims and their pages
 //! put under it, its head noted, the row closed with the run's own word, and the document a person reads
 //! written under the file root. A search whose answer was one value keeps its row and its head and writes
-//! nothing else. Which runs carried a search is bmo-job's to keep, and is handed in by the caller.
+//! nothing else. Which runs carried a search is bmo-agency's to keep, and is handed in by the caller.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -223,8 +223,8 @@ async fn add_pages(db: &DatabaseConnection, search_id: i64, pages: &[OpenedPage]
   Ok(())
 }
 
-/// The whole of one search as its document is written from, carried by `runs` as bmo-job lists them; none for
-/// a search the archive does not hold.
+/// The whole of one search as its document is written from, carried by `runs` as bmo-agency lists them; none
+/// for a search the archive does not hold.
 pub async fn read_search(
   db: &DatabaseConnection,
   search_id: i64,
@@ -347,7 +347,7 @@ pub async fn kept_pictures(
 pub struct Ending<'a> {
   pub search_id: i64,
   pub run_id: Option<i64>,
-  /// Every run that has carried the search, this one included, as bmo-job lists them.
+  /// Every run that has carried the search, this one included, as bmo-agency lists them.
   pub runs: &'a [i64],
   pub result: Option<&'a str>,
   pub stream: &'a str,

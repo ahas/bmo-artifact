@@ -460,7 +460,7 @@ room-holding answer (see "Room holding") before it removes a room.
 | Purpose | Unit |
 |---|---|
 | Open a search run's row in the ledger naming the search it carries, launch its runner, read and close a run, list the runs that have carried a search | bmo-agency |
-| Hand a run's ending back to its room's session as a quiet instruction | bmo-job |
+| Hand a run's ending back to its room's session as a quiet instruction | bmo-receiver |
 | Import a page, fetch a raster picture, check an address, pace requests per host and engine | bmo-explorer, through the tool host |
 | Read the search-engine values a research profile chooses among | bmo-explorer, through the tool host |
 | Start a briefing of a finished document | bmo-voice |
@@ -474,9 +474,9 @@ room-holding answer (see "Room holding") before it removes a room.
 | Which registration owns a home, and whether it keeps its research | bmo-agency |
 
 Each unit is reached at the address its name holds under `[units]` in the settings: `voice`,
-`tool_host`, `agency`, `job`, `receiver` and `gate`.
+`tool_host`, `agency`, `receiver` and `gate`.
 
-The calls to bmo-job, bmo-receiver and bmo-gate share one shape:
+The calls to bmo-receiver and bmo-gate share one shape:
 
 - **A body is JSON, both ways,** with snake_case keys; a time is epoch milliseconds, and a field
   written with a question mark may be null.
@@ -535,31 +535,25 @@ The calls to bmo-job, bmo-receiver and bmo-gate share one shape:
     `suspended_until?`, `elapsed_ms?` and `result_count?`;
   - `cooldowns`, each a `reason` and the `ms` an engine rests for it.
 
-### bmo-job
-
-The runner hands a search run's ending back for the room's session at bmo-job's address. bmo-job serves
-no such route, and bmo-receiver's quiet instruction carries neither the sort, the run nor the road, so
-no unit takes this call: it is refused as any other refusal, and the runner says so on its error
-stream.
-
-| Call | Method and path | Request | Answer |
-|---|---|---|---|
-| Hand an ending back | `POST /instructions` | `run_id?`, `chat_id`, `agent?`, `text`, `sort`, `via?` | 201, `id` |
-
-- **An ending handed back** is the quiet instruction the room's session reads, of `sort` `search`, on
-  the road `via` names, for the agent `agent` names: the agent whose turn set the search off, none
-  where no turn did. The unit that takes it queues it for that agent in the run's room, and for the
-  owner's room, naming the room, where the run's room is gone. `run_id` is the run whose result it
-  is.
-
 ### bmo-receiver
 
 | Call | Method and path | Request | Answer |
 |---|---|---|---|
 | Read a message | `GET /rooms/{room}/messages/{message}` | | `sender_id?`, `sender_name?`, `sent_at`, `via`; 404 where the room holds no such message |
 | List the rooms' names | `GET /rooms` | | `rooms`, each `chat_id` and `title?` |
+| Hand an ending back | `POST /instructions` | `agent?`, `chat`, `said` (`order`), `sort`, `via?`, `run?` | 201, `id` |
 
-- **`via`** is the road the message came in on, which bmo-receiver always names.
+- **The token** bmo-receiver's server takes goes with every call to it as `Authorization: Bearer
+  <token>`, from `receiver_token` under `[units]`. Where it is unset a call goes with none, and
+  bmo-receiver refuses it `401` as it refuses any call without its token.
+- **An ending handed back** is the quiet instruction the room's session reads: `said` holds one key,
+  `order`, the words the session is handed; `sort` is `search`; `chat` is the run's room; `via` is the
+  road the question came in on, which the answer goes out on; `agent` is the agent whose turn set the
+  search off, none where no turn did; and `run` is the run in bmo-agency's ledger whose result it is.
+  bmo-receiver queues it for that agent in the run's room, and for the owner's room, naming the room,
+  where the run's room is gone. A refusal costs the room its answer and nothing else: the runner says
+  so on its error stream.
+- **A message's `via`** is the road it came in on, which bmo-receiver always names.
 - **The rooms' names** are read once for each list or document read: they stand on each row and a
   phrase is matched in them. Where bmo-receiver cannot be asked, rows carry no room's name and no row
   is found by one.

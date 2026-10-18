@@ -108,10 +108,10 @@ pub struct Units {
   pub agency: Option<String>,
   /// The token bmo-agency's server takes.
   pub agency_token: Option<String>,
-  /// bmo-job.
-  pub job: Option<String>,
   /// bmo-receiver.
   pub receiver: Option<String>,
+  /// The token bmo-receiver's server takes.
+  pub receiver_token: Option<String>,
   /// bmo-gate.
   pub gate: Option<String>,
 }
