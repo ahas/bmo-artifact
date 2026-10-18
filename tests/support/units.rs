@@ -1,31 +1,22 @@
 //! Stand-ins for the units a search calls besides bmo-agency (`docs/api.md`, "What this repository calls"):
-//! bmo-job's ledger and queue, bmo-receiver's messages, bmo-gate's knowledge, bmo-voice's briefings and the
-//! tool host's page reading, all served on one local port from a book the test fills and reads back. The
-//! service's own clients reach it, so a launch or a run goes through the same calls the service makes.
+//! the queue an ending is handed back through, bmo-receiver's messages, bmo-gate's knowledge, bmo-voice's
+//! briefings and the tool host's page reading, all served on one local port from a book the test fills and
+//! reads back. The service's own clients reach it, so a run goes through the same calls the service makes.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use axum::Json;
-use axum::extract::{Path, Query, State};
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
-use bmo_artifact::clients::job::{HandBack, Launch, NewRun, Run, RunClose};
+use bmo_artifact::clients::job::HandBack;
 use serde_json::{Value, json};
 
 /// What the stand-ins hold, and every call they were asked to act on.
 #[derive(Debug, Default)]
 pub struct Book {
-  /// The ledger: each run opened, as bmo-job holds it.
-  pub runs: Vec<Run>,
-  /// Each run opened, as it was asked for.
-  pub opened: Vec<NewRun>,
-  /// Each launch asked for, by its run.
-  pub launches: Vec<(i64, Launch)>,
-  /// The sentence a launch is refused with; none lets every launch come up.
-  pub launch_refusal: Option<String>,
-  pub closes: Vec<(i64, RunClose)>,
   /// Each ending handed back to a room's session.
   pub handed: Vec<HandBack>,
   /// The messages bmo-receiver holds, by room and message.
@@ -60,10 +51,6 @@ pub async fn serve(book: Book) -> (Units, String) {
   let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("a port");
   let address = format!("http://{}", listener.local_addr().expect("an address"));
   let app = axum::Router::new()
-    .route("/runs", post(open_run).get(runs_of_search))
-    .route("/runs/{id}", get(run))
-    .route("/runs/{id}/launch", post(launch))
-    .route("/runs/{id}/close", post(close_run))
     .route("/instructions", post(hand_back))
     .route("/rooms", get(rooms))
     .route("/rooms/{room}/messages/{message}", get(message))
@@ -95,87 +82,6 @@ fn absent(what: &str) -> Response {
     Json(json!({ "error": format!("no such {what}"), "code": "not_found" })),
   )
     .into_response()
-}
-
-async fn open_run(State(units): State<Units>, Json(asked): Json<NewRun>) -> Response {
-  let mut book = units.book();
-  let id = 100 + book.runs.len() as i64;
-
-  book.runs.push(Run {
-    id,
-    agent: asked.agent.clone(),
-    chat_id: Some(asked.chat_id),
-    unit: asked.unit.clone(),
-    depth: asked.depth.clone(),
-    search_id: asked.search_id,
-    started_at: 1,
-    ..Run::default()
-  });
-  book.opened.push(asked);
-
-  (StatusCode::CREATED, Json(json!({ "id": id }))).into_response()
-}
-
-async fn runs_of_search(
-  State(units): State<Units>,
-  Query(query): Query<HashMap<String, String>>,
-) -> Json<Value> {
-  let search: Option<i64> = query.get("search").and_then(|id| id.parse().ok());
-  let runs: Vec<i64> = units
-    .book()
-    .runs
-    .iter()
-    .filter(|run| run.search_id == search)
-    .map(|run| run.id)
-    .collect();
-
-  Json(json!({ "runs": runs }))
-}
-
-async fn run(State(units): State<Units>, Path(id): Path<i64>) -> Response {
-  match units.book().runs.iter().find(|run| run.id == id) {
-    Some(run) => Json(run.clone()).into_response(),
-    None => absent("run"),
-  }
-}
-
-async fn launch(State(units): State<Units>, Path(id): Path<i64>, Json(launch): Json<Launch>) -> Response {
-  let mut book = units.book();
-
-  book.launches.push((id, launch));
-
-  match book.launch_refusal.clone() {
-    None => StatusCode::NO_CONTENT.into_response(),
-    Some(refused) => {
-      (StatusCode::BAD_GATEWAY, Json(json!({ "error": refused, "code": "launch_failed" }))).into_response()
-    }
-  }
-}
-
-async fn close_run(
-  State(units): State<Units>,
-  Path(id): Path<i64>,
-  Json(close): Json<RunClose>,
-) -> Response {
-  let mut book = units.book();
-  let Some(run) = book.runs.iter_mut().find(|run| run.id == id) else {
-    return absent("run");
-  };
-
-  if run.finished_at.is_some() {
-    return (
-      StatusCode::CONFLICT,
-      Json(json!({ "error": "the run is already closed", "code": "run_closed" })),
-    )
-      .into_response();
-  }
-
-  run.finished_at = Some(close.finished_at);
-  run.outcome = Some(close.outcome.clone());
-  run.context_tokens = close.context_tokens;
-  book.closes.push((id, close));
-
-  StatusCode::NO_CONTENT.into_response()
 }
 
 async fn hand_back(State(units): State<Units>, Json(back): Json<HandBack>) -> Response {

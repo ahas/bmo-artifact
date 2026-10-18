@@ -15,7 +15,6 @@ use serde_json::{Map, Value, json};
 use tokio::sync::OnceCell;
 
 use crate::clients::agency::{Agency, AgencyClient};
-use crate::clients::job::Job;
 use crate::clients::receiver::Receiver;
 use crate::clients::tool_host::ToolHost;
 use crate::documents::preview::PreviewCache;
@@ -158,8 +157,6 @@ pub struct Standing {
   pub tool_host: ToolHost,
   /// bmo-agency, at the address the settings name; a test hands a stand-in of its own.
   pub agency: Arc<dyn Agency>,
-  /// bmo-job, at the address the settings name.
-  pub job: Job,
   /// bmo-receiver, at the address the settings name.
   pub receiver: Receiver,
   /// The previews of the pages a document points at, fetched through the tool host and kept under the file
@@ -175,8 +172,8 @@ impl Standing {
     let wording = Wording::read(settings.wording.file.as_deref())?;
     let tool_host =
       ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
-    let agency = Arc::new(AgencyClient::new(settings.units.agency.clone()));
-    let job = Job::new(settings.units.job.clone());
+    let agency =
+      Arc::new(AgencyClient::new(settings.units.agency.clone(), settings.units.agency_token.clone()));
     let receiver = Receiver::new(settings.units.receiver.clone());
     let previews =
       Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::new(tool_host.clone())));
@@ -187,7 +184,6 @@ impl Standing {
       wording,
       tool_host,
       agency,
-      job,
       receiver,
       previews,
       settled: Arc::default(),
@@ -206,7 +202,7 @@ impl Standing {
       db: db.clone(),
       root: self.settings.files.root.clone(),
       words: self.wording.search.clone(),
-      job: self.job.clone(),
+      agency: Arc::clone(&self.agency),
       receiver: self.receiver.clone(),
       previews: Arc::clone(&self.previews),
     })

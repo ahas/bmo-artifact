@@ -336,6 +336,81 @@ impl Apart {
   }
 }
 
+/// A run's row as it is opened in the run ledger: whose run it is, the room it reports to, the unit it runs
+/// as, its depth, how long it may take, when it started in epoch seconds, who set it off and the search it
+/// carries.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NewRun {
+  pub agent: String,
+  #[serde(default)]
+  pub chat_id: Option<i64>,
+  pub unit: String,
+  pub depth: i64,
+  /// How long it may take, or none for a run that follows its work to the end however long it takes.
+  #[serde(default)]
+  pub cap_ms: Option<i64>,
+  pub started_at: i64,
+  #[serde(default)]
+  pub started_by: Option<String>,
+  #[serde(default)]
+  pub search_id: Option<i64>,
+}
+
+/// One run of the ledger, its times in epoch seconds.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Run {
+  pub id: i64,
+  pub agent: String,
+  #[serde(default)]
+  pub chat_id: Option<i64>,
+  pub unit: String,
+  pub depth: i64,
+  pub started_at: i64,
+  #[serde(default)]
+  pub finished_at: Option<i64>,
+  #[serde(default)]
+  pub outcome: Option<String>,
+  #[serde(default)]
+  pub context_tokens: Option<i64>,
+}
+
+/// How a run ended, in epoch seconds.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunClose {
+  pub finished_at: i64,
+  pub outcome: String,
+  #[serde(default)]
+  pub context_tokens: Option<i64>,
+}
+
+/// The process a run is: the program, its words, the folder it starts in and the variables it is handed.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Command {
+  pub program: String,
+  pub args: Vec<String>,
+  pub cwd: String,
+  pub environment: BTreeMap<String, String>,
+}
+
+/// A run's runner launched: what it is in the words a person watching reads, the agent it belongs to, and
+/// its process.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Launch {
+  pub title: String,
+  pub agent: String,
+  pub command: Command,
+}
+
+#[derive(Deserialize)]
+struct Opened {
+  id: i64,
+}
+
+#[derive(Deserialize)]
+struct Carried {
+  runs: Vec<i64>,
+}
+
 #[derive(Deserialize)]
 struct Started {
   id: String,
@@ -414,13 +489,27 @@ pub trait Agency: Send + Sync + Debug {
   fn apart<'a>(&'a self, id: &'a str) -> Asked<'a, Apart>;
   /// A run apart stopped.
   fn stop_apart<'a>(&'a self, id: &'a str) -> Asked<'a, ()>;
+
+  /// A run's row opened in the ledger before the run is, so it is there from the moment it exists: its
+  /// number.
+  fn open_run<'a>(&'a self, run: &'a NewRun) -> Asked<'a, i64>;
+  /// A run's runner launched; bmo-agency's sentence where it did not come up.
+  fn launch<'a>(&'a self, run_id: i64, launch: &'a Launch) -> Asked<'a, ()>;
+  /// One run of the ledger.
+  fn run(&self, run_id: i64) -> Asked<'_, Option<Run>>;
+  /// A run's row closed with how it ended: whether this was the ending that closed it, `false` where it was
+  /// closed already.
+  fn close_run<'a>(&'a self, run_id: i64, close: &'a RunClose) -> Asked<'a, bool>;
+  /// Every run that has carried a search, in the order they were opened.
+  fn runs_of_search(&self, search_id: i64) -> Asked<'_, Vec<i64>>;
 }
 
-/// bmo-agency at the address the settings name, where they name one.
+/// bmo-agency at the address the settings name, where they name one, under the token they name.
 #[derive(Clone, Debug)]
 pub struct AgencyClient {
   http: reqwest::Client,
   address: Option<String>,
+  token: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -466,10 +555,11 @@ impl<'a> Call<'a> {
 }
 
 impl AgencyClient {
-  pub fn new(address: Option<String>) -> Self {
+  pub fn new(address: Option<String>, token: Option<String>) -> Self {
     Self {
       http: reqwest::Client::new(),
       address,
+      token: token.filter(|token| !token.trim().is_empty()),
     }
   }
 
@@ -495,6 +585,10 @@ impl AgencyClient {
     }
 
     let mut request = self.http.request(call.method.clone(), url);
+
+    if let Some(token) = &self.token {
+      request = request.bearer_auth(token);
+    }
 
     if let Some(body) = &call.body {
       request = request.json(body);
@@ -752,5 +846,56 @@ impl Agency for AgencyClient {
     Box::pin(
       async move { self.done(Call::new("stop a run apart", Method::POST, &["apart", id, "stop"])).await },
     )
+  }
+
+  fn open_run<'a>(&'a self, run: &'a NewRun) -> Asked<'a, i64> {
+    Box::pin(async move {
+      let opened: Opened =
+        self.read(Call::new("open a run's row", Method::POST, &["runs"]).body(run)).await?;
+
+      Ok(opened.id)
+    })
+  }
+
+  fn launch<'a>(&'a self, run_id: i64, launch: &'a Launch) -> Asked<'a, ()> {
+    Box::pin(async move {
+      let id = run_id.to_string();
+
+      self
+        .done(Call::new("launch a run's runner", Method::POST, &["runs", &id, "launch"]).body(launch))
+        .await
+    })
+  }
+
+  fn run(&self, run_id: i64) -> Asked<'_, Option<Run>> {
+    Box::pin(async move {
+      let id = run_id.to_string();
+
+      self.found(Call::new("read a run", Method::GET, &["runs", &id])).await
+    })
+  }
+
+  fn close_run<'a>(&'a self, run_id: i64, close: &'a RunClose) -> Asked<'a, bool> {
+    Box::pin(async move {
+      let id = run_id.to_string();
+      let path = ["runs", &id, "close"];
+      let call = Call::new("close a run's row", Method::POST, &path).body(close);
+
+      Ok(self.send(call, Some(StatusCode::CONFLICT)).await?.is_some())
+    })
+  }
+
+  fn runs_of_search(&self, search_id: i64) -> Asked<'_, Vec<i64>> {
+    Box::pin(async move {
+      let search = search_id.to_string();
+      let carried: Carried = self
+        .read(
+          Call::new("list the runs that carried a search", Method::GET, &["runs"])
+            .query("search", Some(&search)),
+        )
+        .await?;
+
+      Ok(carried.runs)
+    })
   }
 }

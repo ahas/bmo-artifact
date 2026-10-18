@@ -213,7 +213,8 @@ impl Shell {
     let voice = Voice::new(settings.units.voice.clone());
     let tool_host =
       ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
-    let agency = Arc::new(AgencyClient::new(settings.units.agency.clone()));
+    let agency =
+      Arc::new(AgencyClient::new(settings.units.agency.clone(), settings.units.agency_token.clone()));
     let job = Job::new(settings.units.job.clone());
     let receiver = Receiver::new(settings.units.receiver.clone());
     let gate = Gate::new(settings.units.gate.clone());

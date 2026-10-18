@@ -42,7 +42,7 @@ use crate::verbs::archive_docs::Documents;
 use crate::verbs::research::admission::{
   Branches, Demand, PLACE_POLL, await_place, parse_demand, unit_running,
 };
-use crate::verbs::research::run::{Research, Road, Row, assistant_texts};
+use crate::verbs::research::run::{Research, Road, assistant_texts};
 use crate::verbs::research::{
   Profile, Told, instruction_line, profile as read_profile, reclaim_leases, reserve_places, work_knowledge,
 };
@@ -101,6 +101,8 @@ pub struct Started {
   pub via: Option<String>,
   /// The registration its research is kept on.
   pub kept_on: Option<String>,
+  /// The agent whose turn asked it, which what it comes to goes back to.
+  pub asked_by: Option<String>,
 }
 
 // How the work came out where it did not hand anything back itself.
@@ -133,6 +135,7 @@ impl Run<'_> {
     let back = HandBack {
       run_id: self.started.run_id,
       chat_id: self.started.chat_id,
+      agent: self.started.asked_by.clone(),
       text: text.to_owned(),
       sort: SORT.to_owned(),
       via: self.started.via.clone(),
@@ -150,7 +153,7 @@ impl Run<'_> {
     }
 
     let Some(search_id) = self.started.search_id else { return };
-    let runs = match self.shell.job.runs_of_search(search_id).await {
+    let runs = match self.shell.agency.runs_of_search(search_id).await {
       Ok(runs) => runs,
       Err(why) => {
         eprintln!("the runs that carried search {search_id} could not be listed: {why}");
@@ -306,7 +309,7 @@ impl Run<'_> {
     let agency = Arc::clone(&shell.agency);
 
     // Places a research run left behind when its process died are given back before this run asks.
-    if let Err(why) = reclaim_leases(&*agency, &shell.job, unit_running).await {
+    if let Err(why) = reclaim_leases(&*agency, unit_running).await {
       eprintln!("the pool's abandoned places could not be reclaimed: {why}");
     }
 
@@ -548,15 +551,17 @@ pub async fn search_runner(
     .address
     .clone()
     .map(|address| Documents::of_shell(shell, db.clone(), address));
-  let row = started.run_id.map(|id| Row {
-    job: shell.job.clone(),
-    id,
-  });
   let mut run = Run {
     shell,
     db: db.clone(),
     started,
-    research: Research::new(Arc::clone(&shell.agency), "search", started.chat_id, row, &started.unit),
+    research: Research::new(
+      Arc::clone(&shell.agency),
+      "search",
+      started.chat_id,
+      started.run_id,
+      &started.unit,
+    ),
     query: request.query.clone(),
     documents,
     owner_room,
@@ -612,6 +617,9 @@ pub struct RunnerArgs {
   /// The registration the run's research is kept on.
   #[arg(long)]
   kept_on: Option<String>,
+  /// The agent whose turn asked it, which what it comes to goes back to.
+  #[arg(long)]
+  asked_by: Option<String>,
 }
 
 impl RunnerArgs {
@@ -631,6 +639,7 @@ impl RunnerArgs {
       profile: self.profile.filter(|profile| !profile.is_empty()),
       via: self.via.filter(|via| !via.trim().is_empty()),
       kept_on: self.kept_on.filter(|kept_on| !kept_on.trim().is_empty()),
+      asked_by: self.asked_by.filter(|asked_by| !asked_by.trim().is_empty()),
     })
   }
 }

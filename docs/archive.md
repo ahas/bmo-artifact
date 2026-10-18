@@ -33,7 +33,7 @@ Every other unit is reached through the calls `docs/api.md` lists:
   fetching a raster picture, checking an address, and pacing requests per host and engine.
 - **bmo-agency** drives the research session and the co-worker pool. It also provides the tiers,
   providers and accounts.
-- **bmo-job** queues a search run and holds its live state.
+- **bmo-agency** also keeps a search run's row in its run ledger and launches its runner.
 - **bmo-voice** speaks a narration.
 - **bmo-receiver** says who sent the asking message and when.
 - **bmo-web** hosts the console, which loads this repository's console plugin bundle. It also holds
@@ -792,7 +792,7 @@ How the two relate:
   each depth.
 - The way results return to a room. The runner does not speak to the room: it hands the result to
   that room's session as a quiet instruction, and the session answers in its own voice.
-- The run row bmo-job keeps for each run, and its ending values.
+- The run row the run ledger keeps for each run, and its ending values.
 
 ## The log is not the document
 

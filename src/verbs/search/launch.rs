@@ -11,9 +11,9 @@ use clap::Args;
 
 use super::record::{NewSearch, finish_search, join_search, reopen_search, start_search};
 use super::request::{
-  Asker, DEFAULT_DEPTH, REGIONS, Request, SHAPES, depth_names, is_depth, options, search_key,
+  Asker, DEFAULT_DEPTH, REGIONS, Request, SHAPES, depth_names, is_depth, ladder_place, options, search_key,
 };
-use crate::clients::job::{Command, Launch, NewRun, RunClose};
+use crate::clients::agency::{Command, Launch, NewRun, RunClose};
 use crate::helpers::marks::fill_marks;
 use crate::now_ms;
 use crate::plumbing::verb::{Answer, Shell, Verb, VerbError};
@@ -91,8 +91,8 @@ pub struct Asked {
 pub use crate::helpers::js::parse_int as whole;
 
 /// What the runner is started with: the room, the file holding the question, the depth, the rows it carries
-/// and its unit, who set it off, the demand, the settings it launches on, its road and its registration —
-/// and never the question itself.
+/// and its unit, who set it off, the demand, the settings it launches on, its road, its registration and the
+/// agent whose turn asked it — and never the question itself.
 pub struct RunnerCall<'a> {
   pub chat_id: i64,
   pub query_path: &'a Path,
@@ -105,6 +105,7 @@ pub struct RunnerCall<'a> {
   pub profile: &'a Profile,
   pub via: Option<&'a str>,
   pub kept_on: Option<&'a str>,
+  pub asked_by: Option<&'a str>,
 }
 
 /// The runner's words, after the binary.
@@ -128,6 +129,10 @@ pub fn runner_args(call: &RunnerCall<'_>) -> Vec<String> {
 
   if let Some(registration) = call.kept_on {
     args.extend(["--kept-on".to_owned(), registration.to_owned()]);
+  }
+
+  if let Some(agent) = call.asked_by {
+    args.extend(["--asked-by".to_owned(), agent.to_owned()]);
   }
 
   args
@@ -272,7 +277,7 @@ pub async fn search(
 
   // Places a research run left in the pool when its process died are given back first, so a dead run never
   // reads as a full pool.
-  if let Err(why) = reclaim_leases(agency, &shell.job, unit_running).await {
+  if let Err(why) = reclaim_leases(agency, unit_running).await {
     eprintln!("the pool's abandoned places could not be reclaimed: {why}");
   }
 
@@ -343,16 +348,15 @@ pub async fn search(
 
   join_search(db, search_id, &effective).await?;
 
-  let opened = shell
-    .job
+  let opened = agency
     .open_run(&NewRun {
       agent: AGENT.to_owned(),
-      chat_id,
+      chat_id: Some(chat_id),
       unit: unit.clone(),
+      depth: ladder_place(&effective),
       cap_ms: None,
+      started_at: now_ms() / 1000,
       started_by: started_by.map(str::to_owned),
-      asked_by: asked.asked_by.clone(),
-      depth: Some(effective.clone()),
       search_id: Some(search_id),
     })
     .await;
@@ -364,7 +368,7 @@ pub async fn search(
 
       return Err(VerbError::Partly {
         lines,
-        refusal: format!("the run's row could not be opened in bmo-job: {why}"),
+        refusal: format!("the run's row could not be opened in bmo-agency: {why}"),
       });
     }
   };
@@ -380,6 +384,7 @@ pub async fn search(
     profile: &profile,
     via: asked_on.as_deref(),
     kept_on: kept_on.as_deref(),
+    asked_by: asked.asked_by.as_deref(),
   });
   let launch = Launch {
     title: asked.query.clone().unwrap_or_else(|| query.clone()),
@@ -387,22 +392,22 @@ pub async fn search(
     command: runner_command(args, std::env::vars())?,
   };
 
-  if let Err(reason) = shell.job.launch(run_id, &launch).await {
+  if let Err(reason) = agency.launch(run_id, &launch).await {
     // A run that never came up ends the search it was going to answer, this launch being the only one it has;
     // an earlier search it was to carry on is put back as it stood.
     take_off(&scratch);
 
     let close = RunClose {
-      finished_at: now_ms(),
+      finished_at: now_ms() / 1000,
       outcome: LAUNCH_ERROR.to_owned(),
       context_tokens: None,
     };
 
-    if let Err(why) = shell.job.close_run(run_id, &close).await {
+    if let Err(why) = agency.close_run(run_id, &close).await {
       eprintln!("{unit}: the run's row could not be closed: {why}");
     }
 
-    eprintln!("failed to launch {unit}: bmo-job refused ({reason})");
+    eprintln!("failed to launch {unit}: bmo-agency refused ({reason})");
     finish_search(db, search_id, put_back).await?;
 
     return Err(VerbError::Partly {

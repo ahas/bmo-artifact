@@ -3,7 +3,7 @@
 //! registration it is kept on; the run's research settings handed to its web tools in its environment; the run
 //! carried apart by bmo-agency, which walks the accounts its road is offered, feeds every line to the run's
 //! log and records what it spent; every line it gains kept here, so a run stopped from outside still has what
-//! it wrote; and the run's row closed once in bmo-job's ledger, with its pool places given back.
+//! it wrote; and the run's row closed once in bmo-agency's ledger, with its pool places given back.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
@@ -13,9 +13,8 @@ use serde_json::Value;
 
 use super::{LINE, Profile, Told, clock, finish_leases, owner as research_owner};
 use crate::clients::agency::{
-  Agency, ApartAsking, ApartLog, ApartReply, Instructions, Note, Road as Going,
+  Agency, ApartAsking, ApartLog, ApartReply, Instructions, Note, Road as Going, RunClose,
 };
-use crate::clients::job::{Job, RunClose};
 use crate::control::research::{checked_effort, launch_mapping, research_provider};
 use crate::now_ms;
 
@@ -71,18 +70,13 @@ pub enum Road {
   Kept(String),
 }
 
-/// The row a run's launcher opened for it, and bmo-job, whose ledger holds it.
-pub struct Row {
-  pub job: Job,
-  pub id: i64,
-}
-
 /// One run as its runner starts it: its room and row, the log its lines are fed to, and what it has written.
 pub struct Research {
   agency: Arc<dyn Agency>,
   source: &'static str,
   chat_id: i64,
-  row: Option<Row>,
+  /// The number of the row its launcher opened in the run ledger.
+  run_id: Option<i64>,
   owner: Option<String>,
   log: Option<ApartLog>,
   streamed: Arc<Mutex<Vec<String>>>,
@@ -98,15 +92,15 @@ impl Research {
     agency: Arc<dyn Agency>,
     source: &'static str,
     chat_id: i64,
-    row: Option<Row>,
+    run_id: Option<i64>,
     unit: &str,
   ) -> Self {
     Self {
       agency,
       source,
       chat_id,
-      owner: row.as_ref().map(|row| research_owner(source, row.id)),
-      row,
+      owner: run_id.map(|id| research_owner(source, id)),
+      run_id,
       log: (!unit.is_empty()).then(|| ApartLog {
         run: unit.to_owned(),
         chat_id: Some(chat_id),
@@ -294,7 +288,7 @@ impl Research {
       eprintln!("{} run pool places could not be given back: {why}", self.source);
     }
 
-    let Some(row) = &self.row else { return false };
+    let Some(run_id) = self.run_id else { return false };
 
     if self.closed {
       return false;
@@ -303,12 +297,12 @@ impl Research {
     self.closed = true;
 
     let close = RunClose {
-      finished_at: now_ms(),
+      finished_at: now_ms() / 1000,
       outcome: outcome.to_owned(),
       context_tokens: self.context_tokens,
     };
 
-    match row.job.close_run(row.id, &close).await {
+    match self.agency.close_run(run_id, &close).await {
       Ok(closed) => closed,
       Err(why) => {
         eprintln!("the run's row could not be closed: {why}");

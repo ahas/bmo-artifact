@@ -20,7 +20,7 @@ use bmo_artifact::verbs::search::request::{Asker, Options, Request};
 use bmo_artifact::wording::Wording;
 use serde_json::{Value, json};
 use support::ROOT;
-use support::agency::{self, Book as AgencyBook};
+use support::agency::{self, Book as AgencyBook, Stand};
 use support::cli::{Ran, cli};
 use support::scratch::Scratch;
 use support::units::{self, Book, Units};
@@ -31,17 +31,18 @@ const ROOM_TEXT: &str = "42";
 
 struct Space {
   scratch: Scratch,
-  units: Units,
+  _units: Units,
+  agency: Stand,
   // The folder the launcher writes the question in.
   temp: tempfile::TempDir,
   settings: Vec<(&'static str, String)>,
 }
 
 impl Space {
-  async fn new(book: Book) -> Self {
+  async fn new(book: Book, ledger: AgencyBook) -> Self {
     let scratch = Scratch::new().await;
     let (units, address) = units::serve(book).await;
-    let (_, agency) = agency::serve(AgencyBook::lending()).await;
+    let (stand, agency) = agency::serve(ledger).await;
     let temp = tempfile::tempdir().expect("a folder");
     let mut settings = units::pointed_at(&address, &agency);
 
@@ -53,7 +54,8 @@ impl Space {
 
     Self {
       scratch,
-      units,
+      _units: units,
+      agency: stand,
       temp,
       settings,
     }
@@ -98,16 +100,19 @@ impl Space {
   }
 }
 
-fn refusing() -> Book {
-  Book {
+// A space whose bmo-agency refuses every launch.
+async fn refusing() -> Space {
+  let ledger = AgencyBook {
     launch_refusal: Some("refused for the test".to_owned()),
-    ..Book::default()
-  }
+    ..AgencyBook::lending()
+  };
+
+  Space::new(Book::default(), ledger).await
 }
 
 #[tokio::test]
 async fn refuses_a_call_it_cannot_read_and_opens_no_row_for_any() {
-  let space = Space::new(refusing()).await;
+  let space = refusing().await;
   let refusals: [(&[&str], &str, &str); 5] = [
     (&["search", "--query", "rate"], "", "usage: bmo search --chat <chatId>"),
     (&["search", "--chat", ROOM_TEXT], "   ", "usage: bmo search --chat <chatId>"),
@@ -135,7 +140,7 @@ async fn refuses_a_call_it_cannot_read_and_opens_no_row_for_any() {
     assert!(ran.err.contains(said), "{}", ran.err);
   }
 
-  assert!(space.units.book().opened.is_empty());
+  assert!(space.agency.book().opened.is_empty());
   assert!(space.searches().await.is_empty());
 }
 
@@ -143,10 +148,10 @@ async fn refuses_a_call_it_cannot_read_and_opens_no_row_for_any() {
 // nothing of a failed launch.
 #[tokio::test]
 async fn the_search_launcher_closes_its_own_row_and_its_search_and_takes_its_scratch_file_with_it() {
-  let space = Space::new(refusing()).await;
+  let space = refusing().await;
   let ran = space.bmo(&["search", "--chat", ROOM_TEXT, "--by", "chat:42"], "dinner nearby").await;
   let (run, opened) = {
-    let book = space.units.book();
+    let book = space.agency.book();
 
     (book.runs.first().expect("a run opened").clone(), book.opened[0].clone())
   };
@@ -159,11 +164,15 @@ async fn the_search_launcher_closes_its_own_row_and_its_search_and_takes_its_scr
   assert!(run.unit.starts_with("bmo-search-"));
   // Not "failed": the run never reached the work.
   assert_eq!(run.outcome.as_deref(), Some("error"));
-  assert_eq!(run.depth.as_deref(), Some("basic"));
+  // The basic rung, the shallowest on the ladder.
+  assert_eq!(run.depth, 0);
+  assert_eq!(run.chat_id, Some(ROOM));
+  // The ledger's times are epoch seconds.
+  assert!(run.started_at < 10_000_000_000, "{}", run.started_at);
+  assert!(run.finished_at.is_some_and(|at| at < 10_000_000_000), "{:?}", run.finished_at);
   assert_eq!(opened.cap_ms, None);
   assert_eq!(opened.started_by.as_deref(), Some("chat:42"));
-  assert_eq!(opened.asked_by.as_deref(), Some("agent-a"));
-  assert_eq!(run.search_id, searches[0]["id"].as_i64());
+  assert_eq!(opened.search_id, searches[0]["id"].as_i64());
   // The launch was the only one that search would ever have.
   assert_eq!(searches[0]["status"], "failed");
   assert_eq!(searches[0]["query"], "dinner nearby");
@@ -176,7 +185,7 @@ async fn the_search_launcher_closes_its_own_row_and_its_search_and_takes_its_scr
 // puts that search back as it stood, and a search it cannot carry on is refused before any row is written.
 #[tokio::test]
 async fn a_follow_up_carries_its_rooms_earlier_search_on_and_refuses_what_it_cannot() {
-  let space = Space::new(refusing()).await;
+  let space = refusing().await;
   let mut ids = vec![];
 
   for (chat, author, kind) in
@@ -205,10 +214,10 @@ async fn a_follow_up_carries_its_rooms_earlier_search_on_and_refuses_what_it_can
     );
   }
 
-  assert!(space.units.book().opened.is_empty());
+  assert!(space.agency.book().opened.is_empty());
 
   let ran = space.bmo(&["search", "--chat", ROOM_TEXT, "--into", &ids[0]], "more photos").await;
-  let joined = space.units.book().opened[0].search_id;
+  let joined = space.agency.book().opened[0].search_id;
   let searches = space.searches().await;
 
   assert_eq!(ran.code, Some(1), "{}", ran.err);
@@ -220,7 +229,7 @@ async fn a_follow_up_carries_its_rooms_earlier_search_on_and_refuses_what_it_can
 
 #[tokio::test]
 async fn a_page_asked_for_whole_is_an_import_at_the_first_depth_under_its_own_question() {
-  let space = Space::new(refusing()).await;
+  let space = refusing().await;
 
   space
     .bmo(
@@ -249,11 +258,11 @@ async fn a_page_asked_for_whole_is_an_import_at_the_first_depth_under_its_own_qu
   assert_eq!(search["options"], r#"{"source":"https://r.example/a"}"#);
 }
 
-// A launch bmo-job takes answers that the run is on its way, leaves the question in the runner's file with
-// who asked and when as bmo-receiver keeps them, and hands bmo-job this binary on the runner's words with the
-// road the question came in on.
+// A launch bmo-agency takes answers that the run is on its way, leaves the question in the runner's file with
+// who asked and when as bmo-receiver keeps them, and hands bmo-agency this binary on the runner's words with
+// the road the question came in on and the agent whose turn asked.
 #[tokio::test]
-async fn a_launch_reads_who_asked_off_bmo_receiver_and_hands_bmo_job_the_runner_on_its_words() {
+async fn a_launch_reads_who_asked_off_bmo_receiver_and_hands_bmo_agency_the_runner_on_its_words() {
   let mut book = Book::default();
 
   book.messages.insert(
@@ -261,7 +270,7 @@ async fn a_launch_reads_who_asked_off_bmo_receiver_and_hands_bmo_job_the_runner_
     json!({ "sender_id": 5, "sender_name": "tester", "sent_at": 1_700_000_000_123_i64, "via": "chat-road" }),
   );
 
-  let space = Space::new(book).await;
+  let space = Space::new(book, AgencyBook::lending()).await;
   let ran = space
     .bmo(
       &[
@@ -277,7 +286,7 @@ async fn a_launch_reads_who_asked_off_bmo_receiver_and_hands_bmo_job_the_runner_
     )
     .await;
   let ((run_id, launch), unit) = {
-    let book = space.units.book();
+    let book = space.agency.book();
 
     (book.launches[0].clone(), book.runs[0].unit.clone())
   };
@@ -296,8 +305,8 @@ async fn a_launch_reads_who_asked_off_bmo_receiver_and_hands_bmo_job_the_runner_
   assert!(launch.command.program.ends_with("bmo-artifact-cli"), "{}", launch.command.program);
   assert_eq!(launch.command.args[..2], ["search-runner".to_owned(), ROOM_TEXT.to_owned()]);
   assert_eq!(
-    launch.command.args[launch.command.args.len() - 2..],
-    ["--via".to_owned(), "chat-road".to_owned()]
+    launch.command.args[launch.command.args.len() - 4..],
+    ["--via", "chat-road", "--asked-by", "agent-a"]
   );
   assert!(
     !launch.command.args.iter().any(|arg| arg.contains("rate rise")),
@@ -377,6 +386,7 @@ fn of_a_search_hands_the_runner_the_question_in_its_file_and_not_in_its_words() 
     profile: &profile,
     via: Some("chat-road"),
     kept_on: None,
+    asked_by: None,
   });
   let command = runner_command(
     args.clone(),

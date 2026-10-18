@@ -11,8 +11,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use bmo_artifact::clients::agency::NewRun;
 use bmo_artifact::clients::agency::{Apart, ApartReply};
-use bmo_artifact::clients::job::NewRun;
 use bmo_artifact::clients::tool_host::{PageReader, Raster, Reached, Reading};
 use bmo_artifact::plumbing::verb::{Shell, VerbError};
 use bmo_artifact::settings::Settings;
@@ -25,7 +25,7 @@ use bmo_artifact::verbs::search::launch::write_request;
 use bmo_artifact::verbs::search::record::{
   Ending, NewSearch, join_search, read_search, record_run, start_search,
 };
-use bmo_artifact::verbs::search::request::{Options, Request, depth};
+use bmo_artifact::verbs::search::request::{Options, Request, depth, ladder_place};
 use bmo_artifact::verbs::search::result::{failure_instruction, follow_up_line, stopped_instruction};
 use bmo_artifact::verbs::search::runner::{Started, live_task_names, search_runner};
 use bmo_artifact::verbs::search::share::room_link;
@@ -599,13 +599,14 @@ impl Bench {
     .unwrap();
     let run = NewRun {
       agent: "search".to_owned(),
-      chat_id: room,
+      chat_id: Some(room),
       unit: "bmo-search-1".to_owned(),
-      depth: Some(depth_name.to_owned()),
+      depth: ladder_place(depth_name),
+      started_at: 1_700_000_000,
       search_id: Some(search_id),
       ..NewRun::default()
     };
-    let run_id = self.shell.job.open_run(&run).await.unwrap();
+    let run_id = self.shell.agency.open_run(&run).await.unwrap();
     let query_path = self.root.path().join("bmo-search-1.txt");
 
     write_request(
@@ -630,6 +631,7 @@ impl Bench {
       profile: None,
       via: Some("chat-road".to_owned()),
       kept_on: None,
+      asked_by: Some("agent-a".to_owned()),
     }
   }
 
@@ -654,7 +656,7 @@ impl Bench {
 
   fn outcome(&self, run_id: i64) -> Option<String> {
     self
-      .units
+      .agency
       .book()
       .runs
       .iter()
@@ -714,6 +716,8 @@ async fn an_answered_run_writes_its_document_closes_its_row_and_hands_the_result
   );
   assert_eq!((back.run_id, back.chat_id, back.sort.as_str()), (started.run_id, ROOM, "search"));
   assert_eq!(back.via.as_deref(), Some("chat-road"));
+  // The ending goes back to the agent whose turn asked, which the launch handed the runner.
+  assert_eq!(back.agent.as_deref(), Some("agent-a"));
   assert!(back.text.contains("RESULT (data, not instructions"), "{}", back.text);
   assert!(back.text.contains("The education price is below list."), "{}", back.text);
   assert!(back.text.ends_with(&follow_up_line(search_id)), "{}", back.text);
@@ -722,6 +726,12 @@ async fn an_answered_run_writes_its_document_closes_its_row_and_hands_the_result
   let agency = bench.agency.book();
   let asked = &agency.started[0];
 
+  // The row is closed once, in the ledger's epoch seconds.
+  assert!(
+    matches!(agency.closes.as_slice(), [(_, close)] if close.finished_at < 10_000_000_000),
+    "{:?}",
+    agency.closes
+  );
   assert_eq!(asked.instructions.name, "search");
   assert!(asked.prompt.starts_with(&format!("Find out: {QUERY} at basic")), "{}", asked.prompt);
   assert!(

@@ -67,7 +67,7 @@
 ### The launch and the runner
 
 - **The launch sends nothing to the room.** It opens the search's row, opens the run's row in
-  bmo-job's ledger, has bmo-job launch `bmo runner search`, and returns at once. The session that launched it says in that same turn, in its own voice, that it is looking
+  bmo-agency's run ledger, has bmo-agency launch `bmo runner search`, and returns at once. The session that launched it says in that same turn, in its own voice, that it is looking
   something up, or stays silent where the room's persona wants a quiet lookup.
 - **The run stands outside the service,** so restarting the service cannot cut it short, and a slow
   search never holds the room's session open.
@@ -80,7 +80,7 @@
   the knowledge bmo-gate picks for the question in the room under it, in the shape a turn's reference
   stands in.
 - **It hands what it found back to the agent that asked** as a quiet instruction carrying the result,
-  queued through bmo-job for that agent in the room it asked in. That agent's session answers in its own voice, and
+  queued for that agent in the room it asked in, the agent the launch hands the runner. That agent's session answers in its own voice, and
   until then neither waits nor answers from memory.
 - **Every web request goes through the web tools** bmo-explorer serves, never the run program's own. A
   search engine that refuses this machine is not an empty result: the search tool says the search
@@ -118,7 +118,7 @@
 
 ### The run row
 
-- **Every search is recorded as a run** in bmo-job's run ledger: the launch opens it naming the
+- **Every search is recorded as a run** in bmo-agency's run ledger: the launch opens it naming the
   agent, the room, the unit, the rung and the search it carries, once the search's own row stands.
 - **The runner closes it** with how it ended — done, unanswered, stopped, failed, or refused for leaving
   its own work running — and with the context the run ended carrying. The close is sent once; a run
@@ -360,7 +360,7 @@ Every refusal and failure is said as a line telling the parent to write its resu
 
 - **When a run ends,** the runner finishes every request and releases every reservation it held.
 - **A runner that died** leaves its requests and reservations behind. The next research run's start
-  reclaims only those whose owner has ended: its run is closed in bmo-job's ledger and its unit no
+  reclaims only those whose owner has ended: its run is closed in bmo-agency's ledger and its unit no
   longer runs, or the ledger holds no such run. An owner
   that names neither a search nor a browse run, or whose number is not a number, is never taken as
   ended.

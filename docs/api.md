@@ -84,14 +84,15 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
     opened.
   - Its last line on success: `search launched as <unit>; it answers chat <chatId> by itself when it is
     done. …`, after any note on an asker bmo-receiver does not know or a depth the pool lowered.
-  - A run bmo-job does not open or launch ends with failure: the search is put back as it stood, or
+  - A run bmo-agency does not open or launch ends with failure: the search is put back as it stood, or
     closed `failed` where it was new; a run's row opened and never launched is closed `error`, and
     the question's file is taken off the disk. The refusal is `<unit> did not come up`.
-- The search's row is opened here and the run's in bmo-job's ledger, and bmo-job launches its runner.
-- `bmo runner search <chatId> <queryFile> [depth] [runId] [unit] [startedBy] [searchId] [demand] [profile] [--via <road>] [--kept-on <registration>]`,
-  also run as `search-runner`, is the run bmo-job launches. It reads the question from the file and
+- The search's row is opened here and the run's in bmo-agency's ledger, and bmo-agency launches its
+  runner.
+- `bmo runner search <chatId> <queryFile> [depth] [runId] [unit] [startedBy] [searchId] [demand] [profile] [--via <road>] [--kept-on <registration>] [--asked-by <agent>]`,
+  also run as `search-runner`, is the run bmo-agency launches. It reads the question from the file and
   deletes it, carries the run, writes the document from the run's structure lines, and hands the
-  ending back to the room's session through bmo-job. It speaks to no room itself.
+  ending back to the room's session, for the agent `--asked-by` names. It speaks to no room itself.
   - It answers with a line on how the run ended. A run that failed ends with failure and the reason.
   - A stop signal (`SIGTERM` or `SIGINT`) stops the run: what it had written in the result's
     structure is handed back as a stopped result, or, where it wrote nothing, the stop itself.
@@ -244,7 +245,7 @@ reads.
 - `GET /api/archive/{id}` answers `200` with one document whole, or `404 document_not_found`; a number
   that is not a whole number from 1 is refused `400 bad_id`.
   - `search`: the item's fields, `shared` as the list reads it, `runs` (every run that carried it, as
-    bmo-job lists them) and `document` (whether its file is there to read).
+    bmo-agency lists them, and none where it cannot) and `document` (whether its file is there to read).
   - `kind`: the document's kind as the catalogue answers it. A word the catalogue does not know reads
     as `search`.
   - `outline`: `entries`, the table of contents its kind makes, each `slug`, `text`, `depth` and
@@ -458,7 +459,7 @@ room-holding answer (see "Room holding") before it removes a room.
 
 | Purpose | Unit |
 |---|---|
-| Open a search run's row in the ledger naming the search it carries, launch its runner, read and close a run, list the runs that have carried a search | bmo-job |
+| Open a search run's row in the ledger naming the search it carries, launch its runner, read and close a run, list the runs that have carried a search | bmo-agency |
 | Hand a run's ending back to its room's session as a quiet instruction | bmo-job |
 | Import a page, fetch a raster picture, check an address, pace requests per host and engine | bmo-explorer, through the tool host |
 | Read the search-engine values a research profile chooses among | bmo-explorer, through the tool host |
@@ -536,30 +537,20 @@ The calls to bmo-job, bmo-receiver and bmo-gate share one shape:
 
 ### bmo-job
 
-A search run's row lives in bmo-job's ledger, and bmo-job launches its runner and queues what the run
-hands back for the room's session.
+The runner hands a search run's ending back for the room's session at bmo-job's address. bmo-job serves
+no such route, and bmo-receiver's quiet instruction carries neither the sort, the run nor the road, so
+no unit takes this call: it is refused as any other refusal, and the runner says so on its error
+stream.
 
 | Call | Method and path | Request | Answer |
 |---|---|---|---|
-| Open a run's row | `POST /runs` | `agent`, `chat_id`, `unit`, `cap_ms?`, `started_by?`, `asked_by?`, `depth?`, `search_id?` | 201, `id` |
-| Launch its runner | `POST /runs/{id}/launch` | `title`, `agent`, `command` | 204; a refusal with the sentence where it did not come up |
-| Read a run | `GET /runs/{id}` | | `id`, `agent`, `chat_id?`, `unit`, `depth?`, `search_id?`, `started_at`, `finished_at?`, `outcome?`, `context_tokens?` |
-| Close a run | `POST /runs/{id}/close` | `finished_at`, `outcome`, `context_tokens?` | 204; 409 where it is already closed |
-| List the runs that carried a search | `GET /runs?search={id}` | | `runs`, their ids in the order they were opened |
-| Hand an ending back | `POST /instructions` | `run_id?`, `chat_id`, `text`, `sort`, `via?` | 201, `id` |
+| Hand an ending back | `POST /instructions` | `run_id?`, `chat_id`, `agent?`, `text`, `sort`, `via?` | 201, `id` |
 
-- **A search run's row** is opened under the agent `search`, with no `cap_ms`, the depth it runs at
-  and the search it carries; a follow-up names the earlier search.
-- **`asked_by`** is the agent whose turn set it off, which the ending goes back to; `started_by` is who
-  set it off, such as the console.
-- **`command`** is the runner's process: `program`, the path of this repository's CLI binary; `args`,
-  the runner's words; `cwd`, the folder the launcher started in; and `environment`, the variables
-  it is handed. bmo-job starts it where a run of the agent stands, under the run's unit and title.
-- **The outcomes a search run is closed with:** `done`, `unanswered`, `stopped`, `failed`,
-  `live-tasks`, and `error` for a run that never came up.
 - **An ending handed back** is the quiet instruction the room's session reads, of `sort` `search`, on
-  the road `via` names. bmo-job queues it for the agent `asked_by` named in the run's room, and for the
-  owner's room, naming the room, where the run's room is gone.
+  the road `via` names, for the agent `agent` names: the agent whose turn set the search off, none
+  where no turn did. The unit that takes it queues it for that agent in the run's room, and for the
+  owner's room, naming the room, where the run's room is gone. `run_id` is the run whose result it
+  is.
 
 ### bmo-receiver
 
@@ -589,13 +580,15 @@ hands back for the room's session.
 ### bmo-agency
 
 The research runs' model sessions, the providers, tiers and routes they resolve on, the co-worker pool,
-the agents' run counts, the agent log and the registrations are bmo-agency's; the run ledger is
-bmo-job's. This repository reaches all of
-them through the calls below and nothing else. The trait `Agency` declares every call, and
-`AgencyClient` makes them over HTTP; a test hands the service a stand-in of its own.
+the agents' run counts, the agent log, the registrations and the run ledger are bmo-agency's. This
+repository reaches all of them through the calls below and nothing else. The trait `Agency` declares
+every call, and `AgencyClient` makes them over HTTP; a test hands the service a stand-in of its own.
 
 - **The address** is the base of every path below. Where `agency` under `[units]` is unset, every call
   is refused with "the agency's address is not set: set agency under [units] in the settings".
+- **The token** bmo-agency's server takes goes with every call as `Authorization: Bearer <token>`,
+  from `agency_token` under `[units]`. Where it is unset a call goes with none, and bmo-agency refuses
+  it `401` as it refuses any call without its token.
 - **A body is JSON, both ways,** with snake_case keys. A time is epoch milliseconds, and a field written
   with a question mark may be null.
 - **A path segment is an id as it stands,** percent-encoded where it needs to be.
@@ -657,6 +650,33 @@ them through the calls below and nothing else. The trait `Agency` declares every
   `reserved`, `waiting`, `yielding_active`, `yielding_waiting`.
 - **A place a branch answered on** is named `branch-line:<provider>:<model>:<effort>`, the effort empty
   where there is none.
+
+#### The run ledger
+
+A search run's row lives in bmo-agency's run ledger, one row a run of an agent's unit. Its fields are
+the ledger's column names, in snake_case like every other body here, but its times are epoch seconds.
+
+| Call | Method and path | Request | Answer |
+|---|---|---|---|
+| Open a run's row | `POST /runs` | `agent`, `chat_id?`, `unit`, `depth`, `cap_ms?`, `started_at`, `started_by?`, `search_id?` | 201, `id`; 400 where a field it needs is missing |
+| Read a run | `GET /runs/{id}` | | `id`, `agent`, `chat_id?`, `unit`, `depth`, `started_at`, `finished_at?`, `outcome?`, `context_tokens?`; 404 where the ledger holds no such run |
+| Close a run | `POST /runs/{id}/close` | `finished_at`, `outcome`, `context_tokens?` | 204; 409 where it is already closed, and it keeps its first closing |
+| Launch its runner | `POST /runs/{id}/launch` | `title`, `agent`, `command` | 204; a refusal with the sentence where it did not come up |
+| List the runs that carried a search | `GET /runs?search={id}` | | `runs`, their ids in the order they were opened |
+
+- **bmo-agency serves the first three.** It serves neither the launch nor the list: each is refused as
+  any other refusal, so a search's runner never comes up and its launch ends as a run that did not
+  (see "Searching (CLI)"), and the list reads as the run that asks it alone, or as none for the read
+  API.
+- **A search run's row** is opened under the agent `search`, with no `cap_ms`, the search it carries
+  as a number, and as `depth` the rung it runs on by its place on the ladder: `0` for `basic`, `1` for
+  `thorough`, `2` for `exhaustive`. A follow-up names the earlier search. `started_by` is who set it
+  off, such as the console.
+- **`command`** is the runner's process: `program`, the path of this repository's CLI binary; `args`,
+  the runner's words; `cwd`, the folder the launcher started in; and `environment`, the variables
+  it is handed. It is started where a run of the agent stands, under the run's unit and title.
+- **The outcomes a search run is closed with:** `done`, `unanswered`, `stopped`, `failed`,
+  `live-tasks`, and `error` for a run that never came up.
 
 #### Run counts, the agent log and registrations
 

@@ -41,7 +41,7 @@ src/
     run_log/               the run log's JSON and the lines a run's stream leaves
     picture/               a picture's type read off its bytes, and a kept picture written as AVIF
   wording.rs               the document wording file and its English default
-  clients/                 bmo-job, bmo-agency, bmo-voice, bmo-receiver, bmo-gate, and the tool host for bmo-explorer
+  clients/                 bmo-agency, bmo-job, bmo-voice, bmo-receiver, bmo-gate, and the tool host for bmo-explorer
   verbs/
     archive_docs.rs        archive doc and archive share
     html_read.rs           archive html-read
@@ -284,7 +284,9 @@ environment. `src/settings.rs` reads them all.
   `agency` for bmo-agency, `job` for bmo-job, `receiver` for bmo-receiver and `gate` for bmo-gate.
   `docs/api.md` lists the calls. No address is committed; a call to a unit whose address is unset is
   refused with "the <unit> address is not set: set <key> under [units] in the settings".
-- **A search's runner reads the same settings as its launcher.** The launcher hands bmo-job the
+- **The token bmo-agency's server takes,** `agency_token` under `[units]`, which goes with every call to
+  it. No value is committed: a deployment sets it in `settings.local.toml` or in the environment.
+- **A search's runner reads the same settings as its launcher.** The launcher hands bmo-agency the
   folder it started in and every variable of its own environment that begins with `BMO_ARTIFACT_`,
   with `PATH` and `HOME`, so the runner reads the same files with the same values over them.
 

@@ -24,7 +24,6 @@ use serde_json::{Map, Value, json};
 use crate::Refusal;
 use crate::clients::agency::{Agency, Reservation, ReservationAsking};
 use crate::clients::gate::Gate;
-use crate::clients::job::Job;
 use crate::control::research::{self as profiles, Values, child_mapping, research_provider};
 use crate::control::whole;
 use crate::settings::Research;
@@ -318,7 +317,7 @@ pub async fn finish_leases(agency: &dyn Agency, owner: &str, outcome: &str) -> R
 
 // Whether the research run an owner names has ended: its run closed and its unit no longer running, or no run
 // at all. Time alone proves nothing, since a branch inside a standing unit may still be running.
-async fn ended<F, Fut>(job: &Job, owner: &str, source: &str, running: &F) -> Result<bool, String>
+async fn ended<F, Fut>(agency: &dyn Agency, owner: &str, source: &str, running: &F) -> Result<bool, String>
 where
   F: Fn(String) -> Fut,
   Fut: Future<Output = bool>,
@@ -334,14 +333,16 @@ where
   }
 
   let Ok(id) = id.parse::<i64>() else { return Ok(false) };
-  let Some(run) = job.run(id).await? else { return Ok(true) };
+  let Some(run) = agency.run(id).await.map_err(|fault| fault.to_string())? else {
+    return Ok(true);
+  };
 
   Ok(run.finished_at.is_some() && !running(run.unit).await)
 }
 
 /// What research runs left behind when their process died before they could give it back: only a run that
-/// is closed in bmo-job's ledger and whose unit no longer runs is reclaimed; how many places came back.
-pub async fn reclaim_leases<F, Fut>(agency: &dyn Agency, job: &Job, running: F) -> Result<i64, String>
+/// is closed in bmo-agency's ledger and whose unit no longer runs is reclaimed; how many places came back.
+pub async fn reclaim_leases<F, Fut>(agency: &dyn Agency, running: F) -> Result<i64, String>
 where
   F: Fn(String) -> Fut,
   Fut: Future<Output = bool>,
@@ -350,7 +351,7 @@ where
   let mut reclaimed = 0;
 
   for held in agency.reservations(None).await.map_err(said)? {
-    if ended(job, &held.asking.owner, &held.asking.source, &running).await?
+    if ended(agency, &held.asking.owner, &held.asking.source, &running).await?
       && agency
         .release(&held.token, "research run ended without giving its seats back")
         .await
@@ -362,7 +363,7 @@ where
 
   for request in agency.requests(None).await.map_err(said)? {
     if request.asking.reservation.is_some()
-      || !ended(job, &request.asking.owner, &request.asking.source, &running).await?
+      || !ended(agency, &request.asking.owner, &request.asking.source, &running).await?
     {
       continue;
     }

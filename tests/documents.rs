@@ -1,5 +1,5 @@
 //! The document read API (`docs/api.md`, "Documents (HTTP)"), against a scratch database and a file root of
-//! the test's own, bmo-receiver and bmo-job stood in for and every page fetch answered by a fake that writes
+//! the test's own, bmo-receiver and bmo-agency stood in for and every page fetch answered by a fake that writes
 //! down what it was asked. What it is held to is that every address fetched is one the record holds, found
 //! again from a ref the screen hands back, and that every file is read only where it truly sits inside its
 //! document's folder. Carried from searches.test.ts, the API's archive.test.ts and moved-screens.test.ts.
@@ -12,7 +12,6 @@ use std::sync::Arc;
 
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
-use bmo_artifact::clients::job::Job;
 use bmo_artifact::clients::receiver::Receiver;
 use bmo_artifact::clients::tool_host::Raster;
 use bmo_artifact::documents::preview::PreviewCache;
@@ -26,6 +25,7 @@ use bmo_artifact::settings::Settings;
 use bmo_artifact::wording::Wording;
 use serde_json::{Value, json};
 use support::ROOT;
+use support::agency;
 use support::scratch::Scratch;
 use support::units::{self, Book, Units};
 use support::web::{FakeWeb, PNG};
@@ -143,6 +143,7 @@ impl Shelf {
       ..Book::default()
     })
     .await;
+    let (_, ledger) = agency::serve(agency::Book::default()).await;
     let root = tempfile::tempdir().unwrap();
     let searches = root.path().join("searches");
     let outside = root.path().join("outside");
@@ -207,14 +208,14 @@ impl Shelf {
       db: scratch.db().clone(),
       root: root.path().to_path_buf(),
       words: Wording::english().unwrap().search,
-      job: Job::new(Some(address.clone())),
+      agency: agency::client(&ledger),
       receiver: Receiver::new(Some(address.clone())),
       previews,
     };
     let settings = HashMap::from([
       ("BMO_ARTIFACT_DATABASE__URL".to_owned(), scratch.address()),
       ("BMO_ARTIFACT_FILES__ROOT".to_owned(), root.path().display().to_string()),
-      ("BMO_ARTIFACT_UNITS__JOB".to_owned(), address.clone()),
+      ("BMO_ARTIFACT_UNITS__AGENCY".to_owned(), ledger),
       ("BMO_ARTIFACT_UNITS__RECEIVER".to_owned(), address),
       ("BMO_ARTIFACT_CONSOLE__ADDRESS".to_owned(), "https://console.example/bmo".to_owned()),
     ]);

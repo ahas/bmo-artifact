@@ -50,6 +50,12 @@ pub fn is_depth(value: &str) -> bool {
   DEPTHS.iter().any(|depth| depth.name == value)
 }
 
+/// A rung's place on the ladder, `0` for the shallowest, as the run ledger records a run's depth; a name off
+/// the ladder is the shallowest, as `depth` reads it.
+pub fn ladder_place(value: &str) -> i64 {
+  DEPTHS.iter().position(|depth| depth.name == value).map_or(0, |place| place as i64)
+}
+
 /// The rung a runner was handed; an unknown name is the shallowest, since a stale caller's guess must only
 /// ever cost a thinner answer and never a wider search nobody asked for.
 pub fn depth(value: Option<&str>) -> Depth {

@@ -7,14 +7,14 @@ use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use axum::Json;
 use axum::extract::{Path, Query, Request, State};
-use axum::http::StatusCode;
+use axum::http::{StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post, put};
 use bmo_artifact::clients::agency::{
-  Agency, AgencyClient, Apart, ApartAsking, ApartReply, Asking, Assignment, Mapping, Note, Place,
-  PlaceWrite, PoolRequest, Provider, Registration, Reservation, ReservationAsking, Role, RouteAsked, Seat,
-  Tier,
+  Agency, AgencyClient, Apart, ApartAsking, ApartReply, Asking, Assignment, Launch, Mapping, NewRun, Note,
+  Place, PlaceWrite, PoolRequest, Provider, Registration, Reservation, ReservationAsking, Role, RouteAsked,
+  Run, RunClose, Seat, Tier,
 };
 use serde_json::{Value, json};
 
@@ -56,8 +56,19 @@ pub struct Book {
   pub finished: Vec<(String, String, bool)>,
   /// Each reservation given back: its token and its reason.
   pub released: Vec<(String, String)>,
+  /// The run ledger: each run opened, as bmo-agency holds it, the first numbered 100.
+  pub runs: Vec<Run>,
+  /// Each run opened, as it was asked for, in the ledger's order.
+  pub opened: Vec<NewRun>,
+  /// Each launch asked for, by its run.
+  pub launches: Vec<(i64, Launch)>,
+  /// The sentence a launch is refused with; none lets every launch come up.
+  pub launch_refusal: Option<String>,
+  pub closes: Vec<(i64, RunClose)>,
   /// Every call, as its method and its address past the host.
   pub calls: Vec<String>,
+  /// The `Authorization` header each call carried, none where it carried none.
+  pub authorizations: Vec<Option<String>>,
 }
 
 impl Book {
@@ -195,6 +206,10 @@ pub async fn serve(book: Book) -> (Stand, String) {
     .route("/apart", post(start_apart))
     .route("/apart/{id}", get(apart))
     .route("/apart/{id}/stop", post(stop_apart))
+    .route("/runs", post(open_run).get(runs_of_search))
+    .route("/runs/{id}", get(run))
+    .route("/runs/{id}/launch", post(launch))
+    .route("/runs/{id}/close", post(close_run))
     .layer(middleware::from_fn_with_state(stand.clone(), noted))
     .with_state(stand.clone());
 
@@ -203,9 +218,9 @@ pub async fn serve(book: Book) -> (Stand, String) {
   (stand, address)
 }
 
-/// The service's own client of the stand-in at `address`.
+/// The service's own client of the stand-in at `address`, under no token.
 pub fn client(address: &str) -> Arc<dyn Agency> {
-  Arc::new(AgencyClient::new(Some(address.to_owned())))
+  Arc::new(AgencyClient::new(Some(address.to_owned()), None))
 }
 
 /// A stand-in filled with `book`, and the client that reaches it.
@@ -216,7 +231,17 @@ pub async fn standing_in(book: Book) -> (Stand, Arc<dyn Agency>) {
 }
 
 async fn noted(State(stand): State<Stand>, request: Request, next: Next) -> Response {
-  stand.book().calls.push(format!("{} {}", request.method(), request.uri()));
+  let authorization = request
+    .headers()
+    .get(header::AUTHORIZATION)
+    .and_then(|value| value.to_str().ok())
+    .map(str::to_owned);
+  {
+    let mut book = stand.book();
+
+    book.calls.push(format!("{} {}", request.method(), request.uri()));
+    book.authorizations.push(authorization);
+  }
 
   next.run(request).await
 }
@@ -513,6 +538,86 @@ async fn stop_apart(State(stand): State<Stand>, Path(id): Path<String>) -> Respo
 
   book.stopped.push(id);
   book.apart.state = "stopped".to_owned();
+
+  done()
+}
+
+fn no_run() -> Response {
+  refuse(StatusCode::NOT_FOUND, "nothing-held", "no run is held under that number")
+}
+
+async fn open_run(State(stand): State<Stand>, Json(asked): Json<NewRun>) -> Response {
+  let mut book = stand.book();
+  let id = 100 + book.runs.len() as i64;
+
+  book.runs.push(Run {
+    id,
+    agent: asked.agent.clone(),
+    chat_id: asked.chat_id,
+    unit: asked.unit.clone(),
+    depth: asked.depth,
+    started_at: asked.started_at,
+    ..Run::default()
+  });
+  book.opened.push(asked);
+
+  (StatusCode::CREATED, Json(json!({ "id": id }))).into_response()
+}
+
+// The runs whose opening named the search, as the launch and the list stand ready to read them.
+async fn runs_of_search(
+  State(stand): State<Stand>,
+  Query(query): Query<HashMap<String, String>>,
+) -> Json<Value> {
+  let search: Option<i64> = query.get("search").and_then(|id| id.parse().ok());
+  let book = stand.book();
+  let runs: Vec<i64> = book
+    .runs
+    .iter()
+    .zip(&book.opened)
+    .filter(|(_, opened)| opened.search_id == search)
+    .map(|(run, _)| run.id)
+    .collect();
+
+  Json(json!({ "runs": runs }))
+}
+
+async fn run(State(stand): State<Stand>, Path(id): Path<i64>) -> Response {
+  match stand.book().runs.iter().find(|run| run.id == id) {
+    Some(run) => Json(run.clone()).into_response(),
+    None => no_run(),
+  }
+}
+
+async fn launch(State(stand): State<Stand>, Path(id): Path<i64>, Json(launch): Json<Launch>) -> Response {
+  let mut book = stand.book();
+
+  book.launches.push((id, launch));
+
+  match book.launch_refusal.clone() {
+    None => done(),
+    Some(refused) => refuse(StatusCode::BAD_GATEWAY, "launch-failed", &refused),
+  }
+}
+
+async fn close_run(
+  State(stand): State<Stand>,
+  Path(id): Path<i64>,
+  Json(close): Json<RunClose>,
+) -> Response {
+  let mut book = stand.book();
+  let Some(run) = book.runs.iter_mut().find(|run| run.id == id) else {
+    return no_run();
+  };
+
+  if run.finished_at.is_some() {
+    return refuse(StatusCode::CONFLICT, "conflict", "the run is already closed");
+  }
+
+  run.finished_at = Some(close.finished_at);
+  run.outcome = Some(close.outcome.clone());
+  run.context_tokens = close.context_tokens;
+  book.closes.push((id, close));
 
   done()
 }

@@ -19,7 +19,7 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 
 use super::preview::PreviewCache;
-use crate::clients::job::Job;
+use crate::clients::agency::Agency;
 use crate::clients::receiver::Receiver;
 use crate::clients::tool_host::Raster;
 use crate::helpers::js::URI_COMPONENT;
@@ -300,14 +300,14 @@ pub struct Asked {
   pub now: i64,
 }
 
-/// What the read stands on: the database, the file root, the wording, bmo-job for the runs that carried a
-/// document, bmo-receiver for the rooms' names, and the previews the screen is shown.
+/// What the read stands on: the database, the file root, the wording, bmo-agency for the runs that carried
+/// a document, bmo-receiver for the rooms' names, and the previews the screen is shown.
 #[derive(Clone)]
 pub struct Library {
   pub db: DatabaseConnection,
   pub root: PathBuf,
   pub words: Search,
-  pub job: Job,
+  pub agency: Arc<dyn Agency>,
   pub receiver: Receiver,
   pub previews: Arc<PreviewCache>,
 }
@@ -791,7 +791,7 @@ impl Library {
     let rooms = self.rooms().await;
     let summary = summary_of(&row, &rooms, None)?;
     let document: Option<String> = row.try_get("", "document")?;
-    let runs = match self.job.runs_of_search(id).await {
+    let runs = match self.agency.runs_of_search(id).await {
       Ok(runs) => runs,
       Err(why) => {
         eprintln!("the runs that carried document {id} could not be listed: {why}");

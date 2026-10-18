@@ -106,6 +106,8 @@ pub struct Units {
   pub tool_host: Option<String>,
   /// bmo-agency.
   pub agency: Option<String>,
+  /// The token bmo-agency's server takes.
+  pub agency_token: Option<String>,
   /// bmo-job.
   pub job: Option<String>,
   /// bmo-receiver.
