@@ -455,7 +455,7 @@ nor a tool repository can keep its minute loop.
 | `bot/bmo-server/src/verbs/news_brief.rs` | 17 | `news-brief` |
 | `lang/bmo-lang/src/news_brief.rs`, `lang/bmo-lang/lang/ko/news-brief.yaml` | 17 | The command's English lines |
 | `bot/bmo-server/src/schedules/news_brief.rs` | 18 | The service's minute loop |
-| `prompts/agents/search/news-brief.md`, `news-brief-request.md` | none | Not carried: they stand in bmo-agency's prompt tree, which the runner reads through the prompt tree setting |
+| `prompts/agents/search/news-brief.md`, `news-brief-request.md` | none | Not carried: they stand in bmo-agency's prompt tree; bmo-agency composes the first by name, and the runner reads the second through the prompt tree setting |
 | `prompts/agents/chat/procedures/news-brief.md` | none | Not carried: bmo-agency's, in its prompt tree |
 
 - **Tests.** The cases of the six runner files, the command, the schedule, the two integration

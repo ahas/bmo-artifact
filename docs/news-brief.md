@@ -44,10 +44,10 @@ flowchart TD
 - **The writer is a research run apart** on the search line and the `search:basic` research
   profile: the same tools, the same site tools and the same model the profile sets for a basic
   search.
-  - Its instructions are the news task, read from the prompt tree's `agents/search/news-brief.md`
-    and handed over as the run's own text in place of the search's.
-  - Its prompt is `news-brief-request.md` beside it, filled with the day the page is for and the
-    moment it is written.
+  - Its instructions are the news task in place of the search's, which bmo-agency composes for the
+    line by the name `news-brief`, with the line's tools and rulebooks.
+  - Its prompt is the prompt tree's `agents/search/news-brief-request.md`, filled with the day the
+    page is for and the moment it is written.
   - It opens no branch.
 - **Its answer is one JSON object**: the summary lines, the items (tag, title, lines, the article's
   address and its picture's address), and for each fixed section its lines and sources, with the

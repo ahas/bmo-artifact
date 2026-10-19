@@ -138,8 +138,9 @@ What the page is, when it runs and how it is made is `docs/news-brief.md`; these
   - Refused, with nothing written: a room not named by its chat id, a time not written `HH:MM`, a
     lead outside 10 to 180 minutes, share hours outside 1 to 720, a row that does not exist, a day
     that is not a calendar date, and a holiday with no name.
-- `bmo runner news-brief --chat <chatId> [--send-to <chatId>] [--day YYYY-MM-DD] [--share-hours <n>] [--send-at HH:MM] [--run <runId>] [--answer <file>] [--no-send]`,
+- `bmo runner news-brief --chat <chatId> [--send-to <chatId>] [--day YYYY-MM-DD] [--share-hours <n>] [--send-at HH:MM] [--run <runId>] [--unit <unit>] [--answer <file>] [--no-send]`,
   also run as `news-brief-runner`, is the run bmo-agency launches.
+  - `--unit` names the run's unit, which its writer's lines are logged under.
   - `--day` is today's in the settings' time zone where none is named, and `--share-hours` 24.
   - It writes the page through a research run apart, files it as a page document of `--chat` with a
     share link living `--share-hours`, holds the message until `--send-at`, and sends it to
@@ -818,9 +819,10 @@ context it ended carrying.
 - **This repository asks every half second** until the run is no longer `running`, and stops it the
   moment its own run is stopped or its research closes.
 - **A morning news page's writer** is a run apart on the `search` line under the `search:basic`
-  profile's road: `instructions` names `search`, with `text` the news task read from the prompt tree's
-  `agents/search/news-brief.md`; `prompt` is `news-brief-request.md` beside it, filled with `{{day}}`
-  and `{{askedAt}}`; `log` names the run's ledger row and the room. Its `reply` text is the brief.
+  profile's road: `instructions` names `news-brief`, the news task bmo-agency composes for the line out
+  of its own prompt tree with the line's tools and rulebooks, and carries no `text`; `prompt` is the
+  prompt tree's `agents/search/news-brief-request.md`, filled with `{{day}}` and `{{askedAt}}`; `log`
+  names the run's unit and the room. It opens no branch. Its `reply` text is the brief.
 
 ## Gaps in siblings
 
@@ -835,4 +837,6 @@ repository's worker:
   "Wording"), so a deployment whose wording setting names that pack is refused until the pack gains
   them, and one naming no file reads the English default this repository ships.
 - **bmo-agency** serves no runner launch (see "The run ledger"), so neither a search's runner nor a
-  morning news page's comes up until it does.
+  morning news page's comes up until it does; and its document states no run apart, nor the
+  `news-brief` instructions it is to compose for the search line out of its own
+  `prompts/agents/search/news-brief.md`, which hold Korean where every model prompt is to be English.
