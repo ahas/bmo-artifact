@@ -489,7 +489,14 @@ A key is its groups joined by dots. The marks are those its line is filled in wi
 | `search.import.moved` | none | The source line of the address asked, which moved to the page kept |
 | `search.import.cited` | none | The source line of a work the page cites |
 | `search.import.cited_text` | `{text}` | The same, with the work's own words |
-| `news_page.weekdays.sunday` … `news_page.weekdays.saturday` | none | The weekdays, seven keys, as the day a morning news page is for names its own |
+| `news_page.language` | none | The language tag the page declares, such as `en` |
+| `news_page.weekdays.sunday` | none | Sunday, as the day a morning news page is for names its weekday |
+| `news_page.weekdays.monday` | none | Monday, the same way |
+| `news_page.weekdays.tuesday` | none | Tuesday, the same way |
+| `news_page.weekdays.wednesday` | none | Wednesday, the same way |
+| `news_page.weekdays.thursday` | none | Thursday, the same way |
+| `news_page.weekdays.friday` | none | Friday, the same way |
+| `news_page.weekdays.saturday` | none | Saturday, the same way |
 | `news_page.day` | `{year}`, `{month}`, `{date}`, `{weekday}` | The day a page is for, the numbers without leading noughts |
 | `news_page.title` | `{day}` | The page's title and its message's title line |
 | `news_page.news` | none | The heading of the news cards |
@@ -502,7 +509,11 @@ A key is its groups joined by dots. The marks are those its line is filled in wi
 | `news_page.original` | `{host}` | The link under a card to its article |
 | `news_page.sources` | none | What stands before a section's links to its sources |
 | `news_page.footer` | none | The page's closing line |
-| `news_page.indices.KOSPI`, `.KOSDAQ`, `.DJI`, `.SPX`, `.NASDAQ` | none | Each index's name, by the key it is read under |
+| `news_page.indices.KOSPI` | none | The KOSPI's name, by the key it is read under |
+| `news_page.indices.KOSDAQ` | none | The KOSDAQ's name |
+| `news_page.indices.DJI` | none | The Dow Jones Industrial Average's name |
+| `news_page.indices.SPX` | none | The S&P 500's name |
+| `news_page.indices.NASDAQ` | none | The Nasdaq Composite's name |
 
 ## What this repository calls
 

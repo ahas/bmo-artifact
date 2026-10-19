@@ -1,6 +1,6 @@
 //! The document wording file (`docs/api.md`, "Wording"): what a document this service writes says of
-//! itself, and what a search leaves for a person to read, each line with the `{name}` marks it is filled
-//! in with. The settings name the file; where they name none, the English default in `lang/` is read. A
+//! itself, what a search leaves for a person to read, and the words of the morning news page, each line
+//! with the `{name}` marks it is filled in with. The settings name the file; where they name none, the English default in `lang/` is read. A
 //! file holds every key the English default holds and no other.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,6 +18,7 @@ pub const ENGLISH: &str = include_str!("../lang/documents.en.yaml");
 pub struct Wording {
   pub archive_docs: archive_docs::ArchiveDocs,
   pub search: search::Search,
+  pub news_page: news_page::NewsPage,
 }
 
 /// Why the document wording could not be read, with the file it was read from.
@@ -226,5 +227,60 @@ pub mod search {
     pub fn field(&self, name: &str) -> &str {
       self.fields.get(name).map_or("", String::as_str)
     }
+  }
+}
+
+/// The words of the morning news page and of the message that hands it to a room
+/// (`docs/news-brief.md`, "The page").
+pub mod news_page {
+  use super::*;
+
+  /// The weekdays, as the day a page is for names its own.
+  #[derive(Clone, Debug, Deserialize, Serialize)]
+  #[serde(deny_unknown_fields)]
+  pub struct Weekdays {
+    pub sunday: String,
+    pub monday: String,
+    pub tuesday: String,
+    pub wednesday: String,
+    pub thursday: String,
+    pub friday: String,
+    pub saturday: String,
+  }
+
+  impl Weekdays {
+    /// A weekday's name by its number of days from Sunday.
+    pub fn from_sunday(&self, days: u32) -> &str {
+      [
+        &self.sunday,
+        &self.monday,
+        &self.tuesday,
+        &self.wednesday,
+        &self.thursday,
+        &self.friday,
+        &self.saturday,
+      ][days as usize % 7]
+    }
+  }
+
+  #[derive(Clone, Debug, Deserialize, Serialize)]
+  #[serde(deny_unknown_fields)]
+  pub struct NewsPage {
+    pub language: String,
+    pub weekdays: Weekdays,
+    pub day: String,
+    pub title: String,
+    pub news: String,
+    pub korea_market: String,
+    pub us_market: String,
+    pub real_estate: String,
+    pub no_close: String,
+    pub close_of: String,
+    pub chart_label: String,
+    pub original: String,
+    pub sources: String,
+    pub footer: String,
+    /// Each index's name, by the key it is read under.
+    pub indices: BTreeMap<String, String>,
   }
 }

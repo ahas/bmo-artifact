@@ -33,7 +33,7 @@ src/
     news_briefs.rs         the morning news page's rooms and the holiday calendar, the one module that writes them
   plumbing/                errors, refusals, CLI and HTTP answers, and the loops the server runs
   helpers/                 copied helpers and the Rust twins
-    js.rs                  JavaScript's white space and a text's characters
+    js.rs                  JavaScript's white space, a text's characters and a number written to fixed places
     web_address.rs         the web addresses a text names
     marks.rs               a wording line's {name} marks filled in
     ceiling.rs             the answer ceiling and its counts
