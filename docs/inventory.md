@@ -6,7 +6,7 @@ everything it takes from the old single bmo repository and everything near it th
 member appears exactly once, and each excluded member names the unit that owns it. The split plan,
 archive document #301, settles which unit owns what. Its addendum also settles that the old
 `archive/` code is a facade over every table, and that each table goes to the service using it. Only
-the document tables come here.
+the document tables and the morning news page's two tables come here.
 
 Phase 1 carries behaviour unchanged. A TypeScript file is ported to Rust only where a new server has
 to exist, which is the HTTP API the console screen calls. Every other carried behaviour already has
@@ -15,7 +15,9 @@ a Rust original, and that original is what comes.
 The "Step" column names the build step that carries a member: 1 inventory docs, 2 archive design,
 3 root skeleton, 4 schema and database, 5 helpers and wording, 6 document verb and HTML read,
 7 search document core, 8 research profiles, 9 search launch and runner, 10 document read API,
-11 share API, 12 console plugin bundle.
+11 share API, 12 console plugin bundle; and for the morning news page (section 17), 13 its
+documents, 14 its store, 15 its page, 16 its calls to other units, 17 its runner and command, 18 its
+minute loop.
 
 ## 1. Rust source taken (23 files, 7,979 lines)
 
@@ -275,7 +277,8 @@ Each file is cleared in the step that carries it:
 | `document_talk` | bmo-brain. Its `document` column is plain text with no foreign key to `searches`, and it serves the brain's document viewer |
 | `document_translations` | bmo-brain for the document viewer, and bmo-job for work-order translation. Same reason: plain text, no foreign key |
 | `collected_items` | bmo-receiver |
-| `news_briefs` | bmo-voice |
+| `news_briefs` | bmo-artifact (step 14) |
+| `holidays` | bmo-artifact (step 14) |
 | `voice_briefings` | bmo-voice |
 | `page_read_failures` | bmo-explorer |
 | `web_file_shares` | bmo-drive |
@@ -286,7 +289,7 @@ Each file is cleared in the step that carries it:
 |---|---|
 | `searches/` (document files, `images/`, `attachments/`, per document id) | bmo-artifact |
 | `collected/` | bmo-receiver |
-| `news-brief/` | bmo-voice |
+| `news-brief/` | bmo-artifact (step 17), under the file root beside `searches/` |
 | `archive-copies/`, `archive-return/` | Not carried. Database-move transition copies |
 
 ## 15. Excluded: each line names the owning unit
@@ -309,7 +312,6 @@ Each file is cleared in the step that carries it:
 - `bot/bmo-server/src/verbs/browse.rs` and `browse_runner.rs` go to bmo-explorer. They call the
   research base carried here and reach it through this repository's `search branch` verb and
   settings routes.
-- `bot/bmo-server/src/verbs/news_brief_runner/` (6 files) goes to bmo-voice.
 - `bot/bmo-server/src/editors/` (26 files) are the brain's editors and go to bmo-brain.
 - `web/web-layer` (42 files) goes to bmo-explorer. Page import, picture fetch, address checks,
   pacing and search engines are reached through the tool host.
@@ -323,8 +325,10 @@ Each file is cleared in the step that carries it:
   - `research-fields.ts` and `research-profile.ts`: the twin is `verbs/research` and
     `control/research.rs`. The console form's copy of the field checks stays with the console's
     agents screen in bmo-web, which calls this repository's research-settings routes.
-- **bmo-voice (6 files):** `briefing-store.ts`, `briefing-store.test.ts`, `news-brief-store.ts`,
-  `news-brief-store.test.ts`, `voice-store.ts`, `voice-store.test.ts`.
+- **Ported for the morning news page (3 files):** `news-brief-store.ts`, `news-brief-store.test.ts`
+  and `holiday-store.ts` (section 17).
+- **bmo-voice (4 files):** `briefing-store.ts`, `briefing-store.test.ts`, `voice-store.ts`,
+  `voice-store.test.ts`.
 - **bmo-drive (1 file):** `file-share-rows.ts`.
 - **bmo-node (3 files):** `nodes.ts`, `node-state.ts`, `node-state.test.ts`.
 - **Whole-archive database tooling, which stays with the old repository for the switch-over
@@ -334,7 +338,7 @@ Each file is cleared in the step that carries it:
   `postgres-reconnect.test.ts`, `archive.ts`.
 - **Package configuration, replaced by this repository's own (3 files):** `package.json`,
   `tsconfig.json`, `bunfig.toml`.
-- **Facade over tables other units own (83 files).** Each one goes to the unit that owns its table,
+- **Facade over tables other units own (82 files).** Each one goes to the unit that owns its table,
   in that unit's own split item:
   - `account-seed.ts`, `account-store.ts`, `agent-rest.test.ts`, `agent-store.ts`
   - `archive-seeding.ts`, `base-prompts.ts`, `bmo-events.ts`
@@ -345,7 +349,7 @@ Each file is cleared in the step that carries it:
   - `execution-store.ts`, `fallback-store.ts`
   - `fragment-row-store.ts`, `fragment-titles.ts`
   - `gate-rows.ts`, `gate-store.ts`
-  - `hardware-tables.ts`, `holiday-store.ts`, `instruction-store.ts`
+  - `hardware-tables.ts`, `instruction-store.ts`
   - `job-store.ts`, `job-store.test.ts`
   - `laya-health-store.ts`, `laya-rows.ts`, `laya-verdicts.ts`
   - `legacy-routes-fixture.ts`, `media-store.ts`, `memory-row-store.ts`
@@ -429,3 +433,38 @@ Each file is cleared in the step that carries it:
   so the path does not travel here.
 - `snapshot.rs` fixes the deploy tree's directory layout into a named root. It is not carried (see
   section 15), so the layout does not travel here.
+
+## 17. The morning news page (23 members)
+
+The morning news page is this repository's: it is a page document handed over by a share link, made
+by a research run on the search line and pictures fetched the way a search's are, all of which stand
+here, and nothing else uses what it adds (`docs/news-brief.md`). It is a written page and speaks
+nothing, so bmo-voice does not hold it; a tool runs only when it is called, so neither bmo-explorer
+nor a tool repository can keep its minute loop.
+
+| Old member | Step | Becomes |
+|---|---|---|
+| `docs/news-brief.md` | 13 | `docs/news-brief.md`, restated for this repository |
+| `archive/archive/news-brief-store.ts`, `news-brief-store.test.ts`, `holiday-store.ts` | 14 | The news brief's store and its tests |
+| `archive/bmo-archive/src/migration/archive.sql`, its `news_briefs` and `holidays` statements | 14 | A migration of this repository's own, seeding no row |
+| `bot/bmo-server/src/verbs/news_brief_runner/brief.rs`, `page.rs` | 15 | The brief's reading, the page and the message |
+| `bot/bmo-server/src/verbs/news_brief_runner/indices.rs` | 15 | The series, its number text and the chart's days; reading Naver's price lists is the `stock_index` site tool's and does not come |
+| `lang/bmo-lang/src/news_page.rs`, `lang/bmo-lang/lang/ko/news-page.yaml` | 15 | The `news_page` keys of the document wording file, with an English default; the failure account becomes the English line the owner's agent is handed |
+| `bot/bmo-server/src/verbs/news_brief_runner/compose.rs`, `outside.rs` | 16 | Composing on the tool host's calls; the address checks, pacing and read bounds are bmo-explorer's and do not come |
+| `bot/bmo-server/src/verbs/news_brief_runner/mod.rs` | 17 | `runner news-brief`, launched by bmo-agency rather than starting a unit of its own |
+| `bot/bmo-server/src/verbs/news_brief.rs` | 17 | `news-brief` |
+| `lang/bmo-lang/src/news_brief.rs`, `lang/bmo-lang/lang/ko/news-brief.yaml` | 17 | The command's English lines |
+| `bot/bmo-server/src/schedules/news_brief.rs` | 18 | The service's minute loop |
+| `prompts/agents/search/news-brief.md`, `news-brief-request.md` | none | Not carried: they stand in bmo-agency's prompt tree, which the runner reads through the prompt tree setting |
+| `prompts/agents/chat/procedures/news-brief.md` | none | Not carried: bmo-agency's, in its prompt tree |
+
+- **Tests.** The cases of the six runner files, the command, the schedule, the two integration
+  files `news_brief_runner.rs` and `news_brief_verb.rs`, and the news page case of `schedules.rs`
+  move into `tests/` in the step of the code they test. The cases that read Naver's price lists and
+  the one that checks an address is public stay with `stock_index` and bmo-explorer. The store test's
+  cases on seeded rows and seed dates go, since nothing is seeded.
+- **Not carried.** The old registration lines that named the verbs and the schedule: each verb and the
+  loop registers itself here. The seeded room and the seeded holidays: a deployment's rows stand in its
+  database and move with it.
+- **Hangul.** The old wording files and the holiday seed are Korean. None of it is written into this
+  repository: the page's words come from the wording file, and holiday names are a deployment's rows.
