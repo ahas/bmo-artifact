@@ -22,18 +22,17 @@ testbed.toml
 src/
   lib.rs
   bin/
-    bmo-artifact.rs        the HTTP server, and the loops it runs while it listens
+    bmo-artifact.rs        the HTTP server
     bmo-artifact-cli.rs    the CLI's line, built from every registered verb, and the version and migrate verbs
   settings.rs              every setting (see "Settings")
   pool.rs                  connection pools and how a statement is bound and run on them
   store/                   the queries the carried code runs, and the clock its columns keep
-    migration/             the document tables', the research profiles' and the morning news page's migrations, and the migrator
+    migration/             the document tables' and the research profiles' migrations, the pair that makes and drops two old tables, and the migrator
     entity/                one SeaORM entity per document table
     shares.rs              the share link rows, the one module that writes them
-    news_briefs.rs         the morning news page's rooms and the holiday calendar, the one module that writes them
-  plumbing/                errors, refusals, CLI and HTTP answers, and the loops the server runs
+  plumbing/                errors, refusals, CLI and HTTP answers
   helpers/                 copied helpers and the Rust twins
-    js.rs                  JavaScript's white space, a text's characters and a number written to fixed places
+    js.rs                  JavaScript's white space and a text's characters
     web_address.rs         the web addresses a text names
     marks.rs               a wording line's {name} marks filled in
     ceiling.rs             the answer ceiling and its counts
@@ -48,7 +47,6 @@ src/
     html_read.rs           archive html-read
     search/                launch, runner, request, result, document, record, images, gallery, import, share, page reading
     research/              profiles, admission, branch, run
-    news_brief/            the morning news page: the command, the runner, the brief, the series, the page, composing, the minute loop
   control/
     research.rs            research profiles and their checks
     research_settings.rs   the research-settings routes
@@ -129,12 +127,6 @@ The plumbing is what every verb and every route stands on, and it knows none of 
   refusal: a status, a snake_case code and an English message.
 - **Each route registers itself** beside its own answer, so adding a route changes no file but its
   own. The server refuses to start where two routes name the same method and path.
-- **A loop** is work the server repeats on its own clock: it declares its name, its period, and one
-  pass, handed what the server stands on and the moment of the pass. **Each loop registers itself**
-  beside its own code, as a route does. The server starts every registered loop once it listens,
-  runs no pass of one loop beside another of the same loop, and stops them all when it stops. A pass
-  that fails is said on the server's error stream and the loop goes on. A test runs one pass at a
-  moment it names, never waiting on the clock.
 - **What the server stands on** is its settings and the database and the document wording they
   name, opened and read the same way as the shell's, with the tool host client and the bmo-agency
   client. The bmo-agency client is an interface, so a test hands the server or the shell a stand-in.
@@ -216,21 +208,22 @@ there, one level below the root.
 ## Storage
 
 - **Database.** PostgreSQL, as today. The address is a setting, read from the settings files or the
-  environment, and is never written into source. The six document tables, `research_profiles`, and
-  the morning news page's `news_briefs` and `holidays` are this repository's own. No other unit's
-  table is read or written.
-- **Schema.** Three migrations, run in order:
+  environment, and is never written into source. The six document tables and `research_profiles`
+  are this repository's own. No other unit's table is read or written.
+- **Schema.** Four migrations, run in order:
   - the first makes the six document tables and their four indexes in the shape the old archive
     declares for them. It also gives `web_search_shares` the nullable `user_id` column that the old
     archive added. In the old archive that column's default is read from another unit's settings
     table; here it has no default, since no other unit's table is read;
   - the second makes `research_profiles`, one row per research key, in the shape the old archive
     declares for it;
-  - the third makes `news_briefs`, one row per room that gets a morning news page, and `holidays`,
-    one row per day off, in the shapes the old archive declares for them, and seeds neither.
+  - the third makes `news_briefs` and `holidays`, and the fourth takes both away with their rows, so
+    a migrated database holds neither. A migration a database may already have run is never
+    rewritten or removed, since the migrator refuses a database whose record names a migration it
+    does not know.
 
   SeaORM keeps the migrations' record in its own table beside them. The `migrate` verb brings the
-  database the settings name up to date with both.
+  database the settings name up to date with all four.
 - **Settling.** Once in each process, before the first statement on the document tables, a row that
   names no kind is given its kind and its writer, and the pictures of `search_images` not yet among
   the attachments are copied there, as `docs/archive.md` sets out under "`searches`" and "The other
@@ -240,9 +233,8 @@ there, one level below the root.
   before a table's shape changed under the process is run once more on a fresh connection, and no
   connection opened before that change is handed out again.
 - **File root.** The folder holding `searches/<document id>/` is a setting. Each document's folder
-  holds its markdown or HTML file, `images/` and `attachments/`. The morning news page keeps each
-  day's page and its writer's answer in `news-brief/` beside `searches/`. The default lies under the
-  data root the deploy declaration names.
+  holds its markdown or HTML file, `images/` and `attachments/`. The default lies under the data
+  root the deploy declaration names.
 
 ## Settings
 
@@ -263,8 +255,7 @@ environment. `src/settings.rs` reads them all.
   Where no path is set, the English default in `lang/` is read. bmo-web's language pack supplies the
   live wording under the same keys, which `docs/api.md` lists under "Wording".
 - **The time zone** used when a sentence or a document states a time, `zone` under `[time]`, by its
-  IANA name. The morning news page's days, send times and working days are told in it too. The
-  committed default is UTC; a deployment sets its own.
+  IANA name. The committed default is UTC; a deployment sets its own.
 - **The documents the agent files**, under `[documents]`:
   - `room`, the owner's private room, which is also the room a document goes to where none is named;
   - `asker`, who asked where nobody is named;
@@ -329,8 +320,7 @@ declaration document, so the testbed needs no knowledge of this repository. It n
 
 It declares no deployment root, so a deployment of this repository puts nothing live. The service
 is one unit, from the neutral template `deploy/bmo-artifact.service`. A backup of this unit must
-include the six document tables, `research_profiles`, `news_briefs`, `holidays`, and the `searches/`
-and `news-brief/` folders under the file root. This repository runs
+include the six document tables, `research_profiles` and the `searches/` folder under the file root. This repository runs
 no backup itself. The whole-data-root backup and its restore drill belong to the testbed.
 
 ## Tests

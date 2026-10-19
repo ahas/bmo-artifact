@@ -1,5 +1,4 @@
-//! The document tables, the research profiles and the morning news page's tables as the migrations make
-//! them: their columns, keys and
+//! The document tables and the research profiles as the migrations make them: their columns, keys and
 //! indexes as the old archive declares them, the entities that read and write them, and the `migrate` verb
 //! that makes them
 //! (`docs/layout.md`, "Storage").
@@ -62,15 +61,13 @@ fn owned(lines: &[&str]) -> Vec<String> {
 }
 
 #[tokio::test]
-async fn the_migrations_make_the_nine_tables_and_nothing_else() {
+async fn the_migrations_make_the_seven_tables_and_nothing_else() {
   let scratch = Scratch::new().await;
 
   assert_eq!(
     scratch.texts(TABLES).await,
     owned(&[
       "archive_attachments",
-      "holidays",
-      "news_briefs",
       "research_profiles",
       "seaql_migrations",
       "search_findings",
@@ -100,18 +97,6 @@ async fn the_columns_are_the_old_archives() {
       "archive_attachments.place bigint",
       "archive_attachments.kept_at bigint not null",
       "archive_attachments.rowid bigint generated as id",
-      "holidays.day text not null",
-      "holidays.name text not null",
-      "holidays.rowid bigint not null identity by default",
-      "news_briefs.id bigint not null identity by default",
-      "news_briefs.chat_id bigint not null",
-      "news_briefs.send_at text not null",
-      "news_briefs.lead_minutes bigint not null",
-      "news_briefs.share_hours bigint not null",
-      "news_briefs.enabled bigint not null",
-      "news_briefs.last_day text",
-      "news_briefs.created_at bigint not null",
-      "news_briefs.rowid bigint generated as id",
       "research_profiles.key text not null",
       "research_profiles.cap_ms bigint",
       "research_profiles.synthesis_reserve_ms bigint",
@@ -186,9 +171,6 @@ async fn the_keys_are_the_old_archives() {
     owned(&[
       "archive_attachments primary key (id)",
       "archive_attachments unique (search_id, path)",
-      "holidays primary key (day)",
-      "holidays unique (rowid)",
-      "news_briefs primary key (id)",
       "research_profiles primary key (key)",
       "research_profiles unique (rowid)",
       "search_findings primary key (id)",
@@ -230,6 +212,23 @@ async fn a_migrated_database_has_nothing_left_to_run_and_can_be_taken_down() {
 }
 
 #[tokio::test]
+async fn a_database_holding_the_dropped_tables_loses_them_to_the_next_migration() {
+  let scratch = Scratch::blank().await;
+  let db = scratch.db();
+
+  Migrator::up(db, Some(3)).await.expect("the first three migrations run");
+
+  assert!(scratch.texts(TABLES).await.iter().any(|table| table == "news_briefs"));
+
+  Migrator::up(db, None).await.expect("the rest run");
+
+  let tables = scratch.texts(TABLES).await;
+
+  assert!(!tables.iter().any(|table| table == "news_briefs" || table == "holidays"), "{tables:?}");
+  assert_eq!(tables.len(), 8);
+}
+
+#[tokio::test]
 async fn the_migrate_verb_makes_the_schema_on_the_database_the_settings_name() {
   let scratch = Scratch::blank().await;
   let migrate = || {
@@ -244,8 +243,8 @@ async fn the_migrate_verb_makes_the_schema_on_the_database_the_settings_name() {
   let first = migrate();
 
   assert!(first.status.success(), "{}", String::from_utf8_lossy(&first.stderr));
-  assert_eq!(String::from_utf8_lossy(&first.stdout), "migrations run: 3\n");
-  assert_eq!(scratch.texts(TABLES).await.len(), 10);
+  assert_eq!(String::from_utf8_lossy(&first.stdout), "migrations run: 4\n");
+  assert_eq!(scratch.texts(TABLES).await.len(), 8);
 
   let again = migrate();
 

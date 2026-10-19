@@ -1,9 +1,8 @@
 # bmo-artifact
 
 The document archive as one service with its own API. It owns the filed documents: their six tables,
-the folder holding each document's files, the searches and research runs that produce them, the
-share links that open them, and the morning news page, a page document made and sent each working
-morning. Every other unit is reached through its API, as `docs/api.md` lists.
+the folder holding each document's files, the searches and research runs that produce them, and the
+share links that open them. Every other unit is reached through its API, as `docs/api.md` lists.
 
 ## Layout
 
@@ -27,7 +26,6 @@ deployment gives.
 | `docs/archive.md` | The design of the archive, which the API reaches and the layout places |
 | `docs/layout.md` | The layout, the plumbing, the settings, the version, the deploy declaration and the checks |
 | `docs/research-runs.md` | The research runs a search is made of, their profiles and their branches |
-| `docs/news-brief.md` | The morning news page: what it is, how a page is made, when it runs, its commands |
 | `docs/inventory.md` | What is taken from the old repository, and what near it is left to the unit owning it |
 
 ## Version

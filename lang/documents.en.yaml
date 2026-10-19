@@ -1,7 +1,7 @@
 # The document wording file's English default (docs/api.md, "Wording"): what a document this service
-# writes says of itself, what a search leaves for a person to read, and the words of the morning news
-# page. A deployment may name another file in its settings; that file holds every key this one holds and
-# no other. Each `{name}` is filled in with what it names.
+# writes says of itself, and what a search leaves for a person to read. A deployment may name another file
+# in its settings; that file holds every key this one holds and no other. Each `{name}` is filled in with
+# what it names.
 
 # What a document filed into the archive says of itself.
 archive_docs:
@@ -135,46 +135,3 @@ search:
     moved: "The address asked for, which moved to the page above"
     cited: "A work the original cites"
     cited_text: "A work the original cites: {text}"
-
-# The morning news page and the message that hands it to a room (docs/news-brief.md, "The page").
-news_page:
-  # The language tag the page declares.
-  language: "en"
-  # The weekdays, as the day a page is for names its own.
-  weekdays:
-    sunday: "Sun"
-    monday: "Mon"
-    tuesday: "Tue"
-    wednesday: "Wed"
-    thursday: "Thu"
-    friday: "Fri"
-    saturday: "Sat"
-  # The day a page is for: {year}, {month} and {date} without leading noughts, {weekday} one of the above.
-  day: "{weekday} {month}/{date}/{year}"
-  # The page's title and the message's title line, {day} the day as said above.
-  title: "Today's news · {day}"
-  # The section headings, in the order the page carries them.
-  news: "Top stories"
-  korea_market: "Korean stock market"
-  us_market: "US stock market"
-  real_estate: "Korean property market"
-  # An index the page could read no close of.
-  no_close: "No close could be read"
-  # The day an index's close is of, {date} as MM/DD.
-  close_of: "Close of {date}"
-  # What a chart is read out as: {name} the index, {first} and {last} the days it runs between, {count} how
-  # many closes it draws, {low} and {high} the lowest and the highest.
-  chart_label: "{name} closes over {count} trading days from {first} to {last}, low {low}, high {high}"
-  # The link under a card to its article, {host} the outlet's address.
-  original: "Read it on {host}"
-  # What stands before a section's links to its sources.
-  sources: "Sources"
-  # The page's closing line.
-  footer: "Summarised anew from the articles · indices at their closing values"
-  # Each index's name, by the key it is read under.
-  indices:
-    KOSPI: "KOSPI"
-    KOSDAQ: "KOSDAQ"
-    DJI: "Dow Jones"
-    SPX: "S&P 500"
-    NASDAQ: "Nasdaq Composite"

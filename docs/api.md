@@ -115,45 +115,6 @@ mirrors what the old bmo serves today, so the two can be compared side by side.
   - A stop signal (`SIGTERM` or `SIGINT`) stops the branch, which gives its place back and answers
     with what it had written.
 
-### The morning news page (CLI)
-
-What the page is, when it runs and how it is made is `docs/news-brief.md`; these are its commands.
-
-- `bmo news-brief` lists the rooms that get a page, one line to a room (its number, on or off, the
-  room, the time it is sent, the lead, the hours its link lives and the day it last started), and how
-  many holidays this year and the next hold. With no room it says so.
-  - `--add --chat <chatId> [--at HH:MM] [--lead <minutes>] [--share-hours <n>] [--on]` adds a room,
-    off unless `--on` says otherwise; the defaults are 08:30, 40 minutes and 24 hours. It answers
-    with the row.
-  - `--set <id> [--chat <chatId>] [--at HH:MM] [--lead <minutes>] [--share-hours <n>]` changes the
-    fields named; `--on <id>` and `--off <id>` switch a room; `--remove <id>` takes it away. Each
-    answers with the row as it stands, or as it stood for a removal.
-  - `--run <id> [--send-to <chatId>]` opens a run's row in bmo-agency's ledger, has bmo-agency
-    launch `runner news-brief` for that room's page of today, sent to `--send-to` where one is named,
-    and answers with the run's number and its unit. A launch that did not come up closes the row
-    `error` and ends with failure, with bmo-agency's sentence.
-  - `--holidays [<year>]` lists the days off of a year, this year's where none is named;
-    `--holiday-add YYYY-MM-DD '<name>'` adds a day or renames it, its name trimmed;
-    `--holiday-remove YYYY-MM-DD` takes it off.
-  - Refused, with nothing written: a room not named by its chat id, a time not written `HH:MM`, a
-    lead outside 10 to 180 minutes, share hours outside 1 to 720, a row that does not exist, a day
-    that is not a calendar date, and a holiday with no name.
-- `bmo runner news-brief --chat <chatId> [--send-to <chatId>] [--day YYYY-MM-DD] [--share-hours <n>] [--send-at HH:MM] [--run <runId>] [--unit <unit>] [--answer <file>] [--no-send]`,
-  also run as `news-brief-runner`, is the run bmo-agency launches.
-  - `--unit` names the run's unit, which its writer's lines are logged under.
-  - `--day` is today's in the settings' time zone where none is named, and `--share-hours` 24.
-  - It writes the page through a research run apart, files it as a page document of `--chat` with a
-    share link living `--share-hours`, holds the message until `--send-at`, and sends it to
-    `--send-to`, or to `--chat` where none is named.
-  - `--answer` draws the page from a writer's answer already written; `--no-send` stops once the
-    page file is drawn.
-  - `--run` names the row in bmo-agency's ledger it closes, `done` where the page went out and
-    `failed` otherwise.
-  - It answers with the page's title, the room and the link. A run that failed tells the owner,
-    sends nothing, and ends with failure: `news-brief: FAILED — <reason>`.
-  - A call that does not read is refused with its usage line.
-- Callers: the service's own minute loop for `--run`'s launch, and an agent session for the rest.
-
 ### Schema (CLI)
 
 - `bmo-artifact-cli migrate` brings the database the settings name up to this repository's schema,
@@ -490,31 +451,6 @@ A key is its groups joined by dots. The marks are those its line is filled in wi
 | `search.import.moved` | none | The source line of the address asked, which moved to the page kept |
 | `search.import.cited` | none | The source line of a work the page cites |
 | `search.import.cited_text` | `{text}` | The same, with the work's own words |
-| `news_page.language` | none | The language tag the page declares, such as `en` |
-| `news_page.weekdays.sunday` | none | Sunday, as the day a morning news page is for names its weekday |
-| `news_page.weekdays.monday` | none | Monday, the same way |
-| `news_page.weekdays.tuesday` | none | Tuesday, the same way |
-| `news_page.weekdays.wednesday` | none | Wednesday, the same way |
-| `news_page.weekdays.thursday` | none | Thursday, the same way |
-| `news_page.weekdays.friday` | none | Friday, the same way |
-| `news_page.weekdays.saturday` | none | Saturday, the same way |
-| `news_page.day` | `{year}`, `{month}`, `{date}`, `{weekday}` | The day a page is for, the numbers without leading noughts |
-| `news_page.title` | `{day}` | The page's title and its message's title line |
-| `news_page.news` | none | The heading of the news cards |
-| `news_page.korea_market` | none | The heading of the home stock market section |
-| `news_page.us_market` | none | The heading of the US stock market section |
-| `news_page.real_estate` | none | The heading of the home property market section |
-| `news_page.no_close` | none | What an index the page could read no close of shows |
-| `news_page.close_of` | `{date}` | The day an index's close is of, `{date}` as MM/DD |
-| `news_page.chart_label` | `{name}`, `{first}`, `{last}`, `{count}`, `{low}`, `{high}` | What a chart is read out as |
-| `news_page.original` | `{host}` | The link under a card to its article |
-| `news_page.sources` | none | What stands before a section's links to its sources |
-| `news_page.footer` | none | The page's closing line |
-| `news_page.indices.KOSPI` | none | The KOSPI's name, by the key it is read under |
-| `news_page.indices.KOSDAQ` | none | The KOSDAQ's name |
-| `news_page.indices.DJI` | none | The Dow Jones Industrial Average's name |
-| `news_page.indices.SPX` | none | The S&P 500's name |
-| `news_page.indices.NASDAQ` | none | The Nasdaq Composite's name |
 
 ## What this repository calls
 
@@ -536,12 +472,6 @@ room-holding answer (see "Room holding") before it removes a room.
 | Read the pool's roles and status; take, wait for, bind and give back places; reserve and release seats; set limits | bmo-agency |
 | Count a run, write a note in a run's log | bmo-agency |
 | Which registration owns a home, and whether it keeps its research | bmo-agency |
-| Open a morning news page run's row, launch its runner, close it | bmo-agency |
-| Write a morning news page through a research run apart | bmo-agency |
-| Read the index closes a morning news page draws | the `stock_index` site tool, through the tool host |
-| Fetch an article's page and picture for a morning news page | bmo-explorer, through the tool host |
-| Send a morning news page's message into its room | bmo-receiver |
-| Tell the owner a morning news page failed, or the holiday calendar is empty for a year | bmo-receiver |
 
 Each unit is reached at the address its name holds under `[units]` in the settings: `voice`,
 `tool_host`, `agency`, `receiver` and `gate`.
@@ -604,23 +534,6 @@ The calls to bmo-receiver and bmo-gate share one shape:
     `korean_native`, `state` (`unknown` where it has not been read), and `reason?`, `observed_at?`,
     `suspended_until?`, `elapsed_ms?` and `result_count?`;
   - `cooldowns`, each a `reason` and the `ms` an engine rests for it.
-- **A morning news page's reading** (bmo-explorer, through the tool host), on the same `POST /calls`,
-  refused the same ways and waited for the same times, under one `pacing` name for the run,
-  `news-brief:<day>:<chatId>`:
-  - an article's own picture is read by `explorer/fetch_page` on the article's address: the first of
-    `og:image:secure_url`, `og:image` and `twitter:image` its `html` declares, resolved against its
-    `url` and kept only where it is a web address;
-  - each picture, the one the writer named or else the article's own, is fetched by
-    `explorer/fetch_raster`, and one that is not a raster picture is left out.
-- **Read the index closes** (the `stock_index` site tool, through the tool host): `web/stock_index`,
-  handed `indices`, the keys `KOSPI`, `KOSDAQ`, `DJI`, `SPX` and `NASDAQ` the page draws, and `days`,
-  20, on the same `POST /calls`, refused the same ways and waited for 60 seconds.
-  - Its structured content carries `series`, one per index it could read: `key`; `days`, the settled
-    closes oldest first, each `date` (`YYYY-MM-DD` in the index's own market), `close`, `change` and
-    `ratio`; and `session?`, the day still trading, with its `date`, `close`, `change`, `ratio` and
-    `at`, the time of its figure.
-  - An index missing from `series`, a result marked `isError`, or an answer with no structured
-    content leaves that index's place on the page plain.
 
 ### bmo-receiver
 
@@ -629,19 +542,6 @@ The calls to bmo-receiver and bmo-gate share one shape:
 | Read a message | `GET /rooms/{room}/messages/{message}` | | `sender_id?`, `sender_name?`, `sent_at`, `via`; 404 where the room holds no such message |
 | List the rooms' names | `GET /rooms` | | `rooms`, each `chat_id` and `title?` |
 | Hand an ending back | `POST /instructions` | `agent?`, `chat`, `said` (`order`), `sort`, `via?`, `run?` | 201, `id` |
-| Tell the owner | `POST /instructions` | `agent` null, `chat` null, `said` (`order`), `sort` | 201, `id` |
-| Send a message into a room | `POST /sends` | `asker` (`chat`, `job`), `tool` `say`, `input` (`chat`, `text`, `reply`) | `lines`, `refusal?` |
-
-- **The owner is told** by a quiet instruction to the deployment's agent in the owner's private
-  chat: `agent` and `chat` null, `sort` `news_brief`, and `said` holding an `order`, one English line
-  for the agent. A morning news page that failed names the day, the room and what failed, and that
-  the room was sent nothing; a year the holiday calendar holds nothing of names the year, that the
-  pages go out on every weekday until it is filled, and the command that fills it. A refusal is said
-  on the runner's or the service's error stream and changes nothing else.
-- **A morning news page's message** is sent with `say`: `asker` names the room as `chat` and `job`
-  false, and no `agent`, since no agent's turn and no job asks it; `input` names the room again, the
-  message as `text` and `reply` false. An answer carrying `refusal` is a message not sent, and the run
-  fails with it.
 
 - **The token** bmo-receiver's server takes goes with every call to it as `Authorization: Bearer
   <token>`, from `receiver_token` under `[units]`. Where it is unset a call goes with none, and
@@ -771,10 +671,6 @@ the ledger's column names, in snake_case like every other body here, but its tim
   it is handed. It is started where a run of the agent stands, under the run's unit and title.
 - **The outcomes a search run is closed with:** `done`, `unanswered`, `stopped`, `failed`,
   `live-tasks`, and `error` for a run that never came up.
-- **A morning news page run's row** is opened under the agent `search`, with no `cap_ms`, no search,
-  `depth` `0`, the unit `bmo-news-brief-<epoch ms>`, and `started_by` `news-brief:<row id>`. Its
-  runner is launched with the title `morning news page`, and the row is closed `done` where the page
-  went out, `failed` where it did not, and `error` where the runner never came up.
 
 #### Run counts, the agent log and registrations
 
@@ -818,25 +714,3 @@ context it ended carrying.
   - `failure` is the sentence why it gave no answer.
 - **This repository asks every half second** until the run is no longer `running`, and stops it the
   moment its own run is stopped or its research closes.
-- **A morning news page's writer** is a run apart on the `search` line under the `search:basic`
-  profile's road: `instructions` names `news-brief`, the news task bmo-agency composes for the line out
-  of its own prompt tree with the line's tools and rulebooks, and carries no `text`; `prompt` is the
-  prompt tree's `agents/search/news-brief-request.md`, filled with `{{day}}` and `{{askedAt}}`; `log`
-  names the run's unit and the room. It opens no branch. Its `reply` text is the brief.
-
-## Gaps in siblings
-
-What another repository's boundary must gain for this one's statements to hold, each for that
-repository's worker:
-
-- **The `stock_index` site tool** stands in no repository of the new layout, and the reading it
-  answers is text for an agent, with no structured content. Until its own repository places it with
-  the tool host and answers `series` as "Read the index closes" states, every index place on a
-  morning news page stays plain.
-- **bmo-web's language pack** holds no `news_page` keys. A wording file must hold every key (see
-  "Wording"), so a deployment whose wording setting names that pack is refused until the pack gains
-  them, and one naming no file reads the English default this repository ships.
-- **bmo-agency** serves no runner launch (see "The run ledger"), so neither a search's runner nor a
-  morning news page's comes up until it does; and its document states no run apart, nor the
-  `news-brief` instructions it is to compose for the search line out of its own
-  `prompts/agents/search/news-brief.md`, which hold Korean where every model prompt is to be English.

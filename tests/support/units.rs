@@ -1,6 +1,6 @@
 //! Stand-ins for the units a search calls besides bmo-agency (`docs/api.md`, "What this repository calls"):
-//! bmo-receiver's instruction queue, sends, messages and room names, bmo-gate's knowledge, bmo-voice's
-//! briefings, and the tool host's page reading, picture fetching and index closes, all served on one local port from a book the test fills and reads back. The
+//! bmo-receiver's instruction queue, messages and room names, bmo-gate's knowledge, bmo-voice's briefings and
+//! the tool host's page reading, all served on one local port from a book the test fills and reads back. The
 //! service's own clients reach it, so a run goes through the same calls the service makes. The receiver's
 //! routes refuse a call without its token, and its queue takes an instruction only in the shape it reads.
 
@@ -12,8 +12,6 @@ use axum::extract::{Path, State};
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
@@ -59,19 +57,6 @@ pub struct Book {
   pub page: Option<Value>,
   /// What the tool host answers `explorer/search_engines` with.
   pub engines: Option<Value>,
-  /// What the tool host answers `explorer/fetch_page` with, by the address asked.
-  pub heads: HashMap<String, Value>,
-  /// The pictures the tool host answers `explorer/fetch_raster` with, by the address asked; any other is
-  /// refused as a 404.
-  pub rasters: HashMap<String, Vec<u8>>,
-  /// What the tool host answers `web/stock_index` with.
-  pub closes: Option<Value>,
-  /// Every call the tool host was asked: the entry and its arguments.
-  pub calls: Vec<Value>,
-  /// Each send bmo-receiver was asked to make.
-  pub sent: Vec<Value>,
-  /// The refusal bmo-receiver answers a send with, where it refuses them.
-  pub send_refusal: Option<String>,
 }
 
 /// The stand-ins as a test reads and fills them.
@@ -91,7 +76,6 @@ pub async fn serve(book: Book) -> (Units, String) {
   let address = format!("http://{}", listener.local_addr().expect("an address"));
   let app = axum::Router::new()
     .route("/instructions", post(hand_back))
-    .route("/sends", post(send))
     .route("/rooms", get(rooms))
     .route("/rooms/{room}/messages/{message}", get(message))
     .route("/knowledge/work", post(knowledge))
@@ -203,44 +187,11 @@ async fn briefing(State(units): State<Units>, Json(asked): Json<Value>) -> Respo
   (StatusCode::CREATED, Json(json!({ "unit": format!("voice-{}", book.briefings.len()) }))).into_response()
 }
 
-async fn send(State(units): State<Units>, headers: HeaderMap, Json(asked): Json<Value>) -> Response {
-  if let Some(refused) = unauthorized(&headers) {
-    return refused;
-  }
-
-  let mut book = units.book();
-
-  book.sent.push(asked);
-
-  Json(match &book.send_refusal {
-    Some(refusal) => json!({ "lines": [], "refusal": refusal }),
-    None => json!({ "lines": ["sent"] }),
-  })
-  .into_response()
-}
-
 async fn call(State(units): State<Units>, Json(asked): Json<Value>) -> Json<Value> {
-  let mut book = units.book();
-  let address = asked["arguments"]["address"].as_str().unwrap_or_default().to_owned();
-
-  book.calls.push(asked.clone());
-
-  if asked["tool"] == "explorer/fetch_raster" {
-    return Json(match book.rasters.get(&address) {
-      Some(bytes) => {
-        json!({ "content": [{ "type": "image", "data": STANDARD.encode(bytes), "mimeType": "image/png" }] })
-      }
-      None => {
-        json!({ "isError": true, "content": [{ "type": "text", "text": "the picture answered 404" }] })
-      }
-    });
-  }
-
+  let book = units.book();
   let served = match asked["tool"].as_str() {
     Some("explorer/import_page") => book.page.clone(),
     Some("explorer/search_engines") => book.engines.clone(),
-    Some("explorer/fetch_page") => book.heads.get(&address).cloned(),
-    Some("web/stock_index") => book.closes.clone(),
     _ => None,
   };
 
