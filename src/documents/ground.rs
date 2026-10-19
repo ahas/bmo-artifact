@@ -66,6 +66,12 @@ pub fn jpeg_on_white(bytes: &[u8], quality: u8) -> Result<Vec<u8>, String> {
   laid_on_white(&decoded(bytes)?, quality)
 }
 
+/// A picture cut to fill a frame of `width` by `height`, upright, laid on white and written as JPEG at
+/// `quality`: what a card of the morning news page carries. Refused for bytes that are no picture.
+pub fn thumbnail(bytes: &[u8], width: u32, height: u32, quality: u8) -> Result<Vec<u8>, String> {
+  laid_on_white(&decoded(bytes)?.resize_to_fill(width, height, FilterType::Lanczos3), quality)
+}
+
 /// A document's picture as a link to it shows it in a chat app's preview card: its first frame, upright,
 /// fitted inside the card's edge and never enlarged, laid on white and written as JPEG, the one format every
 /// crawler drawing those cards reads. None for bytes that are no picture.

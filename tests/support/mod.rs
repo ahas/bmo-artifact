@@ -5,6 +5,7 @@
 
 pub mod agency;
 pub mod cli;
+pub mod news_brief;
 pub mod scratch;
 pub mod units;
 pub mod web;

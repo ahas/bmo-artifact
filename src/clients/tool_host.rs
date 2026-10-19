@@ -1,6 +1,8 @@
 //! The tool host, through which bmo-explorer reads a page whole and fetches a raster picture, each address
 //! checked and each request paced on its side (`docs/api.md`, "Read a page and fetch a picture"), and
-//! reports the search engines a research run may query (`docs/api.md`, "Read the search engines").
+//! reports the search engines a research run may query (`docs/api.md`, "Read the search engines"); and
+//! through which the `stock_index` site tool reads the index closes a morning news page draws
+//! (`docs/api.md`, "Read the index closes").
 
 use std::future::Future;
 use std::pin::Pin;
@@ -182,6 +184,20 @@ impl ToolHost {
       .map_err(|why| format!("explorer/fetch_page answered no page: {why}"))
   }
 
+  /// The settled closes of the indices named by their keys, their last `days` each, as the `stock_index`
+  /// site tool reads them (`docs/api.md`, "Read the index closes"). An index it could not read is not
+  /// among them.
+  pub async fn index_closes(&self, indices: &[&str], days: usize) -> Result<Vec<IndexCloses>, String> {
+    let result = self.call("web/stock_index", json!({ "indices": indices, "days": days })).await?;
+    let Some(content) = result.structured_content else {
+      return Err("web/stock_index answered no structured closes".to_owned());
+    };
+    let read: StockIndexAnswer = serde_json::from_value(content)
+      .map_err(|why| format!("web/stock_index answered no series: {why}"))?;
+
+    Ok(read.series)
+  }
+
   /// The search engines a research run may query, in bmo-explorer's order, and the rest each refusal
   /// earns (`docs/api.md`, "Read the search engines").
   pub async fn search_engines(&self) -> Result<SearchEngines, String> {
@@ -190,6 +206,30 @@ impl ToolHost {
     serde_json::from_value(result.structured_content.unwrap_or_default())
       .map_err(|why| format!("the search engines' answer is not a list of engines: {why}"))
   }
+}
+
+/// One settled close of an index, with its change against the day before in points and in percent.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+pub struct IndexClose {
+  /// The day it closed, `YYYY-MM-DD` in its own market.
+  pub date: String,
+  pub close: f64,
+  pub change: f64,
+  pub ratio: f64,
+}
+
+/// One index's settled closes, oldest first, by the key it is read under. The day still trading is the
+/// site tool's to say and is not read here.
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+pub struct IndexCloses {
+  pub key: String,
+  #[serde(default)]
+  pub days: Vec<IndexClose>,
+}
+
+#[derive(Deserialize)]
+struct StockIndexAnswer {
+  series: Vec<IndexCloses>,
 }
 
 /// One search engine as bmo-explorer last saw it.

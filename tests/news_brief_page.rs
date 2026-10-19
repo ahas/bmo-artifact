@@ -2,39 +2,16 @@
 //! the page writes, the page whole and the message that hands it to a room (`docs/news-brief.md`, "How one
 //! page is made" and "The page").
 
+mod support;
+
 use std::collections::HashMap;
 
 use bmo_artifact::helpers::marks::fill_marks;
 use bmo_artifact::verbs::news_brief::brief::read_brief;
 use bmo_artifact::verbs::news_brief::page::{Page, index_chart, message, page_title, render};
 use bmo_artifact::verbs::news_brief::series::{Day, Series, change_text, close_text};
-use bmo_artifact::wording::Wording;
-use bmo_artifact::wording::news_page::NewsPage;
-use serde_json::{Value, json};
-
-fn words() -> NewsPage {
-  Wording::english().expect("the English default reads").news_page
-}
-
-fn item_value(n: usize) -> Value {
-  json!({
-    "tag": "economy",
-    "title": format!("Title {n}"),
-    "lines": [format!("First line {n}"), format!("Second line {n}")],
-    "url": format!("https://news.example/{n}"),
-    "image": null,
-  })
-}
-
-fn brief_value() -> Value {
-  json!({
-    "summary": ["First summary", "Second summary"],
-    "items": (1..=6).map(item_value).collect::<Vec<_>>(),
-    "realEstate": { "lines": ["Apartment prices rose less"], "sources": ["https://www.example.org/weekly"] },
-    "koreaMarket": { "lines": ["Foreign buying lifted the market"], "movers": [{ "name": "Samsung", "move": "+2.1%" }], "sources": [] },
-    "usMarket": { "lines": ["Rates weighed on stocks"], "movers": [], "sources": ["https://www.example.com/us"] },
-  })
-}
+use serde_json::json;
+use support::news_brief::{brief_value, item_value, words};
 
 fn series(key: &str, days: &[(&str, f64, f64, f64)]) -> Series {
   Series {

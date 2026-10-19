@@ -606,8 +606,9 @@ The calls to bmo-receiver and bmo-gate share one shape:
 - **A morning news page's reading** (bmo-explorer, through the tool host), on the same `POST /calls`,
   refused the same ways and waited for the same times, under one `pacing` name for the run,
   `news-brief:<day>:<chatId>`:
-  - an article's own picture is read by `explorer/fetch_page` on the article's address: the first
-    `og:image` (or `og:image:url`, `twitter:image`) its `html` declares, resolved against its `url`;
+  - an article's own picture is read by `explorer/fetch_page` on the article's address: the first of
+    `og:image:secure_url`, `og:image` and `twitter:image` its `html` declares, resolved against its
+    `url` and kept only where it is a web address;
   - each picture, the one the writer named or else the article's own, is fetched by
     `explorer/fetch_raster`, and one that is not a raster picture is left out.
 - **Read the index closes** (the `stock_index` site tool, through the tool host): `web/stock_index`,
@@ -637,8 +638,9 @@ The calls to bmo-receiver and bmo-gate share one shape:
   pages go out on every weekday until it is filled, and the command that fills it. A refusal is said
   on the runner's or the service's error stream and changes nothing else.
 - **A morning news page's message** is sent with `say`: `asker` names the room as `chat` and `job`
-  false, since no turn and no job asks it; `input` names the room again, the message as `text` and
-  `reply` null. An answer carrying `refusal` is a message not sent, and the run fails with it.
+  false, and no `agent`, since no agent's turn and no job asks it; `input` names the room again, the
+  message as `text` and `reply` false. An answer carrying `refusal` is a message not sent, and the run
+  fails with it.
 
 - **The token** bmo-receiver's server takes goes with every call to it as `Authorization: Bearer
   <token>`, from `receiver_token` under `[units]`. Where it is unset a call goes with none, and
