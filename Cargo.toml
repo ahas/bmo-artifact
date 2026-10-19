@@ -91,3 +91,13 @@ syn = { version = "2.0.119", features = ["full", "visit"] }
 tempfile = "3.27.0"
 toml = { version = "0.8.23", default-features = false, features = ["parse"] }
 tower = { version = "0.5.2", features = ["util"] }
+
+# Build output kept small: line tables alone for a backtrace, split out, and no incremental cache.
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+incremental = false
+
+[profile.release]
+debug = false
+strip = "debuginfo"

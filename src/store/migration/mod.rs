@@ -1,11 +1,12 @@
-//! The document tables' and the research profiles' migrations, run by SeaORM's migrator, which keeps the ones it ran in its own
-//! table beside them (`docs/layout.md`, "Storage").
+//! The document tables', the research profiles' and the morning news page's migrations, run by SeaORM's
+//! migrator, which keeps the ones it ran in its own table beside them (`docs/layout.md`, "Storage").
 
 use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::DatabaseConnection;
 
 pub mod m20261016_000001_documents;
 pub mod m20261017_000001_research_profiles;
+pub mod m20261019_000001_news_briefs;
 
 pub struct Migrator;
 
@@ -15,6 +16,7 @@ impl MigratorTrait for Migrator {
     vec![
       Box::new(m20261016_000001_documents::Migration),
       Box::new(m20261017_000001_research_profiles::Migration),
+      Box::new(m20261019_000001_news_briefs::Migration),
     ]
   }
 }
