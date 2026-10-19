@@ -1,7 +1,10 @@
-//! The HTTP server: every registered route, on the address the settings name.
+//! The HTTP server: every registered route, on the address the settings name, and every registered loop
+//! while it listens.
 
 use std::process::ExitCode;
+use std::sync::Arc;
 
+use bmo_artifact::plumbing::background::{loop_faults, start};
 use bmo_artifact::plumbing::http::{Standing, router};
 use bmo_artifact::settings::Settings;
 use tokio::net::TcpListener;
@@ -24,6 +27,14 @@ async fn main() -> ExitCode {
       return ExitCode::FAILURE;
     }
   };
+  let faults = loop_faults();
+
+  if !faults.is_empty() {
+    eprintln!("the loops cannot be run: {}", faults.join("; "));
+    return ExitCode::FAILURE;
+  }
+
+  let looping = Arc::new(standing.clone());
   let router = match router(standing) {
     Ok(router) => router,
     Err(faults) => {
@@ -41,7 +52,12 @@ async fn main() -> ExitCode {
 
   eprintln!("bmo-artifact {} listens on {listen}", bmo_artifact::VERSION);
 
-  match axum::serve(listener, router).with_graceful_shutdown(stopped()).await {
+  let loops = start(looping);
+  let served = axum::serve(listener, router).with_graceful_shutdown(stopped()).await;
+
+  loops.stop();
+
+  match served {
     Ok(()) => ExitCode::SUCCESS,
     Err(why) => {
       eprintln!("the server stopped: {why}");

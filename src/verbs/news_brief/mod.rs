@@ -10,12 +10,14 @@
 //! - `runner` — `runner news-brief`, one page written, filed and sent.
 //! - `launch` — one page's run opened in bmo-agency's ledger and launched.
 //! - `command` — `news-brief`, the rooms and the holiday calendar.
+//! - `look` — the server's minute loop that starts each room's page on its working days.
 
 pub mod brief;
 pub mod calendar;
 pub mod command;
 pub mod compose;
 pub mod launch;
+pub mod look;
 pub mod page;
 pub mod runner;
 pub mod series;

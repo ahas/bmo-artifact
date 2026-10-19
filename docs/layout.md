@@ -22,7 +22,7 @@ testbed.toml
 src/
   lib.rs
   bin/
-    bmo-artifact.rs        the HTTP server
+    bmo-artifact.rs        the HTTP server, and the loops it runs while it listens
     bmo-artifact-cli.rs    the CLI's line, built from every registered verb, and the version and migrate verbs
   settings.rs              every setting (see "Settings")
   pool.rs                  connection pools and how a statement is bound and run on them

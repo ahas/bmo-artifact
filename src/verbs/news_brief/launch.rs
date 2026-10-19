@@ -2,8 +2,10 @@
 //! ledger"): its row opened in bmo-agency's run ledger and `runner news-brief` launched by bmo-agency, which
 //! keeps it standing however long it writes. `news-brief --run` and the minute loop start a page the same way.
 
-use crate::clients::agency::{Launch, NewRun, RunClose};
-use crate::plumbing::verb::{Shell, VerbError};
+use std::path::Path;
+
+use crate::clients::agency::{Agency, Launch, NewRun, RunClose};
+use crate::plumbing::verb::VerbError;
 use crate::store::news_briefs::Brief;
 use crate::verbs::research::LINE;
 use crate::verbs::search::launch::runner_command;
@@ -58,12 +60,25 @@ pub fn runner_args(start: &Start<'_>, run_id: i64, unit: &str) -> Vec<String> {
   args
 }
 
-/// One page's run opened in the ledger and launched at `now_ms`; refused with the sentence where either
-/// did not happen, a run that did not come up closed as one that never started.
-pub async fn launch(shell: &Shell, start: &Start<'_>, now_ms: i64) -> Result<Launched, VerbError> {
+/// This repository's CLI binary, which the runner is: the program given where it is the CLI, else the one
+/// standing beside it, since the server ships with it and launches the runner too.
+pub fn cli_program(program: &str) -> String {
+  let path = Path::new(program);
+
+  if path.file_stem().is_some_and(|stem| stem == CLI) {
+    return program.to_owned();
+  }
+
+  path.with_file_name(CLI).to_string_lossy().into_owned()
+}
+
+const CLI: &str = "bmo-artifact-cli";
+
+/// One page's run opened in bmo-agency's ledger and launched at `now_ms`; refused with the sentence where
+/// either did not happen, a run that did not come up closed as one that never started.
+pub async fn launch(agency: &dyn Agency, start: &Start<'_>, now_ms: i64) -> Result<Launched, VerbError> {
   let unit = format!("{UNIT_PREFIX}{now_ms}");
-  let run_id = shell
-    .agency
+  let run_id = agency
     .open_run(&NewRun {
       agent: LINE.to_owned(),
       chat_id: Some(start.row.chat_id),
@@ -76,20 +91,24 @@ pub async fn launch(shell: &Shell, start: &Start<'_>, now_ms: i64) -> Result<Lau
     })
     .await
     .map_err(|why| VerbError::Refused(format!("the run's row could not be opened in bmo-agency: {why}")))?;
+  let mut command = runner_command(runner_args(start, run_id, &unit), std::env::vars())?;
+
+  command.program = cli_program(&command.program);
+
   let launch = Launch {
     title: TITLE.to_owned(),
     agent: LINE.to_owned(),
-    command: runner_command(runner_args(start, run_id, &unit), std::env::vars())?,
+    command,
   };
 
-  if let Err(reason) = shell.agency.launch(run_id, &launch).await {
+  if let Err(reason) = agency.launch(run_id, &launch).await {
     let close = RunClose {
       finished_at: now_ms / 1000,
       outcome: LAUNCH_ERROR.to_owned(),
       context_tokens: None,
     };
 
-    if let Err(why) = shell.agency.close_run(run_id, &close).await {
+    if let Err(why) = agency.close_run(run_id, &close).await {
       eprintln!("{unit}: the run's row could not be closed: {why}");
     }
 

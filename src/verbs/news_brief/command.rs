@@ -186,7 +186,7 @@ pub async fn answer(shell: &Shell, asked: &CommandArgs, now_ms: i64) -> Result<V
       send_at: None,
       send_to,
     };
-    let launched = launch(shell, &start, now_ms).await?;
+    let launched = launch(&*shell.agency, &start, now_ms).await?;
 
     return Ok(vec![format!(
       "the page of #{} for {today} runs as {} (run {}); it is sent to {} when it is done",
