@@ -1,0 +1,135 @@
+[
+  {
+    "id": "console/document",
+    "title": "Document screen",
+    "what": "The console document screen at /archive/<id>: the masthead, the body with its contents, the files after it, the references beside it and the picture viewer.",
+    "files": [
+      "client/app/pages/archive/[id].vue",
+      "client/app/components/ArtifactBody.vue",
+      "client/app/components/ArtifactAttachments.vue",
+      "client/app/components/ArtifactReferences.vue",
+      "client/app/components/ArtifactReferenceItem.vue",
+      "client/app/components/ArtifactHostedFrame.vue",
+      "client/app/components/ArtifactPageFrame.vue",
+      "client/app/components/ArtifactPictureViewer.vue",
+      "client/app/domain/document-view.ts",
+      "client/app/domain/document-pictures.ts",
+      "client/app/domain/copy.ts",
+      "client/shared/document-pictures.ts",
+      "docs/layout.md"
+    ],
+    "symbols": [
+      "contentsOf",
+      "drawnNames",
+      "filesAround",
+      "kindOf",
+      "copyText",
+      "documentPictureProperties"
+    ],
+    "aliases": [],
+    "needs": [
+      "console/finding-reading",
+      "console/finding-markdown",
+      "api/documents",
+      "document/attachments",
+      "document/references",
+      "api/kinds",
+      "document/design",
+      "document/hosted-pages"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290071
+  },
+  {
+    "id": "console/finding-markdown",
+    "title": "Finding markdown",
+    "what": "A finding markdown turned into the HTML the console draws: kept pictures and links, folds, galleries and maps, with the addresses in its text linked.",
+    "files": [
+      "client/app/domain/finding-markdown.ts",
+      "client/app/domain/finding-blocks.ts",
+      "client/app/domain/web-address.ts",
+      "client/app/components/ArtifactFold.vue",
+      "client/app/components/ArtifactGallery.vue",
+      "client/app/components/ArtifactMap.vue"
+    ],
+    "symbols": [
+      "findingHtml",
+      "renderFinding",
+      "FINDING_BLOCK_PLACES",
+      "findingBlock",
+      "isWebAddress",
+      "addressAsWritten"
+    ],
+    "aliases": [],
+    "needs": [],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290081
+  },
+  {
+    "id": "console/finding-reading",
+    "title": "Finding reading",
+    "what": "The finding reading loaded once for the whole screen in the browser alone, so every finding after the first is built the moment it stands.",
+    "files": [
+      "client/app/domain/finding-load.ts",
+      "client/app/components/ArtifactText.vue"
+    ],
+    "symbols": [
+      "findingReading",
+      "loadFindingReading"
+    ],
+    "aliases": [],
+    "needs": [
+      "console/finding-markdown"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290087
+  },
+  {
+    "id": "console/list",
+    "title": "Document list screen",
+    "what": "The console document list at /archive: a phrase search and a kind filter held in the address, each document a row with its mark and chips.",
+    "files": [
+      "client/app/pages/archive/index.vue",
+      "client/app/components/ArtifactRowSkeleton.vue",
+      "client/app/components/ArtifactTextPreview.vue",
+      "client/app/domain/artifact.ts",
+      "client/app/domain/sizes.ts",
+      "client/shared/config.ts"
+    ],
+    "symbols": [
+      "artifactAddress",
+      "readDocuments",
+      "DOCUMENTS_PAGE_SIZE",
+      "DOCUMENTS_PHRASE_LIMIT"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/documents",
+      "api/kinds"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290066
+  },
+  {
+    "id": "console/share",
+    "title": "Shared document screen",
+    "what": "The console shared-document screen at /archive/share/<token>: one document alone with no console around it, its preview head kept out of every index.",
+    "files": [
+      "client/app/pages/archive/share/[token].vue",
+      "client/shared/share-head.ts",
+      "docs/archive.md"
+    ],
+    "symbols": [
+      "shareHeadTags",
+      "SHARE_ROBOTS"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/documents",
+      "api/shares",
+      "console/document"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290076
+  }
+]

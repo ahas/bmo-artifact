@@ -1,0 +1,33 @@
+[
+  {
+    "id": "command/cli",
+    "title": "bmo-artifact command",
+    "what": "The bmo-artifact binary and the verbs it registers: serve, migrate, health, openapi, mcp, nouns, version and html-read, each answering through the plumbing verb shell.",
+    "files": [
+      "src/bin/bmo-artifact.rs",
+      "src/commands/mod.rs",
+      "src/commands/html_read.rs",
+      "src/plumbing/verb.rs",
+      "src/helpers/ceiling.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "Serve",
+      "HtmlRead",
+      "html_read",
+      "Nouns",
+      "cap_items"
+    ],
+    "aliases": [],
+    "needs": [
+      "service/settings",
+      "api/mcp",
+      "api/client",
+      "document/page-reading",
+      "api/http",
+      "document/wording"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496296794
+  }
+]

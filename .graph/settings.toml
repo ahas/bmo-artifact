@@ -1,0 +1,16 @@
+repository = "bmo-artifact"
+base = false
+
+[coverage]
+# The package's src/ and the console bundle, but these: the crate root and the module folders that only list
+# their modules, the API types generated from the OpenAPI document, and the type declarations alone.
+layout = "bmo-next"
+unindexed = [
+  "src/lib.rs",
+  "src/documents/mod.rs",
+  "src/helpers/mod.rs",
+  "src/plumbing/mod.rs",
+  "client/app/i18n.d.ts",
+  "client/shared/openapi.ts",
+  "client/shared/types.ts",
+]

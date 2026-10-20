@@ -1,0 +1,294 @@
+[
+  {
+    "id": "api/bundle",
+    "title": "Console bundle",
+    "what": "The console bundle declaration: a Nuxt layer on bmo-ui named artifact, its screens under /archive and its words in its own packs.",
+    "files": [
+      "client/package.json",
+      "client/console-bundle.json",
+      "client/nuxt.config.ts",
+      "client/i18n/en.json",
+      "client/i18n/ko.json",
+      "README.md",
+      "docs/layout.md"
+    ],
+    "symbols": [],
+    "aliases": [],
+    "needs": [
+      "console/list",
+      "console/document",
+      "console/share"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290042,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/cli",
+    "title": "Command API",
+    "what": "The command words other tools call: serve, migrate, health, openapi, mcp and nouns, and the html-read noun bmo dispatches to.",
+    "files": [
+      "docs/api.md"
+    ],
+    "symbols": [],
+    "aliases": [],
+    "needs": [
+      "command/cli"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290038,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/client",
+    "title": "Service client",
+    "what": "The service own Rust client, one method for each route over the wire types, its failure carrying the route status, code and sentence.",
+    "files": [
+      "src/client.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ArtifactClient",
+      "ClientFailure",
+      "CALL_WAIT"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/http"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290047,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/documents",
+    "title": "Document API",
+    "what": "The document routes: the list with its filters, a document filed, read and rewritten, its content and its cover picture, answered from the document tables.",
+    "files": [
+      "src/http/documents.rs",
+      "src/store/documents.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ListDocuments",
+      "FileDocument",
+      "ReadDocument",
+      "ChangeDocument",
+      "ReadContent",
+      "ReadPicture",
+      "Row"
+    ],
+    "aliases": [],
+    "needs": [
+      "document/filing",
+      "document/cover",
+      "api/kinds",
+      "service/storage",
+      "api/events"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496296811
+  },
+  {
+    "id": "api/events",
+    "title": "Event stream",
+    "what": "The service event stream: every change kept with its scope, served as server-sent events or a JSON page and narrowed by kind and scope.",
+    "files": [
+      "src/http/events.rs",
+      "src/events.rs",
+      "src/store/events.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "EventKind",
+      "Publisher",
+      "WINDOW_MS",
+      "ListEvents"
+    ],
+    "aliases": [],
+    "needs": [
+      "service/storage"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290019
+  },
+  {
+    "id": "api/health",
+    "title": "Health route",
+    "what": "GET /health, ready while the document database answers, with the version it runs.",
+    "files": [
+      "src/http/health.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ReadHealth"
+    ],
+    "aliases": [],
+    "needs": [
+      "service/storage"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290024
+  },
+  {
+    "id": "api/http",
+    "title": "HTTP API",
+    "what": "The HTTP boundary: every route behind the bearer token, its wire bodies, each route OpenAPI operation, and the document generated from them.",
+    "files": [
+      "src/http/mod.rs",
+      "src/plumbing/http.rs",
+      "src/plumbing/openapi.rs",
+      "src/plumbing/refusal.rs",
+      "src/openapi.rs",
+      "src/wire.rs",
+      "docs/api.md",
+      "docs/openapi.json"
+    ],
+    "symbols": [
+      "Route",
+      "Call",
+      "Standing",
+      "Refusal",
+      "routes",
+      "router",
+      "openapi",
+      "openapi_json"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/documents",
+      "document/attachments",
+      "document/references",
+      "document/imports",
+      "api/shares",
+      "api/scopes",
+      "api/events",
+      "api/health",
+      "api/kinds",
+      "document/hosted-pages",
+      "service/storage",
+      "service/settings",
+      "document/wording",
+      "calls/explorer"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496296829,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/kinds",
+    "title": "Document kinds",
+    "what": "The kind catalogue and its four modules, record, learning, import and page, each answering its own shape, and GET /document-kinds listing them.",
+    "files": [
+      "src/kinds/mod.rs",
+      "src/kinds/kind.rs",
+      "src/kinds/record.rs",
+      "src/kinds/learning.rs",
+      "src/kinds/import.rs",
+      "src/kinds/page.rs",
+      "src/http/document_kinds.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "Kind",
+      "KINDS",
+      "kind",
+      "known",
+      "RecordKind",
+      "LearningKind",
+      "ImportKind",
+      "PageKind",
+      "ListDocumentKinds"
+    ],
+    "aliases": [],
+    "needs": [],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290004
+  },
+  {
+    "id": "api/mcp",
+    "title": "Harness plugin",
+    "what": "The harness plugin MCP server, bmo-artifact mcp, and its tools, each one call of the service own client answered as structured content.",
+    "files": [
+      "src/mcp/mod.rs",
+      "src/mcp/tool.rs",
+      "src/mcp/tools.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ArtifactServer",
+      "ArtifactTool",
+      "serve",
+      "ENTRY"
+    ],
+    "aliases": [],
+    "needs": [
+      "api/client",
+      "api/http"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496290033,
+    "boundary": {
+      "side": "exposes"
+    }
+  },
+  {
+    "id": "api/scopes",
+    "title": "Scope API",
+    "what": "What the service holds under one caller scope: counted, and let go of with a dry run first where the caller asks.",
+    "files": [
+      "src/http/scopes.rs",
+      "src/store/scopes.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ReadScope",
+      "ReleaseScope",
+      "counts"
+    ],
+    "aliases": [],
+    "needs": [
+      "service/storage",
+      "api/events",
+      "document/attachments",
+      "api/shares",
+      "document/imports"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496296817
+  },
+  {
+    "id": "api/shares",
+    "title": "Share links API",
+    "what": "The share-link routes: a link made, listed, read and ended, with links whose time has passed swept on every read and making.",
+    "files": [
+      "src/http/shares.rs",
+      "src/store/shares.rs",
+      "docs/api.md"
+    ],
+    "symbols": [
+      "ListShares",
+      "MakeShare",
+      "ReadShare",
+      "EndShare",
+      "share_token",
+      "sweep"
+    ],
+    "aliases": [],
+    "needs": [
+      "service/storage",
+      "api/events",
+      "service/settings"
+    ],
+    "base": "b567150659140aafa43b6cbcace5597687cd4852",
+    "changed": 1792496296823
+  }
+]
