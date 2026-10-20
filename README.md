@@ -17,6 +17,7 @@ calls no other unit.
 | `tests/` | The tests, the repository checks among them |
 | `deploy/` | The neutral service unit template |
 | `docs/` | The canonical statements of what the service does |
+| `.graph/` | The repository's code dependency graph, one node per feature, written only by `bmo-graph` |
 
 At the root stand the Cargo manifest, `VERSION`, `build.rs`, `testbed.toml`, `rustfmt.toml`,
 `CLAUDE.md`, `settings.toml` and `settings.local.toml.example`, the example of the local settings a
