@@ -1,0 +1,96 @@
+//! The OpenAPI document (`docs/api.md`, "The wire"): the committed one is what the code generates, and it
+//! states every route, event and tool the API document names, at the repository's version.
+
+mod support;
+
+use std::collections::BTreeSet;
+use std::path::Path;
+
+use bmo_artifact::openapi::{openapi, openapi_json};
+use support::ROOT;
+
+#[test]
+fn the_committed_document_is_what_the_code_generates() {
+  let committed = std::fs::read_to_string(Path::new(ROOT).join("docs/openapi.json"))
+    .expect("docs/openapi.json is committed");
+
+  assert!(
+    committed == openapi_json(),
+    "docs/openapi.json differs: write `bmo-artifact openapi` into it"
+  );
+}
+
+#[test]
+fn it_states_every_route_event_and_tool_at_the_repository_version() {
+  let document = openapi();
+  let routes: BTreeSet<String> = document["paths"]
+    .as_object()
+    .expect("paths")
+    .iter()
+    .flat_map(|(path, methods)| {
+      methods
+        .as_object()
+        .expect("methods")
+        .keys()
+        .map(move |method| format!("{} {path}", method.to_uppercase()))
+    })
+    .collect();
+  let wanted: BTreeSet<String> = [
+    "GET /health",
+    "GET /events",
+    "GET /documents",
+    "POST /documents",
+    "GET /documents/{documentId}",
+    "PATCH /documents/{documentId}",
+    "GET /documents/{documentId}/content",
+    "GET /documents/{documentId}/picture",
+    "GET /documents/{documentId}/attachments",
+    "POST /documents/{documentId}/attachments",
+    "GET /documents/{documentId}/attachments/{attachmentId}",
+    "GET /documents/{documentId}/references",
+    "GET /documents/{documentId}/references/{referenceId}",
+    "GET /documents/{documentId}/references/{referenceId}/image",
+    "GET /document-kinds",
+    "GET /shares",
+    "POST /shares",
+    "GET /shares/{token}",
+    "DELETE /shares/{token}",
+    "POST /imports",
+    "GET /imports/{importId}",
+    "GET /scopes/{scope}",
+    "DELETE /scopes/{scope}",
+  ]
+  .into_iter()
+  .map(str::to_owned)
+  .collect();
+
+  assert_eq!(routes, wanted);
+  assert_eq!(document["info"]["version"], bmo_artifact::VERSION);
+  assert_eq!(document["x-calls"], serde_json::json!(["explorer"]));
+  assert_eq!(document["x-harness"]["plugin"], "bmo-artifact");
+  assert_eq!(document["x-events"].as_array().map(Vec::len), Some(8));
+
+  let tools: Vec<&str> = document["x-tools"]
+    .as_array()
+    .expect("tools")
+    .iter()
+    .filter_map(|tool| tool["name"].as_str())
+    .collect();
+
+  assert_eq!(
+    tools,
+    [
+      "artifact_attach",
+      "artifact_content",
+      "artifact_document",
+      "artifact_documents",
+      "artifact_file",
+      "artifact_import",
+      "artifact_rewrite",
+      "artifact_search",
+      "artifact_share",
+      "artifact_shares",
+      "artifact_unshare",
+    ]
+  );
+}

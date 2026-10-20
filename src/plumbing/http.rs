@@ -1,4 +1,5 @@
-//! Routes, the calls they answer, their refusals, and the router the server stands them on.
+//! Routes, the calls they answer, their refusals, and the router the server stands them on, behind the
+//! bearer token every call presents (`docs/api.md`, "The wire").
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::future::Future;
@@ -7,20 +8,23 @@ use std::sync::Arc;
 
 use axum::Router;
 use axum::extract::{FromRequestParts, Query, RawPathParams, Request, State};
-use axum::http::{Method, StatusCode};
+use axum::http::{Method, StatusCode, header};
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
-use serde_json::{Map, Value, json};
-
+use schemars::generate::SchemaGenerator;
+use sea_orm::DatabaseConnection;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use serde_json::json;
 use tokio::sync::OnceCell;
 
-use crate::clients::agency::{Agency, AgencyClient};
-use crate::clients::receiver::Receiver;
-use crate::clients::tool_host::ToolHost;
 use crate::documents::preview::PreviewCache;
-use crate::documents::read::Library;
+use crate::events::Publisher;
+use crate::plumbing::openapi::Operation;
 use crate::plumbing::refusal::Refusal;
 use crate::pool::Archive;
+use crate::reader::{ExplorerReader, PageReader};
 use crate::settings::Settings;
 use crate::store::documents::settle;
 use crate::wording::{Wording, WordingError};
@@ -30,10 +34,13 @@ pub use inventory;
 /// One route the server answers, registered beside its answer with `bmo_artifact::route!`.
 pub trait Route: Send + Sync + 'static {
   const METHOD: Method;
-  /// The path, in the router's own syntax: `/api/archive/{id}`.
+  /// The path, in the router's own syntax: `/documents/{documentId}`.
   const PATH: &'static str;
 
   fn answer(&self, call: Call) -> impl Future<Output = Result<Response, Refused>> + Send;
+
+  /// The route as the OpenAPI document states it.
+  fn operation(&self, generator: &mut SchemaGenerator) -> Operation;
 }
 
 type Answering<'a> = Pin<Box<dyn Future<Output = Result<Response, Refused>> + Send + 'a>>;
@@ -43,6 +50,7 @@ pub trait Answers: Send + Sync {
   fn method(&self) -> Method;
   fn path(&self) -> &'static str;
   fn answer(&self, call: Call) -> Answering<'_>;
+  fn operation(&self, generator: &mut SchemaGenerator) -> Operation;
 }
 
 impl<R: Route> Answers for R {
@@ -57,6 +65,10 @@ impl<R: Route> Answers for R {
   fn answer(&self, call: Call) -> Answering<'_> {
     Box::pin(Route::answer(self, call))
   }
+
+  fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
+    Route::operation(self, generator)
+  }
 }
 
 /// One registered route.
@@ -64,7 +76,7 @@ pub struct Registered(pub &'static dyn Answers);
 
 inventory::collect!(Registered);
 
-/// Registers a route with the server: `bmo_artifact::route!(ResearchSettings);`
+/// Registers a route with the server: `bmo_artifact::route!(ReadDocument);`
 #[macro_export]
 macro_rules! route {
   ($route:expr) => {
@@ -94,22 +106,15 @@ pub fn route_faults() -> Vec<String> {
     .collect()
 }
 
-/// A refusal: a status, and a body naming why under `error` and `code` (`docs/api.md`, "Errors").
+/// A refusal: a status, and a body of `code` and `error` (`docs/api.md`, "Codes").
 #[derive(Debug, PartialEq, Eq)]
 pub struct Refused {
   pub status: StatusCode,
-  /// The snake_case code a caller matches on.
+  /// The kebab-case code a caller matches on.
   pub code: String,
   /// The English sentence a person reads.
   pub error: String,
-  /// What else the body carries beside them, under the names the route gives it.
-  pub more: Map<String, Value>,
 }
-
-/// The code of a failure a route did not expect.
-pub const FAILED: &str = "failed";
-/// The code of a body that is not JSON.
-pub const NOT_JSON: &str = "not_json";
 
 impl Refused {
   /// A refusal under the status and the code the route gives it.
@@ -118,94 +123,82 @@ impl Refused {
       status,
       code: code.into(),
       error: error.into(),
-      more: Map::new(),
     }
   }
 
-  /// What a route answers for a failure it did not expect: 400, with the failure's own words.
-  pub fn failed(error: impl std::fmt::Display) -> Self {
-    Self::new(StatusCode::BAD_REQUEST, FAILED, error.to_string())
-  }
-
-  /// The refusal with one more field in its body; `error` and `code` stay its own.
-  pub fn with(mut self, name: impl Into<String>, value: impl serde::Serialize) -> Self {
-    self.more.insert(name.into(), json!(value));
-    self
+  /// A request not in the shape the route takes.
+  pub fn bad(error: impl Into<String>) -> Self {
+    Refusal::bad(error).into()
   }
 }
 
 impl IntoResponse for Refused {
   fn into_response(self) -> Response {
-    let mut body = self.more;
-
-    body.insert("error".into(), json!(self.error));
-    body.insert("code".into(), json!(self.code));
-
-    (self.status, Json(Value::Object(body))).into_response()
+    (self.status, Json(json!({ "code": self.code, "error": self.error }))).into_response()
   }
 }
 
 /// What the server stands on, which every call carries.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Standing {
   pub settings: Settings,
   /// The database the settings name, opened on the first statement a route asks of it.
   pub archive: Archive,
   /// The document wording the settings name, read when the server starts.
   pub wording: Wording,
-  /// The tool host bmo-explorer is reached through, at the address the settings name.
-  pub tool_host: ToolHost,
-  /// bmo-agency, at the address the settings name; a test hands a stand-in of its own.
-  pub agency: Arc<dyn Agency>,
-  /// bmo-receiver, at the address the settings name.
-  pub receiver: Receiver,
-  /// The previews of the pages a document points at, fetched through the tool host and kept under the file
-  /// root; a test hands a cache of its own.
+  /// Where the web is read: bmo-explorer's client; a test hands a reader of its own.
+  pub reader: Arc<dyn PageReader>,
+  /// The previews of the pages a document refers to, read through the reader and kept under the file root.
   pub previews: Arc<PreviewCache>,
+  /// Where events are published.
+  pub events: Publisher,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
 
+impl std::fmt::Debug for Standing {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter
+      .debug_struct("Standing")
+      .field("settings", &self.settings)
+      .finish_non_exhaustive()
+  }
+}
+
 impl Standing {
+  /// What the settings name, the web read through bmo-explorer's client.
   pub fn new(settings: Settings) -> Result<Self, WordingError> {
+    let reader = Arc::new(ExplorerReader::open(&settings.explorer.data_root));
+
+    Self::with_reader(settings, reader)
+  }
+
+  /// What the settings name, the web read through `reader`.
+  pub fn with_reader(settings: Settings, reader: Arc<dyn PageReader>) -> Result<Self, WordingError> {
     let archive = Archive::new(settings.database.url.clone());
     let wording = Wording::read(settings.wording.file.as_deref())?;
-    let tool_host =
-      ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
-    let agency =
-      Arc::new(AgencyClient::new(settings.units.agency.clone(), settings.units.agency_token.clone()));
-    let receiver = Receiver::new(settings.units.receiver.clone(), settings.units.receiver_token.clone());
-    let previews =
-      Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::new(tool_host.clone())));
+    let previews = Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::clone(&reader)));
 
     Ok(Self {
       settings,
       archive,
       wording,
-      tool_host,
-      agency,
-      receiver,
+      reader,
       previews,
+      events: Publisher::default(),
       settled: Arc::default(),
     })
   }
 
-  /// The archive as the read API reads it, its document tables settled before the first statement asked of
-  /// them (`docs/layout.md`, "Storage").
-  pub async fn library(&self) -> Result<Library, Refused> {
+  /// The database, its document tables settled before the first statement asked of them
+  /// (`docs/layout.md`, "Storage").
+  pub async fn db(&self) -> Result<&DatabaseConnection, Refused> {
     let db = self.archive.db().map_err(Refusal::from)?;
     let prefix = self.settings.documents.kindless_import_prefix.as_deref();
 
     self.settled.get_or_try_init(|| settle(db, prefix)).await.map_err(Refused::from)?;
 
-    Ok(Library {
-      db: db.clone(),
-      root: self.settings.files.root.clone(),
-      words: self.wording.search.clone(),
-      agency: Arc::clone(&self.agency),
-      receiver: self.receiver.clone(),
-      previews: Arc::clone(&self.previews),
-    })
+    Ok(db)
   }
 }
 
@@ -215,8 +208,8 @@ pub struct Call {
   standing: Arc<Standing>,
 }
 
-// The most a body read whole may carry: 128 MiB.
-const BODY_LIMIT: usize = 128 * 1024 * 1024;
+// The most a body read whole may carry: an attachment's ceiling in base64, and room beside it.
+const BODY_LIMIT: usize = 96 * 1024 * 1024;
 
 impl Call {
   pub fn new(request: Request, standing: Arc<Standing>) -> Self {
@@ -228,6 +221,11 @@ impl Call {
     &self.standing
   }
 
+  /// What the server stands on, shared, for work that outlives the call.
+  pub fn shared(&self) -> Arc<Standing> {
+    Arc::clone(&self.standing)
+  }
+
   /// The parameters the route's path names, by name.
   pub async fn path_params(&mut self) -> Result<HashMap<String, String>, Refused> {
     let (mut parts, body) = std::mem::take(&mut self.request).into_parts();
@@ -235,9 +233,27 @@ impl Call {
 
     self.request = Request::from_parts(parts, body);
 
-    let params = read.map_err(Refused::failed)?;
+    let params = read.map_err(|why| Refused::bad(why.to_string()))?;
 
     Ok(params.iter().map(|(name, value)| (name.to_owned(), value.to_owned())).collect())
+  }
+
+  /// One path parameter as text.
+  pub async fn path_text(&mut self, name: &str) -> Result<String, Refused> {
+    self
+      .path_params()
+      .await?
+      .remove(name)
+      .ok_or_else(|| Refused::bad(format!("the path names no {name}")))
+  }
+
+  /// One path parameter as a member's id: a whole number.
+  pub async fn path_id(&mut self, name: &str) -> Result<i64, Refused> {
+    let text = self.path_text(name).await?;
+
+    text
+      .parse()
+      .map_err(|_| Refused::bad(format!("{name} is a whole number, not {text:?}")))
   }
 
   /// One header's value, where it is given and reads as text.
@@ -250,29 +266,57 @@ impl Call {
       .map(str::to_owned)
   }
 
-  /// One query parameter, the first where it is given more than once.
-  pub fn query(&self, name: &str) -> Option<String> {
-    let Query(pairs) = Query::<Vec<(String, String)>>::try_from_uri(self.request.uri()).ok()?;
-
-    pairs.into_iter().find(|(key, _)| key == name).map(|(_, value)| value)
+  /// The query read as its type; a query not of that shape is refused.
+  pub fn query<Asked: DeserializeOwned>(&self) -> Result<Asked, Refused> {
+    Query::<Asked>::try_from_uri(self.request.uri())
+      .map(|Query(asked)| asked)
+      .map_err(|why| Refused::bad(format!("the query does not read: {}", why.body_text())))
   }
 
-  /// The body read as JSON, whatever its shape; a body that is not JSON is refused. A route reads it once.
-  pub async fn body(&mut self) -> Result<Value, Refused> {
+  /// The body read as its type; a body that is not JSON of that shape is refused, and one over the ceiling
+  /// is too large. A route reads it once.
+  pub async fn json<Sent: DeserializeOwned>(&mut self) -> Result<Sent, Refused> {
     let body = std::mem::take(self.request.body_mut());
-    let bytes = axum::body::to_bytes(body, BODY_LIMIT).await.map_err(Refused::failed)?;
+    let bytes = axum::body::to_bytes(body, BODY_LIMIT)
+      .await
+      .map_err(|_| Refused::from(Refusal::too_large(format!("the body is over {BODY_LIMIT} bytes"))))?;
 
-    serde_json::from_slice(&bytes)
-      .map_err(|_| Refused::new(StatusCode::BAD_REQUEST, NOT_JSON, "the body is not JSON"))
+    serde_json::from_slice(&bytes).map_err(|why| Refused::bad(format!("the body does not read: {why}")))
   }
 }
 
-/// An answer: a JSON body under a status.
-pub fn answer(status: StatusCode, body: Value) -> Response {
+/// An answer: a member or a page as JSON under a status.
+pub fn answer(status: StatusCode, body: &impl Serialize) -> Response {
   (status, Json(body)).into_response()
 }
 
-/// The router answering every registered route, or what is wrong with the routes linked in.
+// Every call presents the settings' token as a bearer; an empty token lets nobody in.
+async fn bearer(State(standing): State<Arc<Standing>>, request: Request, next: Next) -> Response {
+  let token = &standing.settings.server.token;
+  let presented = request
+    .headers()
+    .get(header::AUTHORIZATION)
+    .and_then(|value| value.to_str().ok())
+    .and_then(|value| value.strip_prefix("Bearer "));
+
+  match presented {
+    Some(presented) if !token.is_empty() && presented == token => next.run(request).await,
+    _ => Refused::new(StatusCode::UNAUTHORIZED, "unauthorized", "the bearer token is missing or wrong")
+      .into_response(),
+  }
+}
+
+async fn no_route(request: Request) -> Response {
+  Refused::new(
+    StatusCode::NOT_FOUND,
+    "no-route",
+    format!("no route answers {} {}", request.method(), request.uri().path()),
+  )
+  .into_response()
+}
+
+/// The router answering every registered route behind the bearer token, or what is wrong with the routes
+/// linked in.
 pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   let faults = route_faults();
 
@@ -303,9 +347,12 @@ pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
     return Err(faults);
   }
 
+  let standing = Arc::new(standing);
   let router = by_path
     .into_iter()
-    .fold(Router::new(), |router, (path, methods)| router.route(path, methods));
+    .fold(Router::new(), |router, (path, methods)| router.route(path, methods.fallback(no_route)))
+    .fallback(no_route)
+    .layer(middleware::from_fn_with_state(Arc::clone(&standing), bearer));
 
-  Ok(router.with_state(Arc::new(standing)))
+  Ok(router.with_state(standing))
 }

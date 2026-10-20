@@ -11,11 +11,12 @@ setup = ["cd client && bun install --frozen-lockfile"]
 
 [test.database]
 migrations = ["src/store/migration/**"]
-migrate = "BMO_ARTIFACT_DATABASE__URL=\"$BMO_TEST_TEMPLATE_URL\" cargo run --quiet --bin bmo-artifact-cli -- migrate"
+migrate = "BMO_ARTIFACT_DATABASE__URL=\"$BMO_TEST_TEMPLATE_URL\" cargo run --quiet --bin bmo-artifact -- migrate"
 
 [check]
 quick = ["layout", "dependencies"]
-base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui"]
+# The base libraries, and bmo-explorer, whose published client crate the imports read pages through.
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui", "bmo-explorer"]
 
 [[check.step]]
 id = "check"
@@ -32,4 +33,4 @@ id = "fmt"
 command = "cargo fmt --all --check"
 
 [build]
-binaries = ["bmo-artifact", "bmo-artifact-cli"]
+binaries = ["bmo-artifact"]

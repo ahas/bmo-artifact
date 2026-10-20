@@ -1,30 +1,24 @@
 //! `page`: an HTML page kept as it stands. The file is the document and is opened as that page wherever the
-//! document is opened, so it has no summary and no contents; its head shows the description taken from the
-//! page.
+//! document is opened, so it has no contents.
 
-use super::kind::{HeadProperty, Kind, Outline, OutlineFinding};
-use crate::wording::search::Search;
+use super::kind::Kind;
 
 pub struct PageKind;
 
 impl Kind for PageKind {
-  fn id(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "page"
   }
 
-  fn summary(&self) -> bool {
-    false
+  fn description(&self) -> &'static str {
+    "An HTML page kept as it stands and opened as that page."
   }
 
   fn hosted(&self) -> bool {
     true
   }
 
-  fn head(&self) -> &'static [HeadProperty] {
-    &[HeadProperty::Description]
-  }
-
-  fn outline(&self, _findings: &[OutlineFinding], _words: &Search) -> Outline {
-    Outline::default()
+  fn contents_depth(&self) -> u8 {
+    0
   }
 }

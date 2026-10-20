@@ -1,9 +1,10 @@
-# The document archive as one service: the HTTP server, the CLI verbs and the repository checks in
-# `tests/`. The only manifest at the root; the console plugin bundle keeps its own under `client/`.
+# The document service as one crate: the HTTP server, its client, its command and MCP server, and the
+# repository checks in `tests/`. The only manifest at the root; the console bundle keeps its own under
+# `client/`.
 [package]
 name = "bmo-artifact"
-description = "The document archive: research documents, HTML pages, records, attachments and share links."
-version = "0.2.0"
+description = "Documents kept, searched and shared: records, learning books, imported pages and HTML pages, with their attachments, references and share links."
+version = "0.1.0-rev.2"
 edition = "2024"
 publish = false
 
@@ -12,59 +13,54 @@ name = "bmo-artifact"
 path = "src/bin/bmo-artifact.rs"
 test = false
 
-[[bin]]
-name = "bmo-artifact-cli"
-path = "src/bin/bmo-artifact-cli.rs"
-test = false
-
 [dependencies]
 # A kept AVIF picture's container.
 avif-parse = "2.1.0"
 axum = "0.8.9"
-# A share link's token, and the pictures the tool host answers with.
+# A share link's token, and the bytes a tool or an attachment carries.
 base64 = "0.22.1"
+# The page reader an import and a reference's preview read through: bmo-explorer's published client.
+bmo-explorer = { path = "../explorer", version = "=0.1.0-rev.2" }
 chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
-# The time zone a sentence or a document states a time in, read from the settings by its name.
-chrono-tz = { version = "0.10.4", features = ["serde"] }
 clap = { version = "4.6.7", features = ["derive"] }
-# The reader's scheme, read off the cookie the console keeps it in.
-cookie = "0.18.2"
 # The settings files and the environment, layered in that order.
 config = { version = "0.15", default-features = false, features = ["toml"] }
 # A picture an HTML page carries inside itself as a data address.
 data-url = "0.3.2"
 # The tree an HTML page is read from.
 ego-tree = "0.10.0"
-# The inline marks a heading's or a title's words lose, ported as the console reads them: the patterns
-# need look-around and back-references.
-fancy-regex = "0.19.2"
-# A search's pictures fetched in a few lanes at once.
+# The event stream and the stretch of a kept file a player asks for.
 futures-util = { version = "0.3.34", default-features = false, features = ["alloc"] }
-# The stretch of a kept file a player asks for, read off its Range header.
 headers = "0.4.2"
+# An imported page's main content written as markdown.
+htmd = "0.5.6"
 # A kept picture decoded, brought inside its largest side and written as AVIF.
 image = { version = "0.25.10", default-features = false, features = ["jpeg", "png", "gif", "webp", "tiff", "avif"] }
-# Each route and each verb registers itself beside its own answer.
+# Each route, each tool and each command registers itself beside its own answer.
 inventory = "0.3.24"
 # A hosted page's prelude put ahead of its first element, after its doctype.
 lol_html = "3.0.1"
-# A footnote's in-page address, and the words a map link searches for.
+# A path segment the client writes.
 percent-encoding = "2.3.2"
-# The headings of a document's markdown.
+# The links a markdown body makes, and the headings its contents are read from.
 pulldown-cmark = { version = "0.13.4", default-features = false }
 # A share link's token's bytes.
 rand = "0.9.2"
 # A kept AVIF picture's AV1 frames decoded.
 rav1d = { version = "1.1.0", default-features = false, features = ["bitdepth_8", "bitdepth_16"] }
-# The bmo-voice, tool host and bmo-agency clients.
-reqwest = { version = "0.13.5", features = ["json"] }
+# The service's own client.
+reqwest = { version = "0.13.5", features = ["json", "query"] }
 # An SVG picture drawn into pixels before it is kept.
 resvg = "0.48.1"
+# The MCP server on standard input and output.
+rmcp = { version = "3.5.1", default-features = false, features = ["server", "transport-io"] }
+# The JSON Schemas of the wire types, which the OpenAPI document and the tools are written from.
+schemars = "1.2.3"
 # An HTML page read for its title, its description and its words.
 scraper = "0.25.0"
-# The helpers' patterns: a web address in a sentence, a document's marks, an MCP tool's name.
+# The helpers' patterns: a kept file's name, a description's marks.
 regex = "1.13.1"
-# The document tables and the research profiles: their entities and statements, and their migrations.
+# The document tables: their statements and their migrations.
 sea-orm = { version = "1.1.20", default-features = false, features = ["macros", "runtime-tokio-rustls", "sqlx-postgres"] }
 sea-orm-migration = { version = "1.1.20", default-features = false, features = ["runtime-tokio-rustls", "sqlx-postgres"] }
 serde = { version = "1.0.229", features = ["derive"] }
@@ -76,7 +72,7 @@ sqlx = { version = "0.8.6", default-features = false, features = ["postgres", "r
 # The digest a kept file's name carries.
 sha2 = "0.10.9"
 thiserror = "2.0.21"
-tokio = { version = "1.53.2", features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+tokio = { version = "1.53.2", features = ["io-std", "io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 # A kept file's name in its composed form.
 unicode-normalization = "0.1.25"
 # Whether a text reads as a web address, as a browser reads one; and a scratch database's address in the

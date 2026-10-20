@@ -1,0 +1,401 @@
+//! The members, bodies and queries the routes answer and take (`docs/api.md`), in the common wire format:
+//! camelCase keys, times in epoch milliseconds, ids as signed 64-bit integers. The routes, the client and the
+//! OpenAPI document all read these types, so a field is written once.
+
+use std::collections::BTreeMap;
+
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+/// The caller's own metadata: an object of strings.
+pub type Labels = BTreeMap<String, String>;
+
+/// A failure: its kebab-case code and its English sentence.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+#[schemars(rename = "Error")]
+pub struct WireError {
+  pub code: String,
+  pub error: String,
+}
+
+/// Readiness and version.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Health {
+  pub ready: bool,
+  /// Why the service is not ready; null when it is.
+  pub reason: Option<String>,
+  pub version: String,
+}
+
+/// One event: its number, its kind, when it was kept and the member it is about.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Event {
+  pub id: i64,
+  /// The resource and its change: `document.created`.
+  pub kind: String,
+  /// Epoch milliseconds.
+  pub at: i64,
+  /// The member as a read answers it, or its key alone for a removal.
+  pub data: Value,
+}
+
+/// A page of events, oldest first.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct EventPage {
+  pub items: Vec<Event>,
+  pub more: bool,
+}
+
+/// What `GET /events` is narrowed and resumed by.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct EventsQuery {
+  /// The kinds to keep, comma-separated.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub kinds: Option<String>,
+  /// The event to resume after, by its number.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub after: Option<i64>,
+  /// At most this many events in a page: 100 where none is given, 1000 at most.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub limit: Option<i64>,
+  /// Only the events of members held under this scope.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub scope: Option<String>,
+}
+
+/// One document.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Document {
+  pub id: i64,
+  /// One of the kinds `GET /document-kinds` lists.
+  pub kind: String,
+  pub title: String,
+  /// What it is held under; null where none was given.
+  pub scope: Option<String>,
+  /// Who filed it.
+  pub actor_name: String,
+  /// The caller's own metadata.
+  pub labels: Labels,
+  /// What it reads as before it is opened: a page's declared description, else the opening prose of its
+  /// body, cut at 160 characters; null where it has none.
+  pub description: Option<String>,
+  pub attachment_count: i64,
+  /// Epoch milliseconds.
+  pub created_at: i64,
+  /// Epoch milliseconds.
+  pub changed_at: i64,
+}
+
+/// A page of documents, newest first.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentPage {
+  pub items: Vec<Document>,
+  pub more: bool,
+}
+
+/// What `GET /documents` is filtered and paged by.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentsQuery {
+  /// One kind.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub kind: Option<String>,
+  /// One scope.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub scope: Option<String>,
+  /// `key:value` for documents whose label `key` is `value`, or `key` alone for those carrying it.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub label: Option<String>,
+  /// A phrase matched whole and without regard to case in the title, the labels and the body.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub q: Option<String>,
+  /// Only documents older than this one, by its id.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub before: Option<i64>,
+  /// Only documents newer than this one, by its id.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub after: Option<i64>,
+  /// At most this many: 30 where none is given, 200 at most.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub limit: Option<i64>,
+}
+
+/// A document to file.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentInput {
+  /// One of the kinds `GET /document-kinds` lists.
+  pub kind: String,
+  /// Its title; a page with a `title` element of its own may leave it empty.
+  pub title: String,
+  /// The markdown body, for every kind but a page.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub body: Option<String>,
+  /// The HTML, for a page.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub html: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub scope: Option<String>,
+  pub actor_name: String,
+  #[serde(default)]
+  pub labels: Labels,
+}
+
+/// A document rewritten under its number: each field given replaces its own, and the labels replace the
+/// labels whole.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentChange {
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub title: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub body: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub html: Option<String>,
+  pub labels: Labels,
+}
+
+/// How a file is sent.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentQuery {
+  /// The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
+  /// none is named.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub scheme: Option<String>,
+  /// Send the file itself to keep, under its name.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub download: Option<bool>,
+}
+
+/// One kind a document may be filed as.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentKind {
+  pub name: String,
+  pub description: String,
+  /// Whether a document of this kind is the HTML page it keeps, filed as `html` and opened as that page.
+  pub hosted: bool,
+  /// How many levels of its headings its table of contents lists, 0 for none.
+  pub contents_depth: u8,
+}
+
+/// A page of kinds, in the catalogue's order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentKindPage {
+  pub items: Vec<DocumentKind>,
+  pub more: bool,
+}
+
+/// A page asked by `after` and `limit`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PageQuery {
+  /// Only the members after this one, by its id.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub after: Option<i64>,
+  /// At most this many: 30 where none is given, 200 at most.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub limit: Option<i64>,
+}
+
+/// One file a document keeps.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Attachment {
+  pub id: i64,
+  pub document_id: i64,
+  /// The name it is shown and named by in the body.
+  pub name: String,
+  /// Its type as kept.
+  pub media_type: String,
+  /// What it is read as: `image`, `audio`, `video`, `text`, `page` or `file`.
+  pub kind: String,
+  pub byte_count: i64,
+  /// The caller's word for its part in the document; `head` marks a file a reader is shown at its head.
+  pub role: Option<String>,
+  /// Epoch milliseconds.
+  pub created_at: i64,
+}
+
+/// A page of attachments, in the order they were kept.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AttachmentPage {
+  pub items: Vec<Attachment>,
+  pub more: bool,
+}
+
+/// A file to attach.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct AttachmentInput {
+  pub name: String,
+  pub media_type: String,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub role: Option<String>,
+  /// The file's bytes in base64.
+  pub content: String,
+}
+
+/// A page a document refers to.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Reference {
+  pub id: i64,
+  pub document_id: i64,
+  pub url: String,
+  /// The page's title as the document or its preview gives it.
+  pub title: Option<String>,
+  /// The description the page declares for a preview.
+  pub preview: Option<String>,
+}
+
+/// A page of references, in the document's order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferencePage {
+  pub items: Vec<Reference>,
+  pub more: bool,
+}
+
+/// A share link.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Share {
+  pub token: String,
+  pub document_id: i64,
+  /// The share address, a `/` and the token.
+  pub url: String,
+  /// Epoch milliseconds.
+  pub created_at: i64,
+  /// Epoch milliseconds; null for a link with no end.
+  pub expires_at: Option<i64>,
+}
+
+/// A page of live links, oldest first.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SharePage {
+  pub items: Vec<Share>,
+  pub more: bool,
+}
+
+/// What `GET /shares` is filtered and paged by.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SharesQuery {
+  /// One document's link.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub document_id: Option<i64>,
+  /// Only the links made after this time, in epoch milliseconds: the last item's `createdAt`.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub after: Option<i64>,
+  /// At most this many: 30 where none is given, 200 at most.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub limit: Option<i64>,
+}
+
+/// A link to make.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ShareInput {
+  pub document_id: i64,
+  /// When it stops opening, in epoch milliseconds; none for a link with no end.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub expires_at: Option<i64>,
+}
+
+/// Where an import stands.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum ImportState {
+  Fetching,
+  Filed,
+  Failed,
+}
+
+impl ImportState {
+  /// The word the store keeps.
+  pub fn word(self) -> &'static str {
+    match self {
+      Self::Fetching => "fetching",
+      Self::Filed => "filed",
+      Self::Failed => "failed",
+    }
+  }
+
+  /// The state a stored word names; none for a word that names none.
+  pub fn of_word(word: &str) -> Option<Self> {
+    [Self::Fetching, Self::Filed, Self::Failed]
+      .into_iter()
+      .find(|state| state.word() == word)
+  }
+}
+
+/// One import.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Import {
+  pub id: i64,
+  /// The address asked for.
+  pub url: String,
+  pub state: ImportState,
+  /// The document it filed; null until it is filed.
+  pub document_id: Option<i64>,
+  /// Why it failed; null otherwise.
+  pub error: Option<String>,
+  /// Epoch milliseconds.
+  pub created_at: i64,
+}
+
+/// A page to import.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportInput {
+  pub url: String,
+  /// The document's title; the page's own where none is given.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub title: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub scope: Option<String>,
+  pub actor_name: String,
+}
+
+/// How many members of each resource a scope holds.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ScopeCounts {
+  pub documents: i64,
+  pub attachments: i64,
+  pub shares: i64,
+  pub imports: i64,
+}
+
+/// What the service holds under one scope, counted by resource.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ScopeHolding {
+  pub scope: String,
+  pub counts: ScopeCounts,
+  /// Null for a read, `released` once let go of, `preview` for a dry run.
+  pub state: Option<String>,
+}
+
+/// Whether a removal is only previewed.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DryRunQuery {
+  /// Answer what would go, and let go of nothing.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub dry_run: Option<bool>,
+}

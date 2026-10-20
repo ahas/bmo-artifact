@@ -1,0 +1,77 @@
+{
+  "artifact": {
+    "title": {
+      "screen": "Archive",
+      "document": "Document {id}",
+      "references_count": "Referred pages {n}"
+    },
+    "label": {
+      "actor": "Filed by",
+      "all_kinds": "All kinds",
+      "attachments": "Attachments",
+      "changed": "Changed",
+      "contents": "Contents",
+      "created": "Filed",
+      "files_count": "Files {n}",
+      "link_map": "Map",
+      "listen": "Listen while you read",
+      "picture_address": "Address",
+      "picture_caption": "Caption",
+      "picture_resolution": "Resolution",
+      "picture_resolution_value": "{width} × {height}",
+      "references": "Referred pages",
+      "scope": "Scope",
+      "snippet_only": "Checked against the snippet only",
+      "span_1h": "1 hour",
+      "span_6h": "6 hours",
+      "span_24h": "24 hours",
+      "span_7d": "7 days",
+      "span_30d": "30 days",
+      "span_forever": "No end"
+    },
+    "kind": {
+      "import": "Original",
+      "learning": "Learning material",
+      "page": "Page",
+      "record": "Record"
+    },
+    "action": {
+      "back_to_list": "Back to the list",
+      "clear_search": "Clear the search",
+      "document_original": "Document file",
+      "download": "Download",
+      "more": "More",
+      "open_new_tab": "Open in a new tab",
+      "open_page": "Open the page",
+      "original": "Original",
+      "refresh": "Refresh",
+      "share": "Share"
+    },
+    "aria": {
+      "document_menu": "Document menu",
+      "kind": "Kind",
+      "opens_new_tab": "(opens in a new tab)",
+      "search": "Search the documents"
+    },
+    "placeholder": {
+      "search": "Search"
+    },
+    "status": {
+      "attachment_loading": "Loading the attachment…",
+      "document_loading": "Loading the document…",
+      "empty": "Nothing written",
+      "map_loading": "Loading the map…",
+      "no_documents": "No documents",
+      "no_match": "Nothing found for ‘{phrase}’",
+      "no_references": "No referred pages",
+      "refreshing": "Refreshing the list…"
+    },
+    "error": {
+      "attachment_read_failed": "The attachment could not be read.",
+      "bad_id": "The document number is not right.",
+      "list_failed": "The list could not be read.",
+      "open_failed": "The document could not be opened.",
+      "read_failed": "The document could not be read."
+    }
+  }
+}

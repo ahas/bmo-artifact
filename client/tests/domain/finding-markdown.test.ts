@@ -161,7 +161,7 @@ describe("a finding, as the read API answers it", () => {
     expect(html).toContain('<sup class="search-mark"><a href="#mark-1" data-mark="1">1</a></sup>');
     expect(html).toContain('class="search-mark search-mark-snippet"');
     expect(html).toContain('data-mark="2†"');
-    expect(html).toContain('title="archive.label.snippet_only"');
+    expect(html).toContain('title="artifact.label.snippet_only"');
     expect(html).toContain('<a href="https://x.example">3</a>');
   });
 

@@ -1,0 +1,11 @@
+{
+  "name": "artifact",
+  "title": "artifact.title.screen",
+  "icon": "i-material-symbols-archive-outline",
+  "screenPath": "/archive",
+  "serviceName": "artifact",
+  "languagePack": "i18n",
+  "events": false,
+  "websocket": false,
+  "pushKinds": []
+}

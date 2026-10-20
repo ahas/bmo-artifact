@@ -1,8 +1,14 @@
-//! The routes this repository serves, each registered beside its own answer (`docs/api.md`, "What this
-//! repository exposes").
+//! The routes this service serves, each registered beside its own answer and its own OpenAPI operation
+//! (`docs/api.md`), and the way a kept file goes out on the wire.
 
+pub mod attachments;
+pub mod document_kinds;
 pub mod documents;
+pub mod events;
 pub mod files;
+pub mod health;
 pub mod hosted_page;
-pub mod rooms;
+pub mod imports;
+pub mod references;
+pub mod scopes;
 pub mod shares;

@@ -14,7 +14,7 @@ use lol_html::{RewriteStrSettings, element, rewrite_str};
 use scraper::{Html, Selector};
 use serde::Deserialize;
 
-use crate::design::{DocumentScheme, PageDesign, default_scheme, page_sheet, scheme_cookie, viewer};
+use crate::design::{DocumentScheme, PageDesign, default_scheme, page_sheet, viewer};
 
 #[derive(Deserialize)]
 struct Hosting {
@@ -160,18 +160,7 @@ pub fn hosted_page(html: &str, scheme: DocumentScheme) -> String {
   }
 }
 
-/// The scheme the reader reads in: the one the console's frame names in the address, else the screen mode
-/// the reader's cookie keeps, else the default.
-pub fn reader_scheme(named: Option<&str>, cookies: Option<&str>) -> DocumentScheme {
-  if let Some(scheme) = named.and_then(DocumentScheme::named) {
-    return scheme;
-  }
-
-  cookies
-    .into_iter()
-    .flat_map(cookie::Cookie::split_parse)
-    .filter_map(Result::ok)
-    .find(|kept| kept.name() == scheme_cookie())
-    .and_then(|kept| DocumentScheme::named(kept.value()))
-    .unwrap_or_else(default_scheme)
+/// The scheme the reader reads in: the one the request names, else the design's default.
+pub fn reader_scheme(named: Option<&str>) -> DocumentScheme {
+  named.and_then(DocumentScheme::named).unwrap_or_else(default_scheme)
 }

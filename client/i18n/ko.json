@@ -1,0 +1,77 @@
+{
+  "artifact": {
+    "title": {
+      "screen": "아카이브",
+      "document": "문서 {id}",
+      "references_count": "참조 페이지 {n}"
+    },
+    "label": {
+      "actor": "올린 사람",
+      "all_kinds": "모든 종류",
+      "attachments": "첨부",
+      "changed": "수정한 시각",
+      "contents": "목차",
+      "created": "올린 시각",
+      "files_count": "첨부 {n}",
+      "link_map": "지도",
+      "listen": "들으며 보세요",
+      "picture_address": "주소",
+      "picture_caption": "캡션",
+      "picture_resolution": "해상도",
+      "picture_resolution_value": "{width} × {height}",
+      "references": "참조 페이지",
+      "scope": "범위",
+      "snippet_only": "요약문만 확인",
+      "span_1h": "1시간",
+      "span_6h": "6시간",
+      "span_24h": "24시간",
+      "span_7d": "7일",
+      "span_30d": "30일",
+      "span_forever": "무기한"
+    },
+    "kind": {
+      "import": "원문",
+      "learning": "학습자료",
+      "page": "페이지",
+      "record": "기록"
+    },
+    "action": {
+      "back_to_list": "목록으로",
+      "clear_search": "검색어 삭제",
+      "document_original": "문서 원문",
+      "download": "내려받기",
+      "more": "더보기",
+      "open_new_tab": "새 탭에서 열기",
+      "open_page": "페이지 열기",
+      "original": "원본",
+      "refresh": "새로고침",
+      "share": "공유"
+    },
+    "aria": {
+      "document_menu": "문서 메뉴",
+      "kind": "종류",
+      "opens_new_tab": "(새 탭에서 열림)",
+      "search": "문서 검색"
+    },
+    "placeholder": {
+      "search": "검색"
+    },
+    "status": {
+      "attachment_loading": "첨부 불러오는 중…",
+      "document_loading": "문서 불러오는 중…",
+      "empty": "내용 없음",
+      "map_loading": "지도 불러오는 중…",
+      "no_documents": "문서 없음",
+      "no_match": "‘{phrase}’ 검색 결과 없음",
+      "no_references": "참조 페이지 없음",
+      "refreshing": "목록 갱신 중…"
+    },
+    "error": {
+      "attachment_read_failed": "첨부를 읽지 못했습니다.",
+      "bad_id": "문서 번호가 올바르지 않습니다.",
+      "list_failed": "목록을 읽지 못했습니다.",
+      "open_failed": "문서를 열지 못했습니다.",
+      "read_failed": "문서를 읽지 못했습니다."
+    }
+  }
+}

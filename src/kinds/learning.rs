@@ -1,34 +1,20 @@
-//! `learning`: study material, laid out as a book. No summary. Its contents are three levels: the top
-//! heading a part, the one under it a chapter, the one under that a section; a document with no parts starts
-//! at its chapters, and anything deeper stays in the text.
+//! `learning`: study material, laid out as a book. Its contents are three levels: the top heading a part,
+//! the one under it a chapter, the one under that a section.
 
-use super::kind::{HeadProperty, Kind, Outline, OutlineFinding, OutlineLevel, heading_outline};
-use crate::wording::search::Search;
+use super::kind::Kind;
 
 pub struct LearningKind;
 
 impl Kind for LearningKind {
-  fn id(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "learning"
   }
 
-  fn summary(&self) -> bool {
-    false
+  fn description(&self) -> &'static str {
+    "Study material laid out as a book of parts, chapters and sections, as a markdown body."
   }
 
-  fn searched(&self) -> bool {
-    true
-  }
-
-  fn head(&self) -> &'static [HeadProperty] {
-    &[HeadProperty::Topic, HeadProperty::Keywords]
-  }
-
-  fn outline(&self, findings: &[OutlineFinding], words: &Search) -> Outline {
-    heading_outline(
-      findings,
-      Some(&[OutlineLevel::Part, OutlineLevel::Chapter, OutlineLevel::Section]),
-      words,
-    )
+  fn contents_depth(&self) -> u8 {
+    3
   }
 }

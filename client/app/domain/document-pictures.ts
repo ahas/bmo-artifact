@@ -65,10 +65,10 @@ export function plainPress(event: MouseEvent): boolean {
 // it once it has loaded, and its address where it has one rather than being the picture's own data.
 export function documentPictureProperties(t: Translate, picture: DocumentPicture, drawn: Size | null): BarProperty[] {
   return [
-    ...(picture.caption === "" ? [] : [{ label: t("common.label.picture_caption"), value: picture.caption }]),
+    ...(picture.caption === "" ? [] : [{ label: t("artifact.label.picture_caption"), value: picture.caption }]),
     ...(drawn === null || drawn.width === 0
       ? []
-      : [{ label: t("common.label.picture_resolution"), value: t("common.label.picture_resolution_value", { width: countText(drawn.width), height: countText(drawn.height) }) }]),
-    ...(picture.address === null ? [] : [{ label: t("archive.label.picture_address"), value: picture.address, mono: true }])
+      : [{ label: t("artifact.label.picture_resolution"), value: t("artifact.label.picture_resolution_value", { width: countText(drawn.width), height: countText(drawn.height) }) }]),
+    ...(picture.address === null ? [] : [{ label: t("artifact.label.picture_address"), value: picture.address, mono: true }])
   ];
 }

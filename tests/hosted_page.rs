@@ -1,5 +1,5 @@
 //! A kept HTML page as it goes out (`docs/archive.md`, "An HTML page"): where its prelude stands, the design
-//! it is drawn in, its sheet in each scheme, the head it declares, and the scheme its reader reads in.
+//! it is drawn in, its sheet in each scheme, and the scheme its reader reads in.
 //! Carried from hosted-page.test.ts.
 
 use bmo_artifact::design::{DocumentScheme, PageDesign, page_sheet};
@@ -7,7 +7,6 @@ use bmo_artifact::http::hosted_page::{
   CLIPBOARD_BRIDGE, LINK_BRIDGE, hosted_page, page_design, page_prelude, picture_bridge, reader_scheme,
   scheme_bridge,
 };
-use bmo_artifact::markup::page_head::{DeclaredHead, DeclaredMeta, page_head};
 
 use DocumentScheme::{Dark, Light, System};
 
@@ -141,49 +140,12 @@ fn answers_a_self_dark_pages_scheme_queries_with_the_readers_choice_and_leaves_a
   assert!(!page_prelude("<style>b{}</style>", Dark).contains("<script>(()=>{const w="));
 }
 
-// ---------------------------------------------------------------- the head a page declares
-
-#[test]
-fn is_its_title_the_preview_tags_it_writes_in_lower_case_and_its_canonical_address() {
-  let page = concat!(
-    r#"<html><head><meta charset=utf-8><title> My &amp; Title </title><meta name=Description content="My description"><meta content="x" property='OG:Image'>"#,
-    r#"<meta name="viewport" content="width=device-width"><meta name="twitter:card" content="summary"><link rel=canonical href="/x"></head><title>Second</title>"#
-  );
-
-  assert_eq!(
-    page_head(page),
-    DeclaredHead {
-      title: Some("My & Title".to_owned()),
-      meta: vec![
-        DeclaredMeta::Named {
-          name: "description".to_owned(),
-          content: "My description".to_owned()
-        },
-        DeclaredMeta::Property {
-          property: "og:image".to_owned(),
-          content: "x".to_owned()
-        },
-        DeclaredMeta::Named {
-          name: "twitter:card".to_owned(),
-          content: "summary".to_owned()
-        },
-      ],
-      canonical: Some("/x".to_owned()),
-    }
-  );
-}
-
-#[test]
-fn is_nothing_where_the_page_writes_none_of_it() {
-  assert_eq!(page_head("<p>x</p>"), DeclaredHead::default());
-}
-
 // ---------------------------------------------------------------- the scheme the reader reads in
 
 #[test]
-fn is_the_one_the_frame_names_else_the_one_the_cookie_keeps_else_dark() {
-  assert_eq!(reader_scheme(Some("light"), Some("nuxt-color-mode=dark")), Light);
-  assert_eq!(reader_scheme(Some("sepia"), Some("a=1; nuxt-color-mode=system")), System);
-  assert_eq!(reader_scheme(None, Some("nuxt-color-mode=sepia")), Dark);
-  assert_eq!(reader_scheme(None, None), Dark);
+fn is_the_one_the_request_names_else_the_designs_default() {
+  assert_eq!(reader_scheme(Some("light")), Light);
+  assert_eq!(reader_scheme(Some("system")), System);
+  assert_eq!(reader_scheme(Some("sepia")), Dark);
+  assert_eq!(reader_scheme(None), Dark);
 }

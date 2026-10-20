@@ -90,17 +90,18 @@ async fn a_database_failure_is_refused_with_500_and_its_sentence() {
   let refused = Refused::from(refusal);
 
   assert_eq!(refused.status, StatusCode::INTERNAL_SERVER_ERROR);
-  assert_eq!(refused.code, "internal_server_error");
+  assert_eq!(refused.code, "failed");
 }
 
 #[test]
 fn a_refusal_carries_its_status_to_a_route_and_its_sentence_to_a_verb() {
   assert_eq!(
     Refused::from(Refusal::absent("no such document")),
-    Refused::new(StatusCode::NOT_FOUND, "not_found", "no such document")
+    Refused::new(StatusCode::NOT_FOUND, "not-found", "no such document")
   );
-  assert_eq!(Refused::from(Refusal::bad("no title")).code, "bad_request");
-  assert_eq!(Refused::from(Refusal::forbidden("not yours")).status, StatusCode::FORBIDDEN);
+  assert_eq!(Refused::from(Refusal::bad("no title")).code, "bad-request");
+  assert_eq!(Refused::from(Refusal::conflict("a page")).code, "conflict");
+  assert_eq!(Refused::from(Refusal::too_large("too big")).code, "too-large");
 
   let ended = finished(Err(VerbError::from(Refusal::bad("no title"))));
 

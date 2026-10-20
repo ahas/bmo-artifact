@@ -298,7 +298,7 @@ const findings = new Marked({
       const name = decodeURIComponent(mark[1] ?? "");
       const snippet = name.endsWith("†");
 
-      return `<sup class="search-mark${snippet ? " search-mark-snippet" : ""}"><a href="${escapeHtml(href)}" data-mark="${escapeHtml(name)}"${snippet ? ` title="${escapeHtml(speak("archive.label.snippet_only"))}"` : ""}>${escapeHtml(text)}</a></sup>`;
+      return `<sup class="search-mark${snippet ? " search-mark-snippet" : ""}"><a href="${escapeHtml(href)}" data-mark="${escapeHtml(name)}"${snippet ? ` title="${escapeHtml(speak("artifact.label.snippet_only"))}"` : ""}>${escapeHtml(text)}</a></sup>`;
     },
     image: (picture) => {
       const source = pictureSource(picture.href);

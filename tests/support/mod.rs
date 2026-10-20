@@ -3,11 +3,9 @@
 // Each test file is its own crate and uses only part of this module.
 #![allow(dead_code)]
 
-pub mod agency;
 pub mod cli;
 pub mod scratch;
-pub mod units;
-pub mod web;
+pub mod service;
 
 use std::fs;
 use std::path::{Path, PathBuf};

@@ -1,14 +1,19 @@
-//! The rows a document is written as: the document tables settled once a process opens them, a document
-//! that answers no question started, and one attachment kept (`docs/archive.md`, "`searches`" and "The
-//! other five tables").
+//! The rows a document is written and read as (`docs/archive.md`, "Where it lives"): the document tables
+//! settled once a process opens them, a document's row read as the API answers it, the list with its
+//! filters, a row filed and rewritten, its body as its one finding, and a document let go of.
 
-use sea_orm::ConnectionTrait;
+use sea_orm::{ConnectionTrait, QueryResult, Value};
 
-use super::{now_ms, one, run};
+use super::{all, now_ms, one, run};
+use crate::kinds;
 use crate::plumbing::refusal::Refusal;
+use crate::wire::{Document, DocumentsQuery, Labels};
 
-/// The writer every search and import is recorded under.
+/// The writer every search and import written before the kind was kept is recorded under.
 pub const SEARCHER: &str = "searcher";
+
+/// The longest phrase a search reads.
+pub const PHRASE_LENGTH: usize = 200;
 
 /// The document tables settled: a row that names no kind given its kind and its writer, an import where
 /// its question opens with `kindless_import_prefix`, and every picture of `search_images` not yet among the
@@ -21,7 +26,8 @@ pub async fn settle<C: ConnectionTrait>(
     db,
     r#"UPDATE "searches"
          SET "kind" = CASE WHEN $1::text IS NOT NULL AND starts_with("query", $1::text) THEN 'import' ELSE 'search' END,
-             "author" = COALESCE("author", $2)
+             "author" = COALESCE("author", $2),
+             "actor_name" = COALESCE("actor_name", "author", $2)
        WHERE "kind" IS NULL"#,
     vec![kindless_import_prefix.map(str::to_owned).into(), SEARCHER.into()],
   )
@@ -43,84 +49,261 @@ pub async fn settle<C: ConnectionTrait>(
   Ok(())
 }
 
-/// A document that answers no question, as it is started.
-pub struct NewDocument<'a> {
-  /// The room that asked.
-  pub chat_id: i64,
-  /// The request as it was put.
-  pub request: &'a str,
-  pub title: &'a str,
-  /// Its kind, which stands in place of a depth.
-  pub kind: &'a str,
-  pub asker_id: Option<i64>,
-  /// The writer it is recorded under.
-  pub author: &'a str,
+// What a document's row is read as, every time and wherever: its times in milliseconds, its title its
+// question where it wrote none, its actor its writer where none was kept.
+const COLUMNS: &str = r#"d."id", d."kind", COALESCE(NULLIF(d."title", ''), d."query") AS "title", d."scope",
+  COALESCE(d."actor_name", d."author", '') AS "actor_name", d."labels"::text AS "labels", d."description",
+  (SELECT COUNT(*) FROM "archive_attachments" a WHERE a."search_id" = d."id") AS "attachment_count",
+  d."started_at" * 1000 AS "created_at", COALESCE(d."changed_at", d."started_at" * 1000) AS "changed_at",
+  d."document""#;
+
+/// A document's row as the API answers it, with the file it reads from.
+pub struct Row {
+  pub document: Document,
+  /// The document's file under the file root, none where it keeps none.
+  pub file: Option<String>,
 }
 
-/// A document's row started: born done, its moment of writing both its start and its end. Its number.
-pub async fn start_document<C: ConnectionTrait>(db: &C, document: NewDocument<'_>) -> Result<i64, Refusal> {
-  let now = now_ms() / 1000;
+fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
+  let stored: Option<String> = row.try_get("", "kind")?;
+  let labels: String = row.try_get("", "labels")?;
+
+  Ok(Row {
+    document: Document {
+      id: row.try_get("", "id")?,
+      kind: kinds::kind(stored.as_deref()).name().to_owned(),
+      title: row.try_get("", "title")?,
+      scope: row.try_get("", "scope")?,
+      actor_name: row.try_get("", "actor_name")?,
+      labels: serde_json::from_str(&labels).unwrap_or_default(),
+      description: row.try_get("", "description")?,
+      attachment_count: row.try_get("", "attachment_count")?,
+      created_at: row.try_get("", "created_at")?,
+      changed_at: row.try_get("", "changed_at")?,
+    },
+    file: row.try_get::<Option<String>>("", "document")?.filter(|file| !file.is_empty()),
+  })
+}
+
+/// One document's row, none where it does not stand.
+pub async fn read<C: ConnectionTrait>(db: &C, id: i64) -> Result<Option<Row>, Refusal> {
+  one(db, &format!(r#"SELECT {COLUMNS} FROM "searches" d WHERE d."id" = $1"#), vec![id.into()])
+    .await?
+    .as_ref()
+    .map(row_of)
+    .transpose()
+}
+
+/// One page of documents, newest first, filtered in the reading itself; and whether more stand past it.
+/// A row that left no document is never listed.
+pub async fn list<C: ConnectionTrait>(
+  db: &C,
+  query: &DocumentsQuery,
+  limit: i64,
+) -> Result<(Vec<Document>, bool), Refusal> {
+  let mut values: Vec<Value> = Vec::new();
+  let mut filters = vec![r#"COALESCE(d."documented", 1) <> 0"#.to_owned()];
+  let bind = |value: Value, values: &mut Vec<Value>| {
+    values.push(value);
+    format!("${}", values.len())
+  };
+
+  if let Some(kind) = query.kind.as_deref().filter(|kind| !kind.is_empty()) {
+    let at = bind(kind.into(), &mut values);
+    // A row whose kind no module answers reads as a record, so a record's filter takes it in.
+    let unknown = kinds::KINDS
+      .iter()
+      .map(|kind| format!("'{}'", kind.name()))
+      .collect::<Vec<_>>()
+      .join(", ");
+
+    filters.push(format!(
+      r#"(d."kind" = {at} OR ({at} = 'record' AND (d."kind" IS NULL OR d."kind" NOT IN ({unknown}))))"#
+    ));
+  }
+
+  if let Some(scope) = &query.scope {
+    filters.push(format!(r#"d."scope" = {}"#, bind(scope.clone().into(), &mut values)));
+  }
+
+  if let Some(label) = query.label.as_deref().filter(|label| !label.is_empty()) {
+    match label.split_once(':') {
+      Some((key, value)) => {
+        let key = bind(key.into(), &mut values);
+        let value = bind(value.into(), &mut values);
+
+        filters.push(format!(r#"d."labels" ->> {key} = {value}"#));
+      }
+      None => filters.push(format!(r#"d."labels" ? {}"#, bind(label.into(), &mut values))),
+    }
+  }
+
+  let phrase: String = query.q.as_deref().unwrap_or_default().trim().chars().take(PHRASE_LENGTH).collect();
+
+  if !phrase.is_empty() {
+    let at = bind(phrase.to_lowercase().into(), &mut values);
+
+    filters.push(format!(
+      r#"(strpos(lower(COALESCE(d."title", '') || ' ' || d."query"), {at}) > 0
+          OR strpos(lower(COALESCE(d."topic", '') || ' ' || COALESCE(d."keywords", '')), {at}) > 0
+          OR EXISTS (SELECT 1 FROM jsonb_each_text(d."labels") l WHERE strpos(lower(l."value"), {at}) > 0)
+          OR EXISTS (SELECT 1 FROM "search_findings" f WHERE f."search_id" = d."id" AND strpos(lower(f."text"), {at}) > 0))"#
+    ));
+  }
+
+  if let Some(before) = query.before {
+    filters.push(format!(r#"d."id" < {}"#, bind(before.into(), &mut values)));
+  }
+
+  if let Some(after) = query.after {
+    filters.push(format!(r#"d."id" > {}"#, bind(after.into(), &mut values)));
+  }
+
+  let take = bind((limit + 1).into(), &mut values);
+  let rows = all(
+    db,
+    &format!(
+      r#"SELECT {COLUMNS} FROM "searches" d WHERE {} ORDER BY d."id" DESC LIMIT {take}"#,
+      filters.join(" AND ")
+    ),
+    values,
+  )
+  .await?;
+  let mut documents = rows
+    .iter()
+    .map(|row| row_of(row).map(|row| row.document))
+    .collect::<Result<Vec<_>, _>>()?;
+  let more = documents.len() as i64 > limit;
+
+  documents.truncate(usize::try_from(limit).unwrap_or(usize::MAX));
+
+  Ok((documents, more))
+}
+
+/// A document's row as it is filed.
+pub struct NewRow<'a> {
+  pub kind: &'a str,
+  pub title: &'a str,
+  pub scope: Option<&'a str>,
+  pub actor_name: &'a str,
+  pub labels: &'a Labels,
+  pub description: Option<&'a str>,
+}
+
+/// A document's row written: done from the moment it is filed, its moment of filing both its start and its
+/// end, its kind in place of a depth. Its number.
+pub async fn insert<C: ConnectionTrait>(db: &C, row: NewRow<'_>) -> Result<i64, Refusal> {
+  let now = now_ms();
 
   one(
     db,
     r#"INSERT INTO "searches" ("chat_id", "query", "started_depth", "ended_depth", "status", "started_at", "finished_at",
-                               "asker_id", "title", "documented", "kind", "author")
-       VALUES ($1, $2, $3, $3, 'done', $4, $4, $5, $6, 1, $3, $7) RETURNING "id""#,
+                               "title", "documented", "kind", "author", "scope", "actor_name", "labels", "description",
+                               "changed_at")
+       VALUES (NULL, $1, $2, $2, 'done', $3, $3, $1, 1, $2, $4, $5, $4, $6::jsonb, $7, $8) RETURNING "id""#,
     vec![
-      document.chat_id.into(),
-      document.request.into(),
-      document.kind.into(),
+      row.title.into(),
+      row.kind.into(),
+      (now / 1000).into(),
+      row.actor_name.into(),
+      row.scope.map(str::to_owned).into(),
+      labels_text(row.labels).into(),
+      row.description.map(str::to_owned).into(),
       now.into(),
-      document.asker_id.into(),
-      document.title.into(),
-      document.author.into(),
     ],
   )
   .await?
-  .ok_or_else(|| Refusal::bad("the document's row was not written"))?
+  .ok_or_else(|| Refusal::failed("the document's row was not written"))?
   .try_get("", "id")
   .map_err(Refusal::from)
 }
 
-/// One file kept beside a document, as its row holds it.
-pub struct Attachment<'a> {
-  pub search_id: i64,
-  /// `image`, `audio`, `video`, `text`, `page` or `file`.
-  pub media: &'a str,
-  /// The address it came from, where it came from one.
-  pub url: Option<&'a str>,
-  /// The file it was kept as.
-  pub path: &'a str,
-  /// Its type.
-  pub kind: &'a str,
-  pub bytes: i64,
-  /// The name it is shown by.
-  pub name: &'a str,
-  /// Its place in the document.
-  pub place: Option<i64>,
+fn labels_text(labels: &Labels) -> String {
+  serde_json::to_string(labels).unwrap_or_else(|_| "{}".to_owned())
 }
 
-/// An attachment's row written: one row per file, so keeping the same file again writes over it.
-pub async fn keep_attachment<C: ConnectionTrait>(db: &C, kept: Attachment<'_>) -> Result<(), Refusal> {
+/// A row rewritten: its title where one is given, its labels whole, its description where one is given, and
+/// its change time now.
+pub async fn rewrite<C: ConnectionTrait>(
+  db: &C,
+  id: i64,
+  title: Option<&str>,
+  labels: &Labels,
+  description: Option<Option<&str>>,
+) -> Result<(), Refusal> {
   run(
     db,
-    r#"INSERT INTO "archive_attachments" ("search_id", "media", "url", "path", "type", "bytes", "name", "place", "kept_at")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT ("search_id", "path") DO UPDATE SET
-         "media" = excluded."media", "url" = excluded."url", "type" = excluded."type", "bytes" = excluded."bytes",
-         "name" = excluded."name", "place" = excluded."place", "kept_at" = excluded."kept_at""#,
+    r#"UPDATE "searches"
+          SET "title" = COALESCE($1, "title"), "query" = COALESCE($1, "query"), "labels" = $2::jsonb,
+              "description" = CASE WHEN $3 THEN $4 ELSE "description" END, "changed_at" = $5
+        WHERE "id" = $6"#,
     vec![
-      kept.search_id.into(),
-      kept.media.into(),
-      kept.url.map(str::to_owned).into(),
-      kept.path.into(),
-      kept.kind.into(),
-      kept.bytes.into(),
-      kept.name.into(),
-      kept.place.into(),
-      (now_ms() / 1000).into(),
+      title.map(str::to_owned).into(),
+      labels_text(labels).into(),
+      description.is_some().into(),
+      description.flatten().map(str::to_owned).into(),
+      now_ms().into(),
+      id.into(),
     ],
   )
   .await
   .map(drop)
+}
+
+/// The file a document reads from, set.
+pub async fn set_file<C: ConnectionTrait>(db: &C, id: i64, file: &str) -> Result<(), Refusal> {
+  run(
+    db,
+    r#"UPDATE "searches" SET "document" = $1, "documented" = 1 WHERE "id" = $2"#,
+    vec![file.into(), id.into()],
+  )
+  .await
+  .map(drop)
+}
+
+/// A document's body set as its one finding, the references it made let go of with what it replaced. The
+/// finding's number.
+pub async fn set_body<C: ConnectionTrait>(db: &C, id: i64, text: &str) -> Result<i64, Refusal> {
+  for table in ["search_sources", "search_findings"] {
+    run(db, &format!(r#"DELETE FROM "{table}" WHERE "search_id" = $1"#), vec![id.into()]).await?;
+  }
+
+  one(
+    db,
+    r#"INSERT INTO "search_findings" ("search_id", "run_id", "branch", "place", "text") VALUES ($1, NULL, NULL, 1, $2)
+       RETURNING "id""#,
+    vec![id.into(), text.into()],
+  )
+  .await?
+  .ok_or_else(|| Refusal::failed("the document's body was not written"))?
+  .try_get("", "id")
+  .map_err(Refusal::from)
+}
+
+/// The files a document keeps under the file root, and its rows, let go of: its references, its body, its
+/// attachments, its share links and itself. The share tokens it held.
+pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, Refusal> {
+  let tokens = all(
+    db,
+    r#"SELECT "share_token" FROM "web_search_shares" WHERE "search_id" = $1"#,
+    vec![id.into()],
+  )
+  .await?
+  .iter()
+  .map(|row| row.try_get::<String>("", "share_token"))
+  .collect::<Result<Vec<_>, _>>()?;
+
+  for table in [
+    "search_sources",
+    "search_findings",
+    "search_images",
+    "archive_attachments",
+    "web_search_shares",
+  ] {
+    run(db, &format!(r#"DELETE FROM "{table}" WHERE "search_id" = $1"#), vec![id.into()]).await?;
+  }
+
+  run(db, r#"DELETE FROM "searches" WHERE "id" = $1"#, vec![id.into()]).await?;
+
+  Ok(tokens)
 }

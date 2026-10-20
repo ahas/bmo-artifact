@@ -1,15 +1,19 @@
 # bmo-artifact
 
-The document archive as one service with its own API. It owns the filed documents: their six tables,
-the folder holding each document's files, the searches and research runs that produce them, and the
-share links that open them. Every other unit is reached through its API, as `docs/api.md` lists.
+Documents kept, searched and shared, as one service with its own API: records, learning books,
+imported web pages and HTML pages, each with its files, the pages it refers to and its share link. A
+harness reaches it through its MCP server, `bmo-artifact mcp`, and the `bmo-artifact` skill; any other
+caller through its HTTP API and its Rust client. It reads web pages through bmo-explorer's client and
+calls no other unit.
 
 ## Layout
 
 | Folder | Holds |
 |---|---|
-| `src/` | The library: the settings and the plumbing every verb and route stands on |
-| `src/bin/` | `bmo-artifact`, the HTTP server, and `bmo-artifact-cli`, the command line |
+| `src/` | The library and `bmo-artifact`, the one binary: the routes, the store, the client, the MCP server and the commands |
+| `lang/` | The document wording file's English default |
+| `skills/` | The `bmo-artifact` skill |
+| `client/` | The console bundle |
 | `tests/` | The tests, the repository checks among them |
 | `deploy/` | The neutral service unit template |
 | `docs/` | The canonical statements of what the service does |
@@ -22,17 +26,16 @@ deployment gives.
 
 | Document | States |
 |---|---|
-| `docs/api.md` | The API: the routes and CLI verbs, their answers and refusals, and the calls to other units |
-| `docs/archive.md` | The design of the archive, which the API reaches and the layout places |
-| `docs/layout.md` | The layout, the plumbing, the settings, the version, the deploy declaration and the checks |
-| `docs/research-runs.md` | The research runs a search is made of, their profiles and their branches |
-| `docs/inventory.md` | What is taken from the old repository, and what near it is left to the unit owning it |
+| `docs/api.md` | The API: the routes, the events, the commands, the client, the MCP tools and the call to bmo-explorer |
+| `docs/openapi.json` | The API as an OpenAPI 3.1 document, generated from the code |
+| `docs/archive.md` | The design of the documents, which the API reaches and the layout places |
+| `docs/layout.md` | The layout, the plumbing, the console bundle, the storage, the version, the declaration and the checks |
 
 ## Version
 
-- **One version for the whole repository,** in semver. `VERSION` holds it, the package's version
-  equals it, and both binaries report it.
-- **A major change is a change to the API contract;** anything else is a minor or a patch.
+- **One version for the whole repository,** `0.1.0` and then `0.1.0-rev.<n>` before the first release.
+  `VERSION` holds it, the crate and the console bundle's package equal it, and the health route, the
+  OpenAPI document and the MCP server answer it.
 
 ## Commands
 
@@ -41,6 +44,7 @@ cargo check --all-targets
 cargo fmt --all --check
 cargo clippy --all-targets -- -D warnings
 cargo test
-cargo run --bin bmo-artifact
-cargo run --bin bmo-artifact-cli -- version
+cargo run --bin bmo-artifact -- serve
+cargo run --bin bmo-artifact -- mcp
+cargo run --bin bmo-artifact -- openapi
 ```

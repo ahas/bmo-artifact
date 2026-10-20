@@ -1,6 +1,6 @@
-//! The document tables' and the research profiles' migrations, and the pair that made and took away two
-//! tables no longer this repository's, run by SeaORM's migrator, which keeps the ones it ran in its own
-//! table beside them (`docs/layout.md`, "Storage").
+//! The document tables' migrations, and the ones that made and took away tables no longer this
+//! repository's, run by SeaORM's migrator, which keeps the ones it ran in its own table beside them
+//! (`docs/layout.md`, "Storage").
 
 use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::DatabaseConnection;
@@ -9,6 +9,8 @@ pub mod m20261016_000001_documents;
 pub mod m20261017_000001_research_profiles;
 pub mod m20261019_000001_news_briefs;
 pub mod m20261019_000002_drop_news_briefs;
+pub mod m20261020_000001_redesign;
+pub mod m20261020_000002_drop_research_profiles;
 
 pub struct Migrator;
 
@@ -20,6 +22,8 @@ impl MigratorTrait for Migrator {
       Box::new(m20261017_000001_research_profiles::Migration),
       Box::new(m20261019_000001_news_briefs::Migration),
       Box::new(m20261019_000002_drop_news_briefs::Migration),
+      Box::new(m20261020_000001_redesign::Migration),
+      Box::new(m20261020_000002_drop_research_profiles::Migration),
     ]
   }
 }

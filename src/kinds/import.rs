@@ -1,27 +1,20 @@
-//! `import`: a page brought in whole. No summary of the agent's making — the page's own stands where it has
-//! one — and its contents are the page's own headings, every level of them kept. The importer writes a
-//! page's top headings as `SECTION:` lines and the ones under them as markdown, and both stand, sections
-//! first.
+//! `import`: a page brought in whole through an import. Its contents are the page's own headings, their
+//! levels kept.
 
-use super::kind::{HeadProperty, Kind, Outline, OutlineFinding, heading_outline};
-use crate::wording::search::Search;
+use super::kind::Kind;
 
 pub struct ImportKind;
 
 impl Kind for ImportKind {
-  fn id(&self) -> &'static str {
+  fn name(&self) -> &'static str {
     "import"
   }
 
-  fn summary(&self) -> bool {
-    false
+  fn description(&self) -> &'static str {
+    "A web page brought in whole, as the markdown its import wrote."
   }
 
-  fn head(&self) -> &'static [HeadProperty] {
-    &[HeadProperty::Source]
-  }
-
-  fn outline(&self, findings: &[OutlineFinding], words: &Search) -> Outline {
-    heading_outline(findings, None, words)
+  fn contents_depth(&self) -> u8 {
+    3
   }
 }

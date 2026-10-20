@@ -1,13 +1,13 @@
-# The neutral user unit of the document archive's server. A deployment runs it from its deploy tree,
-# whose settings.toml and settings.local.toml the server reads at start.
+# The neutral user unit of the document service. A deployment runs it from its deploy tree, whose
+# settings.toml and settings.local.toml the server reads at start.
 [Unit]
-Description=bmo-artifact: the document archive
+Description=bmo-artifact: documents kept, searched and shared
 After=network-online.target
 
 [Service]
 Type=simple
 WorkingDirectory=%h/.local/share/bmo-artifact/deploy
-ExecStart=%h/.local/share/bmo-artifact/deploy/bin/bmo-artifact
+ExecStart=%h/.local/share/bmo-artifact/deploy/bin/bmo-artifact serve
 Restart=on-failure
 RestartSec=5
 

@@ -1,6 +1,8 @@
-# The service's settings (docs/layout.md, "Settings"). A deployment overrides them in
-# settings.local.toml, which git ignores, or in the environment.
+# The service's settings (docs/api.md, "Settings"). A deployment overrides them in settings.local.toml,
+# which git ignores, or in the environment.
 
+# The bearer token every caller presents is `token` here; a deployment sets it, and an empty one lets no
+# caller in.
 [server]
 listen = "127.0.0.1:3230"
 
@@ -10,103 +12,16 @@ url = "postgres://localhost/bmo_artifact"
 [files]
 root = "data"
 
+# The data root bmo-explorer's client is opened over, where it keeps its own folder.
+[explorer]
+data_root = "data"
+
+# The address a share link's url stands under is `address` here; a deployment sets it.
+[share]
+
 # The document wording file is the English default in lang/ until `file` names another.
 [wording]
 
-[time]
-zone = "UTC"
-
-# The documents the agent files (docs/layout.md, "Settings"). A deployment sets `room`, the owner's
-# private room and the room a document goes to where none is named; `asker`, who asked where nobody is
-# named; and `kindless_import_prefix`, the prefix that marks a row naming no kind as an import.
+# The prefix that marks a row naming no kind as an import is `kindless_import_prefix` here; a deployment
+# whose rows were written before the kind was kept sets it.
 [documents]
-writer = "bmo"
-sender = "BMO"
-
-# The console's public address, which a document's console address and its share links stand under, is
-# `address` here; a deployment sets it.
-[console]
-
-# The address of each unit this repository calls, by its short name: `voice` for bmo-voice, `tool_host`
-# for the tool host bmo-explorer is reached through, `agency` for bmo-agency, `receiver` for bmo-receiver
-# and `gate` for bmo-gate; and `agency_token` and `receiver_token`, the tokens bmo-agency's and
-# bmo-receiver's servers take. A deployment sets them.
-[units]
-
-# The tree whose prompts/agents/<agent>/ holds each agent's documents is `code` here; a deployment sets
-# it.
-[prompts]
-
-# What every research run is held to (docs/research-runs.md, "Research profiles"): the most places one
-# pool limit may hold, then the tables below.
-[research]
-pool_capacity_most = 128
-
-# What each field of a profile is held to, in milliseconds and counts: the ceiling of a clocked run, the
-# wrap-up kept inside it, the research it must still leave, the branches, the wait for a pool place and
-# the pause between two requests to one host or one engine.
-[research.limits]
-cap_ms = { min = 30000, max = 7200000 }
-synthesis_reserve_ms = { min = 10000 }
-research_ms = { min = 10000 }
-max_children = { max = 16 }
-wait_limit_ms = { max = 3600000 }
-interval_ms = { max = 60000 }
-
-# What a search run's standing instructions carry after its task: the rulebooks a search is bound by, in
-# this order; the ones given by their deciding section alone, read whole once it says they apply; and that
-# section's heading.
-[research.search]
-rulebooks = ["search-kinds", "product-search", "restaurant-search", "investment-search", "study-material", "deep-dives"]
-on_request = ["product-search", "restaurant-search", "investment-search", "study-material", "deep-dives"]
-applies_section = "Whether this rulebook applies at all"
-
-# The capabilities a run's research settings open, in capability order, each with the run variable that
-# opens it (docs/research-runs.md, "What the settings open").
-[[research.opens]]
-capability = "web.branches"
-variable = "BMO_RESEARCH_TOOLS"
-
-[[research.opens]]
-capability = "web.images"
-variable = "BMO_RESEARCH_IMAGES"
-
-[[research.opens]]
-capability = "web.rulebooks"
-variable = "BMO_RESEARCH_RULEBOOKS"
-
-# Every research key, in the order the console lists them (docs/research-runs.md, "What each key
-# declares"): the line its provider must carry, whether it holds a clock, whether it opens no branch, the
-# strategies it accepts, and the seed it starts from and goes back to. A key with no clock names no
-# ceiling and no wrap-up in its seed.
-[[research.keys]]
-key = "search:basic"
-line = "search"
-clocked = false
-branchless = true
-strategies = ["direct-then-browser", "browser-first", "direct-only"]
-seed = { child_role = "scout", max_children = 0, wait_limit_ms = 600000, strategy = "direct-then-browser", host_interval_ms = 1000, engine_interval_ms = 2000 }
-
-[[research.keys]]
-key = "search:thorough"
-line = "search"
-clocked = false
-branchless = false
-strategies = ["direct-then-browser", "browser-first", "direct-only"]
-seed = { child_role = "scout", max_children = 4, wait_limit_ms = 600000, strategy = "direct-then-browser", host_interval_ms = 1000, engine_interval_ms = 2000 }
-
-[[research.keys]]
-key = "search:exhaustive"
-line = "search"
-clocked = false
-branchless = false
-strategies = ["direct-then-browser", "browser-first", "direct-only"]
-seed = { child_role = "scout", max_children = 8, wait_limit_ms = 600000, strategy = "direct-then-browser", host_interval_ms = 1000, engine_interval_ms = 2000 }
-
-[[research.keys]]
-key = "browse"
-line = "browse"
-clocked = true
-branchless = false
-strategies = ["visible", "headless"]
-seed = { cap_ms = 1800000, synthesis_reserve_ms = 180000, child_role = "scout", max_children = 0, wait_limit_ms = 600000, strategy = "visible", host_interval_ms = 1000, engine_interval_ms = 2000 }

@@ -1,4 +1,4 @@
-//! `archive html-read` as a caller runs it: a page read with the pictures inside it written out, and its
+//! `bmo-artifact html-read` as a caller runs it: a page read with the pictures inside it written out, and its
 //! words cut at the answer ceiling with the line to carry on from named (`docs/archive.md`, "An HTML
 //! page").
 
@@ -11,7 +11,7 @@ const DOT: &str =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 fn read(args: &[&str]) -> Ran {
-  cli(&[], &[["archive", "html-read"].as_slice(), args].concat(), None)
+  cli(&[], &[["html-read"].as_slice(), args].concat(), None)
 }
 
 #[test]

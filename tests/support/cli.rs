@@ -1,4 +1,4 @@
-//! The CLI binary as a caller runs it: from the repository's root, so its settings are the committed
+//! The binary as a caller runs it: from the repository's root, so its settings are the committed
 //! ones, with the settings a test gives in the environment over them and none the test's own environment
 //! carries.
 
@@ -17,7 +17,7 @@ pub struct Ran {
 
 /// The binary run on `args` with the settings in `env` and `stdin` on its standard input.
 pub fn cli(env: &[(&str, String)], args: &[&str], stdin: Option<&str>) -> Ran {
-  let mut command = Command::new(env!("CARGO_BIN_EXE_bmo-artifact-cli"));
+  let mut command = Command::new(env!("CARGO_BIN_EXE_bmo-artifact"));
 
   for (name, _) in std::env::vars().filter(|(name, _)| name.starts_with("BMO_ARTIFACT_")) {
     command.env_remove(name);

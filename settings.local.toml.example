@@ -3,6 +3,7 @@
 
 [server]
 listen = "127.0.0.1:3230"
+token = "artifact-token"
 
 [database]
 url = "postgres://artifact:secret@localhost:5432/bmo_artifact"
@@ -10,25 +11,14 @@ url = "postgres://artifact:secret@localhost:5432/bmo_artifact"
 [files]
 root = "/srv/bmo-artifact/files"
 
+[explorer]
+data_root = "/srv/bmo-artifact/data"
+
+[share]
+address = "https://documents.example.com/share"
+
 [wording]
 file = "/srv/bmo-artifact/documents.yaml"
 
-[time]
-zone = "UTC"
-
 [documents]
-room = 1000
-asker = 1000
 kindless_import_prefix = "Import: "
-
-[console]
-address = "https://console.example.com"
-
-[units]
-voice = "http://127.0.0.1:3240"
-tool_host = "http://127.0.0.1:3290"
-agency = "http://127.0.0.1:3250"
-agency_token = "agency-control-token"
-receiver = "http://127.0.0.1:3270"
-receiver_token = "receiver-token"
-gate = "http://127.0.0.1:3280"

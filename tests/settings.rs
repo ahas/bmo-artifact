@@ -32,24 +32,23 @@ fn the_committed_settings_read() {
   assert_eq!(settings.database.url, "postgres://localhost/bmo_artifact");
   assert_eq!(settings.files.root, Path::new("data"));
   assert_eq!(settings.wording.file, None);
-  assert_eq!(settings.time.zone, chrono_tz::UTC);
+  assert_eq!(settings.explorer.data_root, Path::new("data"));
+  // No token is committed, so the committed settings let no caller in, and no share address.
+  assert_eq!((settings.server.token.as_str(), settings.share.address.as_str()), ("", ""));
 }
 
 #[test]
-fn the_wording_file_and_the_time_zone_are_set_like_any_key() {
-  let dir = dir_with(Some("[time]\nzone = \"America/New_York\"\n"));
-  let environment = HashMap::from([("BMO_ARTIFACT_WORDING__FILE".to_owned(), "documents.yaml".to_owned())]);
+fn the_wording_file_the_token_and_the_share_address_are_set_like_any_key() {
+  let dir = dir_with(Some("[share]\naddress = \"https://documents.invalid/share\"\n"));
+  let environment = HashMap::from([
+    ("BMO_ARTIFACT_WORDING__FILE".to_owned(), "documents.yaml".to_owned()),
+    ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), "a-token".to_owned()),
+  ]);
   let settings = Settings::read(dir.path(), Some(environment)).expect("the settings read");
 
-  assert_eq!(settings.time.zone, chrono_tz::America::New_York);
+  assert_eq!(settings.share.address, "https://documents.invalid/share");
+  assert_eq!(settings.server.token, "a-token");
   assert_eq!(settings.wording.file.as_deref(), Some(Path::new("documents.yaml")));
-}
-
-#[test]
-fn a_time_zone_no_one_names_is_refused() {
-  let dir = dir_with(Some("[time]\nzone = \"Nowhere/Town\"\n"));
-
-  assert!(Settings::read(dir.path(), Some(HashMap::new())).is_err());
 }
 
 #[test]

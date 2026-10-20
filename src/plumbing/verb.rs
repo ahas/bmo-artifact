@@ -11,11 +11,6 @@ use clap::{ArgMatches, Args, Command, FromArgMatches};
 use sea_orm::{DatabaseConnection, DbErr};
 use tokio::sync::OnceCell;
 
-use crate::clients::agency::{Agency, AgencyClient, AgencyFault};
-use crate::clients::gate::Gate;
-use crate::clients::receiver::Receiver;
-use crate::clients::tool_host::ToolHost;
-use crate::clients::voice::Voice;
 use crate::plumbing::refusal::Refusal;
 use crate::pool::{Archive, Fault};
 use crate::settings::Settings;
@@ -168,12 +163,6 @@ impl From<Fault> for VerbError {
   }
 }
 
-impl From<AgencyFault> for VerbError {
-  fn from(fault: AgencyFault) -> Self {
-    VerbError::Refused(fault.to_string())
-  }
-}
-
 impl From<sqlx::Error> for VerbError {
   fn from(error: sqlx::Error) -> Self {
     Fault::from(error).into()
@@ -188,17 +177,6 @@ pub struct Shell {
   pub archive: Archive,
   /// The document wording the settings name, read when the shell is made.
   pub wording: Wording,
-  /// bmo-voice, at the address the settings name.
-  pub voice: Voice,
-  /// The tool host bmo-explorer's page reading is reached through, at the address the settings name, its
-  /// requests paced under this process's own name.
-  pub tool_host: ToolHost,
-  /// bmo-agency, at the address the settings name; a test hands a stand-in of its own.
-  pub agency: Arc<dyn Agency>,
-  /// bmo-receiver, at the address the settings name.
-  pub receiver: Receiver,
-  /// bmo-gate, at the address the settings name.
-  pub gate: Gate,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
@@ -207,23 +185,11 @@ impl Shell {
   pub fn new(settings: Settings) -> Result<Self, WordingError> {
     let archive = Archive::new(settings.database.url.clone());
     let wording = Wording::read(settings.wording.file.as_deref())?;
-    let voice = Voice::new(settings.units.voice.clone());
-    let tool_host =
-      ToolHost::new(settings.units.tool_host.clone(), format!("artifact-{}", std::process::id()));
-    let agency =
-      Arc::new(AgencyClient::new(settings.units.agency.clone(), settings.units.agency_token.clone()));
-    let receiver = Receiver::new(settings.units.receiver.clone(), settings.units.receiver_token.clone());
-    let gate = Gate::new(settings.units.gate.clone());
 
     Ok(Self {
       settings,
       archive,
       wording,
-      voice,
-      tool_host,
-      agency,
-      receiver,
-      gate,
       settled: Arc::default(),
     })
   }
@@ -251,7 +217,7 @@ pub struct Finished {
 /// The code a failure ends with, where the verb names none of its own.
 pub const FAILURE: u8 = 1;
 
-/// How a verb's answer or error ends the CLI (`docs/api.md`, "CLI answers").
+/// How a verb's answer or error ends the CLI (`docs/api.md`, "The command").
 pub fn finished(answered: Result<Answer, VerbError>) -> Finished {
   match answered {
     Ok(answer) => Finished {

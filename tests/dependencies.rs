@@ -1,5 +1,6 @@
-//! Dependencies: no path out of the repository, and no other unit's package but the base libraries, in
-//! any manifest or as the first segment of a path in Rust (`docs/layout.md`, "Dependency check").
+//! Dependencies: no path out of the repository, and no other unit's package but the base libraries and the
+//! clients of the units this service calls, in any manifest or as the first segment of a path in Rust
+//! (`docs/layout.md`, "Dependency check").
 
 mod support;
 
@@ -13,6 +14,15 @@ use toml::{Table, Value};
 
 /// The only packages of other units this repository may depend on.
 const BASE_LIBRARIES: [&str; 3] = ["bmo-chat", "bmo-chat-client", "bmo-ui"];
+
+/// The units this service calls, each reached through its published client crate taken from its checkout
+/// beside this one (`docs/api.md`, "What this service calls").
+const CALLED_UNITS: [&str; 1] = ["bmo-explorer"];
+
+/// Where a called unit's client is taken from: its checkout beside this repository's.
+fn called_unit_path(name: &str) -> Option<String> {
+  CALLED_UNITS.contains(&name).then(|| format!("../{}", name.trim_start_matches("bmo-")))
+}
 
 /// This repository's own package, which its tests and binaries name.
 const OWN_PACKAGE: &str = "bmo-artifact";
@@ -35,7 +45,10 @@ fn is_other_unit(name: &str) -> bool {
   let unscoped = name.strip_prefix("@bmo/").map(|rest| format!("bmo-{rest}"));
   let name = unscoped.as_deref().unwrap_or(name);
 
-  (name.starts_with("bmo-") || name == "bmo") && !BASE_LIBRARIES.contains(&name) && name != OWN_PACKAGE
+  (name.starts_with("bmo-") || name == "bmo")
+    && !BASE_LIBRARIES.contains(&name)
+    && !CALLED_UNITS.contains(&name)
+    && name != OWN_PACKAGE
 }
 
 /// `path` with `.` and `..` resolved by reading alone, so a path that does not exist still compares.
@@ -101,6 +114,7 @@ fn cargo_violations(root: &Path, manifest_dir: &Path, manifest: &Table, shown_as
       let path = detail.and_then(|d| d.get("path")).and_then(Value::as_str);
 
       match path {
+        Some(path) if called_unit_path(name).as_deref() == Some(path) => {}
         Some(path) if reaches_outside(root, manifest_dir, path) => {
           found.push(format!("{shown_as}: {key} reaches outside the repository through {path}"));
         }

@@ -1,9 +1,8 @@
 import { fileURLToPath } from "node:url";
 
-// The archive screen as a layer: its pages, its components, its stylesheet and the modules they stand
-// on, on top of bmo-ui. A host extends it as it extends bmo-ui, and brings its i18n module, its
-// language pack and the components this layer leaves to it (`docs/layout.md`, "The console plugin
-// bundle").
+// The document screens as a console bundle: a layer on bmo-ui with its pages, its components, its
+// stylesheet and the modules they stand on, attached by its declaration, `console-bundle.json`
+// (bmo-ui's `docs/console-bundles.md`; `docs/layout.md`, "The console bundle").
 export default defineNuxtConfig({
   extends: ["bmo-ui"],
   // The layer's stylesheet, named from the layer's own folder: an alias in a layer's configuration
