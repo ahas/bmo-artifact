@@ -1,6 +1,7 @@
 {
   "name": "bmo-artifact-client",
   "version": "0.1.0-rev.2",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./nuxt.config.ts",

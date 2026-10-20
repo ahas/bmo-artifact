@@ -20,8 +20,8 @@ calls no other unit.
 | `.graph/` | The repository's code dependency graph, one node per feature, written only by `bmo-graph` |
 
 At the root stand the Cargo manifest, `VERSION`, `build.rs`, `testbed.toml`, `rustfmt.toml`,
-`CLAUDE.md`, `settings.toml` and `settings.local.toml.example`, the example of the local settings a
-deployment gives.
+`CLAUDE.md`, `LICENSE`, `settings.toml` and `settings.local.toml.example`, the example of the local
+settings a deployment gives.
 
 ## Documents
 

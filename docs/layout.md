@@ -12,6 +12,7 @@ The root holds one Rust crate and one console bundle. The bundle sits in its own
 ```
 Cargo.toml
 VERSION
+LICENSE
 README.md
 CLAUDE.md
 build.rs
