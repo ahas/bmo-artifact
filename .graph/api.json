@@ -19,7 +19,7 @@
       "console/document",
       "console/share"
     ],
-    "base": "94fba21af3a048930b7b102627c3bb6566dfbf70",
+    "base": "3113363d4dcca3ed895160eca32701a4d7db84a2",
     "changed": 1792508754782,
     "boundary": {
       "side": "exposes"
@@ -37,7 +37,7 @@
     "needs": [
       "command/cli"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496290038,
     "boundary": {
       "side": "exposes"
@@ -60,7 +60,7 @@
     "needs": [
       "api/http"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496290047,
     "boundary": {
       "side": "exposes"
@@ -92,7 +92,7 @@
       "service/storage",
       "api/events"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496296811
   },
   {
@@ -115,7 +115,7 @@
     "needs": [
       "service/storage"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496290019
   },
   {
@@ -133,7 +133,7 @@
     "needs": [
       "service/storage"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496290024
   },
   {
@@ -177,7 +177,7 @@
       "document/wording",
       "calls/explorer"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496296829,
     "boundary": {
       "side": "exposes"
@@ -210,7 +210,7 @@
     ],
     "aliases": [],
     "needs": [],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496290004
   },
   {
@@ -234,7 +234,7 @@
       "api/client",
       "api/http"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496290033,
     "boundary": {
       "side": "exposes"
@@ -262,7 +262,7 @@
       "api/shares",
       "document/imports"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496296817
   },
   {
@@ -288,7 +288,7 @@
       "api/events",
       "service/settings"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496296823
   }
 ]

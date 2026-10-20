@@ -25,7 +25,7 @@
       "service/storage",
       "api/events"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496296799
   },
   {
@@ -49,7 +49,7 @@
       "document/attachments",
       "service/storage"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289989
   },
   {
@@ -73,7 +73,7 @@
     ],
     "aliases": [],
     "needs": [],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289983
   },
   {
@@ -98,7 +98,7 @@
       "document/page-reading",
       "service/storage"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289948
   },
   {
@@ -124,7 +124,7 @@
       "document/design",
       "api/http"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289978
   },
   {
@@ -154,7 +154,7 @@
       "service/storage",
       "api/events"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496296804
   },
   {
@@ -175,7 +175,7 @@
     ],
     "aliases": [],
     "needs": [],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289972
   },
   {
@@ -197,7 +197,7 @@
       "calls/explorer",
       "service/storage"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289959
   },
   {
@@ -220,7 +220,7 @@
     "needs": [
       "service/settings"
     ],
-    "base": "886ba76061c834728dd232cc90cdd9453edc77c8",
+    "base": "768c76457e2ea6200025fae1c9725a4a07529337",
     "changed": 1792496289994
   }
 ]
