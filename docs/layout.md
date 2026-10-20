@@ -193,8 +193,9 @@ file root; the whole-data-root backup and its restore drill belong to the testbe
   listening service through it.
 - **The OpenAPI document** committed is held to what the code generates.
 - **Repository checks.** Tests in `tests/` also hold the repository to its rules: no Hangul outside the
-  bundle's language pack, no folder named after its parent, Cargo's manifest as the only manifest at the
-  root, no test module in `src/`, and the dependency check below.
+  bundle's language pack, no personal data in any tracked file (`PERSONAL-DATA.md`), no folder named after
+  its parent, Cargo's manifest as the only manifest at the root, no test module in `src/`, and the dependency
+  check below.
 - **Client.** The bundle's tests live in `client/tests/`, every one run with happy-dom's document
   registered. The bundle's `check` script runs its typecheck and its tests, and is what the testbed runs
   for it as a project of its own. The files under `client/tests/browser/` drive a real Chromium through

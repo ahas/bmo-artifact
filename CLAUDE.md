@@ -37,8 +37,9 @@ These rules hold every change to this repository.
 - What the service answers is an English sentence for a person, or a status and a kebab-case code for
   a machine. Words a person reads in another language come from the wording file and the console
   bundle's language pack, the one place another language stands.
-- No personal data: no user names, home directories, machine names or names of any agent. Names the
-  service needs at runtime come from its settings, never from the code.
+- No personal data: no user names, home directories, machine names, internal addresses, mail addresses or
+  names of any agent (`PERSONAL-DATA.md`). Names the service needs at runtime come from its settings, never
+  from the code.
 
 ## Layout
 

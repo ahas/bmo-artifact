@@ -19,8 +19,8 @@
       "console/document",
       "console/share"
     ],
-    "base": "3113363d4dcca3ed895160eca32701a4d7db84a2",
-    "changed": 1792508754782,
+    "base": "5d8f3157fcf0915df142a255dc5f2fde1b6b3318",
+    "changed": 1792531730540,
     "boundary": {
       "side": "exposes"
     }

@@ -20,8 +20,8 @@ calls no other unit.
 | `.graph/` | The repository's code dependency graph, one node per feature, written only by `bmo-graph` |
 
 At the root stand the Cargo manifest, `VERSION`, `build.rs`, `testbed.toml`, `rustfmt.toml`,
-`CLAUDE.md`, `LICENSE`, `settings.toml` and `settings.local.toml.example`, the example of the local
-settings a deployment gives.
+`CLAUDE.md`, `PERSONAL-DATA.md`, `LICENSE`, `settings.toml` and `settings.local.toml.example`, the example
+of the local settings a deployment gives.
 
 ## Documents
 
@@ -31,6 +31,7 @@ settings a deployment gives.
 | `docs/openapi.json` | The API as an OpenAPI 3.1 document, generated from the code |
 | `docs/archive.md` | The design of the documents, which the API reaches and the layout places |
 | `docs/layout.md` | The layout, the plumbing, the console bundle, the storage, the version, the declaration and the checks |
+| `PERSONAL-DATA.md` | The personal data no file may hold, and the check that holds it |
 
 ## Version
 

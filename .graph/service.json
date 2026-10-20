@@ -1,5 +1,21 @@
 [
   {
+    "id": "service/repository-checks",
+    "title": "Personal-data check",
+    "what": "The repository-wide check over every tracked file: no mail address outside the reserved example domains, no home path of a person, no telephone number, token or private network address, as PERSONAL-DATA.md states it.",
+    "files": [
+      "tests/personal_data.rs",
+      "PERSONAL-DATA.md"
+    ],
+    "symbols": [],
+    "aliases": [
+      "개인정보"
+    ],
+    "needs": [],
+    "base": "5d8f3157fcf0915df142a255dc5f2fde1b6b3318",
+    "changed": 1792531728374
+  },
+  {
     "id": "service/settings",
     "title": "Settings",
     "what": "The settings read at start in layers: settings.toml, then settings.local.toml, then the BMO_ARTIFACT environment variables.",
@@ -49,7 +65,7 @@
     "needs": [
       "service/settings"
     ],
-    "base": "3113363d4dcca3ed895160eca32701a4d7db84a2",
-    "changed": 1792508754777
+    "base": "5d8f3157fcf0915df142a255dc5f2fde1b6b3318",
+    "changed": 1792531732841
   }
 ]
