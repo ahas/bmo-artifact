@@ -1,5 +1,6 @@
 //! The command's words (`docs/api.md`, "The command"), each registered beside its own run: the service, the
-//! schema, the readiness asked, the OpenAPI document, the MCP server, an HTML file read and the version.
+//! schema, the readiness asked, the OpenAPI document, the MCP server, the nouns it declares, an HTML file
+//! read and the version.
 
 pub mod html_read;
 
@@ -34,6 +35,26 @@ impl Verb for Version {
 }
 
 crate::verb!(Version);
+
+/// The nouns `bmo` dispatches to this command (`docs/api.md`, "The command"): the page read alone, which a
+/// caller runs on the machine the file stands on. No noun carries a mark.
+pub const NOUNS: &[&str] = &["html-read"];
+
+/// `nouns`.
+pub struct Nouns;
+
+impl Verb for Nouns {
+  const NAME: &'static str = "nouns";
+  const ABOUT: &'static str = "Prints the nouns bmo dispatches to this command, one a line.";
+
+  type Args = Nothing;
+
+  async fn run(&self, _: Nothing, _: &Shell) -> Result<Answer, VerbError> {
+    Ok(NOUNS.iter().map(|noun| (*noun).to_owned()).collect::<Vec<String>>().into())
+  }
+}
+
+crate::verb!(Nouns);
 
 /// `migrate`.
 pub struct Migrate;

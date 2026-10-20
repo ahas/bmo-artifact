@@ -3,8 +3,9 @@
 
 use std::process::ExitCode;
 
+use bmo_artifact::commands::{NOUNS, Nouns};
 use bmo_artifact::plumbing::verb::{
-  Answer, FAILURE, Shell, VerbError, finished, joined, verb_faults, verbs,
+  Answer, FAILURE, Shell, Verb, VerbError, finished, joined, verb_faults, verbs,
 };
 use bmo_artifact::settings::Settings;
 use clap::{ArgMatches, Command};
@@ -29,6 +30,17 @@ async fn main() -> ExitCode {
   let names: Vec<&str> = verbs().map(|verb| verb.name()).collect();
   let line = joined(std::env::args_os().collect(), &names);
   let matches = command().get_matches_from(line);
+
+  // `bmo` asks this of the unit command from whichever directory the caller stands in (`docs/api.md`,
+  // "The command"), so it is answered before the settings of the directory are read.
+  if matches.subcommand_name() == Some(Nouns::NAME) {
+    for noun in NOUNS {
+      println!("{noun}");
+    }
+
+    return ExitCode::SUCCESS;
+  }
+
   let shell = match shell() {
     Ok(shell) => shell,
     Err(why) => {

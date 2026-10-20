@@ -23,7 +23,7 @@ src/
   lib.rs
   bin/
     bmo-artifact.rs        the one binary: its line built from every registered command
-  commands/                serve, migrate, health, openapi, mcp, version and html-read, each registered beside its run
+  commands/                serve, migrate, health, openapi, mcp, nouns, version and html-read, each registered beside its run
   settings.rs              every setting (docs/api.md, "Settings")
   pool.rs                  connection pools and how a statement is bound and run on them
   wire.rs                  the members, bodies and queries the routes answer and take
@@ -88,7 +88,8 @@ The plumbing is what every command and every route stands on, and it knows none 
   lines on standard output and a refusal on standard error, and ends 0 or 1.
 - **The shell** a command stands on is its settings, the database they name, opened on the first
   statement asked of it and settled before the first statement on the document tables, and the
-  document wording they name, read when the shell is made.
+  document wording they name, read when the shell is made. `nouns` stands on none: it is answered
+  before the shell is made, so `bmo`'s question reaches the binary run from any directory.
 - **A route** declares its method, its path, its answer and its OpenAPI operation: its parameters, its
   body, its answers and the codes it can refuse with. Adding a route changes no file but its own; the
   router and the OpenAPI document gather every route linked in, and the server refuses to start where two

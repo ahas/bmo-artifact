@@ -287,6 +287,10 @@ whole」).
 - **`bmo-artifact mcp [--address <url>]`** serves the harness tools (「The harness plugin」).
 - **`bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>] [--from <line>]`** reads an HTML file
   for its words in order, cut at the answer ceiling (docs/archive.md, 「An HTML page」).
+- **`bmo-artifact nouns`** prints the nouns `bmo` dispatches to this command, one a line: `html-read`. It
+  reads no settings, so it answers wherever the caller stands; no noun carries a mark.
+- **The noun's words:** `html-read` is `bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>]
+  [--from <line>]`. It calls no route: it reads the file where it stands.
 - **How a command ends:** 0 on success; a refusal on standard error and 1 otherwise.
 
 ## The client
