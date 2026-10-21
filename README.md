@@ -17,7 +17,7 @@ calls no other unit.
 | `tests/` | The tests, the repository checks among them |
 | `deploy/` | The neutral service unit template |
 | `docs/` | The canonical statements of what the service does |
-| `.graph/` | The repository's code dependency graph, one node per feature, written only by `bmo-graph` |
+| `.graph/` | The repository's code dependency graph, one node per feature, written only by `bmo-graph`. Its area files are generated in the checkout and untracked, so a fresh checkout builds them again, while `settings.toml` is the repository's configuration and stays tracked |
 
 At the root stand the Cargo manifest, `VERSION`, `build.rs`, `testbed.toml`, `rustfmt.toml`,
 `CLAUDE.md`, `PERSONAL-DATA.md`, `LICENSE`, `settings.toml` and `settings.local.toml.example`, the example
