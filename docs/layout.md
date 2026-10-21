@@ -174,12 +174,17 @@ The plumbing is what every command and every route stands on, and it knows none 
 - the static check, in order: the compile check, the linter and the formatter;
 - the quick checks for the layout and the dependencies, with the base libraries and bmo-explorer allowed;
 - the test database: the migration files that name its template, and the `migrate` command that makes it;
-- the one binary a release carries.
+- the one binary a release carries;
+- the deployment: the deploy tree under `~/.local/share/bmo-artifact`, the data root it shares with the
+  services whose files stand under it, the link that gives a release its local settings, the one unit,
+  and the health a deployment waits on.
 
-It declares no deployment root, so a deployment of this repository puts nothing live. The service is one
-unit, from the neutral template `deploy/bmo-artifact.service`, started as `bmo-artifact serve`. A backup
-of this unit must include the document tables, `imports`, `events` and the `searches/` folder under the
-file root; the whole-data-root backup and its restore drill belong to the testbed.
+The service is one unit, `deploy/bmo-artifact.service`, started as `bmo-artifact serve` and marked `bot`:
+a deployment links and enables it, restarts it, waits on `bmo-artifact health` answering on the address
+the settings name, and watches it stay up. A release reads its own values from `settings.local.toml`, a
+link into the data root's `env/artifact.toml`, so the deployment's backup carries them. A backup of this
+unit must include the document tables, `imports`, `events` and the `searches/` folder under the file
+root; the whole-data-root backup and its restore drill belong to the testbed.
 
 ## Tests
 

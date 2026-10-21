@@ -1,12 +1,12 @@
-# How the testbed tests, checks and builds this repository, in the testbed's declaration format. No
-# deploy root is declared, so a deployment of this repository puts nothing live.
+# How the testbed tests, checks, builds and deploys this repository, in the testbed's declaration
+# format.
 testbed = 0
 name = "bmo-artifact"
 
 [test]
-languages = ["cargo"]
-# The console plugin bundle under client/ is a project of its own, found by its manifest and lockfile;
-# its check script runs its typecheck and its tests.
+languages = ["cargo", "bun"]
+# The console plugin bundle under client/ is a project of its own, found by its manifest and its Bun
+# lockfile; its check script runs its typecheck and its tests.
 setup = ["cd client && bun install --frozen-lockfile"]
 
 [test.database]
@@ -34,3 +34,16 @@ command = "cargo fmt --all --check"
 
 [build]
 binaries = ["bmo-artifact"]
+
+# The document service's own deploy tree, and the data root it shares with the services whose files
+# stand under it (docs/layout.md, 「Storage」). The release reads its own values from
+# settings.local.toml, a link into the data root's env/, so the deployment's backup carries them.
+[deploy]
+root = "~/.local/share/bmo-artifact"
+link = "deploy"
+data_root = "~/.local/share/bmo/data"
+env_links = [{ link = "settings.local.toml", target = "env/artifact.toml" }]
+units = ["deploy/*.service"]
+# Answers 0 once the service the release's settings name answers on its listen address, 127.0.0.1:3230
+# by default (docs/api.md, 「Health」).
+health = "cd ~/.local/share/bmo-artifact/deploy && bin/bmo-artifact health"

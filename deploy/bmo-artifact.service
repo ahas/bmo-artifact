@@ -13,3 +13,6 @@ RestartSec=5
 
 [Install]
 WantedBy=default.target
+# The one service a deployment waits on: linked and enabled, restarted, and watched staying up
+# (docs/layout.md, 「The deploy declaration」).
+X-BMO-Deploy=bot
