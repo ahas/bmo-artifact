@@ -4,6 +4,7 @@
 
 pub mod html_read;
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use clap::Args;
@@ -13,7 +14,7 @@ use tokio::signal::unix::{SignalKind, signal};
 use crate::client::ArtifactClient;
 use crate::http::imports::abandon;
 use crate::plumbing::http::{Standing, router};
-use crate::plumbing::verb::{Answer, Shell, Verb, VerbError};
+use crate::plumbing::verb::{Answer, FAILURE, Shell, Verb, VerbError};
 use crate::store::migration;
 
 /// A command that is given nothing.
@@ -73,6 +74,46 @@ impl Verb for Migrate {
 }
 
 crate::verb!(Migrate);
+
+/// What `import` is given.
+#[derive(Args)]
+pub struct ImportArgs {
+  /// The export directory the item's export hand wrote.
+  #[arg(long)]
+  pub export: PathBuf,
+  /// The PostgreSQL address; the settings' own database where none is given.
+  #[arg(long)]
+  pub database: Option<String>,
+  /// Reads the export and reports what it would write, writing nothing.
+  #[arg(long)]
+  pub dry_run: bool,
+}
+
+/// `import`: the migration plan's move of the old archive's document tables into this store (TODO #1923).
+pub struct Import;
+
+impl Verb for Import {
+  const NAME: &'static str = "import";
+  const ABOUT: &'static str =
+    "Moves the old archive's document tables from the item's export into the store (TODO #1923).";
+
+  type Args = ImportArgs;
+
+  async fn run(&self, args: ImportArgs, shell: &Shell) -> Result<Answer, VerbError> {
+    let database = args.database.unwrap_or_else(|| shell.settings.database.url.clone());
+    let report = crate::import::run(&database, &args.export, args.dry_run)
+      .await
+      .map_err(VerbError::Refused)?;
+    let failed = !report.sample.failures.is_empty();
+
+    Ok(Answer {
+      lines: report.lines(),
+      code: if failed { FAILURE } else { 0 },
+    })
+  }
+}
+
+crate::verb!(Import);
 
 /// `serve`.
 pub struct Serve;

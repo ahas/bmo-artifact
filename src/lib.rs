@@ -9,6 +9,7 @@ pub mod documents;
 pub mod events;
 pub mod helpers;
 pub mod http;
+pub mod import;
 pub mod kinds;
 pub mod mcp;
 pub mod openapi;
