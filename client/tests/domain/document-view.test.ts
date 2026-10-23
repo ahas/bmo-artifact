@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { contentsOf, drawnNames, fileAddresses, filesAround, hostInitial, hostOf, kindOf, textPreview } from "../../app/domain/document-view";
+import { contentsOf, drawnNames, fileAddresses, filesAround, hostInitial, hostOf, keptNames, kindOf, textPreview } from "../../app/domain/document-view";
 
 import type { ArtifactAttachment } from "../../shared/types";
 
@@ -48,6 +48,19 @@ describe("a document's files", () => {
 
     expect(address("plan%20v2.png")).toBe("/files/7");
     expect(address("elsewhere.png")).toBeNull();
+  });
+
+  test("are found by a path ending in the names they are kept under, and never by a web address", () => {
+    const files = [attachment(5, "kept.avif", "image"), attachment(6, "notes.txt", "text")];
+    const address = fileAddresses(files, (one) => `/files/${one.id}`);
+    const drawn = drawnNames("![a figure](/data/searches/9/images/kept.avif) and ![elsewhere](https://example.com/kept.avif)");
+
+    expect(address("/data/searches/9/images/kept.avif")).toBe("/files/5");
+    expect(address("images/kept.avif")).toBe("/files/5");
+    expect(address("https://example.com/kept.avif")).toBeNull();
+    expect(address("/data/searches/9/images/")).toBeNull();
+    expect(keptNames("https://example.com/kept.avif")).toEqual(["https://example.com/kept.avif"]);
+    expect(filesAround(files, drawn).after.map((one) => one.id)).toEqual([6]);
   });
 });
 

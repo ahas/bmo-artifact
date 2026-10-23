@@ -87,8 +87,8 @@ const props = withDefaults(defineProps<Props>(), {
   share: null
 });
 
-// A picture or a link in the body may name one of the document's files by its name, and a picture the
-// body draws that way does not stand again among the attachments.
+// A picture or a link in the body may name one of the document's files by its name, or by a path ending
+// in it, and a picture the body draws that way does not stand again among the attachments.
 const named = computed(() => fileAddresses(props.attachments, (attachment) => props.address(attachment)));
 const files = computed(() => filesAround(props.attachments, drawnNames(props.markdown)));
 

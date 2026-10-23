@@ -57,6 +57,11 @@ const COLUMNS: &str = r#"d."id", d."kind", COALESCE(NULLIF(d."title", ''), d."qu
   d."started_at" * 1000 AS "created_at", COALESCE(d."changed_at", d."started_at" * 1000) AS "changed_at",
   d."document""#;
 
+// A row that left a document: one that names its file and is not marked as having written none. Every
+// other row is no document, never listed and read as absent.
+const LEFT_A_DOCUMENT: &str =
+  r#"NULLIF(d."document", '') IS NOT NULL AND COALESCE(d."documented", 1) <> 0"#;
+
 /// A document's row as the API answers it, with the file it reads from.
 pub struct Row {
   pub document: Document,
@@ -85,13 +90,17 @@ fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
   })
 }
 
-/// One document's row, none where it does not stand.
+/// One document's row, none where it does not stand or its row left no document.
 pub async fn read<C: ConnectionTrait>(db: &C, id: i64) -> Result<Option<Row>, Refusal> {
-  one(db, &format!(r#"SELECT {COLUMNS} FROM "searches" d WHERE d."id" = $1"#), vec![id.into()])
-    .await?
-    .as_ref()
-    .map(row_of)
-    .transpose()
+  one(
+    db,
+    &format!(r#"SELECT {COLUMNS} FROM "searches" d WHERE d."id" = $1 AND {LEFT_A_DOCUMENT}"#),
+    vec![id.into()],
+  )
+  .await?
+  .as_ref()
+  .map(row_of)
+  .transpose()
 }
 
 /// One page of documents, newest first, filtered in the reading itself; and whether more stand past it.
@@ -102,7 +111,7 @@ pub async fn list<C: ConnectionTrait>(
   limit: i64,
 ) -> Result<(Vec<Document>, bool), Refusal> {
   let mut values: Vec<Value> = Vec::new();
-  let mut filters = vec![r#"COALESCE(d."documented", 1) <> 0"#.to_owned()];
+  let mut filters = vec![LEFT_A_DOCUMENT.to_owned()];
   let bind = |value: Value, values: &mut Vec<Value>| {
     values.push(value);
     format!("${}", values.len())

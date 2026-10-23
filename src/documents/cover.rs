@@ -1,11 +1,13 @@
 //! A document's cover picture (`docs/api.md`, "Documents"): the first picture its body draws by a kept
-//! file's name, else the first picture it keeps, drawn as a link's preview card shows it.
+//! file's name (`docs/archive.md`, "Attachments"), else the first picture it keeps, drawn as a link's
+//! preview card shows it.
 
 use std::path::PathBuf;
 
 use percent_encoding::percent_decode_str;
 use pulldown_cmark::{Event, Parser, Tag};
 use sea_orm::ConnectionTrait;
+use url::Url;
 
 use super::ground::card_picture;
 use crate::Refusal;
@@ -23,6 +25,18 @@ pub fn drawn_names(body: &str) -> Vec<String> {
     .collect()
 }
 
+/// The names a target a body draws may name a kept file by: the target whole, and where it is a path with no
+/// scheme, its last part. A web address names no kept file but by its whole.
+pub fn kept_names(target: &str) -> Vec<&str> {
+  let last = target.rsplit('/').next().unwrap_or(target);
+
+  if last == target || last.is_empty() || Url::parse(target).is_ok() {
+    vec![target]
+  } else {
+    vec![target, last]
+  }
+}
+
 /// The kept file a document's cover is drawn from: the first picture its body draws, else the first it
 /// keeps; none where it keeps no picture.
 pub async fn cover_file<C: ConnectionTrait>(
@@ -30,11 +44,13 @@ pub async fn cover_file<C: ConnectionTrait>(
   document_id: i64,
   body: Option<&str>,
 ) -> Result<Option<PathBuf>, Refusal> {
-  for name in body.map(drawn_names).unwrap_or_default() {
-    if let Some(kept) = attachments::named(db, document_id, &name).await?
-      && kept.attachment.kind == "image"
-    {
-      return Ok(Some(PathBuf::from(kept.path)));
+  for target in body.map(drawn_names).unwrap_or_default() {
+    for name in kept_names(&target) {
+      if let Some(kept) = attachments::named(db, document_id, name).await?
+        && kept.attachment.kind == "image"
+      {
+        return Ok(Some(PathBuf::from(kept.path)));
+      }
     }
   }
 

@@ -66,26 +66,53 @@ export function contentsOf(markdown: string, depth: number): { entries: Contents
   return { entries, slugs };
 }
 
-/** The names a markdown body draws pictures by, their percent-encoding undone. */
+// Whether a text is a web address, or any address with a scheme, rather than a path.
+function isAddress(text: string): boolean {
+  try {
+    new URL(text);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The names a picture's or a link's target may name a kept file by, its percent-encoding undone: the target
+ * whole, and where it is a path with no scheme, its last part. A web address names no kept file but by its
+ * whole.
+ */
+export function keptNames(href: string): string[] {
+  let target = href;
+
+  try {
+    target = decodeURIComponent(href);
+  } catch {
+    // A target whose percent-encoding does not decode is read as it stands.
+  }
+
+  const last = target.slice(target.lastIndexOf("/") + 1);
+
+  return last === target || last === "" || isAddress(target) ? [target] : [target, last];
+}
+
+/** The names a markdown body draws pictures by, each as `keptNames` reads it. */
 export function drawnNames(markdown: string): Set<string> {
   const names = new Set<string>();
 
   walk(new Lexer().lex(markdown), (token) => {
     if (token.type !== "image") return;
 
-    const href = (token as { href: string }).href;
-
-    try {
-      names.add(decodeURIComponent(href));
-    } catch {
-      names.add(href);
-    }
+    for (const name of keptNames((token as { href: string }).href)) names.add(name);
   });
 
   return names;
 }
 
-/** Where each file a document keeps is served, by the name it is kept under; the first of two that share one. */
+/**
+ * Where each file a document keeps is served, by the name it is kept under, for a target that names it as
+ * `keptNames` reads one; the first of two that share one.
+ */
 export function fileAddresses(attachments: readonly ArtifactAttachment[], address: (attachment: ArtifactAttachment) => string): (href: string) => string | null {
   const byName = new Map<string, string>();
 
@@ -94,11 +121,13 @@ export function fileAddresses(attachments: readonly ArtifactAttachment[], addres
   }
 
   return (href) => {
-    try {
-      return byName.get(decodeURIComponent(href)) ?? null;
-    } catch {
-      return byName.get(href) ?? null;
+    for (const name of keptNames(href)) {
+      const found = byName.get(name);
+
+      if (found !== undefined) return found;
     }
+
+    return null;
   };
 }
 

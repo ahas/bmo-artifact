@@ -116,6 +116,9 @@ answers reads as `record`.
   Each distinct http or https link the body makes becomes one of the document's references. Refused
   `bad-request` for a kind no module answers, an empty title or body, or a body and HTML given the wrong
   way round.
+- **A number that stands for no document answers 404 `not-found`** on `GET /documents/{documentId}` and
+  every route under it: none was filed under it, or its row left no document (docs/archive.md, 「Where it
+  lives」).
 - **`PATCH /documents/{documentId}` rewrites it under its number;** its attachments and share links stay.
   `labels` replaces the labels whole; a `title`, `body` or `html` given replaces that one, and its
   references are read again from a new body. A body for a page or HTML for any other kind is refused
@@ -126,8 +129,8 @@ answers reads as `record`.
   sandboxed page policy. `download=true` sends the file itself to keep, under its name. 404 `not-found`
   where the document has no file inside its folder.
 - **`GET /documents/{documentId}/picture`** sends the picture a link's preview card shows: the first its
-  body draws, else the first it keeps, upright, fitted inside 1200 pixels, never enlarged, laid on white,
-  as JPEG. 404 `not-found` where it has none.
+  body draws by a kept file's name (docs/archive.md, 「Attachments」), else the first it keeps, upright,
+  fitted inside 1200 pixels, never enlarged, laid on white, as JPEG. 404 `not-found` where it has none.
 
 ## Attachments
 

@@ -23,9 +23,13 @@ fn record(title: &str, body: &str) -> Value {
 }
 
 fn png() -> Vec<u8> {
+  png_in([200, 40, 40])
+}
+
+fn png_in([red, green, blue]: [u8; 3]) -> Vec<u8> {
   let mut png = Vec::new();
 
-  image::RgbaImage::from_pixel(40, 30, image::Rgba([200, 40, 40, 255]))
+  image::RgbaImage::from_pixel(40, 30, image::Rgba([red, green, blue, 255]))
     .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
     .expect("a png is written");
   png
@@ -305,6 +309,86 @@ async fn an_attachment_is_kept_listed_and_sent_with_its_range_and_its_picture_is
   assert_eq!(
     service.event_kinds().await,
     ["document.created", "attachment.created", "attachment.created"]
+  );
+}
+
+#[tokio::test]
+async fn a_picture_the_body_draws_by_a_path_ending_in_its_name_is_the_cover() {
+  let service = Service::new().await;
+  let body =
+    "![a figure](/elsewhere/searches/1/images/second.png) and ![away](https://example.com/first.png)";
+  let id = service
+    .call(Method::POST, "/documents", Some(record("Pictured by path", body)))
+    .await
+    .json()["id"]
+    .as_i64()
+    .expect("an id");
+
+  for (name, colour) in [("first.png", [200, 40, 40]), ("second.png", [40, 40, 200])] {
+    let kept = service
+      .call(
+        Method::POST,
+        &format!("/documents/{id}/attachments"),
+        Some(json!({ "name": name, "mediaType": "image/png", "content": STANDARD.encode(png_in(colour)) })),
+      )
+      .await;
+
+    assert_eq!(kept.status, StatusCode::CREATED, "{}", kept.json());
+  }
+
+  let cover = service.call(Method::GET, &format!("/documents/{id}/picture"), None).await;
+
+  assert_eq!(cover.status, StatusCode::OK);
+
+  let drawn = image::load_from_memory(&cover.bytes).expect("a picture").to_rgb8();
+  let image::Rgb([red, _, blue]) = *drawn.get_pixel(drawn.width() / 2, drawn.height() / 2);
+
+  assert!(blue > red, "the cover is the picture the body draws by its path, not the first kept");
+}
+
+#[tokio::test]
+async fn a_row_that_left_no_document_is_neither_listed_nor_read() {
+  let service = Service::new().await;
+  let filed = service
+    .call(Method::POST, "/documents", Some(record("Kept", "Words kept.")))
+    .await
+    .json()["id"]
+    .as_i64()
+    .expect("an id");
+
+  // A research run that failed with no mark of its own, and one marked as having written nothing.
+  for (status, documented) in [("failed", None::<i64>), ("done", Some(0))] {
+    service
+      .scratch
+      .run(
+        r#"INSERT INTO "searches" ("query", "started_depth", "status", "started_at", "documented", "kind")
+           VALUES ('A run that found nothing', 'search', $1, 1700000000, $2, 'search')"#,
+        vec![status.into(), documented.into()],
+      )
+      .await;
+  }
+
+  let listed = service.call(Method::GET, "/documents", None).await.json();
+  let ids: Vec<i64> = listed["items"]
+    .as_array()
+    .expect("a page")
+    .iter()
+    .filter_map(|item| item["id"].as_i64())
+    .collect();
+
+  assert_eq!(ids, [filed]);
+
+  for left in [filed + 1, filed + 2] {
+    for route in ["", "/content", "/picture", "/attachments", "/references"] {
+      let answered = service.call(Method::GET, &format!("/documents/{left}{route}"), None).await;
+
+      assert_eq!(answered.status, StatusCode::NOT_FOUND, "/documents/{left}{route}");
+    }
+  }
+
+  assert_eq!(
+    service.call(Method::GET, &format!("/documents/{filed}/content"), None).await.status,
+    StatusCode::OK
   );
 }
 

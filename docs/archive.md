@@ -53,6 +53,9 @@ address and the file root are settings; no other unit reads or writes either.
 
 - **The rows are the identity:** the list, the filters and the search are read from them.
 - **The file is what a person reads:** the markdown as filed, or the HTML.
+- **A row that left no document is no document.** A row that names no file, or is marked as having
+  written none, as a research run that failed, died or found nothing, is never listed and is read as
+  absent on every route; its number is not given again.
 
 ### The tables
 
@@ -122,8 +125,9 @@ address and the file root are settings; no other unit reads or writes either.
 - **A picture is kept as AVIF, upright,** inside 2048 pixels. A picture that will not convert, and a GIF
   or a WebP that may be animated, are kept as the bytes that came.
 - **A body draws a kept picture by its name:** a markdown picture whose target is the name the file is
-  kept under is drawn from the kept file, and a link with that name opens it. A reader resolves the name
-  under the route it reads the document on.
+  kept under, or a path with no scheme whose last part is that name, is drawn from the kept file, and a
+  link written either way opens it. A web address is never read as a kept name. A reader resolves the
+  name under the route it reads the document on.
 - **The role is the caller's word for the file's part.** `head` marks a file a reader is shown at the
   document's head; a narration's sound is attached with it.
 - **Bounds:** one file is at most 64 MiB through the API, and a document keeps one file of each name.
