@@ -125,8 +125,9 @@ The plumbing is what every command and every route stands on, and it knows none 
   stands under `/archive`: the list, one document at `/archive/<id>`, and one shared document at
   `/archive/share/<token>`.
 - **Calls.** A screen calls this service's routes at the address bmo-ui's `relay` module answers for the
-  service `artifact`, and nothing else. The types it reads are generated from `docs/openapi.json` into
-  `shared/openapi.ts` by the `api` script.
+  service `artifact`, and nothing else. That address is taken under the console app's base path, so a
+  picture, a file or a frame the browser loads by its address reaches the relay as a call does. The types
+  it reads are generated from `docs/openapi.json` into `shared/openapi.ts` by the `api` script.
 - **A document's text is drawn by the bundle.** The service answers a markdown document's file as filed;
   the bundle's reading, built on marked and cleaned by DOMPurify, turns it into HTML: a heading takes its
   contents mark, a picture or a link naming a kept file by its name is drawn from it or goes to it, a

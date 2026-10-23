@@ -365,6 +365,8 @@ export interface components {
              *     body, cut at 160 characters; null where it has none.
              */
             description: string | null;
+            /** @description Whether it keeps a picture, so its cover picture has one to send. */
+            hasPicture: boolean;
             /** Format: int64 */
             id: number;
             /** @description One of the kinds `GET /document-kinds` lists. */

@@ -154,8 +154,8 @@ const { data: head } = await useAsyncData(`artifact-share-head:${token.value}`, 
     const share = await readShare(token.value);
     const document = await readDocument(share.documentId);
 
-    // A document that keeps no file has no picture to show.
-    const image = document.attachmentCount === 0 ? null : new URL(pictureAddress(document.id), link.origin).toString();
+    // A document that keeps no picture has none to show.
+    const image = document.hasPicture ? new URL(pictureAddress(document.id), link.origin).toString() : null;
 
     return { title: document.title, description: document.description, image };
   } catch {

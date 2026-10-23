@@ -275,10 +275,13 @@ A picture in a document opens in the picture viewer, for a markdown document and
 
 ## Where a person reads it
 
-- **The console bundle in `client/`** draws the documents (`docs/layout.md`, 「The console bundle」):
-  - the list at `/archive`, narrowed by kind and by a phrase, each narrowing held in the address;
+- **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
+  console bundle」):
+  - the list at `/archive`, narrowed by kind and by a phrase, each narrowing held in the address, each
+    document beside its cover picture where it keeps one and alone where it keeps none;
   - one document at `/archive/<id>`: its masthead, its file drawn as markdown with a table of contents of
-    its kind's depth, its files after it, its references beside it; a page fills the screen in its frame;
+    its kind's depth, its files after it, its references beside it, each with the picture its preview
+    declares; a page fills the screen in its frame;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document.
 - **A share page reads as its document before anything runs:** the document's title, its description and

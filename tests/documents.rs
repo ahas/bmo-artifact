@@ -58,6 +58,7 @@ async fn a_record_is_filed_read_listed_and_searched_by_its_words_its_labels_and_
   assert_eq!(document["labels"], json!({ "topic": "plans" }));
   assert_eq!(document["description"], "The boxes go on Monday.");
   assert_eq!(document["attachmentCount"], 0);
+  assert_eq!(document["hasPicture"], false);
   assert!(document["createdAt"].as_i64().is_some_and(|at| at > 1_700_000_000_000));
 
   assert_eq!(service.call(Method::GET, &format!("/documents/{id}"), None).await.json(), document);
@@ -264,6 +265,21 @@ async fn an_attachment_is_kept_listed_and_sent_with_its_range_and_its_picture_is
     (json!("audio"), json!("head"), json!("audio/mpeg"))
   );
 
+  let pictured = || {
+    let service = &service;
+
+    async move {
+      let listed = service.call(Method::GET, "/documents?q=Pictured", None).await.json();
+
+      (
+        service.call(Method::GET, &format!("/documents/{id}"), None).await.json()["hasPicture"].clone(),
+        listed["items"][0]["hasPicture"].clone(),
+      )
+    }
+  };
+
+  assert_eq!(pictured().await, (json!(false), json!(false)), "a sound is no picture");
+
   let picture = attach("plan.png", "image/png", png(), None).await.json();
 
   assert_eq!(
@@ -274,6 +290,11 @@ async fn an_attachment_is_kept_listed_and_sent_with_its_range_and_its_picture_is
   let again = attach("plan.png", "image/png", png(), None).await;
 
   assert_eq!(again.status, StatusCode::BAD_REQUEST);
+  assert_eq!(
+    pictured().await,
+    (json!(true), json!(true)),
+    "the document and the list say it keeps a picture"
+  );
 
   let listed = service.call(Method::GET, &format!("/documents/{id}/attachments"), None).await.json();
 

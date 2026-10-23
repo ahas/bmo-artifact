@@ -1,7 +1,7 @@
 {
   "artifact": {
     "title": {
-      "screen": "아카이브",
+      "screen": "아티팩트",
       "document": "문서 {id}",
       "references_count": "참조 페이지 {n}"
     },

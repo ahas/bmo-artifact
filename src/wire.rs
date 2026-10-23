@@ -87,6 +87,8 @@ pub struct Document {
   /// body, cut at 160 characters; null where it has none.
   pub description: Option<String>,
   pub attachment_count: i64,
+  /// Whether it keeps a picture, so its cover picture has one to send.
+  pub has_picture: bool,
   /// Epoch milliseconds.
   pub created_at: i64,
   /// Epoch milliseconds.

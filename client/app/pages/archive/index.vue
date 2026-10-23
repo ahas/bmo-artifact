@@ -63,26 +63,38 @@
           <li v-for="item in items" :key="item.id">
             <NuxtLink
               :to="`/archive/${item.id}`"
-              class="flex flex-col gap-2 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50"
+              class="flex items-start gap-3 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50"
             >
-              <SearchText class="line-clamp-2 text-sm font-medium break-words text-highlighted" :text="item.title" :query="searched" />
-              <p v-if="item.description !== null" class="line-clamp-2 text-sm text-muted"><SearchText :text="item.description" :query="searched" /></p>
+              <div class="flex min-w-0 flex-1 flex-col gap-2">
+                <SearchText class="line-clamp-2 text-sm font-medium break-words text-highlighted" :text="item.title" :query="searched" />
+                <p v-if="item.description !== null" class="line-clamp-2 text-sm text-muted"><SearchText :text="item.description" :query="searched" /></p>
 
-              <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <UBadge color="neutral" variant="outline" size="sm" :label="kindLabel(item.kind)" />
-                <UBadge
-                  v-for="[name, value] in Object.entries(item.labels)"
-                  :key="name"
-                  color="neutral"
-                  variant="subtle"
-                  size="sm"
-                  :label="`${name}: ${value}`"
-                />
-                <span v-if="item.attachmentCount > 0" class="text-sm text-muted tabular-nums">
-                  {{ $t("artifact.label.files_count", { n: countText(item.attachmentCount) }) }}
+                <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <UBadge color="neutral" variant="outline" size="sm" :label="kindLabel(item.kind)" />
+                  <UBadge
+                    v-for="[name, value] in Object.entries(item.labels)"
+                    :key="name"
+                    color="neutral"
+                    variant="subtle"
+                    size="sm"
+                    :label="`${name}: ${value}`"
+                  />
+                  <span v-if="item.attachmentCount > 0" class="text-sm text-muted tabular-nums">
+                    {{ $t("artifact.label.files_count", { n: countText(item.attachmentCount) }) }}
+                  </span>
+                  <span class="ms-auto text-sm tabular-nums text-muted">{{ formatStamp(Math.floor(item.createdAt / 1000)) }}</span>
                 </span>
-                <span class="ms-auto text-sm tabular-nums text-muted">{{ formatStamp(Math.floor(item.createdAt / 1000)) }}</span>
-              </span>
+              </div>
+
+              <img
+                v-if="item.hasPicture && !unpictured.has(item.id)"
+                :src="pictureAddress(item.id)"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="size-16 shrink-0 rounded-md border border-default bg-elevated object-cover sm:size-20"
+                @error="unpictured.add(item.id)"
+              >
             </NuxtLink>
           </li>
         </ul>
@@ -102,7 +114,7 @@ import { formatStamp } from "bmo-ui/app/domain/time";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENTS_PAGE_SIZE, DOCUMENTS_PHRASE_LIMIT } from "../../../shared/config";
-import { readDocuments, useKinds } from "../../domain/artifact";
+import { pictureAddress, readDocuments, useKinds } from "../../domain/artifact";
 import { kindOf } from "../../domain/document-view";
 
 import type { ArtifactDocument } from "../../../shared/types";
@@ -125,6 +137,8 @@ const more = ref(false);
 const loading = ref(false);
 const loaded = ref(false);
 const failed = ref("");
+// The documents whose cover picture did not load, each left without one rather than drawn broken.
+const unpictured = ref(new Set<number>());
 let generation = 0;
 
 onScopeDispose(() => {

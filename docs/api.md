@@ -78,6 +78,7 @@ lives」).
 | `labels` | the caller's metadata |
 | `description` | what it reads as before it is opened: a page's declared description, else the opening prose of its body as plain words, cut at 160 characters; null where it has none |
 | `attachmentCount` | how many files it keeps |
+| `hasPicture` | whether it keeps a picture, so `GET /documents/{documentId}/picture` has a cover to send |
 | `createdAt`, `changedAt` | when it was filed and last rewritten |
 
 ### Kinds

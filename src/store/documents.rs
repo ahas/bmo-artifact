@@ -54,6 +54,7 @@ pub async fn settle<C: ConnectionTrait>(
 const COLUMNS: &str = r#"d."id", d."kind", COALESCE(NULLIF(d."title", ''), d."query") AS "title", d."scope",
   COALESCE(d."actor_name", d."author", '') AS "actor_name", d."labels"::text AS "labels", d."description",
   (SELECT COUNT(*) FROM "archive_attachments" a WHERE a."search_id" = d."id") AS "attachment_count",
+  EXISTS (SELECT 1 FROM "archive_attachments" a WHERE a."search_id" = d."id" AND a."media" = 'image') AS "has_picture",
   d."started_at" * 1000 AS "created_at", COALESCE(d."changed_at", d."started_at" * 1000) AS "changed_at",
   d."document""#;
 
@@ -83,6 +84,7 @@ fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
       labels: serde_json::from_str(&labels).unwrap_or_default(),
       description: row.try_get("", "description")?,
       attachment_count: row.try_get("", "attachment_count")?,
+      has_picture: row.try_get("", "has_picture")?,
       created_at: row.try_get("", "created_at")?,
       changed_at: row.try_get("", "changed_at")?,
     },
