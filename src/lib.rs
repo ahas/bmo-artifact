@@ -4,6 +4,7 @@
 
 pub mod client;
 pub mod commands;
+pub mod console;
 pub mod design;
 pub mod documents;
 pub mod events;

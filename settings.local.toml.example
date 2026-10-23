@@ -5,6 +5,10 @@
 listen = "127.0.0.1:3230"
 token = "artifact-token"
 
+[console]
+token = "artifact-console-token"
+bundle = "/srv/bmo-artifact/console"
+
 [database]
 url = "postgres://artifact:secret@localhost:5432/bmo_artifact"
 

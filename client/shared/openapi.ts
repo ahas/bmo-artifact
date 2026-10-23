@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/console-manifest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The console bundle's manifest. */
+        get: operations["readConsoleManifest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/console/words": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The console bundle's words: each locale's under its code. */
+        get: operations["readConsoleWords"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/console/{file}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The console bundle's module or stylesheet, at the path the manifest names. */
+        get: operations["readConsoleFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/document-kinds": {
         parameters: {
             query?: never;
@@ -338,6 +389,38 @@ export interface components {
             items: components["schemas"]["Attachment"][];
             more: boolean;
         };
+        /**
+         * @description The console bundle's manifest, in the shape of bmo-ui's console plugin contract (`docs/api.md`,
+         *     "The console").
+         */
+        ConsoleManifest: {
+            /** @description The path the module is answered at. */
+            bundle: string;
+            /** @description Whether the screens read the event stream. */
+            events: boolean;
+            /** @description The icon drawn beside that name. */
+            icon: string;
+            /** @description The bundle's name, its words' namespace. */
+            name: string;
+            /** @description Whether every call the screens make needs the reader's owner key. */
+            ownerKey: boolean;
+            /** @description The event kinds a console may raise as a notice. */
+            pushKinds: string[];
+            /** @description The least role a reader holds to open the screens: `administrator` or `member`. */
+            role: string;
+            /** @description The path the screens stand under. */
+            screenPath: string;
+            /** @description The service's name, which a console relays it under. */
+            serviceName: string;
+            /** @description The path the stylesheet is answered at, where the bundle has one. */
+            stylesheet?: string | null;
+            /** @description The key, in the bundle's words, of the name a console's menu gives the screen. */
+            title: string;
+            /** @description Whether the screens open a WebSocket. */
+            websocket: boolean;
+            /** @description The path the words are answered at. */
+            words: string;
+        };
         /** @description A document's file, in base64. */
         ContentOutput: {
             /** @description The file's bytes in base64. */
@@ -583,6 +666,75 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    readConsoleManifest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The console bundle's manifest. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsoleManifest"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readConsoleWords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The console bundle's words: each locale's under its code. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: Record<string, never>;
+                    };
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readConsoleFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The file's name, carrying the digest of its bytes. */
+                file: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The console bundle's module or stylesheet, at the path the manifest names. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/css": string;
+                    "text/javascript": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     listDocumentKinds: {
         parameters: {
             query?: {

@@ -11,7 +11,7 @@ use super::files::{Asking, KeptFile, PRIVATE_DAY, inside_root, send};
 use crate::Refusal;
 use crate::documents::keeper::{Handed, keep};
 use crate::events::EventKind;
-use crate::plumbing::http::{Call, Refused, Route, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
 use crate::plumbing::openapi::{
   Operation, bytes_answer, header, id_parameter, json_answer, json_body, query,
 };
@@ -23,6 +23,7 @@ pub struct ListAttachments;
 impl Route for ListAttachments {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/attachments";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
@@ -114,6 +115,7 @@ pub struct ReadAttachment;
 impl Route for ReadAttachment {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/attachments/{attachmentId}";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;

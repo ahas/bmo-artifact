@@ -10,7 +10,7 @@ use super::documents::document;
 use crate::Refusal;
 use crate::events::EventKind;
 use crate::now_ms;
-use crate::plumbing::http::{Call, Refused, Route, Standing, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, json_answer, json_body, query, text_parameter};
 use crate::store::{documents, page_limit, shares};
 use crate::wire::{Share, ShareInput, SharePage, SharesQuery};
@@ -47,6 +47,7 @@ pub struct ListShares;
 impl Route for ListShares {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/shares";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let asked: SharesQuery = call.query()?;
@@ -89,6 +90,7 @@ pub struct MakeShare;
 impl Route for MakeShare {
   const METHOD: Method = Method::POST;
   const PATH: &'static str = "/shares";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let asked: ShareInput = call.json().await?;
@@ -146,6 +148,7 @@ pub struct ReadShare;
 impl Route for ReadShare {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/shares/{token}";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let token = call.path_text("token").await?;
@@ -180,6 +183,7 @@ pub struct EndShare;
 impl Route for EndShare {
   const METHOD: Method = Method::DELETE;
   const PATH: &'static str = "/shares/{token}";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let token = call.path_text("token").await?;

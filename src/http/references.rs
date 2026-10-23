@@ -10,7 +10,7 @@ use super::documents::document;
 use super::files::PRIVATE_DAY;
 use crate::Refusal;
 use crate::documents::preview::PreviewCache;
-use crate::plumbing::http::{Call, Refused, Route, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
 use crate::plumbing::openapi::{Operation, bytes_answer, id_parameter, json_answer, query};
 use crate::reader::Preview;
 use crate::store::page_limit;
@@ -43,6 +43,7 @@ pub struct ListReferences;
 impl Route for ListReferences {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/references";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
@@ -90,6 +91,7 @@ pub struct ReadReference;
 impl Route for ReadReference {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/references/{referenceId}";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let cited = cited(&mut call).await?;
@@ -118,6 +120,7 @@ pub struct ReadReferenceImage;
 impl Route for ReadReferenceImage {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/references/{referenceId}/image";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let cited = cited(&mut call).await?;

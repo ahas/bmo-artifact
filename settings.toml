@@ -1,10 +1,14 @@
 # The service's settings (docs/api.md, "Settings"). A deployment overrides them in settings.local.toml,
 # which git ignores, or in the environment.
 
-# The bearer token every caller presents is `token` here; a deployment sets it, and an empty one lets no
-# caller in.
+# The service's token, which reaches every route, is `token` here; a deployment sets it, and an empty one
+# lets no caller in by it.
 [server]
 listen = "127.0.0.1:3230"
+
+# The console's token is `token` here; a deployment sets it, and an empty one lets no console in. The console
+# bundle's module, stylesheet and words are read from `bundle`, client/dist until it names another folder.
+[console]
 
 [database]
 url = "postgres://localhost/bmo_artifact"

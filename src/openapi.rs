@@ -10,7 +10,7 @@ use serde_json::{Map, Value, json};
 use crate::events::EventKind;
 use crate::mcp::ENTRY;
 use crate::mcp::tool::tools;
-use crate::plumbing::http::routes;
+use crate::plumbing::http::{ConsoleReach, routes};
 use crate::wire::WireError;
 
 /// Where the schemas the routes refer to stand in the document.
@@ -36,15 +36,27 @@ pub fn openapi() -> Value {
 
   for route in routes() {
     let operation = route.operation(&mut generator);
+    let reach = route.console();
 
     if !tags.contains(&operation.tag) {
       tags.push(operation.tag);
     }
 
+    let mut value = operation.value();
+
+    // The console's token is refused wherever it reaches the route under a guard or not at all.
+    if reach != ConsoleReach::Open
+      && let Some(codes) = value["x-codes"].as_array_mut()
+      && !codes.iter().any(|code| code == "forbidden")
+    {
+      codes.push("forbidden".into());
+    }
+
+    value["x-console"] = reach.word().into();
     by_path
       .entry(route.path())
       .or_default()
-      .insert(route.method().as_str().to_lowercase(), operation.value());
+      .insert(route.method().as_str().to_lowercase(), value);
   }
 
   tags.sort_unstable();
@@ -86,7 +98,12 @@ pub fn openapi() -> Value {
         },
       },
       "securitySchemes": {
-        "bearer": { "type": "http", "scheme": "bearer", "description": "The token of the service's settings." },
+        "bearer": {
+          "type": "http",
+          "scheme": "bearer",
+          "description": "The service's token, or the console's, as the settings name them; the console's reaches \
+            each operation as its x-console says, under the Owner-Role and Owner-Key headers where it is a screen's.",
+        },
       },
     },
     "x-events": EventKind::ALL.iter().map(|kind| kind.name()).collect::<Vec<_>>(),

@@ -59,12 +59,22 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "GET /imports/{importId}",
     "GET /scopes/{scope}",
     "DELETE /scopes/{scope}",
+    "GET /console-manifest",
+    "GET /console/words",
+    "GET /console/{file}",
   ]
   .into_iter()
   .map(str::to_owned)
   .collect();
 
   assert_eq!(routes, wanted);
+
+  let reach = |path: &str, method: &str| document["paths"][path][method]["x-console"].clone();
+
+  assert_eq!(reach("/console-manifest", "get"), "open");
+  assert_eq!(reach("/console/{file}", "get"), "screen");
+  assert_eq!(reach("/documents", "get"), "screen");
+  assert_eq!(reach("/documents", "post"), "closed");
   assert_eq!(document["info"]["version"], bmo_artifact::VERSION);
   assert_eq!(document["x-calls"], serde_json::json!(["explorer"]));
   assert_eq!(document["x-harness"]["plugin"], "bmo-artifact");

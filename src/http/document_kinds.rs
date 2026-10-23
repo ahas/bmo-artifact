@@ -6,7 +6,7 @@ use axum::response::Response;
 use schemars::generate::SchemaGenerator;
 
 use crate::kinds::KINDS;
-use crate::plumbing::http::{Call, Refused, Route, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
 use crate::plumbing::openapi::{Operation, json_answer, query};
 use crate::store::page_limit;
 use crate::wire::{DocumentKindPage, PageQuery};
@@ -16,6 +16,7 @@ pub struct ListDocumentKinds;
 impl Route for ListDocumentKinds {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/document-kinds";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let asked: PageQuery = call.query()?;

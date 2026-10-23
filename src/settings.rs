@@ -19,6 +19,9 @@ pub const ENVIRONMENT_PREFIX: &str = "BMO_ARTIFACT";
 #[derive(Clone, Debug, Deserialize)]
 pub struct Settings {
   pub server: Server,
+  /// Nothing set here lets no console in and reads the bundle from `client/dist`.
+  #[serde(default)]
+  pub console: Console,
   pub database: Database,
   pub files: Files,
   pub explorer: Explorer,
@@ -37,9 +40,36 @@ pub struct Settings {
 pub struct Server {
   /// The address the server listens on.
   pub listen: SocketAddr,
-  /// The bearer token every caller presents; an empty one lets no caller in.
+  /// The service's token, which reaches every route; an empty one lets no caller in by it.
   #[serde(default)]
   pub token: String,
+}
+
+/// The console the document screens are relayed through (`docs/api.md`, "The console").
+#[derive(Clone, Debug, Deserialize)]
+pub struct Console {
+  /// The console's token, which reaches what the screens use; an empty one lets no console in.
+  #[serde(default)]
+  pub token: String,
+  /// The folder the build of `client/` writes the module, its stylesheet and its words into; a relative one
+  /// is read from where the process starts.
+  #[serde(default = "Console::default_bundle")]
+  pub bundle: PathBuf,
+}
+
+impl Console {
+  fn default_bundle() -> PathBuf {
+    PathBuf::from("client/dist")
+  }
+}
+
+impl Default for Console {
+  fn default() -> Self {
+    Self {
+      token: String::new(),
+      bundle: Self::default_bundle(),
+    }
+  }
 }
 
 /// The database holding the document tables.

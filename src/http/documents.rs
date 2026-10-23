@@ -12,7 +12,7 @@ use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
 use crate::events::EventKind;
 use crate::kinds;
-use crate::plumbing::http::{Call, Refused, Route, Standing, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, bytes_answer, id_parameter, json_answer, json_body, query};
 use crate::store::{attachments, documents, page_limit};
 use crate::wire::{ContentQuery, Document, DocumentChange, DocumentInput, DocumentPage, DocumentsQuery};
@@ -29,6 +29,7 @@ pub struct ListDocuments;
 impl Route for ListDocuments {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let asked: DocumentsQuery = call.query()?;
@@ -94,6 +95,7 @@ pub struct ReadDocument;
 impl Route for ReadDocument {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
@@ -199,6 +201,7 @@ pub struct ReadContent;
 impl Route for ReadContent {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/content";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
@@ -230,6 +233,7 @@ pub struct ReadPicture;
 impl Route for ReadPicture {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/documents/{documentId}/picture";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;

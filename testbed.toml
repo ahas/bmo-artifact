@@ -47,3 +47,10 @@ units = ["deploy/*.service"]
 # Answers 0 once the service the release's settings name answers on its listen address, 127.0.0.1:3230
 # by default (docs/api.md, 「Health」).
 health = "cd ~/.local/share/bmo-artifact/deploy && bin/bmo-artifact health"
+
+# The console bundle's module, its stylesheet and its words, built in the release into the folder the
+# settings name by default, where the service reads them when it starts (docs/api.md, 「The console」).
+[[deploy.step]]
+id = "console-module"
+command = "cd client && bun run module"
+phase = "before-flip"

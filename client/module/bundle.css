@@ -1,0 +1,13 @@
+/* The module's stylesheet (bmo-ui's `docs/console-bundles.md`, "What a bundle is"): the document
+   screens' own styles, and the utility classes their files use, built on the layer's tokens. The
+   layer's stylesheet is the console's copy, so it is read for its theme and emits nothing here. */
+@layer theme, base, components, utilities;
+
+@reference "bmo-ui/app/assets/css/main.css";
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+@source "../app";
+@source "../shared";
+
+@import "../app/assets/css/document.css";
+@import "../app/assets/css/finding.css";

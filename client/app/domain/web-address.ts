@@ -3,8 +3,7 @@
 // the console's half of it, for the address the reading turns into a link. A bare address runs to the
 // next space or Korean letter, and what the sentence put after it — a full stop, a comma, a closing
 // bracket that opened before the address — is the sentence's, not the address's. A pair of brackets
-// inside the address, as a wiki page's name carries, stays in it. It also says where a path of the
-// console's own stands once the base the console app is served under is put ahead of it.
+// inside the address, as a wiki page's name carries, stays in it.
 
 // Korean letters: jamo, compatibility jamo, and the syllables with their extensions. An address
 // written straight into a Korean sentence ends where the sentence's own letters begin.
@@ -42,17 +41,4 @@ export function isWebAddress(url: string): boolean {
   } catch {
     return false;
   }
-}
-
-// A path from the console's root as a browser loads it: under the base path the console app is served
-// at, unless it stands there already. A base of the root, and an address that is no path from the root,
-// leave the address as it is.
-export function underBase(base: string, address: string): string {
-  const root = base.replace(/\/+$/, "");
-
-  if (root === "" || !address.startsWith("/") || address === root || address.startsWith(`${root}/`)) {
-    return address;
-  }
-
-  return `${root}${address}`;
 }

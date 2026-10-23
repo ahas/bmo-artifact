@@ -144,6 +144,13 @@ impl Verb for Serve {
 
     abandon(&standing).await.map_err(|why| VerbError::Refused(why.error))?;
 
+    if !standing.console.built() {
+      eprintln!(
+        "the console bundle is not built in {}; its manifest answers not-found",
+        shell.settings.console.bundle.display()
+      );
+    }
+
     let router = router(standing).map_err(|faults| {
       VerbError::Refused(format!("the routes cannot be served: {}", faults.join("; ")))
     })?;

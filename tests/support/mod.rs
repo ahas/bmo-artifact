@@ -12,8 +12,9 @@ use std::path::{Path, PathBuf};
 
 pub const ROOT: &str = env!("CARGO_MANIFEST_DIR");
 
-/// Directories no check reads: build output and installed packages.
-const SKIPPED: [&str; 2] = ["target", "node_modules"];
+/// Directories no check reads: build output, the console bundle's module build among it, and installed
+/// packages.
+const SKIPPED: [&str; 3] = ["target", "dist", "node_modules"];
 
 /// Whether a directory is one no check reads: those above, and every hidden one, git's own and the
 /// tools' local state among them.

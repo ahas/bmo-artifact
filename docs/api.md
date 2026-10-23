@@ -30,16 +30,20 @@ flowchart TD
 - **The wire format is bmo-chat's** (`docs/conventions.md`, 「The common wire format」 and 「API design」):
   camelCase keys, times in epoch milliseconds, ids as signed 64-bit integers, a page as `items` and
   `more`, a failure as a status with `code` and `error`.
-- **Every route takes the token** the settings name, as `Authorization: Bearer <token>`. A missing or wrong
-  token is refused 401 `unauthorized`; an empty token in the settings lets no caller in.
+- **Every route takes a bearer token,** as `Authorization: Bearer <token>`: the service's token or the
+  console's, both named by the settings. A missing or wrong token is refused 401 `unauthorized`; an empty
+  token in the settings lets no caller in by it.
+- **The service's token reaches every route.** The console's token reaches only what its screens use, under
+  the guard 「The console」 states.
 - **The paths carry no prefix.** Whatever serves the service to a browser mounts it under its own path.
 - **A caller's strings are opaque:** `scope` is what a document or an import is held under, `actorName`
   who filed it, and `labels` the caller's own metadata, an object of strings. The service stores and
   matches them and never reads meaning into them.
 - **Every answer is English,** a sentence or a status code.
 - **`docs/openapi.json` is the contract,** an OpenAPI 3.1 document generated from the service's own types:
-  every route with its parameters, bodies, answers and codes, the events under `x-events`, the tools under
-  `x-tools`, the plugin under `x-harness` and the units it calls under `x-calls`. A test fails where the
+  every route with its parameters, bodies, answers and codes and how far the console's token reaches it under
+  `x-console`, the events under `x-events`, the tools under `x-tools`, the plugin under `x-harness` and the
+  units it calls under `x-calls`. A test fails where the
   committed document differs from what the code generates; `bmo-artifact openapi` prints it.
 
 ### Codes
@@ -48,6 +52,7 @@ flowchart TD
 |---|---|---|
 | 400 | `bad-request` | the body, the query or a path key is not the shape the route takes; the sentence names what |
 | 401 | `unauthorized` | the token is missing or wrong |
+| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs |
 | 404 | `no-route` | no route answers this method and path |
 | 404 | `not-found` | nothing stands at the key the path names |
 | 409 | `conflict` | the member does not take the change: a body for a page, HTML for any other kind |
@@ -328,13 +333,39 @@ Each tool is one call of the client, answered as structured content; a refusal i
 | `artifact_import` | `POST /imports` | the route's body | the import |
 | `artifact_search` | `GET /documents` | `q`, `kind?`, `scope?` | a page of documents |
 
-## The console bundle
+## The console
 
-- **`client/` is the console bundle,** a Nuxt layer on bmo-ui as its contract states (bmo-ui's
-  `docs/console-bundles.md`), declared in `client/console-bundle.json`: the service `artifact`, its screens
-  under `/archive`, a shared document's at `/archive/share/<token>`, its words in its own pack under
-  `client/i18n/` (docs/layout.md, 「The console bundle」).
-- **Its screens call this service's routes through the console's relay** and nothing else.
+The document screens are a console bundle by bmo-ui's console plugin contract (bmo-ui's
+`docs/console-bundles.md`), built from `client/` (docs/layout.md, 「The console bundle」). The service answers
+the bundle's manifest, its module, its stylesheet and its words, and guards every route its screens use.
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /console-manifest` | | 200, the manifest |
+| `GET /console/words` | | 200, the bundle's words |
+| `GET /console/{file}` | | 200, the module or the stylesheet the manifest names |
+
+- **The manifest** is the contract's shape: the bundle `artifact`, its menu title the key
+  `artifact.title.screen`, its icon, its screens under `/archive`, the service `artifact`, the paths of its
+  module, its stylesheet and its words, and the role `member`. Every call the screens make stands under the
+  API prefix `/`; no screen needs the owner key, reads the event stream or opens a socket, and no event is
+  raised as a notice.
+- **The module and the stylesheet** are the files the build of `client/` writes into the folder the settings
+  name, read when the service starts. Each is answered at `/console/` and a name carrying the first sixteen
+  hexadecimal digits of the SHA-256 of its bytes, so its path changes whenever its bytes do, and may be kept
+  by whoever loaded it. A file name the manifest does not name is `not-found`.
+- **The words** are each locale's words of the bundle's pack under the locale's code, every key under
+  `artifact`, as the build writes them beside the module.
+- **Where the folder holds no module,** the manifest, the module, the stylesheet and the words are all
+  `not-found`, so a console leaves the service out.
+- **The guard.** A call with the console's token is the console relaying for a reader, and it reaches:
+  - the manifest and the words with no role and no owner key;
+  - the module, the stylesheet and every route the screens use where its `Owner-Role` header is a role that
+    allows `member`, either role; one with that header missing or naming no role is refused 403
+    `forbidden`;
+  - no other route: each is refused 403 `forbidden`.
+- **The routes the screens use** are the reads of documents, their content, pictures, attachments,
+  references and kinds, and the reading, making and ending of share links.
 
 ## What this service calls
 
@@ -357,7 +388,9 @@ environment.
 | Table | Key | What it is |
 |---|---|---|
 | `server` | `listen` | where the service answers, as `host:port` |
-| `server` | `token` | the bearer token every caller presents |
+| `server` | `token` | the service's token, which reaches every route |
+| `console` | `token` | the console's token, which reaches what the screens use (「The console」) |
+| `console` | `bundle` | the folder the build of `client/` writes the module, its stylesheet and its words into; `client/dist` where none is named |
 | `database` | `url` | the PostgreSQL database the document tables stand in |
 | `files` | `root` | the folder each document's folder stands under |
 | `explorer` | `data_root` | the data root bmo-explorer's client is opened over |
@@ -376,10 +409,12 @@ environment.
 What another repository must gain or settle for this one to stand on it, each for that repository's own
 worker:
 
-- **The console that serves this bundle:** a share link is opened by a reader who is not signed in, so the
-  console serves the bundle's `/archive/share/<token>` screen and relays the reads it makes, the link and
-  the document it opens, without its sign-in, and sets this service's share address to that screen's; this
-  service answers only callers holding its token.
+- **The console that serves this bundle:** it calls this service with the console's token, finds the bundle
+  by its manifest and loads its module (bmo-ui's `docs/console-bundles.md`). A share link is opened by a
+  reader who is not signed in, so the console serves the bundle's `/archive/share/<token>` screen and relays
+  the reads it makes, the link and the document it opens, without its sign-in but with a role this service
+  takes, and sets this service's share address to that screen's; this service answers only callers holding
+  one of its tokens.
 - **The callers of the routes this service no longer serves:** research runs and their settings,
   narrations, the holding read by a chat id and the filing verbs are gone. A research run or a narration
   is a client's own work that files through this service's MCP server, and what a caller files is held

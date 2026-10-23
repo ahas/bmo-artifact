@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDarkScheme } from "bmo-ui/app/domain/scheme";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENT_PALETTE } from "../../shared/document-design";
@@ -41,12 +42,12 @@ interface Props {
 
 const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), { kind: null, properties: () => [], share: null, chrome: true });
-const colorMode = useColorMode();
+const dark = useDarkScheme();
 
 useHead({ style: [{ key: "document-palette", innerHTML: DOCUMENT_PALETTE }] });
 
 // The page in the scheme the console stands in.
-const framed = computed(() => props.page(schemeOf(colorMode.value)));
+const framed = computed(() => props.page(schemeOf(dark.value ? "dark" : "light")));
 
 function openPage(): void {
   window.open(framed.value, "_blank", "noopener,noreferrer");
@@ -56,7 +57,7 @@ function openPage(): void {
 function download(): void {
   const link = document.createElement("a");
 
-  link.href = props.page(schemeOf(colorMode.value), true);
+  link.href = props.page(schemeOf(dark.value ? "dark" : "light"), true);
   link.download = "";
   link.click();
 }

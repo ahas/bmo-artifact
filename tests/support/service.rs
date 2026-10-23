@@ -20,6 +20,8 @@ use super::scratch::Scratch;
 
 /// The token every call of the tests presents.
 pub const TOKEN: &str = "service-token";
+/// The console's token.
+pub const CONSOLE_TOKEN: &str = "console-token";
 /// The address the settings put share links under.
 pub const SHARE_ADDRESS: &str = "https://documents.invalid/share";
 
@@ -93,6 +95,8 @@ impl Answered {
 pub struct Service {
   pub scratch: Scratch,
   pub files: tempfile::TempDir,
+  /// The folder the console bundle is read from.
+  pub console: tempfile::TempDir,
   pub web: Arc<Web>,
   pub standing: Arc<Standing>,
   router: Router,
@@ -100,12 +104,25 @@ pub struct Service {
 
 impl Service {
   pub async fn new() -> Self {
+    Self::with_console(&[]).await
+  }
+
+  /// The service over a console bundle folder holding these files, by name.
+  pub async fn with_console(bundle: &[(&str, &[u8])]) -> Self {
     let scratch = Scratch::new().await;
     let files = tempfile::tempdir().expect("a file root");
+    let console = tempfile::tempdir().expect("a console bundle folder");
+
+    for (name, bytes) in bundle {
+      std::fs::write(console.path().join(name), bytes).expect("a bundle file");
+    }
+
     let environment = HashMap::from([
       ("BMO_ARTIFACT_DATABASE__URL".to_owned(), scratch.address()),
       ("BMO_ARTIFACT_FILES__ROOT".to_owned(), files.path().display().to_string()),
       ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), TOKEN.to_owned()),
+      ("BMO_ARTIFACT_CONSOLE__TOKEN".to_owned(), CONSOLE_TOKEN.to_owned()),
+      ("BMO_ARTIFACT_CONSOLE__BUNDLE".to_owned(), console.path().display().to_string()),
       ("BMO_ARTIFACT_SHARE__ADDRESS".to_owned(), SHARE_ADDRESS.to_owned()),
     ]);
     let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
@@ -117,6 +134,7 @@ impl Service {
     Self {
       scratch,
       files,
+      console,
       web,
       standing: Arc::new(standing),
       router,
@@ -146,10 +164,23 @@ impl Service {
     body: Option<Value>,
     headers: &[(&str, &str)],
   ) -> Answered {
-    let mut request = Request::builder()
-      .method(method)
-      .uri(uri)
-      .header("authorization", format!("Bearer {TOKEN}"));
+    self.call_by(Some(TOKEN), method, uri, body, headers).await
+  }
+
+  /// A call presenting `token`, or none, with the headers named.
+  pub async fn call_by(
+    &self,
+    token: Option<&str>,
+    method: Method,
+    uri: &str,
+    body: Option<Value>,
+    headers: &[(&str, &str)],
+  ) -> Answered {
+    let mut request = Request::builder().method(method).uri(uri);
+
+    if let Some(token) = token {
+      request = request.header("authorization", format!("Bearer {token}"));
+    }
 
     for (name, value) in headers {
       request = request.header(*name, *value);

@@ -1,5 +1,6 @@
 //! Routes, the calls they answer, their refusals, and the router the server stands them on, behind the
-//! bearer token every call presents (`docs/api.md`, "The wire").
+//! bearer token every call presents and the reach each route gives the console's (`docs/api.md`, "The wire"
+//! and "The console").
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::future::Future;
@@ -19,6 +20,7 @@ use serde::de::DeserializeOwned;
 use serde_json::json;
 use tokio::sync::OnceCell;
 
+use crate::console::{ConsoleBundle, screen_admits};
 use crate::documents::preview::PreviewCache;
 use crate::events::Publisher;
 use crate::plumbing::openapi::Operation;
@@ -31,11 +33,44 @@ use crate::wording::{Wording, WordingError};
 
 pub use inventory;
 
+/// How far the console's token reaches a route (`docs/api.md`, "The console").
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConsoleReach {
+  /// Not at all: the screens do not use the route.
+  Closed,
+  /// With no role and no owner key: what a console reads for no reader.
+  Open,
+  /// As a screen's call, under the role and the owner key the screens need.
+  Screen,
+}
+
+impl ConsoleReach {
+  /// The word the OpenAPI document states it by.
+  pub fn word(self) -> &'static str {
+    match self {
+      Self::Closed => "closed",
+      Self::Open => "open",
+      Self::Screen => "screen",
+    }
+  }
+}
+
+/// Whose token a call presents.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Credential {
+  /// The service's, which reaches every route.
+  Service,
+  /// The console's, relaying for a reader.
+  Console,
+}
+
 /// One route the server answers, registered beside its answer with `bmo_artifact::route!`.
 pub trait Route: Send + Sync + 'static {
   const METHOD: Method;
   /// The path, in the router's own syntax: `/documents/{documentId}`.
   const PATH: &'static str;
+  /// How far the console's token reaches it; a route the screens do not use is closed to it.
+  const CONSOLE: ConsoleReach = ConsoleReach::Closed;
 
   fn answer(&self, call: Call) -> impl Future<Output = Result<Response, Refused>> + Send;
 
@@ -49,6 +84,7 @@ type Answering<'a> = Pin<Box<dyn Future<Output = Result<Response, Refused>> + Se
 pub trait Answers: Send + Sync {
   fn method(&self) -> Method;
   fn path(&self) -> &'static str;
+  fn console(&self) -> ConsoleReach;
   fn answer(&self, call: Call) -> Answering<'_>;
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation;
 }
@@ -60,6 +96,10 @@ impl<R: Route> Answers for R {
 
   fn path(&self) -> &'static str {
     R::PATH
+  }
+
+  fn console(&self) -> ConsoleReach {
+    R::CONSOLE
   }
 
   fn answer(&self, call: Call) -> Answering<'_> {
@@ -152,6 +192,8 @@ pub struct Standing {
   pub previews: Arc<PreviewCache>,
   /// Where events are published.
   pub events: Publisher,
+  /// The console bundle the settings' folder holds, read when the server starts.
+  pub console: Arc<ConsoleBundle>,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
@@ -178,6 +220,7 @@ impl Standing {
     let archive = Archive::new(settings.database.url.clone());
     let wording = Wording::read(settings.wording.file.as_deref())?;
     let previews = Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::clone(&reader)));
+    let console = Arc::new(ConsoleBundle::read(&settings.console.bundle));
 
     Ok(Self {
       settings,
@@ -186,6 +229,7 @@ impl Standing {
       reader,
       previews,
       events: Publisher::default(),
+      console,
       settled: Arc::default(),
     })
   }
@@ -290,19 +334,50 @@ pub fn answer(status: StatusCode, body: &impl Serialize) -> Response {
   (status, Json(body)).into_response()
 }
 
-// Every call presents the settings' token as a bearer; an empty token lets nobody in.
-async fn bearer(State(standing): State<Arc<Standing>>, request: Request, next: Next) -> Response {
-  let token = &standing.settings.server.token;
+// Every call presents one of the settings' tokens as a bearer, and is marked with whose it is; an empty
+// token lets nobody in by it.
+async fn bearer(State(standing): State<Arc<Standing>>, mut request: Request, next: Next) -> Response {
+  let settings = &standing.settings;
   let presented = request
     .headers()
     .get(header::AUTHORIZATION)
     .and_then(|value| value.to_str().ok())
     .and_then(|value| value.strip_prefix("Bearer "));
+  let credential = presented.and_then(|presented| {
+    [
+      (&settings.server.token, Credential::Service),
+      (&settings.console.token, Credential::Console),
+    ]
+    .into_iter()
+    .find(|(token, _)| !token.is_empty() && presented == token.as_str())
+    .map(|(_, credential)| credential)
+  });
 
-  match presented {
-    Some(presented) if !token.is_empty() && presented == token => next.run(request).await,
-    _ => Refused::new(StatusCode::UNAUTHORIZED, "unauthorized", "the bearer token is missing or wrong")
+  match credential {
+    Some(credential) => {
+      request.extensions_mut().insert(credential);
+      next.run(request).await
+    }
+    None => Refused::new(StatusCode::UNAUTHORIZED, "unauthorized", "the bearer token is missing or wrong")
       .into_response(),
+  }
+}
+
+// Whether a call reaches a route: the service's token reaches every one, the console's only as far as the
+// route's reach.
+fn admitted(reach: ConsoleReach, request: &Request) -> Result<(), Refused> {
+  if request.extensions().get::<Credential>() != Some(&Credential::Console) {
+    return Ok(());
+  }
+
+  match reach {
+    ConsoleReach::Closed => Err(Refused::new(
+      StatusCode::FORBIDDEN,
+      "forbidden",
+      "the console's token does not reach this route",
+    )),
+    ConsoleReach::Open => Ok(()),
+    ConsoleReach::Screen => screen_admits(request.headers()).map_err(Refused::from),
   }
 }
 
@@ -333,6 +408,10 @@ pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
       continue;
     };
     let handler = move |State(standing): State<Arc<Standing>>, request: Request| async move {
+      if let Err(refused) = admitted(route.console(), &request) {
+        return refused.into_response();
+      }
+
       route
         .answer(Call::new(request, standing))
         .await

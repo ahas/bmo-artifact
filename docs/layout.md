@@ -34,6 +34,7 @@ src/
   reader.rs                the page reader, over bmo-explorer's client
   wording.rs               the document wording file and its English default
   design.rs                the document design read from client/design/document.json, and a page's sheet
+  console.rs               the console bundle as the service answers it: its manifest, its files and the guard's floor
   plumbing/                routes, commands, refusals, the bearer check and each route's OpenAPI operation
   store/                   the statements on the document tables, by resource, and the clock their columns keep
     migration/             the migrations and the migrator
@@ -58,9 +59,12 @@ skills/
 tests/
 client/                    the console bundle (see "The console bundle")
   package.json
-  console-bundle.json      the bundle's declaration
+  console-bundle.json      the declaration a console building the bundle in reads
   bun.lock
   nuxt.config.ts
+  module.config.ts         the build of the browser module
+  module/                  the module's entry, its stylesheet's entry and what stands in for Nuxt's build there
+  dist/                    the module's build, which git ignores
   i18n/                    the bundle's words, one pack a locale
   vendor/                  the packed bmo-ui the bundle's own install takes
   patches/                 bmo-ui's patch to a dependency, applied in this install
@@ -92,14 +96,16 @@ The plumbing is what every command and every route stands on, and it knows none 
   document wording they name, read when the shell is made. `nouns` stands on none: it is answered
   before the shell is made, so `bmo`'s question reaches the binary run from any directory.
 - **A route** declares its method, its path, its answer and its OpenAPI operation: its parameters, its
-  body, its answers and the codes it can refuse with. Adding a route changes no file but its own; the
-  router and the OpenAPI document gather every route linked in, and the server refuses to start where two
-  name one method and path.
+  body, its answers and the codes it can refuse with. It also declares how far the console's token reaches
+  it: not at all, with no role, or as a screen's call, under the role and owner key the console bundle
+  needs. Adding a route changes no file but its own; the router and the OpenAPI document gather every route
+  linked in, and the server refuses to start where two name one method and path.
 - **A call** carries the request and what the server stands on: the settings, the database, the wording,
   the page reader, the preview cache and the event publisher. A route reads its path's keys, its query and
   its JSON body each as its own type, and a request not of that shape is refused `bad-request`.
-- **Every call presents the bearer token** the settings name; a route answers only past that check, and a
-  method and path no route answers is `no-route`.
+- **Every call presents a bearer token** the settings name, the service's or the console's; a route answers
+  only past that check and, for the console's, past the reach the route declares. A method and path no route
+  answers is `no-route`.
 - **A refusal** is a status and an English sentence, answered with the code bmo-chat's conventions give
   that status. A failure of the database is one: status 500, `failed`.
 - **Each harness tool registers itself** beside its call; the MCP server lists them and the OpenAPI
@@ -112,9 +118,22 @@ The plumbing is what every command and every route stands on, and it knows none 
 `client/` is a Bun project of its own, a console bundle by bmo-ui's contract (bmo-ui's
 `docs/console-bundles.md`).
 
-- **A Nuxt layer on bmo-ui.** It extends bmo-ui and adds the document screens' pages, components, domain
-  modules and stylesheet. Its declaration, `console-bundle.json`, names the bundle `artifact`, the service
-  `artifact`, its screens under `/archive` and its words in `i18n/`.
+- **One set of sources, two builds.** The pages, components, domain modules, stylesheets and words under
+  `client/` are built both as the browser module the service answers and as a Nuxt layer on bmo-ui packed
+  for a console that builds its bundles in.
+- **The browser module.** `bun run module` builds `module/entry.ts`, whose default export is the routes of
+  the three screens, into one ECMAScript module, `dist/bundle.js`, its stylesheet, `dist/bundle.css`, and
+  its words, `dist/words.json`, each locale's pack under its code. Every import of `vue`, `vue-router`,
+  `vue-i18n`, `nuxt/app`, `@nuxt/ui` and bmo-ui stays an import, written as the package's own path; the
+  rest, marked and DOMPurify among it, is carried in the module. What Nuxt's build would supply is supplied
+  by this one: the Vue and Nuxt functions a file uses without importing them are imported from `vue` and
+  `nuxt/app`, a component a template names is imported from its file, the bundle's own, Nuxt UI's or
+  bmo-ui's, the link component is made from the console's Nuxt app, and a page's meta is stated on its
+  route. The stylesheet is the bundle's own sheets and the utility classes its files use, built against
+  bmo-ui's stylesheet without carrying it.
+- **The Nuxt layer.** It extends bmo-ui and adds the same pages, components, domain modules and
+  stylesheets. Its declaration, `console-bundle.json`, names the bundle `artifact`, the service `artifact`,
+  its screens under `/archive` and its words in `i18n/`, in the fields the service's manifest answers.
 - **bmo-ui is a peer.** The manifest names bmo-ui as a peer at the one version the bundle is built
   against, marked optional so no install looks for it in a registry. For the bundle's own install, a
   packed copy kept under `client/vendor/`, named by version, is a development dependency taken from that
@@ -125,7 +144,7 @@ The plumbing is what every command and every route stands on, and it knows none 
   stands under `/archive`: the list, one document at `/archive/<id>`, and one shared document at
   `/archive/share/<token>`.
 - **Calls.** A screen calls this service's routes at the address bmo-ui's `relay` module answers for the
-  service `artifact`, and nothing else. That address is taken under the console app's base path, so a
+  service `artifact`, and nothing else. That address stands under the console app's base path, so a
   picture, a file or a frame the browser loads by its address reaches the relay as a call does. The types
   it reads are generated from `docs/openapi.json` into `shared/openapi.ts` by the `api` script.
 - **A document's text is drawn by the bundle.** The service answers a markdown document's file as filed;
@@ -136,10 +155,13 @@ The plumbing is what every command and every route stands on, and it knows none 
   against a real document.
 - **Its own files by relative path.** No file of the bundle reaches outside `client/`, which a test in
   `client/tests/` holds by reading the imports of every file the package carries.
-- **How a console takes it.** The bundle is packed from `client/` with `bun pm pack`, which prepares
-  Nuxt's types first and writes `bmo-artifact-client-<version>.tgz`, carrying the manifest, the
-  declaration, the words, the Nuxt configuration, `app/`, `shared/`, `design/` and `patches/`, and nothing
-  of its own tests or its copy of bmo-ui. A console attaches it by its declaration as the contract says.
+- **How a console takes it.** A console that finds services while it runs reads the service's manifest and
+  loads the module (docs/api.md, 「The console」). A console that builds its bundles in takes the layer
+  packed from `client/` with `bun pm pack`, which prepares Nuxt's types first and writes
+  `bmo-artifact-client-<version>.tgz`, carrying the package manifest, the declaration, the words, the Nuxt
+  configuration, `app/`, `shared/`, `design/` and `patches/`, and nothing of its own tests, its module's
+  build or its copy of bmo-ui; it attaches it by the declaration. The layer's addresses stand under the app's
+  base path where the console runs bmo-ui 0.1.0-rev.6 or later.
 
 ## Storage
 
@@ -176,6 +198,8 @@ The plumbing is what every command and every route stands on, and it knows none 
 - the quick checks for the layout and the dependencies, with the base libraries and bmo-explorer allowed;
 - the test database: the migration files that name its template, and the `migrate` command that makes it;
 - the one binary a release carries;
+- the step before the flip that builds the console bundle's module in the release, into the folder the
+  settings name by default;
 - the deployment: the deploy tree under `~/.local/share/bmo-artifact`, the data root it shares with the
   services whose files stand under it, the link that gives a release its local settings, the one unit,
   and the health a deployment waits on.
@@ -197,6 +221,9 @@ root; the whole-data-root backup and its restore drill belong to the testbed.
     test ends, and the first template a binary makes drops every template and copy whose process is gone.
 - **The MCP server** is started as a harness starts it and held to its eleven tools; one test reaches a
   listening service through it.
+- **The console** routes are called over a folder of the test's own holding a module, a stylesheet and
+  words: the manifest is read through bmo-ui's `consoleManifest` by Bun in `client/`, the module's path
+  follows its bytes, and the guard is held to its 401s and 403s on each kind of route.
 - **The OpenAPI document** committed is held to what the code generates.
 - **Repository checks.** Tests in `tests/` also hold the repository to its rules: no Hangul outside the
   bundle's language pack, no personal data in any tracked file (`PERSONAL-DATA.md`), no folder named after

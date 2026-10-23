@@ -1,0 +1,10 @@
+{
+  // The module's entry and its build configuration read the layer's code through the aliases Nuxt gives
+  // the app, and the build runs under Bun, so they take the app's config with Bun's types beside it.
+  "extends": "../.nuxt/tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["./**/*", "../module.config.ts", "../.nuxt/nuxt.d.ts", "../app/**/*.d.ts"],
+  "exclude": []
+}

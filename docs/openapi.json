@@ -111,6 +111,84 @@
         ],
         "type": "object"
       },
+      "ConsoleManifest": {
+        "description": "The console bundle's manifest, in the shape of bmo-ui's console plugin contract (`docs/api.md`,\n\"The console\").",
+        "properties": {
+          "bundle": {
+            "description": "The path the module is answered at.",
+            "type": "string"
+          },
+          "events": {
+            "description": "Whether the screens read the event stream.",
+            "type": "boolean"
+          },
+          "icon": {
+            "description": "The icon drawn beside that name.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The bundle's name, its words' namespace.",
+            "type": "string"
+          },
+          "ownerKey": {
+            "description": "Whether every call the screens make needs the reader's owner key.",
+            "type": "boolean"
+          },
+          "pushKinds": {
+            "description": "The event kinds a console may raise as a notice.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "role": {
+            "description": "The least role a reader holds to open the screens: `administrator` or `member`.",
+            "type": "string"
+          },
+          "screenPath": {
+            "description": "The path the screens stand under.",
+            "type": "string"
+          },
+          "serviceName": {
+            "description": "The service's name, which a console relays it under.",
+            "type": "string"
+          },
+          "stylesheet": {
+            "description": "The path the stylesheet is answered at, where the bundle has one.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "description": "The key, in the bundle's words, of the name a console's menu gives the screen.",
+            "type": "string"
+          },
+          "websocket": {
+            "description": "Whether the screens open a WebSocket.",
+            "type": "boolean"
+          },
+          "words": {
+            "description": "The path the words are answered at.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "title",
+          "icon",
+          "screenPath",
+          "serviceName",
+          "bundle",
+          "words",
+          "role",
+          "ownerKey",
+          "events",
+          "websocket",
+          "pushKinds"
+        ],
+        "type": "object"
+      },
       "ContentOutput": {
         "description": "A document's file, in base64.",
         "properties": {
@@ -714,7 +792,7 @@
     },
     "securitySchemes": {
       "bearer": {
-        "description": "The token of the service's settings.",
+        "description": "The service's token, or the console's, as the settings name them; the console's reaches each operation as its x-console says, under the Owner-Role and Owner-Key headers where it is a screen's.",
         "scheme": "bearer",
         "type": "http"
       }
@@ -723,10 +801,117 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.4"
+    "version": "0.1.0-rev.5"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/console-manifest": {
+      "get": {
+        "operationId": "readConsoleManifest",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsoleManifest"
+                }
+              }
+            },
+            "description": "The console bundle's manifest."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The console bundle's manifest.",
+        "tags": [
+          "console"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/console/words": {
+      "get": {
+        "operationId": "readConsoleWords",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "object"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "The console bundle's words: each locale's under its code."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The console bundle's words: each locale's under its code.",
+        "tags": [
+          "console"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/console/{file}": {
+      "get": {
+        "operationId": "readConsoleFile",
+        "parameters": [
+          {
+            "description": "The file's name, carrying the digest of its bytes.",
+            "in": "path",
+            "name": "file",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/css": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "text/javascript": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The console bundle's module or stylesheet, at the path the manifest names."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The console bundle's module or stylesheet, at the path the manifest names.",
+        "tags": [
+          "console"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
     "/document-kinds": {
       "get": {
         "operationId": "listDocumentKinds",
@@ -781,8 +966,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "bad-request"
-        ]
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/documents": {
@@ -905,8 +1092,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "bad-request"
-        ]
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "screen"
       },
       "post": {
         "operationId": "createDocuments",
@@ -941,8 +1130,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "bad-request"
-        ]
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/documents/{documentId}": {
@@ -981,8 +1172,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       },
       "patch": {
         "operationId": "changeDocumentsByDocumentId",
@@ -1030,8 +1223,10 @@
           "unauthorized",
           "bad-request",
           "not-found",
-          "conflict"
-        ]
+          "conflict",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/documents/{documentId}/attachments": {
@@ -1098,8 +1293,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       },
       "post": {
         "operationId": "createDocumentsAttachmentsByDocumentId",
@@ -1147,8 +1344,10 @@
           "unauthorized",
           "bad-request",
           "not-found",
-          "too-large"
-        ]
+          "too-large",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/documents/{documentId}/attachments/{attachmentId}": {
@@ -1243,8 +1442,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/documents/{documentId}/content": {
@@ -1310,8 +1511,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/documents/{documentId}/picture": {
@@ -1351,8 +1554,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/documents/{documentId}/references": {
@@ -1419,8 +1624,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/documents/{documentId}/references/{referenceId}": {
@@ -1468,8 +1675,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/documents/{documentId}/references/{referenceId}/image": {
@@ -1518,8 +1727,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/events": {
@@ -1617,8 +1828,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "gone"
-        ]
+          "gone",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/health": {
@@ -1644,8 +1857,10 @@
           "health"
         ],
         "x-codes": [
-          "unauthorized"
-        ]
+          "unauthorized",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/imports": {
@@ -1682,8 +1897,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "bad-request"
-        ]
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/imports/{importId}": {
@@ -1722,8 +1939,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/scopes/{scope}": {
@@ -1775,8 +1994,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "closed"
       },
       "get": {
         "operationId": "readScopesByScope",
@@ -1812,8 +2033,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "closed"
       }
     },
     "/shares": {
@@ -1884,8 +2107,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "bad-request"
-        ]
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "screen"
       },
       "post": {
         "operationId": "createShares",
@@ -1931,8 +2156,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/shares/{token}": {
@@ -1963,8 +2190,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       },
       "get": {
         "operationId": "readSharesByToken",
@@ -2000,8 +2229,10 @@
         ],
         "x-codes": [
           "unauthorized",
-          "not-found"
-        ]
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     }
   },
@@ -2017,6 +2248,9 @@
     }
   ],
   "tags": [
+    {
+      "name": "console"
+    },
     {
       "name": "document-kinds"
     },

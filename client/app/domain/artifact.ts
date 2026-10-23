@@ -1,7 +1,6 @@
 import { relayAddress } from "bmo-ui/app/domain/relay";
 
 import { SHARE_SPANS } from "../../shared/config";
-import { underBase } from "./web-address";
 
 import type { Ref } from "vue";
 import type { ShareLink, ShareRoad } from "bmo-ui/app/domain/share-links";
@@ -25,12 +24,12 @@ import type {
 const SERVICE = "artifact";
 
 /**
- * The address a path of the service is called at through the console's relay, under the base path the
- * console app is served at, so a picture, a file or a frame the browser loads by its address reaches the
- * relay as a call does.
+ * The address a path of the service is called at through the console's relay. It stands under the base
+ * path the console app is served at, so a picture, a file or a frame the browser loads by its address
+ * reaches the relay as a call does.
  */
 export function artifactAddress(path: string): string {
-  return underBase(useRuntimeConfig().app.baseURL, relayAddress(SERVICE, path));
+  return relayAddress(SERVICE, path);
 }
 
 /** What the list is narrowed and paged by. */

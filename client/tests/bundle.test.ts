@@ -2,16 +2,24 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { CONSOLE_BUNDLE_FILE, consoleBundle } from "bmo-ui/shared/console-bundle";
 import { WORDING_KEYS } from "bmo-ui/shared/wording-keys";
 
-// The bundle as a console attaches it (bmo-ui's `docs/console-bundles.md`): its declaration reads as the
-// contract's shape, its components carry its prefix, its pages stand under its screen path, and every
-// word its screens ask for is in each of its packs under its namespace, or is one the console answers
-// for bmo-ui.
+// The bundle as a console attaches it (bmo-ui's `docs/console-bundles.md`; `docs/layout.md`, "The console
+// bundle"): the declaration a console building it in reads names this service, its components carry its
+// prefix, its pages stand under its screen path, and every word its screens ask for is in each of its
+// packs under its namespace, or is one the console answers for bmo-ui. The service's own test holds the
+// declaration to the manifest the service answers.
+
+interface Declaration {
+  name: string;
+  serviceName: string;
+  screenPath: string;
+  languagePack: string;
+}
 
 const ROOT = resolve(import.meta.dir, "..");
-const declaration = consoleBundle(JSON.parse(readFileSync(join(ROOT, CONSOLE_BUNDLE_FILE), "utf8")));
+const DECLARATION_FILE = "console-bundle.json";
+const declaration = JSON.parse(readFileSync(join(ROOT, DECLARATION_FILE), "utf8")) as Declaration;
 
 function filesUnder(dir: string): string[] {
   return readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" }).map((one) => join(dir, one));
@@ -41,14 +49,14 @@ function keysHeld(value: unknown, at = ""): string[] {
 }
 
 describe("the bundle's declaration", () => {
-  test("reads as the contract's shape and names this service", () => {
+  test("names this service, its screen path and its words", () => {
     expect(declaration).toMatchObject({ name: "artifact", serviceName: "artifact", screenPath: "/archive", languagePack: "i18n" });
   });
 
   test("is carried by the package with the words it names", () => {
     const manifest = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { files: string[] };
 
-    expect(manifest.files).toEqual(expect.arrayContaining([CONSOLE_BUNDLE_FILE, declaration.languagePack]));
+    expect(manifest.files).toEqual(expect.arrayContaining([DECLARATION_FILE, declaration.languagePack]));
   });
 
   test("has every component named with its prefix and every page under its screen path", () => {

@@ -1,6 +1,6 @@
 {
   "name": "bmo-artifact-client",
-  "version": "0.1.0-rev.4",
+  "version": "0.1.0-rev.5",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -9,6 +9,7 @@
   "scripts": {
     "prepare": "bun x nuxi prepare",
     "api": "openapi-typescript ../docs/openapi.json -o shared/openapi.ts",
+    "module": "vite build --config module.config.ts",
     "typecheck": "nuxi typecheck",
     "check": "bun run typecheck && bun test"
   },
@@ -21,7 +22,7 @@
   },
   "peerDependencies": {
     "@nuxtjs/i18n": "^10.6.0",
-    "bmo-ui": "0.1.0-rev.2",
+    "bmo-ui": "0.1.0-rev.7",
     "nuxt": "^4.5.2",
     "vue-i18n": "^11.4.8"
   },
@@ -31,12 +32,18 @@
   "devDependencies": {
     "@happy-dom/global-registrator": "20.14.5",
     "@nuxtjs/i18n": "^10.6.0",
+    "@tailwindcss/vite": "4.3.3",
     "@types/bun": "^1.3.4",
-    "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.2.tgz",
+    "@vitejs/plugin-vue": "6.0.10",
+    "bmo-ui": "file:vendor/bmo-ui-0.1.0-rev.7.tgz",
     "nuxt": "^4.5.2",
     "openapi-typescript": "7.13.0",
     "playwright-core": "1.62.1",
+    "tailwindcss": "4.3.3",
     "typescript": "^5.9.3",
+    "unplugin-auto-import": "21.1.0",
+    "unplugin-vue-components": "32.1.0",
+    "vite": "8.3.4",
     "vue-i18n": "^11.4.8",
     "vue-tsc": "^3.2.0"
   },
