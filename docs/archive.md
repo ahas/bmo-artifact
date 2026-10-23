@@ -278,7 +278,7 @@ A picture in a document opens in the picture viewer, for a markdown document and
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
   - the list at `/archive`, narrowed by kind and by a phrase, each narrowing held in the address, each
-    document beside its cover picture where it keeps one and alone where it keeps none;
+    document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps none;
   - one document at `/archive/<id>`: its masthead, its file drawn as markdown with a table of contents of
     its kind's depth, its files after it, its references beside it, each with the picture its preview
     declares; a page fills the screen in its frame;

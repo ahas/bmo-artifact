@@ -65,6 +65,16 @@
               :to="`/archive/${item.id}`"
               class="flex items-start gap-3 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50"
             >
+              <img
+                v-if="item.hasPicture && !unpictured.has(item.id)"
+                :src="pictureAddress(item.id)"
+                alt=""
+                loading="lazy"
+                decoding="async"
+                class="size-16 shrink-0 rounded-md border border-default bg-elevated object-cover sm:size-20"
+                @error="unpictured.add(item.id)"
+              >
+
               <div class="flex min-w-0 flex-1 flex-col gap-2">
                 <SearchText class="line-clamp-2 text-sm font-medium break-words text-highlighted" :text="item.title" :query="searched" />
                 <p v-if="item.description !== null" class="line-clamp-2 text-sm text-muted"><SearchText :text="item.description" :query="searched" /></p>
@@ -85,16 +95,6 @@
                   <span class="ms-auto text-sm tabular-nums text-muted">{{ formatStamp(Math.floor(item.createdAt / 1000)) }}</span>
                 </span>
               </div>
-
-              <img
-                v-if="item.hasPicture && !unpictured.has(item.id)"
-                :src="pictureAddress(item.id)"
-                alt=""
-                loading="lazy"
-                decoding="async"
-                class="size-16 shrink-0 rounded-md border border-default bg-elevated object-cover sm:size-20"
-                @error="unpictured.add(item.id)"
-              >
             </NuxtLink>
           </li>
         </ul>
