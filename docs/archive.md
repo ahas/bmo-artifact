@@ -35,6 +35,10 @@ Every document has a kind, and the kind decides how it is filed and read.
   - One catalogue lists the modules, in the order `GET /document-kinds` answers them.
   - The routes and the console bundle ask a document's kind, and never branch on a kind's name.
   - Adding a kind is adding its module and its line in the catalogue.
+- **`search`**: what a research found, as a markdown body in the shape the researcher writes it: the core
+  answer, the three-line summary, the findings in the sections the question shapes, and what could not be
+  confirmed. Its references are the pages the findings rest on. Its contents are its headings, to two
+  levels: a section and the parts inside it.
 - **`record`**: data put in order and kept, as a markdown body. Its contents are its headings, to two
   levels.
 - **`learning`**: study material laid out as a book, as a markdown body. Its contents are three levels: a

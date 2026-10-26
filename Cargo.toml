@@ -4,7 +4,7 @@
 [package]
 name = "bmo-artifact"
 description = "Documents kept, searched and shared: records, learning books, imported pages and HTML pages, with their attachments, references and share links."
-version = "0.1.0-rev.5"
+version = "0.1.0-rev.6"
 edition = "2024"
 license = "MIT"
 publish = false
@@ -21,7 +21,7 @@ axum = "0.8.9"
 # A share link's token, and the bytes a tool or an attachment carries.
 base64 = "0.22.1"
 # The page reader an import and a reference's preview read through: bmo-explorer's published client.
-bmo-explorer = { path = "../explorer", version = "=0.1.0-rev.2" }
+bmo-explorer = { path = "../explorer", version = "=0.1.0-rev.3" }
 chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
 clap = { version = "4.6.7", features = ["derive"] }
 # The settings files and the environment, layered in that order.

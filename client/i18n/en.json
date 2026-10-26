@@ -33,7 +33,8 @@
       "import": "Original",
       "learning": "Learning material",
       "page": "Page",
-      "record": "Record"
+      "record": "Record",
+      "search": "Research"
     },
     "action": {
       "back_to_list": "Back to the list",

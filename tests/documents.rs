@@ -117,7 +117,7 @@ async fn a_document_is_refused_where_its_input_is_not_the_shape_its_kind_takes()
   };
 
   for body in [
-    json!({ "kind": "search", "title": "x", "body": "y", "actorName": "tester", "labels": {} }),
+    json!({ "kind": "nobody-knows", "title": "x", "body": "y", "actorName": "tester", "labels": {} }),
     json!({ "kind": "record", "title": " ", "body": "y", "actorName": "tester", "labels": {} }),
     json!({ "kind": "record", "title": "x", "body": "", "actorName": "tester", "labels": {} }),
     json!({ "kind": "record", "title": "x", "html": "<p>y</p>", "actorName": "tester", "labels": {} }),
@@ -490,10 +490,10 @@ async fn the_kinds_answer_for_themselves_and_the_service_is_ready() {
 
   assert_eq!(
     named,
-    [("record", false, 2), ("learning", false, 3), ("import", false, 3), ("page", true, 0)]
+    [("search", false, 2), ("record", false, 2), ("learning", false, 3), ("import", false, 3), ("page", true, 0)]
   );
   assert_eq!(
-    service.call(Method::GET, "/document-kinds?after=3", None).await.json()["items"][0]["name"],
+    service.call(Method::GET, "/document-kinds?after=4", None).await.json()["items"][0]["name"],
     "page"
   );
 

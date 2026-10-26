@@ -38,7 +38,7 @@ src/
   plumbing/                routes, commands, refusals, the bearer check and each route's OpenAPI operation
   store/                   the statements on the document tables, by resource, and the clock their columns keep
     migration/             the migrations and the migrator
-  kinds/                   the catalogue, and the four kinds: record, learning, import, page
+  kinds/                   the catalogue, and the five kinds: search, record, learning, import, page
   documents/
     filing.rs              a document filed and rewritten: its row, body, references and file
     keeper.rs              a file kept beside a document, read for what it is

@@ -33,7 +33,8 @@
       "import": "원문",
       "learning": "학습자료",
       "page": "페이지",
-      "record": "기록"
+      "record": "기록",
+      "search": "조사"
     },
     "action": {
       "back_to_list": "목록으로",
