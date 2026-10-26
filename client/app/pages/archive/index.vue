@@ -1,7 +1,8 @@
 <template>
   <UDashboardPanel id="artifact-documents">
     <template #header>
-      <UDashboardNavbar :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
+      <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own. -->
+      <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
       <!-- The search takes what width the row has, and the kind filter and the reread keep theirs. -->
       <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }">
@@ -111,6 +112,7 @@
 import { failureText } from "bmo-ui/app/domain/errors";
 import { countText } from "bmo-ui/app/domain/numbers";
 import { formatStamp } from "bmo-ui/app/domain/time";
+import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENTS_PAGE_SIZE, DOCUMENTS_PHRASE_LIMIT } from "../../../shared/config";
@@ -123,6 +125,8 @@ import type { ArtifactDocument } from "../../../shared/types";
 // narrowing is held in the address, so a reload or a shared address shows the same list.
 
 const { t } = useI18n();
+// Whether a console offers its title bar, under the key bmo-ui's bundle contract names.
+const barOffered = inject("bmo-console-title-bar", null) !== null;
 const route = useRoute();
 const router = useRouter();
 const kinds = useKinds();

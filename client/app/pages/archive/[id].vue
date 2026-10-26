@@ -3,7 +3,9 @@
        parts that scroll on their own with a boundary between them; on a phone the side rises from the
        bottom edge over the text. A page fills the screen in its frame. -->
   <UDashboardPanel id="artifact-document" :ui="{ body: 'p-0 sm:p-0 gap-0 overflow-hidden [&>*]:max-w-none' }">
-    <template #header>
+    <!-- Under a console that offers its title bar the console draws it, and the way back to the list and the
+         document's number stand beside its name; alone, the screen draws its own bar holding both. -->
+    <template v-if="barOffer === null" #header>
       <UDashboardNavbar :title="$t('artifact.title.document', { id: documentId })" icon="i-material-symbols-archive-outline">
         <template #leading>
           <UTooltip :text="$t('artifact.action.back_to_list')">
@@ -14,6 +16,13 @@
     </template>
 
     <template #body>
+      <!-- The way back to the list and the document's number, beside the console bar's name. -->
+      <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
+        <UTooltip :text="$t('artifact.action.back_to_list')">
+          <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
+        </UTooltip>
+        <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
+      </Teleport>
       <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2 p-4">
         <p class="text-sm text-error">{{ failed }}</p>
         <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" icon="i-material-symbols-refresh" :label="$t('artifact.action.refresh')" @click="load" />
@@ -72,6 +81,7 @@ import { useNarrow } from "bmo-ui/app/domain/screen";
 import { scrollWithin } from "bmo-ui/app/domain/scroll-within";
 import { FULL_SHEET, SPLIT_HANDLE } from "bmo-ui/app/domain/side-parts";
 import { formatStamp } from "bmo-ui/app/domain/time";
+import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { SHARE_SPANS } from "../../../shared/config";
@@ -97,6 +107,9 @@ import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactRefere
 // refers to, each read from the service through the console's relay.
 
 const { t } = useI18n();
+// The console's title bar, where a console offers it under the key bmo-ui's bundle contract names: the place in it
+// the screen lays what acts on it as a whole.
+const barOffer = inject<{ screenActions: string } | null>("bmo-console-title-bar", null);
 const SIDES: SplitterItem[] = [
   { slot: "body", minSize: 40, defaultSize: 72 },
   { slot: "side", minSize: 16, defaultSize: 28 }

@@ -12,8 +12,10 @@ import type { ConsoleBundleModule } from "bmo-ui/shared/console-manifest";
 // around it.
 const bundle: ConsoleBundleModule = {
   routes: [
-    { path: "/archive", name: "archive", component: ListScreen },
-    { path: "/archive/:id", name: "archive-id", component: DocumentScreen },
+    // The list and one document stand under the console's title bar (bmo-ui's `docs/console-bundles.md`, the
+    // title bar).
+    { path: "/archive", name: "archive", component: ListScreen, meta: { consoleTitleBar: true } },
+    { path: "/archive/:id", name: "archive-id", component: DocumentScreen, meta: { consoleTitleBar: true } },
     { path: "/archive/share/:token", name: "archive-share-token", component: ShareScreen, meta: { layout: false } }
   ]
 };
