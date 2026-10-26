@@ -1,6 +1,6 @@
 {
   "name": "bmo-artifact-client",
-  "version": "0.1.0-rev.7",
+  "version": "0.1.0-rev.8",
   "license": "MIT",
   "private": true,
   "type": "module",

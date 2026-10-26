@@ -808,7 +808,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.7"
+    "version": "0.1.0-rev.8"
   },
   "openapi": "3.1.0",
   "paths": {

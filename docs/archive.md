@@ -153,8 +153,10 @@ address and the file root are settings; no other unit reads or writes either.
 
 - **A link is a row rather than a signature:** a link is read back long after it was made, and ended
   before its time, neither of which a signed capability can do.
-- **The token is the link entire:** 32 random bytes in URL-safe base64, from which nothing is derived,
-  naming the one row it was written for. A token not shaped as one issued here opens nothing.
+- **The token is the link entire:** eight random characters of the URL-safe alphabet (six random bytes in
+  base64), from which nothing is derived, naming the one row it was written for; a token that meets one
+  already kept is drawn again. A token of eight to 128 such characters is one shaped as issued here, and any
+  other opens nothing.
 - **A document has at most one live link.** Asking for a link where one stands answers the one that
   stands, so a link somebody is still handing out is never quietly replaced.
 - **A link ends at the second its time falls in,** never before. Every read and every making sweeps away

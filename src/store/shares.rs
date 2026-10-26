@@ -37,17 +37,19 @@ impl Link {
   }
 }
 
-const TOKEN_BYTES: usize = 32;
+// Six random bytes make eight URL-safe characters: short enough to read out, wide enough that the links
+// kept never meet, and drawn again where one does.
+const TOKEN_BYTES: usize = 6;
 
-/// A new token: wide enough that guessing one is not a road, and URL-safe so the whole of it stands as one
-/// path segment.
+/// A new token: eight characters of the URL-safe alphabet, so the whole of it stands as one short path
+/// segment.
 pub fn share_token() -> String {
   URL_SAFE_NO_PAD.encode(rand::random::<[u8; TOKEN_BYTES]>())
 }
 
 /// Whether a token is shaped like one issued here. Anything else opens nothing.
 pub fn is_share_token(token: &str) -> bool {
-  (22..=128).contains(&token.len())
+  (8..=128).contains(&token.len())
     && token.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
 }
 
@@ -142,18 +144,35 @@ pub async fn create(
   now: i64,
   expires_at: Option<i64>,
 ) -> Result<Option<Link>, Refusal> {
-  one(
-    db,
-    &format!(
-      r#"INSERT INTO "web_search_shares" ("share_token", "search_id", "created_by", "created_at", "expires_at")
-         VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING RETURNING {COLUMNS}"#
-    ),
-    vec![share_token().into(), document_id.into(), created_by.into(), now.into(), expires_at.into()],
-  )
-  .await?
-  .as_ref()
-  .map(link_of)
-  .transpose()
+  // A token that meets one already kept is drawn again; a document that already has its link gets none.
+  for _ in 0..8 {
+    let written = one(
+      db,
+      &format!(
+        r#"INSERT INTO "web_search_shares" ("share_token", "search_id", "created_by", "created_at", "expires_at")
+           VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING RETURNING {COLUMNS}"#
+      ),
+      vec![share_token().into(), document_id.into(), created_by.into(), now.into(), expires_at.into()],
+    )
+    .await?;
+
+    if let Some(row) = written.as_ref() {
+      return link_of(row).map(Some);
+    }
+
+    if one(
+      db,
+      r#"SELECT 1 FROM "web_search_shares" WHERE "search_id" = $1"#,
+      vec![document_id.into()],
+    )
+    .await?
+    .is_some()
+    {
+      return Ok(None);
+    }
+  }
+
+  Err(Refusal::failed("no share token could be drawn that was not already kept".to_owned()))
 }
 
 /// The link one token names taken away: whether there was one to take.
