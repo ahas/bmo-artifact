@@ -183,6 +183,9 @@ pub struct DocumentInput {
   pub actor_name: String,
   #[serde(default)]
   pub labels: Labels,
+  /// What it reads as before it is opened, where the filer says it; else it is read out of the body or the page.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub description: Option<String>,
 }
 
 /// A document rewritten under its number: each field given replaces its own, and the labels replace the

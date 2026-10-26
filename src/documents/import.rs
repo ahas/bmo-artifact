@@ -289,6 +289,7 @@ pub async fn import_page(
     scope: asked.scope.map(str::to_owned),
     actor_name: asked.actor_name.to_owned(),
     labels: Labels::new(),
+    description: None,
   };
   let document_id = file_markdown(db, root, &input, references).await.map_err(|why: Refusal| why.detail)?;
   let mut attachments = Vec::new();

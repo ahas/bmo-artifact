@@ -108,7 +108,8 @@ address and the file root are settings; no other unit reads or writes either.
 - **The title** is the one given; a page whose title is left empty takes its own `title` element, and a
   page with neither is refused.
 - **The description** is what the document reads as before it is opened:
-  - for a markdown document, the opening prose of its body as plain words, headings, pictures, code and
+  - the one the filer gives, cut like the others, where it gives one;
+  - else, for a markdown document, the opening prose of its body as plain words, headings, pictures, code and
     tables left out, cut at a space near 160 characters and marked as cut;
   - for a page, its description meta, else the start of its words cut the same way.
 - **The references** of a markdown document are each distinct http or https link its body makes, in the

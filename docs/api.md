@@ -81,7 +81,7 @@ lives」).
 | `scope` | what it is held under, null where none was given |
 | `actorName` | who filed it |
 | `labels` | the caller's metadata |
-| `description` | what it reads as before it is opened: a page's declared description, else the opening prose of its body as plain words, cut at 160 characters; null where it has none |
+| `description` | what it reads as before it is opened: the one the filer gave, else a page's declared description, else the opening prose of its body as plain words; cut at 160 characters; null where it has none |
 | `attachmentCount` | how many files it keeps |
 | `hasPicture` | whether it keeps a picture, so `GET /documents/{documentId}/picture` has a cover to send |
 | `createdAt`, `changedAt` | when it was filed and last rewritten |
@@ -106,7 +106,7 @@ answers reads as `record`.
 | Route | Takes | Answers |
 |---|---|---|
 | `GET /documents` | query `kind?`, `scope?`, `label?`, `q?`, `before?`, `after?`, `limit?` | 200, a page of documents |
-| `POST /documents` | `kind`, `title`, `body?`, `html?`, `scope?`, `actorName`, `labels` | 201, the document |
+| `POST /documents` | `kind`, `title`, `body?`, `html?`, `scope?`, `actorName`, `labels`, `description?` | 201, the document |
 | `GET /documents/{documentId}` | | 200, the document |
 | `PATCH /documents/{documentId}` | `title?`, `body?`, `html?`, `labels` | 200, the document |
 | `GET /documents/{documentId}/content` | query `scheme?`, `download?` | 200, the file |

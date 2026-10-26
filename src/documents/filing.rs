@@ -8,7 +8,9 @@ use pulldown_cmark::{Event, Parser, Tag, TagEnd};
 use sea_orm::{ConnectionTrait, DatabaseConnection, TransactionTrait};
 
 use super::keeper::{document_folder, write_private};
-use super::page_reading::{PICTURE_STEM, collapsed, markdown_description, page_description, read_html};
+use super::page_reading::{
+  PICTURE_STEM, collapsed, cut_description, markdown_description, page_description, read_html,
+};
 use crate::Refusal;
 use crate::kinds::{self, Kind};
 use crate::store::documents::{self, NewRow};
@@ -184,6 +186,8 @@ async fn file_written(
   input: &DocumentInput,
   written: &Written,
 ) -> Result<i64, Refusal> {
+  // The description the filer gives stands over the one read out of the body or the page.
+  let given = input.description.as_deref().and_then(cut_description);
   let tx = db.begin().await?;
   let id = documents::insert(
     &tx,
@@ -193,7 +197,7 @@ async fn file_written(
       scope: input.scope.as_deref().filter(|scope| !scope.is_empty()),
       actor_name: input.actor_name.trim(),
       labels: &input.labels,
-      description: written.description.as_deref(),
+      description: given.as_deref().or(written.description.as_deref()),
     },
   )
   .await?;

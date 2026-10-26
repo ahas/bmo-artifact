@@ -108,6 +108,24 @@ async fn a_record_is_filed_read_listed_and_searched_by_its_words_its_labels_and_
 }
 
 #[tokio::test]
+async fn a_description_the_filer_gives_stands_over_the_one_read_from_the_body() {
+  let service = Service::new().await;
+  let mut body = record("Rates", "# Rates\n\nThe won closed at 1,323.1 to the dollar.");
+  body["description"] = json!("  Today's won/dollar closing rate  ");
+  let filed = service.call(Method::POST, "/documents", Some(body)).await;
+
+  assert_eq!(filed.status, StatusCode::CREATED, "{}", filed.json());
+  assert_eq!(filed.json()["description"], "Today's won/dollar closing rate");
+
+  let mut blank = record("Rates again", "# Rates\n\nThe won closed at 1,323.1 to the dollar.");
+  blank["description"] = json!("   ");
+  let filed = service.call(Method::POST, "/documents", Some(blank)).await;
+
+  assert_eq!(filed.status, StatusCode::CREATED, "{}", filed.json());
+  assert_eq!(filed.json()["description"], "The won closed at 1,323.1 to the dollar.");
+}
+
+#[tokio::test]
 async fn a_document_is_refused_where_its_input_is_not_the_shape_its_kind_takes() {
   let service = Service::new().await;
   let refused = |body: Value| {
@@ -490,7 +508,13 @@ async fn the_kinds_answer_for_themselves_and_the_service_is_ready() {
 
   assert_eq!(
     named,
-    [("search", false, 2), ("record", false, 2), ("learning", false, 3), ("import", false, 3), ("page", true, 0)]
+    [
+      ("search", false, 2),
+      ("record", false, 2),
+      ("learning", false, 3),
+      ("import", false, 3),
+      ("page", true, 0)
+    ]
   );
   assert_eq!(
     service.call(Method::GET, "/document-kinds?after=4", None).await.json()["items"][0]["name"],
