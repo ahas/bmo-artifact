@@ -10,7 +10,7 @@ use super::documents::document;
 use super::files::PRIVATE_DAY;
 use crate::Refusal;
 use crate::documents::preview::PreviewCache;
-use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, bytes_answer, id_parameter, json_answer, query};
 use crate::reader::Preview;
 use crate::store::page_limit;
@@ -29,13 +29,71 @@ fn reference_of(cited: Cited, preview: Option<Preview>) -> Reference {
   }
 }
 
+/// One reference a document holds; a reference of another document is absent.
+pub async fn cited_in(standing: &Standing, id: i64, reference: i64) -> Result<Cited, Refused> {
+  references::read(standing.db().await?, id, reference)
+    .await?
+    .ok_or_else(|| Refusal::absent(format!("document {id} holds no reference {reference}")).into())
+}
+
 async fn cited(call: &mut Call) -> Result<Cited, Refused> {
   let id = call.path_id("documentId").await?;
   let reference = call.path_id("referenceId").await?;
 
-  references::read(call.standing().db().await?, id, reference)
-    .await?
-    .ok_or_else(|| Refusal::absent(format!("document {id} holds no reference {reference}")).into())
+  cited_in(call.standing(), id, reference).await
+}
+
+/// A page of the pages a document refers to, with what is kept of their previews.
+pub async fn reference_page(standing: &Standing, id: i64, asked: &PageQuery) -> Result<Response, Refused> {
+  let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
+
+  document(standing, id).await?;
+
+  let (cited, more) = references::list(standing.db().await?, id, asked.after, limit).await?;
+  let previews: &PreviewCache = &standing.previews;
+
+  Ok(answer(
+    StatusCode::OK,
+    &ReferencePage {
+      items: cited
+        .into_iter()
+        .map(|cited| {
+          let held = previews.held(&cited.url);
+
+          reference_of(cited, held)
+        })
+        .collect(),
+      more,
+    },
+  ))
+}
+
+/// One reference with its preview, read where none is kept fresh.
+pub async fn reference(standing: &Standing, cited: Cited) -> Result<Response, Refused> {
+  let preview = standing.previews.preview(&cited.url).await;
+
+  Ok(answer(StatusCode::OK, &reference_of(cited, preview)))
+}
+
+/// The preview picture of a page a document refers to.
+pub async fn reference_image(standing: &Standing, cited: Cited) -> Result<Response, Refused> {
+  let previews = &standing.previews;
+  let none =
+    || Refused::from(Refusal::absent(format!("{} declares no picture that could be read", cited.url)));
+  let address = previews.preview(&cited.url).await.and_then(|preview| preview.image).ok_or_else(none)?;
+  let picture = previews.image(&address).await.ok_or_else(none)?;
+  let mut response = Response::new(Body::from(picture.bytes));
+  let headers = response.headers_mut();
+
+  if let Ok(media_type) = HeaderValue::from_str(&picture.media_type) {
+    headers.insert(header::CONTENT_TYPE, media_type);
+  }
+
+  headers.insert(header::CACHE_CONTROL, HeaderValue::from_static(PRIVATE_DAY));
+  headers.insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
+  headers.insert(header::CONTENT_SECURITY_POLICY, HeaderValue::from_static("sandbox"));
+
+  Ok(response)
 }
 
 pub struct ListReferences;
@@ -48,27 +106,8 @@ impl Route for ListReferences {
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
     let asked: PageQuery = call.query()?;
-    let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
 
-    document(call.standing(), id).await?;
-
-    let (cited, more) = references::list(call.standing().db().await?, id, asked.after, limit).await?;
-    let previews: &PreviewCache = &call.standing().previews;
-
-    Ok(answer(
-      StatusCode::OK,
-      &ReferencePage {
-        items: cited
-          .into_iter()
-          .map(|cited| {
-            let held = previews.held(&cited.url);
-
-            reference_of(cited, held)
-          })
-          .collect(),
-        more,
-      },
-    ))
+    reference_page(call.standing(), id, &asked).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
@@ -95,9 +134,8 @@ impl Route for ReadReference {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let cited = cited(&mut call).await?;
-    let preview = call.standing().previews.preview(&cited.url).await;
 
-    Ok(answer(StatusCode::OK, &reference_of(cited, preview)))
+    reference(call.standing(), cited).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
@@ -124,23 +162,8 @@ impl Route for ReadReferenceImage {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let cited = cited(&mut call).await?;
-    let previews = &call.standing().previews;
-    let none =
-      || Refused::from(Refusal::absent(format!("{} declares no picture that could be read", cited.url)));
-    let address = previews.preview(&cited.url).await.and_then(|preview| preview.image).ok_or_else(none)?;
-    let picture = previews.image(&address).await.ok_or_else(none)?;
-    let mut response = Response::new(Body::from(picture.bytes));
-    let headers = response.headers_mut();
 
-    if let Ok(media_type) = HeaderValue::from_str(&picture.media_type) {
-      headers.insert(header::CONTENT_TYPE, media_type);
-    }
-
-    headers.insert(header::CACHE_CONTROL, HeaderValue::from_static(PRIVATE_DAY));
-    headers.insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
-    headers.insert(header::CONTENT_SECURITY_POLICY, HeaderValue::from_static("sandbox"));
-
-    Ok(response)
+    reference_image(call.standing(), cited).await
   }
 
   fn operation(&self, _generator: &mut SchemaGenerator) -> Operation {

@@ -12,4 +12,5 @@ pub mod hosted_page;
 pub mod imports;
 pub mod references;
 pub mod scopes;
+pub mod share_reads;
 pub mod shares;

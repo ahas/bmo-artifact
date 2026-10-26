@@ -38,8 +38,19 @@ async fn scope_of(standing: &Standing, document_id: i64) -> Result<Option<String
   )
 }
 
-fn token_parameter() -> serde_json::Value {
+/// The path parameter a share link's token is named by.
+pub fn token_parameter() -> serde_json::Value {
   text_parameter("token", "The share link's token.")
+}
+
+/// The document a live link opens, swept first; a token that names no live link is absent.
+pub async fn shared_document(standing: &Standing, token: &str) -> Result<i64, Refused> {
+  sweep(standing).await?;
+
+  shares::by_token(standing.db().await?, token)
+    .await?
+    .map(|link| link.document_id)
+    .ok_or_else(|| Refusal::absent("no live share link has this token").into())
 }
 
 pub struct ListShares;
@@ -148,7 +159,8 @@ pub struct ReadShare;
 impl Route for ReadShare {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/shares/{token}";
-  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
+  // A share read: the token is the whole of what it is held to (bmo-ui's `docs/console-bundles.md`, "Share pages").
+  const CONSOLE: ConsoleReach = ConsoleReach::Open;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let token = call.path_text("token").await?;

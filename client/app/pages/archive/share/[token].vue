@@ -15,7 +15,7 @@
     <ArtifactPageFrame
       v-else-if="held.kind?.hosted === true"
       :title="held.document.title"
-      :page="(scheme, download) => contentAddress(held!.document.id, scheme, download)"
+      :page="(scheme, download) => sharedContentAddress(token, scheme, download)"
       :chrome="false"
     />
 
@@ -59,28 +59,27 @@ import { useI18n } from "vue-i18n";
 
 import { DOCUMENT_PALETTE } from "../../../../shared/document-design";
 import { SHARE_ROBOTS, shareHeadTags } from "../../../../shared/share-head";
+import { contentsOf } from "../../../domain/document-view";
 import {
-  attachmentAddress,
-  contentAddress,
-  pictureAddress,
-  readAttachments,
-  readContent,
-  readDocument,
-  readKinds,
-  readReference,
-  readReferences,
-  readShare,
-  referenceImageAddress
-} from "../../../domain/artifact";
-import { contentsOf, kindOf } from "../../../domain/document-view";
+  readSharedAttachments,
+  readSharedContent,
+  readSharedDocument,
+  readSharedKind,
+  readSharedReference,
+  readSharedReferences,
+  sharedAttachmentAddress,
+  sharedContentAddress,
+  sharedPictureAddress,
+  sharedReferenceImageAddress
+} from "../../../domain/shared-document";
 
 import type { SplitterItem } from "@nuxt/ui";
 import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactReference } from "../../../../shared/types";
 
-// What a share link opens. The page knows its document by the link its token names: it reads the link,
-// then the document the link opens, its file, its files and the pages it refers to. Whoever serves the
-// screen to a reader with no sign-in relays these reads for a link that stands (`docs/api.md`, "Share
-// links").
+// What a share link opens. Every read the page makes carries its token and reads the one document the link
+// opens: the document, its kind, its file, its files and the pages it refers to. They are the share reads the
+// manifest names, which whoever serves the screen relays to a reader with no sign-in (`docs/api.md`, "Share
+// links"; bmo-ui's `docs/console-bundles.md`, "Share pages").
 
 definePageMeta({ layout: false });
 
@@ -126,14 +125,14 @@ const bodyProps = computed(() => ({
   markdown: held.value?.markdown ?? "",
   slugs: contents.value.slugs,
   attachments: held.value?.attachments ?? [],
-  address: (attachment: ArtifactAttachment, download = false) => attachmentAddress(attachment.documentId, attachment.id, download)
+  address: (attachment: ArtifactAttachment, download = false) => sharedAttachmentAddress(token.value, attachment.id, download)
 }));
 
 const sideProps = computed(() => ({
   contents: contents.value.entries,
   references: held.value?.references ?? [],
-  image: (reference: ArtifactReference) => referenceImageAddress(reference.documentId, reference.id),
-  read: (reference: ArtifactReference) => readReference(reference.documentId, reference.id)
+  image: (reference: ArtifactReference) => sharedReferenceImageAddress(token.value, reference.id),
+  read: (reference: ArtifactReference) => readSharedReference(token.value, reference.id)
 }));
 
 async function goTo(slug: string): Promise<void> {
@@ -151,11 +150,10 @@ async function goTo(slug: string): Promise<void> {
 const link = useRequestURL({ xForwardedHost: true });
 const { data: head } = await useAsyncData(`artifact-share-head:${token.value}`, async () => {
   try {
-    const share = await readShare(token.value);
-    const document = await readDocument(share.documentId);
+    const document = await readSharedDocument(token.value);
 
     // A document that keeps no picture has none to show.
-    const image = document.hasPicture ? new URL(pictureAddress(document.id), link.origin).toString() : null;
+    const image = document.hasPicture ? new URL(sharedPictureAddress(token.value), link.origin).toString() : null;
 
     return { title: document.title, description: document.description, image };
   } catch {
@@ -178,14 +176,11 @@ async function load(): Promise<void> {
   failed.value = "";
 
   try {
-    const share = await readShare(token.value);
-    const id = share.documentId;
-    const [document, catalogue] = await Promise.all([readDocument(id), readKinds()]);
-    const kind = kindOf(catalogue, document.kind);
+    const [document, kind] = await Promise.all([readSharedDocument(token.value), readSharedKind(token.value)]);
     const [markdown, attachments, references] = await Promise.all([
-      kind?.hosted === true ? Promise.resolve("") : readContent(id),
-      readAttachments(id),
-      readReferences(id)
+      kind.hosted ? Promise.resolve("") : readSharedContent(token.value),
+      readSharedAttachments(token.value),
+      readSharedReferences(token.value)
     ]);
 
     if (mine === generation) held.value = { document, kind, markdown, attachments, references };

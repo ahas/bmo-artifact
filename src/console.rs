@@ -8,6 +8,7 @@ use axum::http::{HeaderMap, StatusCode};
 use sha2::{Digest, Sha256};
 
 use crate::Refusal;
+use crate::http::share_reads::SHARE_READS;
 use crate::wire::ConsoleManifest;
 
 /// The route of the service's own API the manifest is answered at.
@@ -159,6 +160,7 @@ impl ConsoleBundle {
       events: false,
       websocket: false,
       push_kinds: Vec::new(),
+      share_reads: SHARE_READS.iter().map(|path| (*path).to_owned()).collect(),
     })
   }
 

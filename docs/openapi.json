@@ -153,6 +153,13 @@
             "description": "The service's name, which a console relays it under.",
             "type": "string"
           },
+          "shareReads": {
+            "description": "The reads a share token alone permits, each a path pattern carrying `{token}`.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "stylesheet": {
             "description": "The path the stylesheet is answered at, where the bundle has one.",
             "type": [
@@ -185,7 +192,8 @@
           "ownerKey",
           "events",
           "websocket",
-          "pushKinds"
+          "pushKinds",
+          "shareReads"
         ],
         "type": "object"
       },
@@ -913,10 +921,9 @@
         ],
         "x-codes": [
           "unauthorized",
-          "not-found",
-          "forbidden"
+          "not-found"
         ],
-        "x-console": "screen"
+        "x-console": "open"
       }
     },
     "/document-kinds": {
@@ -2236,10 +2243,537 @@
         ],
         "x-codes": [
           "unauthorized",
-          "not-found",
-          "forbidden"
+          "not-found"
         ],
-        "x-console": "screen"
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/attachments": {
+      "get": {
+        "operationId": "listSharesAttachmentsByToken",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the members after this one, by its id.",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "description": "Only the members after this one, by its id.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentPage"
+                }
+              }
+            },
+            "description": "The attachments of the document a live link opens."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The attachments of the document a live link opens.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/attachments/{attachmentId}": {
+      "get": {
+        "operationId": "readSharesAttachmentsByTokenAttachmentId",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachmentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Send the file itself to keep, under its name.",
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "description": "Send the file itself to keep, under its name.",
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
+            "in": "query",
+            "name": "scheme",
+            "required": false,
+            "schema": {
+              "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "One byte range of the file.",
+            "in": "header",
+            "name": "Range",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "One attachment's bytes of the document a live link opens, with Range."
+          },
+          "206": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "One attachment's bytes of the document a live link opens, with Range."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "One attachment's bytes of the document a live link opens, with Range.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/content": {
+      "get": {
+        "operationId": "listSharesContentByToken",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Send the file itself to keep, under its name.",
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "description": "Send the file itself to keep, under its name.",
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
+            "in": "query",
+            "name": "scheme",
+            "required": false,
+            "schema": {
+              "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The file of the document a live link opens."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The file of the document a live link opens.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/document": {
+      "get": {
+        "operationId": "listSharesDocumentByToken",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            },
+            "description": "The document a live link opens."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The document a live link opens.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/kind": {
+      "get": {
+        "operationId": "listSharesKindByToken",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKind"
+                }
+              }
+            },
+            "description": "The kind of the document a live link opens."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The kind of the document a live link opens.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/picture": {
+      "get": {
+        "operationId": "listSharesPictureByToken",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The cover picture of the document a live link opens."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The cover picture of the document a live link opens.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/references": {
+      "get": {
+        "operationId": "listSharesReferencesByToken",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the members after this one, by its id.",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "description": "Only the members after this one, by its id.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferencePage"
+                }
+              }
+            },
+            "description": "The pages the document a live link opens refers to, with what is kept of their previews."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The pages the document a live link opens refers to, with what is kept of their previews.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/references/{referenceId}": {
+      "get": {
+        "operationId": "readSharesReferencesByTokenReferenceId",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "referenceId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reference"
+                }
+              }
+            },
+            "description": "A page the document a live link opens refers to, with its preview."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "A page the document a live link opens refers to, with its preview.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
+    "/shares/{token}/references/{referenceId}/image": {
+      "get": {
+        "operationId": "listSharesReferencesImageByTokenReferenceId",
+        "parameters": [
+          {
+            "description": "The share link's token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "referenceId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "The preview picture of a page the document a live link opens refers to."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The preview picture of a page the document a live link opens refers to.",
+        "tags": [
+          "shares"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
       }
     }
   },

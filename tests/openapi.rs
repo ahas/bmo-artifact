@@ -55,6 +55,15 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "POST /shares",
     "GET /shares/{token}",
     "DELETE /shares/{token}",
+    "GET /shares/{token}/document",
+    "GET /shares/{token}/kind",
+    "GET /shares/{token}/content",
+    "GET /shares/{token}/picture",
+    "GET /shares/{token}/attachments",
+    "GET /shares/{token}/attachments/{attachmentId}",
+    "GET /shares/{token}/references",
+    "GET /shares/{token}/references/{referenceId}",
+    "GET /shares/{token}/references/{referenceId}/image",
     "POST /imports",
     "GET /imports/{importId}",
     "GET /scopes/{scope}",
@@ -72,7 +81,13 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   let reach = |path: &str, method: &str| document["paths"][path][method]["x-console"].clone();
 
   assert_eq!(reach("/console-manifest", "get"), "open");
-  assert_eq!(reach("/console/{file}", "get"), "screen");
+  assert_eq!(reach("/console/{file}", "get"), "open");
+  assert_eq!(reach("/shares/{token}", "get"), "open");
+  assert_eq!(reach("/shares/{token}", "delete"), "screen");
+
+  for read in bmo_artifact::http::share_reads::SHARE_READS {
+    assert_eq!(reach(read, "get"), "open", "{read}");
+  }
   assert_eq!(reach("/documents", "get"), "screen");
   assert_eq!(reach("/documents", "post"), "closed");
   assert_eq!(document["info"]["version"], bmo_artifact::VERSION);

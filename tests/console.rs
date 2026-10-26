@@ -74,6 +74,13 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
   assert_eq!(read["ownerKey"], false);
   assert_eq!(read["apiPrefix"], "/");
   assert_eq!(read["words"], "/console/words");
+  assert_eq!(read["shareReads"], manifest["shareReads"]);
+  assert!(
+    read["shareReads"]
+      .as_array()
+      .is_some_and(|reads| reads.contains(&json!("/shares/{token}/document"))),
+    "{read}"
+  );
 
   let declaration: Value = serde_json::from_str(
     &std::fs::read_to_string(Path::new(ROOT).join("client/console-bundle.json")).expect("the declaration"),
@@ -86,12 +93,9 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
 
   let bundle = manifest["bundle"].as_str().expect("the module's path");
   let stylesheet = manifest["stylesheet"].as_str().expect("the stylesheet's path");
-  let module = service
-    .call_by(Some(CONSOLE_TOKEN), Method::GET, bundle, None, &[("owner-role", "member")])
-    .await;
-  let sheet = service
-    .call_by(Some(CONSOLE_TOKEN), Method::GET, stylesheet, None, &[("owner-role", "member")])
-    .await;
+  // A reader with no sign-in loads them to open a share page, so they are answered with no role.
+  let module = service.call_by(Some(CONSOLE_TOKEN), Method::GET, bundle, None, &[]).await;
+  let sheet = service.call_by(Some(CONSOLE_TOKEN), Method::GET, stylesheet, None, &[]).await;
   let words = service.call_by(Some(CONSOLE_TOKEN), Method::GET, "/console/words", None, &[]).await;
 
   assert_eq!((module.status, module.bytes.as_slice()), (StatusCode::OK, MODULE));
@@ -177,12 +181,8 @@ async fn a_call_without_a_token_is_refused_401() {
 #[tokio::test]
 async fn the_console_reaches_the_screens_routes_only_under_a_role_allowing_member() {
   let service = built().await;
-  let bundle = service.call(Method::GET, "/console-manifest", None).await.json()["bundle"]
-    .as_str()
-    .expect("a path")
-    .to_owned();
 
-  for path in [bundle.as_str(), "/documents", "/document-kinds", "/shares"] {
+  for path in ["/documents", "/document-kinds", "/shares"] {
     for headers in [&[][..], &[("owner-role", "guest")][..], &[("owner-role", "")][..]] {
       let refused = service.call_by(Some(CONSOLE_TOKEN), Method::GET, path, None, headers).await;
 

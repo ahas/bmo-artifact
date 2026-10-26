@@ -350,6 +350,159 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shares/{token}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The attachments of the document a live link opens. */
+        get: operations["listSharesAttachmentsByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One attachment's bytes of the document a live link opens, with Range. */
+        get: operations["readSharesAttachmentsByTokenAttachmentId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The file of the document a live link opens. */
+        get: operations["listSharesContentByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The document a live link opens. */
+        get: operations["listSharesDocumentByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/kind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The kind of the document a live link opens. */
+        get: operations["listSharesKindByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/picture": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The cover picture of the document a live link opens. */
+        get: operations["listSharesPictureByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The pages the document a live link opens refers to, with what is kept of their previews. */
+        get: operations["listSharesReferencesByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/references/{referenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A page the document a live link opens refers to, with its preview. */
+        get: operations["readSharesReferencesByTokenReferenceId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shares/{token}/references/{referenceId}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The preview picture of a page the document a live link opens refers to. */
+        get: operations["listSharesReferencesImageByTokenReferenceId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -412,6 +565,8 @@ export interface components {
             screenPath: string;
             /** @description The service's name, which a console relays it under. */
             serviceName: string;
+            /** @description The reads a share token alone permits, each a path pattern carrying `{token}`. */
+            shareReads: string[];
             /** @description The path the stylesheet is answered at, where the bundle has one. */
             stylesheet?: string | null;
             /** @description The key, in the bundle's words, of the name a console's menu gives the screen. */
@@ -479,6 +634,8 @@ export interface components {
             actorName: string;
             /** @description The markdown body, for every kind but a page. */
             body?: string | null;
+            /** @description What it reads as before it is opened, where the filer says it; else it is read out of the body or the page. */
+            description?: string | null;
             /** @description The HTML, for a page. */
             html?: string | null;
             /** @description One of the kinds `GET /document-kinds` lists. */
@@ -1359,6 +1516,263 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesAttachmentsByToken: {
+        parameters: {
+            query?: {
+                /** @description Only the members after this one, by its id. */
+                after?: number | null;
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The attachments of the document a live link opens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttachmentPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readSharesAttachmentsByTokenAttachmentId: {
+        parameters: {
+            query?: {
+                /** @description Send the file itself to keep, under its name. */
+                download?: boolean | null;
+                /**
+                 * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
+                 *     none is named.
+                 */
+                scheme?: string | null;
+            };
+            header?: {
+                /** @description One byte range of the file. */
+                Range?: string;
+            };
+            path: {
+                /** @description The share link's token. */
+                token: string;
+                attachmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One attachment's bytes of the document a live link opens, with Range. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description One attachment's bytes of the document a live link opens, with Range. */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesContentByToken: {
+        parameters: {
+            query?: {
+                /** @description Send the file itself to keep, under its name. */
+                download?: boolean | null;
+                /**
+                 * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
+                 *     none is named.
+                 */
+                scheme?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The file of the document a live link opens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesDocumentByToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The document a live link opens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Document"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesKindByToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The kind of the document a live link opens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentKind"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesPictureByToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cover picture of the document a live link opens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesReferencesByToken: {
+        parameters: {
+            query?: {
+                /** @description Only the members after this one, by its id. */
+                after?: number | null;
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pages the document a live link opens refers to, with what is kept of their previews. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferencePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readSharesReferencesByTokenReferenceId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+                referenceId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page the document a live link opens refers to, with its preview. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Reference"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesReferencesImageByTokenReferenceId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+                referenceId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The preview picture of a page the document a live link opens refers to. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
             };
             default: components["responses"]["Error"];
         };

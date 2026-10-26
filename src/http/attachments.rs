@@ -11,12 +11,54 @@ use super::files::{Asking, KeptFile, PRIVATE_DAY, inside_root, send};
 use crate::Refusal;
 use crate::documents::keeper::{Handed, keep};
 use crate::events::EventKind;
-use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
+use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{
   Operation, bytes_answer, header, id_parameter, json_answer, json_body, query,
 };
 use crate::store::{attachments, page_limit};
 use crate::wire::{Attachment, AttachmentInput, AttachmentPage, ContentQuery, PageQuery};
+
+/// A page of a document's attachments, in the order they were kept.
+pub async fn attachment_page(standing: &Standing, id: i64, asked: &PageQuery) -> Result<Response, Refused> {
+  let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
+
+  document(standing, id).await?;
+
+  let (kept, more) = attachments::list(standing.db().await?, id, asked.after, limit).await?;
+
+  Ok(answer(
+    StatusCode::OK,
+    &AttachmentPage {
+      items: kept.into_iter().map(|kept| kept.attachment).collect(),
+      more,
+    },
+  ))
+}
+
+/// One attachment's bytes as they are asked for; an attachment of another document is absent.
+pub async fn attachment_bytes(
+  standing: &Standing,
+  asking: &Asking,
+  id: i64,
+  attachment: i64,
+) -> Result<Response, Refused> {
+  let kept = attachments::read(standing.db().await?, id, attachment)
+    .await?
+    .ok_or_else(|| Refusal::absent(format!("document {id} keeps no attachment {attachment}")))?;
+  if !inside_root(&standing.settings.files.root, &kept.path) {
+    return Err(
+      Refusal::absent(format!("document {id} keeps no attachment {attachment} on the disk")).into(),
+    );
+  }
+
+  let file = KeptFile {
+    path: kept.path,
+    media_type: kept.attachment.media_type,
+    name: kept.attachment.name,
+  };
+
+  send(asking, &file, PRIVATE_DAY).await
+}
 
 pub struct ListAttachments;
 
@@ -28,19 +70,8 @@ impl Route for ListAttachments {
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
     let asked: PageQuery = call.query()?;
-    let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
 
-    document(call.standing(), id).await?;
-
-    let (kept, more) = attachments::list(call.standing().db().await?, id, asked.after, limit).await?;
-
-    Ok(answer(
-      StatusCode::OK,
-      &AttachmentPage {
-        items: kept.into_iter().map(|kept| kept.attachment).collect(),
-        more,
-      },
-    ))
+    attachment_page(call.standing(), id, &asked).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
@@ -121,23 +152,8 @@ impl Route for ReadAttachment {
     let id = call.path_id("documentId").await?;
     let attachment = call.path_id("attachmentId").await?;
     let asking = Asking::of(&call)?;
-    let standing = call.shared();
-    let kept = attachments::read(standing.db().await?, id, attachment)
-      .await?
-      .ok_or_else(|| Refusal::absent(format!("document {id} keeps no attachment {attachment}")))?;
-    if !inside_root(&standing.settings.files.root, &kept.path) {
-      return Err(
-        Refusal::absent(format!("document {id} keeps no attachment {attachment} on the disk")).into(),
-      );
-    }
 
-    let file = KeptFile {
-      path: kept.path,
-      media_type: kept.attachment.media_type,
-      name: kept.attachment.name,
-    };
-
-    send(&asking, &file, PRIVATE_DAY).await
+    attachment_bytes(call.standing(), &asking, id, attachment).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {

@@ -104,7 +104,9 @@ pub struct ReadConsoleFile;
 impl Route for ReadConsoleFile {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/console/{file}";
-  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
+  // A reader with no sign-in loads them to open a share page, and they carry no reader's data (bmo-ui's
+  // `docs/console-bundles.md`, "Share pages").
+  const CONSOLE: ConsoleReach = ConsoleReach::Open;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let name = call.path_text("file").await?;

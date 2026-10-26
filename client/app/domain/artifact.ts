@@ -72,8 +72,8 @@ export function pictureAddress(id: number): string {
   return artifactAddress(`/documents/${id}/picture`);
 }
 
-// Every member of a collection paged by `after`, read a page at a time until none is left.
-async function everyPage<T extends { id: number }>(path: string): Promise<T[]> {
+/** Every member of a collection paged by `after`, read a page at a time until none is left. */
+export async function everyPage<T extends { id: number }>(path: string): Promise<T[]> {
   const items: T[] = [];
   let after: number | undefined;
 

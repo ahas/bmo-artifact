@@ -5,8 +5,10 @@
 mod support;
 
 use axum::http::{Method, StatusCode};
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
-use support::service::{SHARE_ADDRESS, Service};
+use support::service::{CONSOLE_TOKEN, SHARE_ADDRESS, Service};
 
 async fn filed(service: &Service, title: &str, scope: &str) -> i64 {
   service
@@ -62,6 +64,86 @@ async fn a_link_is_made_once_answered_again_read_listed_and_ended() {
     StatusCode::NOT_FOUND
   );
   assert_eq!(service.event_kinds().await, ["document.created", "share.created", "share.deleted"]);
+}
+
+async fn attached(service: &Service, id: i64, name: &str, bytes: &[u8]) -> i64 {
+  service
+    .call(
+      Method::POST,
+      &format!("/documents/{id}/attachments"),
+      Some(json!({ "name": name, "mediaType": "text/plain", "content": STANDARD.encode(bytes) })),
+    )
+    .await
+    .json()["id"]
+    .as_i64()
+    .expect("an attachment")
+}
+
+#[tokio::test]
+async fn a_live_link_opens_its_one_document_through_the_share_reads_with_no_role() {
+  let service = Service::new().await;
+  let id = filed(&service, "Shared", "team-a").await;
+  let other = filed(&service, "Not shared", "team-a").await;
+  let kept = attached(&service, id, "notes.txt", b"Kept words.").await;
+  let elsewhere = attached(&service, other, "other.txt", b"Other words.").await;
+  let token =
+    service.call(Method::POST, "/shares", Some(json!({ "documentId": id }))).await.json()["token"]
+      .as_str()
+      .expect("a token")
+      .to_owned();
+  // The console relays a share read with no session behind it: its token, and no role and no owner key.
+  let read = |path: String| {
+    let service = &service;
+
+    async move { service.call_by(Some(CONSOLE_TOKEN), Method::GET, &path, None, &[]).await }
+  };
+
+  let document = read(format!("/shares/{token}/document")).await;
+
+  assert_eq!(document.status, StatusCode::OK, "{}", document.json());
+  assert_eq!(
+    (document.json()["id"].as_i64(), document.json()["title"].clone()),
+    (Some(id), json!("Shared"))
+  );
+  assert_eq!(read(format!("/shares/{token}")).await.json()["documentId"].as_i64(), Some(id));
+  assert_eq!(read(format!("/shares/{token}/kind")).await.json()["name"], "record");
+
+  let content = read(format!("/shares/{token}/content")).await;
+
+  assert_eq!((content.status, content.bytes.as_slice()), (StatusCode::OK, b"Words.".as_slice()));
+
+  let files = read(format!("/shares/{token}/attachments")).await.json();
+
+  assert_eq!(files["items"].as_array().map(Vec::len), Some(1));
+  assert_eq!(files["items"][0]["id"].as_i64(), Some(kept));
+
+  let file = read(format!("/shares/{token}/attachments/{kept}")).await;
+
+  assert_eq!((file.status, file.bytes.as_slice()), (StatusCode::OK, b"Kept words.".as_slice()));
+  assert_eq!(
+    read(format!("/shares/{token}/attachments/{elsewhere}")).await.status,
+    StatusCode::NOT_FOUND
+  );
+  assert_eq!(read(format!("/shares/{token}/references")).await.json()["items"], json!([]));
+  assert_eq!(read(format!("/shares/{token}/references/1")).await.status, StatusCode::NOT_FOUND);
+  assert_eq!(read(format!("/shares/{token}/picture")).await.status, StatusCode::NOT_FOUND);
+
+  // The document's own routes stay behind the role.
+  assert_eq!(read(format!("/documents/{id}")).await.status, StatusCode::FORBIDDEN);
+
+  service.call(Method::DELETE, &format!("/shares/{token}"), None).await;
+
+  for path in ["/document", "/kind", "/content", "/attachments", "/references"] {
+    let ended = read(format!("/shares/{token}{path}")).await;
+
+    assert_eq!(
+      (ended.status, ended.json()["code"].clone()),
+      (StatusCode::NOT_FOUND, json!("not-found")),
+      "{path}"
+    );
+  }
+
+  assert_eq!(read(format!("/shares/{}/document", "u".repeat(8))).await.status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

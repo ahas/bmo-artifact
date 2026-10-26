@@ -196,6 +196,40 @@ pub async fn document_file(standing: &Standing, row: &documents::Row) -> Result<
   })
 }
 
+/// A document's file as it is asked for: a page as a hosted page, any other kind as its markdown.
+pub async fn content(standing: &Standing, asking: &Asking, id: i64) -> Result<Response, Refused> {
+  let row = document(standing, id).await?;
+  let file = document_file(standing, &row).await?;
+
+  send(asking, &file, NO_STORE).await
+}
+
+/// A document's cover picture as the card a link's preview shows.
+pub async fn picture(standing: &Standing, id: i64) -> Result<Response, Refused> {
+  let row = document(standing, id).await?;
+  let body = match (kinds::kind(Some(&row.document.kind)).hosted(), &row.file) {
+    (false, Some(path)) => tokio::fs::read_to_string(path).await.ok(),
+    _ => None,
+  };
+  let none = || Refused::from(Refusal::absent(format!("document {id} has no picture")));
+  let path = cover_file(standing.db().await?, id, body.as_deref()).await?.ok_or_else(none)?;
+  let bytes = tokio::fs::read(path).await.map_err(|_| none())?;
+  let card = tokio::task::spawn_blocking(move || cover_card(&bytes))
+    .await
+    .map_err(|why| Refused::from(Refusal::failed(why.to_string())))?
+    .ok_or_else(none)?;
+  let mut response = Response::new(Body::from(card));
+
+  response
+    .headers_mut()
+    .insert(header::CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
+  response
+    .headers_mut()
+    .insert(header::CACHE_CONTROL, HeaderValue::from_static(PRIVATE_DAY));
+
+  Ok(response)
+}
+
 pub struct ReadContent;
 
 impl Route for ReadContent {
@@ -206,11 +240,8 @@ impl Route for ReadContent {
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
     let asking = Asking::of(&call)?;
-    let standing = call.shared();
-    let row = document(&standing, id).await?;
-    let file = document_file(&standing, &row).await?;
 
-    send(&asking, &file, NO_STORE).await
+    content(call.standing(), &asking, id).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
@@ -237,29 +268,8 @@ impl Route for ReadPicture {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
-    let standing = call.standing();
-    let row = document(standing, id).await?;
-    let body = match (kinds::kind(Some(&row.document.kind)).hosted(), &row.file) {
-      (false, Some(path)) => tokio::fs::read_to_string(path).await.ok(),
-      _ => None,
-    };
-    let none = || Refused::from(Refusal::absent(format!("document {id} has no picture")));
-    let path = cover_file(standing.db().await?, id, body.as_deref()).await?.ok_or_else(none)?;
-    let bytes = tokio::fs::read(path).await.map_err(|_| none())?;
-    let card = tokio::task::spawn_blocking(move || cover_card(&bytes))
-      .await
-      .map_err(|why| Refused::from(Refusal::failed(why.to_string())))?
-      .ok_or_else(none)?;
-    let mut response = Response::new(Body::from(card));
 
-    response
-      .headers_mut()
-      .insert(header::CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
-    response
-      .headers_mut()
-      .insert(header::CACHE_CONTROL, HeaderValue::from_static(PRIVATE_DAY));
-
-    Ok(response)
+    picture(call.standing(), id).await
   }
 
   fn operation(&self, _generator: &mut SchemaGenerator) -> Operation {

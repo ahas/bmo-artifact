@@ -62,6 +62,8 @@ pub struct ConsoleManifest {
   pub websocket: bool,
   /// The event kinds a console may raise as a notice.
   pub push_kinds: Vec<String>,
+  /// The reads a share token alone permits, each a path pattern carrying `{token}`.
+  pub share_reads: Vec<String>,
 }
 
 /// One event: its number, its kind, when it was kept and the member it is about.

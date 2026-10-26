@@ -162,8 +162,8 @@ address and the file root are settings; no other unit reads or writes either.
 - **A link ends at the second its time falls in,** never before. Every read and every making sweeps away
   the links whose time has passed.
 - **A link's address** is the share address the settings name, a `/` and the token. What answers that
-  address is whoever serves the service to a browser: it reads the link, then the document, its content and
-  its files by the document's number.
+  address is whoever serves the service to a browser: it reads the link, then the document, its content, its
+  files and its references through the share reads, each carrying the token (docs/api.md, 「Share links」).
 
 ## A page imported whole
 

@@ -206,12 +206,31 @@ A share link opens one document for whoever holds its token. A document has at m
 | `GET /shares/{token}` | | 200, the link |
 | `DELETE /shares/{token}` | | 204 |
 
+The **share reads** open, to whoever holds a live link's token, the one document it opens, each answering
+what the route under `/documents/{documentId}` it stands for answers for that document:
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /shares/{token}/document` | | 200, the document |
+| `GET /shares/{token}/kind` | | 200, the document's kind, as `GET /document-kinds` lists it |
+| `GET /shares/{token}/content` | query `scheme?`, `download?` | 200, the file |
+| `GET /shares/{token}/picture` | | 200, the cover picture as JPEG |
+| `GET /shares/{token}/attachments` | query `after?`, `limit?` | 200, a page of attachments |
+| `GET /shares/{token}/attachments/{attachmentId}` | query `scheme?`, `download?`; the `Range` header | 200 or 206, the bytes |
+| `GET /shares/{token}/references` | query `after?`, `limit?` | 200, a page of references |
+| `GET /shares/{token}/references/{referenceId}` | | 200, the reference, its preview read |
+| `GET /shares/{token}/references/{referenceId}/image` | | 200, the page's preview picture |
+
 - **Every read and every making sweeps away the links whose time has passed,** each a `share.deleted`. A
   token that names no live link is `not-found`.
 - **`POST /shares`** refuses an `expiresAt` not in the future `bad-request`, and a document that does not
   stand `not-found`.
+- **A share read answers for a live token alone,** and only with what that link's document holds: a token
+  that names no live link is `not-found`, and so is an attachment or a reference of another document. `GET
+  /shares/{token}` and the share reads are the whole of what the link opens.
 - **A reader with no token of the service's** opens a link through whoever serves the service to a
-  browser: it reads the link, then the document, its content and its files by the document's number.
+  browser: it reads the link, then the document and everything of it through the share reads, each carrying
+  the token.
 
 ## Imports
 
@@ -349,7 +368,8 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
   `artifact.title.screen`, its icon, its screens under `/archive`, the service `artifact`, the paths of its
   module, its stylesheet and its words, and the role `member`. Every call the screens make stands under the
   API prefix `/`; no screen needs the owner key, reads the event stream or opens a socket, and no event is
-  raised as a notice.
+  raised as a notice. Under `shareReads` it names `GET /shares/{token}` and every share read (「Share links」),
+  the reads the share page makes.
 - **The module and the stylesheet** are the files the build of `client/` writes into the folder the settings
   name, read when the service starts. Each is answered at `/console/` and a name carrying the first sixteen
   hexadecimal digits of the SHA-256 of its bytes, so its path changes whenever its bytes do, and may be kept
@@ -359,8 +379,10 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
 - **Where the folder holds no module,** the manifest, the module, the stylesheet and the words are all
   `not-found`, so a console leaves the service out.
 - **The guard.** A call with the console's token is the console relaying for a reader, and it reaches:
-  - the manifest and the words with no role and no owner key;
-  - the module, the stylesheet and every route the screens use where its `Owner-Role` header is a role that
+  - the manifest, the words, the module, the stylesheet, `GET /shares/{token}` and the share reads with no
+    role and no owner key, since a reader with no sign-in opens a share page by them; a share read is held to
+    its token;
+  - every other route the screens use where its `Owner-Role` header is a role that
     allows `member`, either role; one with that header missing or naming no role is refused 403
     `forbidden`;
   - no other route: each is refused 403 `forbidden`.
@@ -412,9 +434,9 @@ worker:
 - **The console that serves this bundle:** it calls this service with the console's token, finds the bundle
   by its manifest and loads its module (bmo-ui's `docs/console-bundles.md`). A share link is opened by a
   reader who is not signed in, so the console serves the bundle's `/archive/share/<token>` screen and relays
-  the reads it makes, the link and the document it opens, without its sign-in but with a role this service
-  takes, and sets this service's share address to that screen's; this service answers only callers holding
-  one of its tokens.
+  the share reads the manifest names without its sign-in and with no role (bmo-ui's `docs/console-bundles.md`,
+  「Share pages」), and sets this service's share address to that screen's; this service answers only callers
+  holding one of its tokens.
 - **The callers of the routes this service no longer serves:** research runs and their settings,
   narrations, the holding read by a chat id and the filing verbs are gone. A research run or a narration
   is a client's own work that files through this service's MCP server, and what a caller files is held
