@@ -151,15 +151,16 @@ const kindText = computed(() => {
 
 const contents = computed(() => contentsOf(held.value?.markdown ?? "", kind.value?.contentsDepth ?? 2));
 
-// What the document is, for the properties viewer beside the title: its labels, who filed it, what it is
-// held under and its times.
+// What the document is, for the properties viewer beside the title: who filed it, what it is held under and its
+// times, and for a page, which stands with no masthead, its labels too; a written document's labels stand on its
+// masthead's secondary line.
 const properties = computed<BarProperty[]>(() => {
   const document = held.value?.document;
 
   if (document === undefined) return [];
 
   return [
-    ...Object.entries(document.labels).map(([label, value]) => ({ label, value })),
+    ...(hosted.value ? Object.entries(document.labels).map(([label, value]) => ({ label, value })) : []),
     { label: t("artifact.label.actor"), value: document.actorName },
     ...(document.scope === null ? [] : [{ label: t("artifact.label.scope"), value: document.scope, mono: true }]),
     { label: t("artifact.label.created"), value: formatStamp(Math.floor(document.createdAt / 1000)) },
@@ -187,6 +188,7 @@ const bodyProps = computed(() => ({
   attachments: held.value?.attachments ?? [],
   address: fileAddress,
   properties: properties.value,
+  labels: held.value?.document.labels ?? null,
   documentUrl: contentAddress(documentId.value, undefined, true),
   share: openShare
 }));

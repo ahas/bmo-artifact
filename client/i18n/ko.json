@@ -21,12 +21,13 @@
       "picture_resolution_value": "{width} × {height}",
       "references": "참조 페이지",
       "scope": "범위",
+      "shared": "공유 중 · {until}",
       "snippet_only": "요약문만 확인",
       "span_1h": "1시간",
-      "span_6h": "6시간",
       "span_24h": "24시간",
-      "span_7d": "7일",
       "span_30d": "30일",
+      "span_6h": "6시간",
+      "span_7d": "7일",
       "span_forever": "무기한"
     },
     "kind": {

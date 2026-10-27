@@ -21,12 +21,13 @@
       "picture_resolution_value": "{width} × {height}",
       "references": "Referred pages",
       "scope": "Scope",
+      "shared": "Shared · {until}",
       "snippet_only": "Checked against the snippet only",
       "span_1h": "1 hour",
-      "span_6h": "6 hours",
       "span_24h": "24 hours",
-      "span_7d": "7 days",
       "span_30d": "30 days",
+      "span_6h": "6 hours",
+      "span_7d": "7 days",
       "span_forever": "No end"
     },
     "kind": {

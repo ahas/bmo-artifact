@@ -9,6 +9,9 @@
         <div class="flex flex-col gap-2">
           <p v-if="props.kind !== null" class="document-eyebrow">{{ props.kind }}</p>
           <h1 class="document-title">{{ props.title }}</h1>
+          <!-- Its labels, the names a filer finds it by, on a secondary line that wraps (docs/archive.md, 「Where a person
+               reads it」). -->
+          <p v-if="labelLine !== ''" class="text-sm break-words text-muted" data-document-labels>{{ labelLine }}</p>
         </div>
 
         <div v-if="actions.length > 0 || props.properties !== null" class="flex items-center gap-2">
@@ -67,6 +70,9 @@ interface Props {
   // Where one of the document's files is served, and where it is taken to be saved.
   address: (attachment: ArtifactAttachment, download?: boolean) => string;
   properties?: readonly BarProperty[] | null;
+  // The document's labels, each name and value, shown on the masthead's secondary line; none where it stands for
+  // somebody holding its link.
+  labels?: Readonly<Record<string, string>> | null;
   // Where the document's file is saved from.
   documentUrl?: string | null;
   // The pages it refers to, where they do not stand beside it.
@@ -82,10 +88,17 @@ const props = withDefaults(defineProps<Props>(), {
   slugs: () => [],
   attachments: () => [],
   properties: null,
+  labels: null,
   documentUrl: null,
   references: null,
   share: null
 });
+
+const labelLine = computed(() =>
+  Object.entries(props.labels ?? {})
+    .map(([name, value]) => (value === "" ? name : `${name}: ${value}`))
+    .join(" · ")
+);
 
 // A picture or a link in the body may name one of the document's files by its name, or by a path ending
 // in it, and a picture the body draws that way does not stand again among the attachments.

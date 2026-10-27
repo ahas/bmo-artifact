@@ -132,6 +132,23 @@ export async function shareOf(documentId: number): Promise<ArtifactShare | null>
   return page.items[0] ?? null;
 }
 
+/** Every live link, by the document it opens: what the list's share badges read (docs/archive.md, 「Where a person reads it」). */
+export async function readLiveShares(): Promise<Map<number, ArtifactShare>> {
+  const links = new Map<number, ArtifactShare>();
+  let after: number | undefined;
+
+  for (;;) {
+    const page = await $fetch<ArtifactSharePage>(artifactAddress("/shares"), { query: { after, limit: 200 } });
+
+    for (const link of page.items) links.set(link.documentId, link);
+
+    // The page's cursor is the moment its last link was made.
+    if (!page.more || page.items.length === 0) return links;
+
+    after = page.items[page.items.length - 1]!.createdAt;
+  }
+}
+
 /** One link and the document it opens, read by its token. */
 export function readShare(token: string): Promise<ArtifactShare> {
   return $fetch<ArtifactShare>(artifactAddress(`/shares/${encodeURIComponent(token)}`));

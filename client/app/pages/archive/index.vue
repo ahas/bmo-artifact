@@ -78,17 +78,21 @@
 
               <div class="flex min-w-0 flex-1 flex-col gap-2">
                 <SearchText class="line-clamp-2 text-sm font-medium break-words text-highlighted" :text="item.title" :query="searched" />
-                <p v-if="item.description !== null" class="line-clamp-2 text-sm text-muted"><SearchText :text="item.description" :query="searched" /></p>
+                <p v-if="item.description !== null" class="line-clamp-2 text-sm break-words text-muted"><SearchText :text="item.description" :query="searched" /></p>
 
-                <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <!-- A row carries exactly two badges, its kind and its live link; its labels are search metadata and
+                     stand in the document's own view (docs/archive.md, 「Where a person reads it」). -->
+                <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   <UBadge color="neutral" variant="outline" size="sm" :label="kindLabel(item.kind)" />
                   <UBadge
-                    v-for="[name, value] in Object.entries(item.labels)"
-                    :key="name"
-                    color="neutral"
+                    v-if="shares.has(item.id)"
+                    color="primary"
                     variant="subtle"
                     size="sm"
-                    :label="`${name}: ${value}`"
+                    icon="i-material-symbols-link"
+                    class="max-w-full"
+                    :label="$t('artifact.label.shared', { until: shareUntilText(t, shareEnd(shares.get(item.id)!), now) })"
+                    data-shared
                   />
                   <span v-if="item.attachmentCount > 0" class="text-sm text-muted tabular-nums">
                     {{ $t("artifact.label.files_count", { n: countText(item.attachmentCount) }) }}
@@ -111,15 +115,16 @@
 <script setup lang="ts">
 import { failureText } from "bmo-ui/app/domain/errors";
 import { countText } from "bmo-ui/app/domain/numbers";
-import { formatStamp } from "bmo-ui/app/domain/time";
+import { shareUntilText } from "bmo-ui/app/domain/share-links";
+import { formatStamp, useNowSeconds } from "bmo-ui/app/domain/time";
 import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENTS_PAGE_SIZE, DOCUMENTS_PHRASE_LIMIT } from "../../../shared/config";
-import { pictureAddress, readDocuments, useKinds } from "../../domain/artifact";
+import { pictureAddress, readDocuments, readLiveShares, useKinds } from "../../domain/artifact";
 import { kindOf } from "../../domain/document-view";
 
-import type { ArtifactDocument } from "../../../shared/types";
+import type { ArtifactDocument, ArtifactShare } from "../../../shared/types";
 
 // The documents the service keeps, newest first, narrowed by kind and found by a phrase; each
 // narrowing is held in the address, so a reload or a shared address shows the same list.
@@ -143,6 +148,15 @@ const loaded = ref(false);
 const failed = ref("");
 // The documents whose cover picture did not load, each left without one rather than drawn broken.
 const unpictured = ref(new Set<number>());
+// The live links by the document each opens, read beside every reading of the list; a list read with none of them
+// stands with no share badge rather than failing.
+const shares = ref(new Map<number, ArtifactShare>());
+const { now } = useNowSeconds();
+
+// When a link ends, in the seconds the share words read, or null for a link with no end.
+function shareEnd(link: ArtifactShare): number | null {
+  return link.expiresAt === null ? null : Math.floor(link.expiresAt / 1000);
+}
 let generation = 0;
 
 onScopeDispose(() => {
@@ -169,6 +183,15 @@ async function read(before?: number): Promise<void> {
 
   loading.value = true;
   failed.value = "";
+
+  if (before === undefined) {
+    void readLiveShares().then(
+      (links) => {
+        if (mine === generation) shares.value = links;
+      },
+      () => undefined
+    );
+  }
 
   try {
     const page = await readDocuments({

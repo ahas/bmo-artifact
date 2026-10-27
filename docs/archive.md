@@ -285,10 +285,16 @@ A picture in a document opens in the picture viewer, for a markdown document and
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
   - the list at `/archive`, narrowed by kind and by a phrase, each narrowing held in the address, each
-    document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps none;
-  - one document at `/archive/<id>`: its masthead, its file drawn as markdown with a table of contents of
-    its kind's depth, its files after it, its references beside it, each with the picture its preview
-    declares; a page fills the screen in its frame;
+    document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps none.
+    A row is the document's title, its description, how many files it keeps and the day it was filed, and
+    exactly two badges: its kind, and, where a link to it stands, its being shared with the time the link has left. A
+    document's labels — the keywords, the rule, the question, the run a filer names it by — are search metadata,
+    no part of a row and never a badge anywhere in the list: a phrase still finds a document by them. A row
+    holds to the list's width at every width; its words wrap or are cut, and the list never scrolls sideways;
+  - one document at `/archive/<id>`: its masthead — its labels on a secondary line under its title, each name
+    and value, that wraps — its file drawn as markdown with a table of contents of its kind's depth, its files
+    after it, its references beside it, each with the picture its preview declares; a page fills the screen in
+    its frame;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document.
 - **A share page reads as its document before anything runs:** the document's title, its description and
