@@ -204,8 +204,8 @@ The plumbing is what every command and every route stands on, and it knows none 
 - the quick checks for the layout and the dependencies, with the base libraries and bmo-explorer allowed;
 - the test database: the migration files that name its template, and the `migrate` command that makes it;
 - the one binary a release carries;
-- the step before the flip that builds the console bundle's module in the release, into the folder the
-  settings name by default;
+- the steps before the flip: the document tables brought to the schema the release carries, and the console
+  bundle's module built in the release, into the folder the settings name by default;
 - the deployment: the deploy tree under `~/.local/share/bmo-artifact`, the data root it shares with the
   services whose files stand under it, the link that gives a release its local settings, the one unit,
   and the health a deployment waits on.
@@ -225,8 +225,8 @@ root; the whole-data-root backup and its restore drill belong to the testbed.
   - The scratch database is made on the server `BMO_TEST_POSTGRES` names: the first test of a binary
     migrates a template with this repository's migrator, each test gets a copy of it, dropped when the
     test ends, and the first template a binary makes drops every template and copy whose process is gone.
-- **The MCP server** is started as a harness starts it and held to its eleven tools; one test reaches a
-  listening service through it.
+- **The MCP server** is started as a harness starts it and held to its twelve tools; one test reaches a
+  listening service through it, and one publishes a document from a file.
 - **The console** routes are called over a folder of the test's own holding a module, a stylesheet and
   words: the manifest is read through bmo-ui's `consoleManifest` by Bun in `client/`, the module's path
   follows its bytes, and the guard is held to its 401s and 403s on each kind of route.

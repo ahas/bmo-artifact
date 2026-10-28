@@ -54,3 +54,11 @@ health = "cd ~/.local/share/bmo-artifact/deploy && bin/bmo-artifact health"
 id = "console-module"
 command = "cd client && bun run module"
 phase = "before-flip"
+
+# The document tables are brought to the schema the release carries before it is flipped, so a migration
+# runs at the deployment that brings it and no service meets a table it does not have (docs/api.md,
+# "The command").
+[[deploy.step]]
+id = "migrate"
+command = "bin/bmo-artifact migrate"
+phase = "before-flip"
