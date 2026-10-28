@@ -40,7 +40,7 @@ async fn opened(call: &mut Call) -> Result<i64, Refused> {
   shared_document(call.standing(), &token).await
 }
 
-const CODES: &[&str] = &["unauthorized", "bad-request", "not-found"];
+const CODES: &[&str] = &["unauthorized", "bad-request", "not-found", "gone"];
 
 pub struct ReadSharedDocument;
 

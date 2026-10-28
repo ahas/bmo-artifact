@@ -1,6 +1,6 @@
 ---
 name: bmo-artifact
-description: Keep, find and share documents with the bmo-artifact MCP server. Use when a task should leave a document a person reads later (a record, study notes, an HTML page, a web page brought in whole), when earlier documents have to be found again by their words, when a file such as a picture or a sound belongs beside a document, or when someone has to be handed a link that opens a document; and when building or checking a caller of the artifact service.
+description: Keep, find and share documents with the bmo-artifact MCP server. Use when a task should leave a document a person reads later (a record, study notes, an HTML page, a web page brought in whole), when a document written for somebody has to be handed over as a permanent link rather than a file, when earlier documents have to be found again by their words, when a file such as a picture or a sound belongs beside a document, or when someone has to be handed a link that opens a document; and when building or checking a caller of the artifact service.
 ---
 
 # bmo-artifact
@@ -33,6 +33,20 @@ environment).
 - `artifact_rewrite` rewrites a document under its number: `documentId`, `labels` (required, they replace
   the labels whole) and any of `title`, `body`, `html`. Its attachments and share links stay.
 
+## Handing a document to a person
+
+A document written for somebody is handed over as a link, never as a file attached to a message:
+`artifact_publish` files it and opens its link in one call.
+
+- Its input is `title`, `description` (a line or two on what it holds), and its words as markdown `body`
+  or as the `path` of a file on the machine the harness runs on, read whole; `kind` is `record` where none
+  is named, `learning` or `page` beside it, and `scope` and `actorName` are as `artifact_file` takes them.
+- Its answer is the document and its link: `document.id` is the document's number, and `share.url` is the
+  address to hand over, absolute already. Give that address as it came back, adding nothing to it.
+- The link has no end and opens with no console login. It names the document rather than a body, so a
+  rewrite keeps it and it serves the newest body; it keeps opening across the service's restarts and
+  redeployments. Where it does end, its token answers what it opened rather than nothing at all.
+
 ## Attaching files
 
 `artifact_attach` keeps a file beside a document: `documentId`, `name`, `mediaType`, `content` in base64
@@ -56,7 +70,7 @@ at most 64 MiB.
 `artifact_share` makes a link for `documentId`, ending at `expiresAt` (epoch milliseconds) or never where
 none is given; asking again for the same document answers the link that stands. Hand the reader the
 link's `url`. `artifact_shares` lists the live links, by `documentId` where given; `artifact_unshare` ends
-one by its `token`.
+one by its `token`, and its token then answers what it opened, as 410 `gone`, rather than a body.
 
 ## Importing a web page
 
@@ -70,6 +84,6 @@ read an import back; list the documents of its `scope` or search for its title t
 
 A refused call comes back as a tool error whose text is the service's `status`, `code` and `error`:
 `bad-request` for input not of the tool's shape (the sentence says what), `not-found` for a document,
-attachment or link that does not stand, `conflict` for a body given to a page or HTML to any other kind,
-`too-large` for a file over its ceiling, and `unauthorized` where the token is wrong. A call that reached no
-service carries only `error`.
+attachment or link that does not stand, `gone` for a link that has ended, `conflict` for a body given to a
+page or HTML to any other kind, `too-large` for a file over its ceiling, and `unauthorized` where the token is
+wrong. A call that reached no service carries only `error`.

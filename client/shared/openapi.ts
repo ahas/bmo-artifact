@@ -296,6 +296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/publications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** File a document and open a link to it with no end. */
+        post: operations["createPublications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scopes/{scope}": {
         parameters: {
             query?: never;
@@ -736,6 +753,15 @@ export interface components {
         ImportState: "fetching" | "filed" | "failed";
         /** @description Nothing: the route answered 204. */
         Nothing: Record<string, never>;
+        /** @description A document filed and a link to it opened in one call: what a document is handed to somebody as. */
+        Publication: {
+            document: components["schemas"]["Document"];
+            /**
+             * @description The link that opens it, with no end: it names the document, so it serves the body the document stands
+             *     with whenever it is opened.
+             */
+            share: components["schemas"]["Share"];
+        };
         /** @description A page a document refers to. */
         Reference: {
             /** Format: int64 */
@@ -1356,6 +1382,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Import"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createPublications: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentInput"];
+            };
+        };
+        responses: {
+            /** @description File a document and open a link to it with no end. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Publication"];
                 };
             };
             default: components["responses"]["Error"];

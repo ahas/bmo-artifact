@@ -356,6 +356,16 @@ pub struct ShareInput {
   pub expires_at: Option<i64>,
 }
 
+/// A document filed and a link to it opened in one call: what a document is handed to somebody as.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Publication {
+  pub document: Document,
+  /// The link that opens it, with no end: it names the document, so it serves the body the document stands
+  /// with whenever it is opened.
+  pub share: Share,
+}
+
 /// Where an import stands.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]

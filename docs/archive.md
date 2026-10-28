@@ -71,6 +71,7 @@ address and the file root are settings; no other unit reads or writes either.
 | `archive_attachments` | kept file | what it is read as, its type, size, name, role, path and when it was kept |
 | `search_images` | picture kept before the attachments held pictures | read once into the attachments, never written |
 | `web_search_shares` | share link | its token, its document, when it was made and when it ends |
+| `web_search_share_notes` | link that has ended | its token, what it opened, that document's title, when it ended and why |
 | `imports` | import | the address asked, the title, scope and actor asked, its state, its document or why it failed |
 | `events` | event | its kind, when it was kept, the scope of its member and the member |
 
@@ -161,6 +162,15 @@ address and the file root are settings; no other unit reads or writes either.
   stands, so a link somebody is still handing out is never quietly replaced.
 - **A link ends at the second its time falls in,** never before. Every read and every making sweeps away
   the links whose time has passed.
+- **A link that has ended leaves a note of what it opened:** its token, the document, that document's title,
+  the second it ended and why it did, held where no live link stands. A link ends by its time passing, by a
+  caller ending it, or by its document being let go of with its scope, and each of the three leaves the note
+  before the link goes, so the row and the link are never both lost. The token then answers what stood, and
+  never nothing at all (docs/api.md, 「Share links」). A note says what stood, never what it said: the body is
+  the document's, and a note outlives it.
+- **A document with no end is the ordinary hand-over:** `POST /publications` files a document and opens its
+  link at once, with no end, so the link a reader is handed keeps opening across the service's restarts and
+  redeployments, and keeps serving the body a rewrite leaves it standing with.
 - **A link's address** is the share address the settings name, a `/` and the token. What answers that
   address is whoever serves the service to a browser: it reads the link, then the document, its content, its
   files and its references through the share reads, each carrying the token (docs/api.md, 「Share links」).
@@ -300,6 +310,8 @@ A picture in a document opens in the picture viewer, for a markdown document and
 - **A share page reads as its document before anything runs:** the document's title, its description and
   its cover picture stand as the page's preview head, the link is its canonical address, and it asks
   search engines not to index or follow it.
+- **A link that has ended says so on its page:** the reader is told the link has ended, where a token that
+  never named one is told the document could not be opened.
 
 ## Out of scope
 

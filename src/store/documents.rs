@@ -292,8 +292,12 @@ pub async fn set_body<C: ConnectionTrait>(db: &C, id: i64, text: &str) -> Result
 }
 
 /// The files a document keeps under the file root, and its rows, let go of: its references, its body, its
-/// attachments, its share links and itself. The share tokens it held.
+/// attachments, its share links and itself, its link leaving a note of what it opened. The share tokens it
+/// held.
 pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, Refusal> {
+  // Its link leaves a note of what it opened behind it, written while the document's own row still stands.
+  super::shares::note_of_document(db, id, now_ms() / 1000, super::shares::RELEASED).await?;
+
   let tokens = all(
     db,
     r#"SELECT "share_token" FROM "web_search_shares" WHERE "search_id" = $1"#,

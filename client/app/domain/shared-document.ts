@@ -65,3 +65,11 @@ export function readSharedReference(token: string, referenceId: number): Promise
 export function sharedReferenceImageAddress(token: string, referenceId: number): string {
   return sharedAddress(token, `/references/${referenceId}/image`);
 }
+
+/**
+ * Whether a read failed because the link has ended: the service answers 410 `gone` with what the link opened,
+ * where a token that never named one is 404.
+ */
+export function linkEnded(error: unknown): boolean {
+  return (error as { data?: { code?: unknown } } | null)?.data?.code === "gone";
+}

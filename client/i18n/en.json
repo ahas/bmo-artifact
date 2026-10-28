@@ -71,6 +71,7 @@
     "error": {
       "attachment_read_failed": "The attachment could not be read.",
       "bad_id": "The document number is not right.",
+      "link_ended": "This share link has ended.",
       "list_failed": "The list could not be read.",
       "open_failed": "The document could not be opened.",
       "read_failed": "The document could not be read."

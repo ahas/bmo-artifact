@@ -13,8 +13,8 @@ use crate::settings::Settings;
 use crate::wire::{
   Attachment, AttachmentInput, AttachmentPage, ConsoleManifest, ContentQuery, Document, DocumentChange,
   DocumentInput, DocumentKindPage, DocumentPage, DocumentsQuery, DryRunQuery, EventPage, EventsQuery,
-  Health, Import, ImportInput, PageQuery, Reference, ReferencePage, ScopeHolding, Share, ShareInput,
-  SharePage, SharesQuery, WireError,
+  Health, Import, ImportInput, PageQuery, Publication, Reference, ReferencePage, ScopeHolding, Share,
+  ShareInput, SharePage, SharesQuery, WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -177,6 +177,11 @@ impl ArtifactClient {
   /// `POST /documents`.
   pub async fn file(&self, input: &DocumentInput) -> Result<Document, ClientFailure> {
     Self::json(self.request(Method::POST, "/documents").json(input)).await
+  }
+
+  /// `POST /publications`.
+  pub async fn publish(&self, input: &DocumentInput) -> Result<Publication, ClientFailure> {
+    Self::json(self.request(Method::POST, "/publications").json(input)).await
   }
 
   /// `GET /documents/{documentId}`.

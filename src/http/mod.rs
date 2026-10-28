@@ -10,6 +10,7 @@ pub mod files;
 pub mod health;
 pub mod hosted_page;
 pub mod imports;
+pub mod publications;
 pub mod references;
 pub mod scopes;
 pub mod share_reads;

@@ -252,8 +252,9 @@ pub struct Call {
   standing: Arc<Standing>,
 }
 
-// The most a body read whole may carry: an attachment's ceiling in base64, and room beside it.
-const BODY_LIMIT: usize = 96 * 1024 * 1024;
+/// The most a body read whole may carry: an attachment's ceiling in base64, and room beside it. A harness tool
+/// that reads a file to send it is held to the same ceiling.
+pub const BODY_LIMIT: usize = 96 * 1024 * 1024;
 
 impl Call {
   pub fn new(request: Request, standing: Arc<Standing>) -> Self {

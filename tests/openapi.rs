@@ -53,6 +53,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "GET /document-kinds",
     "GET /shares",
     "POST /shares",
+    "POST /publications",
     "GET /shares/{token}",
     "DELETE /shares/{token}",
     "GET /shares/{token}/document",
@@ -90,6 +91,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   }
   assert_eq!(reach("/documents", "get"), "screen");
   assert_eq!(reach("/documents", "post"), "closed");
+  assert_eq!(reach("/publications", "post"), "closed");
   assert_eq!(document["info"]["version"], bmo_artifact::VERSION);
   assert_eq!(document["x-calls"], serde_json::json!(["explorer"]));
   assert_eq!(document["x-harness"]["plugin"], "bmo-artifact");
@@ -111,6 +113,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
       "artifact_documents",
       "artifact_file",
       "artifact_import",
+      "artifact_publish",
       "artifact_rewrite",
       "artifact_search",
       "artifact_share",

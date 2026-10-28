@@ -618,6 +618,23 @@
         "description": "Nothing: the route answered 204.",
         "type": "object"
       },
+      "Publication": {
+        "description": "A document filed and a link to it opened in one call: what a document is handed to somebody as.",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/Document"
+          },
+          "share": {
+            "$ref": "#/components/schemas/Share",
+            "description": "The link that opens it, with no end: it names the document, so it serves the body the document stands\nwith whenever it is opened."
+          }
+        },
+        "required": [
+          "document",
+          "share"
+        ],
+        "type": "object"
+      },
       "Reference": {
         "description": "A page a document refers to.",
         "properties": {
@@ -816,7 +833,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.8"
+    "version": "0.1.0-rev.9"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1959,6 +1976,46 @@
         "x-console": "closed"
       }
     },
+    "/publications": {
+      "post": {
+        "operationId": "createPublications",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Publication"
+                }
+              }
+            },
+            "description": "File a document and open a link to it with no end."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "File a document and open a link to it with no end.",
+        "tags": [
+          "publications"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "closed"
+      }
+    },
     "/scopes/{scope}": {
       "delete": {
         "operationId": "deleteScopesByScope",
@@ -2243,7 +2300,8 @@
         ],
         "x-codes": [
           "unauthorized",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2312,7 +2370,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2409,7 +2468,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2477,7 +2537,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2518,7 +2579,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2559,7 +2621,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2601,7 +2664,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2670,7 +2734,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2720,7 +2785,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2771,7 +2837,8 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
-          "not-found"
+          "not-found",
+          "gone"
         ],
         "x-console": "open"
       }
@@ -2806,6 +2873,9 @@
     },
     {
       "name": "imports"
+    },
+    {
+      "name": "publications"
     },
     {
       "name": "scopes"
@@ -3042,6 +3112,78 @@
         "$ref": "#/components/schemas/Import"
       },
       "route": "POST /imports"
+    },
+    {
+      "description": "Publish a document as an artifact: file it and answer with a permanent share link to hand to a reader. Takes its title, a short description, and its words as markdown `body` or as the `path` of a file on this machine. The link has no end and opens with no console login; it keeps opening across restarts and redeployments, and it names the document rather than a body, so a rewrite keeps the same link serving the newest body.",
+      "input": {
+        "additionalProperties": false,
+        "description": "A document to publish: what it is called, what it reads as, and its words, given or read off this machine.",
+        "properties": {
+          "actorName": {
+            "description": "Who files it.",
+            "type": "string"
+          },
+          "body": {
+            "default": null,
+            "description": "Its words as markdown, for a record or a learning book; the page's HTML for a page.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "default": null,
+            "description": "What it reads as before it is opened, in a line or two.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "default": null,
+            "description": "The kind it is filed as: `record` where none is named, `learning` or `page` beside it.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "path": {
+            "default": null,
+            "description": "A file on this machine whose whole text is the body, or the HTML of a page, given instead of `body`.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "default": null,
+            "description": "What it is held under, where the caller keeps one.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "description": "The document's title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "body",
+          "path",
+          "kind",
+          "scope",
+          "actorName"
+        ],
+        "type": "object"
+      },
+      "name": "artifact_publish",
+      "output": {
+        "$ref": "#/components/schemas/Publication"
+      },
+      "route": "POST /publications"
     },
     {
       "description": "Rewrite a document under its number; its share links stay.",

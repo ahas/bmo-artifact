@@ -1,9 +1,13 @@
-//! The share links of documents, as rows of `web_search_shares` (`docs/archive.md`, "Share links"). This is
-//! the one module that writes the table. Its times are epoch seconds; a link is answered in milliseconds.
+//! The share links of documents, as rows of `web_search_shares`, and the notes they leave in
+//! `web_search_share_notes` where they stop opening (`docs/archive.md`, "Share links"). This is the one module
+//! that writes either table. Its times are epoch seconds; a link is answered in milliseconds.
 //!
 //! A link is a row rather than a signature: a link is read back long after it was made, and taken away before
 //! its time, neither of which a signed capability can do. What the row guards is the token, which is the link
 //! entire: a wide random value from which nothing is derived, naming the one row it was written for.
+//!
+//! A note is written before the link goes, so a link that ended leaves what it opened behind it: a token that
+//! names no live link answers what stood rather than nothing at all.
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -37,6 +41,27 @@ impl Link {
   }
 }
 
+/// What a link opened, kept where it stops opening: the token, the document it opened, that document's title,
+/// the second it ended and why it did.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Note {
+  pub token: String,
+  pub document_id: i64,
+  /// The title of the document it opened, empty where the document was gone before the note was written.
+  pub title: String,
+  /// Epoch seconds.
+  pub ended_at: i64,
+  /// Why it ended: `expired`, `ended` or `released`.
+  pub reason: String,
+}
+
+/// The reason a link ended because its time has passed.
+pub const EXPIRED: &str = "expired";
+/// The reason a link ended because a caller ended it.
+pub const ENDED: &str = "ended";
+/// The reason a link ended because the document it opened was let go of.
+pub const RELEASED: &str = "released";
+
 // Six random bytes make eight URL-safe characters: short enough to read out, wide enough that the links
 // kept never meet, and drawn again where one does.
 const TOKEN_BYTES: usize = 6;
@@ -64,8 +89,83 @@ fn link_of(row: &QueryResult) -> Result<Link, Refusal> {
   })
 }
 
-/// The links whose time has passed at `now`, in epoch seconds, taken away; the tokens they held.
+// The note one link leaves, written from the link's own row while that row still stands: what it opened, its
+// document's title, the second it ended and why. The row keeps the token and the title it opened, never the
+// body: a note says what stood, not what it said.
+const NOTED: &str = r#"INSERT INTO "web_search_share_notes" ("share_token", "search_id", "title", "ended_at", "reason")
+   SELECT s."share_token", s."search_id", COALESCE(d."title", ''), "#;
+
+/// The notes the links whose time has passed leave, at `now` in epoch seconds, written before those links go.
+async fn note_expired(db: &impl ConnectionTrait, now: i64) -> Result<(), Refusal> {
+  run(
+    db,
+    &format!(
+      r#"{NOTED} s."expires_at", $2
+           FROM "web_search_shares" s
+           LEFT JOIN "searches" d ON d."id" = s."search_id"
+          WHERE s."expires_at" IS NOT NULL AND s."expires_at" <= $1
+         ON CONFLICT ("share_token") DO NOTHING"#
+    ),
+    vec![now.into(), EXPIRED.into()],
+  )
+  .await
+  .map(drop)
+}
+
+/// The note the live link of one document leaves at `now`, in epoch seconds, written before the link goes; none
+/// where that document has no live link.
+pub async fn note_of_document(
+  db: &impl ConnectionTrait,
+  document_id: i64,
+  now: i64,
+  reason: &str,
+) -> Result<(), Refusal> {
+  run(
+    db,
+    &format!(
+      r#"{NOTED} $2, $3
+           FROM "web_search_shares" s
+           LEFT JOIN "searches" d ON d."id" = s."search_id"
+          WHERE s."search_id" = $1
+         ON CONFLICT ("share_token") DO NOTHING"#
+    ),
+    vec![document_id.into(), now.into(), reason.into()],
+  )
+  .await
+  .map(drop)
+}
+
+/// The note one token left, none where it names none.
+pub async fn note_by_token(db: &impl ConnectionTrait, token: &str) -> Result<Option<Note>, Refusal> {
+  if !is_share_token(token) {
+    return Ok(None);
+  }
+
+  one(
+    db,
+    r#"SELECT "share_token", "search_id", "title", "ended_at", "reason"
+         FROM "web_search_share_notes" WHERE "share_token" = $1"#,
+    vec![token.into()],
+  )
+  .await?
+  .as_ref()
+  .map(|row| {
+    Ok(Note {
+      token: row.try_get("", "share_token")?,
+      document_id: row.try_get("", "search_id")?,
+      title: row.try_get("", "title")?,
+      ended_at: row.try_get("", "ended_at")?,
+      reason: row.try_get("", "reason")?,
+    })
+  })
+  .transpose()
+}
+
+/// The links whose time has passed at `now`, in epoch seconds, taken away; the tokens they held. Each leaves a
+/// note first, so a link somebody was handed answers what it opened long after it stopped opening.
 pub async fn sweep(db: &impl ConnectionTrait, now: i64) -> Result<Vec<String>, Refusal> {
+  note_expired(db, now).await?;
+
   all(
     db,
     r#"DELETE FROM "web_search_shares" WHERE "expires_at" IS NOT NULL AND "expires_at" <= $1

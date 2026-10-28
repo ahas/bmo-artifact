@@ -61,6 +61,7 @@ import { DOCUMENT_PALETTE } from "../../../../shared/document-design";
 import { SHARE_ROBOTS, shareHeadTags } from "../../../../shared/share-head";
 import { contentsOf } from "../../../domain/document-view";
 import {
+  linkEnded,
   readSharedAttachments,
   readSharedContent,
   readSharedDocument,
@@ -185,7 +186,11 @@ async function load(): Promise<void> {
 
     if (mine === generation) held.value = { document, kind, markdown, attachments, references };
   } catch (error) {
-    if (mine === generation) failed.value = failureText(error, t("artifact.error.open_failed"));
+    if (mine !== generation) return;
+
+    failed.value = linkEnded(error)
+      ? t("artifact.error.link_ended")
+      : failureText(error, t("artifact.error.open_failed"));
   }
 }
 

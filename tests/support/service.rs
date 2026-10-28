@@ -25,6 +25,19 @@ pub const CONSOLE_TOKEN: &str = "console-token";
 /// The address the settings put share links under.
 pub const SHARE_ADDRESS: &str = "https://documents.invalid/share";
 
+// The settings a service of a test stands on: its database, its file root and its console folder, and the
+// tokens and share address every test names.
+fn environment(database: String, files: &Path, console: &Path) -> HashMap<String, String> {
+  HashMap::from([
+    ("BMO_ARTIFACT_DATABASE__URL".to_owned(), database),
+    ("BMO_ARTIFACT_FILES__ROOT".to_owned(), files.display().to_string()),
+    ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), TOKEN.to_owned()),
+    ("BMO_ARTIFACT_CONSOLE__TOKEN".to_owned(), CONSOLE_TOKEN.to_owned()),
+    ("BMO_ARTIFACT_CONSOLE__BUNDLE".to_owned(), console.display().to_string()),
+    ("BMO_ARTIFACT_SHARE__ADDRESS".to_owned(), SHARE_ADDRESS.to_owned()),
+  ])
+}
+
 /// The web as the stand-in reader serves it: pages, pictures and previews by address, and every address
 /// asked written down.
 #[derive(Default)]
@@ -117,14 +130,7 @@ impl Service {
       std::fs::write(console.path().join(name), bytes).expect("a bundle file");
     }
 
-    let environment = HashMap::from([
-      ("BMO_ARTIFACT_DATABASE__URL".to_owned(), scratch.address()),
-      ("BMO_ARTIFACT_FILES__ROOT".to_owned(), files.path().display().to_string()),
-      ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), TOKEN.to_owned()),
-      ("BMO_ARTIFACT_CONSOLE__TOKEN".to_owned(), CONSOLE_TOKEN.to_owned()),
-      ("BMO_ARTIFACT_CONSOLE__BUNDLE".to_owned(), console.path().display().to_string()),
-      ("BMO_ARTIFACT_SHARE__ADDRESS".to_owned(), SHARE_ADDRESS.to_owned()),
-    ]);
+    let environment = environment(scratch.address(), files.path(), console.path());
     let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
     let web = Arc::new(Web::default());
     let standing =
@@ -139,6 +145,21 @@ impl Service {
       standing: Arc::new(standing),
       router,
     }
+  }
+
+  /// The service stood up again over the same database and the same file root, as a stop and a start leave it,
+  /// or a redeployment that keeps the store: its settings read afresh and its routes gathered again.
+  pub fn restart(&mut self) {
+    let settings = Settings::read(
+      Path::new(ROOT),
+      Some(environment(self.scratch.address(), self.files.path(), self.console.path())),
+    )
+    .expect("the settings read");
+    let standing =
+      Standing::with_reader(settings, Arc::clone(&self.web) as Arc<dyn PageReader>).expect("it stands");
+
+    self.router = router(standing.clone()).expect("the routes stand");
+    self.standing = Arc::new(standing);
   }
 
   /// The service listening on a port of its own until the test ends; its address.

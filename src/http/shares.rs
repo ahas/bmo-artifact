@@ -1,9 +1,10 @@
 //! The share links (`docs/api.md`, "Share links"): listed, made, read and taken away, the links whose time
-//! has passed swept on every read and every making.
+//! has passed swept on every read and every making, and what each link opened kept where it has ended.
 
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use schemars::generate::SchemaGenerator;
+use sea_orm::DatabaseConnection;
 use serde_json::json;
 
 use super::documents::document;
@@ -43,14 +44,34 @@ pub fn token_parameter() -> serde_json::Value {
   text_parameter("token", "The share link's token.")
 }
 
-/// The document a live link opens, swept first; a token that names no live link is absent.
+/// What a token that names no live link answers: what that link opened where it has ended, and nothing at all
+/// where it never named one (`docs/api.md`, "Share links").
+async fn no_live_link(db: &DatabaseConnection, token: &str) -> Result<Refused, Refusal> {
+  let Some(note) = shares::note_by_token(db, token).await? else {
+    return Ok(Refusal::absent("no live share link has this token").into());
+  };
+
+  let opened = if note.title.trim().is_empty() {
+    format!("document {}", note.document_id)
+  } else {
+    format!("\"{}\" (document {})", note.title.trim(), note.document_id)
+  };
+
+  Ok(Refusal::gone(format!("This share link has ended: it opened {opened}.")).into())
+}
+
+/// The document a live link opens, swept first; a token that names no live link answers what it opened where it
+/// has ended, and nothing at all where it never named one.
 pub async fn shared_document(standing: &Standing, token: &str) -> Result<i64, Refused> {
   sweep(standing).await?;
 
-  shares::by_token(standing.db().await?, token)
-    .await?
-    .map(|link| link.document_id)
-    .ok_or_else(|| Refusal::absent("no live share link has this token").into())
+  let db = standing.db().await?;
+
+  if let Some(link) = shares::by_token(db, token).await? {
+    return Ok(link.document_id);
+  }
+
+  Err(no_live_link(db, token).await?)
 }
 
 pub struct ListShares;
@@ -168,9 +189,10 @@ impl Route for ReadShare {
 
     sweep(standing).await?;
 
-    let link = shares::by_token(standing.db().await?, &token)
-      .await?
-      .ok_or_else(|| Refusal::absent("no live share link has this token"))?;
+    let db = standing.db().await?;
+    let Some(link) = shares::by_token(db, &token).await? else {
+      return Err(no_live_link(db, &token).await?);
+    };
 
     Ok(answer(StatusCode::OK, &link.wire(&standing.settings.share.address)))
   }
@@ -183,7 +205,7 @@ impl Route for ReadShare {
       parameters: vec![token_parameter()],
       body: None,
       answers: vec![(200, json_answer::<Share>(generator))],
-      codes: &["unauthorized", "not-found"],
+      codes: &["unauthorized", "not-found", "gone"],
     }
   }
 }
@@ -204,6 +226,9 @@ impl Route for EndShare {
     let link = shares::by_token(db, &token)
       .await?
       .ok_or_else(|| Refusal::absent("no share link has this token"))?;
+
+    // What the link opened is kept where it ends, so the token answers it long after it stops opening.
+    shares::note_of_document(db, link.document_id, now_ms() / 1000, shares::ENDED).await?;
 
     if shares::remove(db, &token).await? {
       let scope = scope_of(standing, link.document_id).await?;

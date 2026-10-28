@@ -71,6 +71,7 @@
     "error": {
       "attachment_read_failed": "첨부를 읽지 못했습니다.",
       "bad_id": "문서 번호가 올바르지 않습니다.",
+      "link_ended": "이 공유 링크는 끝났습니다.",
       "list_failed": "목록을 읽지 못했습니다.",
       "open_failed": "문서를 열지 못했습니다.",
       "read_failed": "문서를 읽지 못했습니다."

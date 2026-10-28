@@ -56,7 +56,7 @@ flowchart TD
 | 404 | `no-route` | no route answers this method and path |
 | 404 | `not-found` | nothing stands at the key the path names |
 | 409 | `conflict` | the member does not take the change: a body for a page, HTML for any other kind |
-| 410 | `gone` | an event stream resumed from before the window the service keeps |
+| 410 | `gone` | a share link that has ended, and what it opened; an event stream resumed from before the window the service keeps |
 | 413 | `too-large` | the body or an attachment is over its ceiling |
 | 500 | `failed` | the service failed: its store or its file root; the sentence is the failure |
 
@@ -193,7 +193,7 @@ A share link opens one document for whoever holds its token. A document has at m
 
 | Field | Holds |
 |---|---|
-| `token` | the link's token, 22 to 128 letters, digits, `-` and `_` |
+| `token` | the link's token, 8 to 128 letters, digits, `-` and `_` |
 | `documentId` | the document it opens |
 | `url` | the share address the settings name, a `/` and the token |
 | `createdAt` | when it was made |
@@ -221,16 +221,43 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 | `GET /shares/{token}/references/{referenceId}` | | 200, the reference, its preview read |
 | `GET /shares/{token}/references/{referenceId}/image` | | 200, the page's preview picture |
 
-- **Every read and every making sweeps away the links whose time has passed,** each a `share.deleted`. A
-  token that names no live link is `not-found`.
+- **Every read and every making sweeps away the links whose time has passed,** each a `share.deleted`.
 - **`POST /shares`** refuses an `expiresAt` not in the future `bad-request`, and a document that does not
   stand `not-found`.
-- **A share read answers for a live token alone,** and only with what that link's document holds: a token
-  that names no live link is `not-found`, and so is an attachment or a reference of another document. `GET
-  /shares/{token}` and the share reads are the whole of what the link opens.
+- **A share read answers for a live token alone,** and only with what that link's document holds: an
+  attachment or a reference of another document is `not-found`. `GET /shares/{token}` and the share reads
+  are the whole of what the link opens.
+- **A link that has ended leaves a note of what it opened** (docs/archive.md, 「Share links」): its token and
+  that token alone answers 410 `gone`, with the sentence naming the document's title and its number, where the
+  link ended by its time, by `DELETE /shares/{token}` or by its document being let go of with its scope. `GET
+  /shares/{token}` and every share read of that token answer so, and no live link stands there any more.
+- **A token that never named a link is `not-found`,** with the plain sentence saying so.
 - **A reader with no token of the service's** opens a link through whoever serves the service to a
   browser: it reads the link, then the document and everything of it through the share reads, each carrying
   the token.
+
+## Publications
+
+A publication files a document and opens a link with no end to it in one call: what a document is handed to
+somebody as, the address they keep rather than a copy they were sent.
+
+| Field | Holds |
+|---|---|
+| `document` | the document filed, as `POST /documents` answers it |
+| `share` | the link that opens it, its `expiresAt` null |
+
+| Route | Takes | Answers |
+|---|---|---|
+| `POST /publications` | `kind`, `title`, `body?`, `html?`, `scope?`, `actorName`, `labels`, `description?` | 201, the document and its link |
+
+- **The document is filed as `POST /documents` files one,** taking the same body and refusing the same ways.
+- **The link has no end** and names the document rather than a body: a rewrite of that document keeps the
+  link, and the link serves the newest body whenever it is opened (docs/archive.md, 「Share links」).
+- **The link is a share link like any other** once made: `GET /shares`, the share reads and `DELETE
+  /shares/{token}` answer it, and its token answers what stood once it has ended.
+- **Only the service's token publishes.** The console's does not reach the route, since no screen files a
+  document.
+- **Each half is told:** a `document.created` for the document and a `share.created` for the link.
 
 ## Imports
 
@@ -334,14 +361,15 @@ The plugin is `bmo-artifact`: the MCP server `bmo-artifact mcp` starts and the s
 `skills/bmo-artifact/SKILL.md`, which tells a harness when and how to use it. The server reaches the
 service at `--address`, or at the settings' `server.listen` where none is given, with the settings' token.
 Each tool is one call of the client, answered as structured content; a refusal is a tool result marked
-`isError` whose text is the route's status, `code` and `error`. A harness files what it wrote with
-`artifact_file`, finds earlier documents with `artifact_search`, and hands a reader a link with
-`artifact_share`.
+`isError` whose text is the route's status, `code` and `error`. A harness publishes what it wrote with
+`artifact_publish`, which hands it back the document's number and the link to hand to a reader; finds earlier
+documents with `artifact_search`; and opens a link on a document already filed with `artifact_share`.
 
 | Tool | Calls | Input | Output |
 |---|---|---|---|
 | `artifact_documents` | `GET /documents` | the route's query | a page of documents |
 | `artifact_file` | `POST /documents` | `body`, the document's input | the document |
+| `artifact_publish` | `POST /publications` | `title`, `description?`, `body` or `path`, `kind?`, `scope?`, `actorName` | the document and its permanent link |
 | `artifact_document` | `GET /documents/{documentId}` | `documentId` | the document |
 | `artifact_rewrite` | `PATCH /documents/{documentId}` | `documentId` and the route's body | the document |
 | `artifact_content` | `GET /documents/{documentId}/content` | `documentId` | `content`, the file in base64, and `mediaType` |
@@ -351,6 +379,10 @@ Each tool is one call of the client, answered as structured content; a refusal i
 | `artifact_unshare` | `DELETE /shares/{token}` | `token` | an empty object |
 | `artifact_import` | `POST /imports` | the route's body | the import |
 | `artifact_search` | `GET /documents` | `q`, `kind?`, `scope?` | a page of documents |
+
+- **`artifact_publish`'s words come as `body`, or as the `path` of a file on the machine the harness runs
+  on,** read whole and refused over the size one call may carry. Its link is absolute to the share address the
+  settings name, so the harness hands the reader what the service answered and adds nothing to it.
 
 ## The console
 

@@ -7,9 +7,11 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::tool::{ArtifactTool, ToolFailure};
+use crate::kinds::Kind;
+use crate::plumbing::http::BODY_LIMIT;
 use crate::wire::{
   Attachment, AttachmentInput, ContentQuery, Document, DocumentChange, DocumentInput, DocumentPage,
-  DocumentsQuery, Import, ImportInput, Share, ShareInput, SharePage, SharesQuery,
+  DocumentsQuery, Import, ImportInput, Labels, Publication, Share, ShareInput, SharePage, SharesQuery,
 };
 
 /// One document, by its number.
@@ -24,6 +26,31 @@ pub struct DocumentKey {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct FileInput {
   pub body: DocumentInput,
+}
+
+/// A document to publish: what it is called, what it reads as, and its words, given or read off this machine.
+#[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PublishInput {
+  /// The document's title.
+  pub title: String,
+  /// What it reads as before it is opened, in a line or two.
+  #[serde(default)]
+  pub description: Option<String>,
+  /// Its words as markdown, for a record or a learning book; the page's HTML for a page.
+  #[serde(default)]
+  pub body: Option<String>,
+  /// A file on this machine whose whole text is the body, or the HTML of a page, given instead of `body`.
+  #[serde(default)]
+  pub path: Option<String>,
+  /// The kind it is filed as: `record` where none is named, `learning` or `page` beside it.
+  #[serde(default)]
+  pub kind: Option<String>,
+  /// What it is held under, where the caller keeps one.
+  #[serde(default)]
+  pub scope: Option<String>,
+  /// Who files it.
+  pub actor_name: String,
 }
 
 /// A document rewritten under its number.
@@ -99,6 +126,77 @@ fn file() -> ArtifactTool {
 }
 
 crate::tool!(file);
+
+// The whole of a file this machine holds, as the text a document is filed with: refused where it cannot be
+// read, is not text, or is over what one call may carry.
+fn read_text(path: &str) -> Result<String, ToolFailure> {
+  let bytes = std::fs::read(path)
+    .map_err(|why| ToolFailure::Arguments(format!("the file {path} could not be read: {why}")))?;
+
+  if bytes.len() > BODY_LIMIT {
+    return Err(ToolFailure::Arguments(format!(
+      "the file {path} weighs {} bytes, over the {BODY_LIMIT} one call may carry",
+      bytes.len()
+    )));
+  }
+
+  String::from_utf8(bytes)
+    .map_err(|_| ToolFailure::Arguments(format!("the file {path} is not text this service can keep")))
+}
+
+// The document a publish call files: its words as given, else the whole of the file it names, laid in the body
+// or the HTML its kind is filed with.
+fn publish_input(input: PublishInput) -> Result<DocumentInput, ToolFailure> {
+  let words = match (input.body, input.path) {
+    (Some(body), None) => body,
+    (None, Some(path)) => read_text(&path)?,
+    (Some(_), Some(_)) => {
+      return Err(ToolFailure::Arguments(
+        "give the document's words as `body` or as the `path` of a file, not both".to_owned(),
+      ));
+    }
+    (None, None) => {
+      return Err(ToolFailure::Arguments(
+        "give the document's words as `body` or as the `path` of a file".to_owned(),
+      ));
+    }
+  };
+
+  let kind = input.kind.unwrap_or_else(|| crate::kinds::RecordKind.name().to_owned());
+  let (body, html) = if crate::kinds::kind(Some(&kind)).hosted() {
+    (None, Some(words))
+  } else {
+    (Some(words), None)
+  };
+
+  Ok(DocumentInput {
+    kind,
+    title: input.title,
+    body,
+    html,
+    scope: input.scope,
+    actor_name: input.actor_name,
+    labels: Labels::default(),
+    description: input.description,
+  })
+}
+
+fn publish() -> ArtifactTool {
+  ArtifactTool::new(
+    "artifact_publish",
+    "Publish a document as an artifact: file it and answer with a permanent share link to hand to a reader. \
+     Takes its title, a short description, and its words as markdown `body` or as the `path` of a file on this \
+     machine. The link has no end and opens with no console login; it keeps opening across restarts and \
+     redeployments, and it names the document rather than a body, so a rewrite keeps the same link serving the \
+     newest body.",
+    "POST /publications",
+    |client, input: PublishInput| async move {
+      Ok::<Publication, ToolFailure>(client.publish(&publish_input(input)?).await?)
+    },
+  )
+}
+
+crate::tool!(publish);
 
 fn document() -> ArtifactTool {
   ArtifactTool::new(

@@ -38,6 +38,11 @@ impl Refusal {
     Self::new(StatusCode::CONFLICT, detail)
   }
 
+  /// The member stood once and stands no more: what it was is said in the sentence.
+  pub fn gone(detail: impl Into<String>) -> Self {
+    Self::new(StatusCode::GONE, detail)
+  }
+
   /// The body or a file is over its ceiling.
   pub fn too_large(detail: impl Into<String>) -> Self {
     Self::new(StatusCode::PAYLOAD_TOO_LARGE, detail)

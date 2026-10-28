@@ -1,5 +1,5 @@
 //! The harness plugin's MCP server as a harness starts it (`docs/api.md`, "The harness plugin"):
-//! `bmo-artifact mcp` answers the handshake at the repository's version and lists exactly its eleven tools;
+//! `bmo-artifact mcp` answers the handshake at the repository's version and lists exactly its twelve tools;
 //! a tool's call reaches the service through the client and a refusal comes back as a tool error.
 
 mod support;
@@ -111,6 +111,7 @@ fn it_lists_exactly_its_eleven_tools_at_the_repository_version() {
       "artifact_documents",
       "artifact_file",
       "artifact_import",
+      "artifact_publish",
       "artifact_rewrite",
       "artifact_search",
       "artifact_share",
@@ -170,6 +171,49 @@ async fn a_harness_files_a_document_finds_it_and_shares_it_through_the_tools() {
       .is_some_and(|url| url.starts_with("https://")),
     "{shared}"
   );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_harness_publishes_a_document_from_a_file_and_answers_its_link() {
+  let service = Service::new().await;
+  let address = service.listening().await;
+  let folder = tempfile::tempdir().expect("a folder of the machine's own");
+  let file = folder.path().join("quarterlies.md");
+
+  std::fs::write(&file, "# Quarterlies\n\nWhat the *quarter* came to.\n").expect("the document's file");
+  let path = file.display().to_string();
+  let answers = tokio::task::spawn_blocking(move || {
+    let (mut server, _) = Server::started(&address);
+    let mut call = |id: i64, name: &str, arguments: Value| {
+      server.send(json!({
+        "jsonrpc": "2.0", "id": id, "method": "tools/call", "params": { "name": name, "arguments": arguments },
+      }));
+      server.answer(id)["result"].clone()
+    };
+    let published = call(
+      2,
+      "artifact_publish",
+      json!({ "title": "Quarterlies", "description": "What the quarter came to.", "path": path, "actorName": "tester" }),
+    );
+    let both = call(
+      3,
+      "artifact_publish",
+      json!({ "title": "Twice", "body": "Words.", "path": path, "actorName": "tester" }),
+    );
+
+    (published, both)
+  })
+  .await
+  .expect("the harness ran");
+  let (published, both) = answers;
+  let document = &published["structuredContent"]["document"];
+  let share = &published["structuredContent"]["share"];
+
+  assert_eq!(document["title"], "Quarterlies", "{published}");
+  assert_eq!(document["description"], "What the quarter came to.", "{published}");
+  assert_eq!(share["expiresAt"], Value::Null, "{published}");
+  assert!(share["url"].as_str().is_some_and(|url| url.starts_with("https://")), "{published}");
+  assert_eq!(both["isError"], true, "{both}");
 }
 
 #[test]

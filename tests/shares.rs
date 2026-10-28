@@ -55,10 +55,10 @@ async fn a_link_is_made_once_answered_again_read_listed_and_ended() {
     service.call(Method::DELETE, &format!("/shares/{token}"), None).await.status,
     StatusCode::NO_CONTENT
   );
-  assert_eq!(
-    service.call(Method::GET, &format!("/shares/{token}"), None).await.status,
-    StatusCode::NOT_FOUND
-  );
+  // The link no longer opens, and what it opened stands where it ended.
+  let ended = service.call(Method::GET, &format!("/shares/{token}"), None).await;
+
+  assert_eq!((ended.status, ended.json()["code"].clone()), (StatusCode::GONE, json!("gone")));
   assert_eq!(
     service.call(Method::DELETE, &format!("/shares/{token}"), None).await.status,
     StatusCode::NOT_FOUND
@@ -133,12 +133,18 @@ async fn a_live_link_opens_its_one_document_through_the_share_reads_with_no_role
 
   service.call(Method::DELETE, &format!("/shares/{token}"), None).await;
 
-  for path in ["/document", "/kind", "/content", "/attachments", "/references"] {
+  // What the link opened stands where it ended: the token answers it, and never nothing at all.
+  for path in ["", "/document", "/kind", "/content", "/attachments", "/references"] {
     let ended = read(format!("/shares/{token}{path}")).await;
 
     assert_eq!(
       (ended.status, ended.json()["code"].clone()),
-      (StatusCode::NOT_FOUND, json!("not-found")),
+      (StatusCode::GONE, json!("gone")),
+      "{path}"
+    );
+    assert_eq!(
+      ended.json()["error"],
+      format!("This share link has ended: it opened \"Shared\" (document {id})."),
       "{path}"
     );
   }
@@ -174,9 +180,12 @@ async fn a_link_is_refused_for_a_time_gone_by_or_no_document_and_swept_once_its_
     )
     .await;
 
+  let ended = service.call(Method::GET, &format!("/shares/{token}"), None).await;
+
+  assert_eq!((ended.status, ended.json()["code"].clone()), (StatusCode::GONE, json!("gone")));
   assert_eq!(
-    service.call(Method::GET, &format!("/shares/{token}"), None).await.status,
-    StatusCode::NOT_FOUND
+    ended.json()["error"],
+    format!("This share link has ended: it opened \"Shared\" (document {id}).")
   );
   assert_eq!(service.event_kinds().await, ["document.created", "share.deleted"]);
 }
