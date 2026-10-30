@@ -75,6 +75,27 @@
       "list_failed": "The list could not be read.",
       "open_failed": "The document could not be opened.",
       "read_failed": "The document could not be read."
+    },
+    "player": {
+      "common": {
+        "action": {
+          "play": "Play",
+          "pause": "Pause",
+          "mute": "Mute",
+          "unmute": "Unmute"
+        },
+        "label": {
+          "play_position": "Play position",
+          "unplayable": "Cannot be played",
+          "volume": "Volume"
+        },
+        "aria": {
+          "download_named": "Download {name}"
+        },
+        "status": {
+          "loading": "Loading…"
+        }
+      }
     }
   }
 }

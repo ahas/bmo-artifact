@@ -1,5 +1,6 @@
-import { artifactAddress, everyPage } from "./artifact";
+import { artifactAddress, everyPage, pageQuery } from "./artifact";
 
+import type { PageAsked } from "./artifact";
 import type { ArtifactAttachment, ArtifactAttachmentPage, ArtifactDocument, ArtifactKind, ArtifactReference, ArtifactReferencePage } from "../../shared/types";
 
 // The reads a share page makes of the one document its link opens, each a share read carrying the token
@@ -19,16 +20,9 @@ export function readSharedKind(token: string): Promise<ArtifactKind> {
   return $fetch<ArtifactKind>(sharedAddress(token, "/kind"));
 }
 
-/** Where the file of the document the link opens is served: a page in the scheme named, as a hosted page. */
-export function sharedContentAddress(token: string, scheme?: string, download = false): string {
-  const query = new URLSearchParams();
-
-  if (scheme !== undefined) query.set("scheme", scheme);
-  if (download) query.set("download", "true");
-
-  const rest = query.toString();
-
-  return sharedAddress(token, `/content${rest === "" ? "" : `?${rest}`}`);
+/** Where the file of the document the link opens is served: a page as asked, as a hosted page. */
+export function sharedContentAddress(token: string, asked: PageAsked = {}): string {
+  return sharedAddress(token, `/content${pageQuery(asked)}`);
 }
 
 /** The markdown file of the document the link opens, as its text. */

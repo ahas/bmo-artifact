@@ -134,8 +134,9 @@ address and the file root are settings; no other unit reads or writes either.
   kept under, or a path with no scheme whose last part is that name, is drawn from the kept file, and a
   link written either way opens it. A web address is never read as a kept name. A reader resolves the
   name under the route it reads the document on.
-- **The role is the caller's word for the file's part.** `head` marks a file a reader is shown at the
-  document's head; a narration's sound is attached with it.
+- **The role is the caller's word for the file's part.** `head` marks a file a reader is shown at a
+  markdown document's head; a narration's sound is attached with it. A page stands its sounds where it
+  writes them (「An HTML page」).
 - **A name may carry a language** as its last part, a two-letter language code after a hyphen and before
   the extension, as `narration-ko.ogg` and `narration-en.ogg` do. A code no language is known by is no
   language.
@@ -211,8 +212,27 @@ place.
 
 - **Filing it:** the page is filed as its HTML, untouched. A page carries what it draws inside itself or
   over https, so it takes no body; files may still be attached beside it.
-- **A page carries no player of its own.** A sound to be heard with it is attached beside it with the role
-  `head`, and the reader plays it in the listen band above the page (「How a document is drawn」).
+- **A page's sounds play in the design's player, where the page writes them.** A sound the page keeps beside
+  it is attached to its document, and the page refers to it by the name it is kept under, as an `audio`
+  element whose address is `attachment:` and the name, percent-encoded where the name needs it:
+  `<audio src="attachment:narration-ko.ogg"></audio>`, or a `source` inside the `audio` so written. An
+  address over https is taken as it stands. What the page writes around the element — a band, a heading, a
+  label for each language — stays as the page wrote it; the reader draws no band of its own over a page.
+  - **Each `audio` element is stood in its place as the design's player,** bmo-ui's audio player element,
+    `bmo-audio-player`, keeping every attribute the page gave the `audio` element but its address and those
+    only the browser's own player reads (`controls`, `preload`, `autoplay`, `crossorigin`), so a
+    `data-language` or a `class` the page selects it by still stands on it.
+  - **The player answers `play()` and `pause()`** as the `audio` element did, so the page's own script moves
+    it as before, found by any attribute but the element's name. One sound plays at a time across the page.
+  - **It is named** by the element's `title` where the page gives one, else by the kept file's name, and
+    downloads the kept file.
+  - **It speaks the reader's language,** in the words the console bundle's pack gives the player, and is
+    drawn in the scheme the page is drawn in.
+  - **The address a sound plays from** is one the sandboxed page can load: on a share link, the share route
+    of the attachment; on the console's own reading, a reading address (「Readings」). A name the document
+    keeps no file under leaves the player saying it cannot be played.
+  - Where the player's script cannot be loaded, each `audio` element stays the browser's own, its address
+    rewritten the same way.
 - **Reading it:** `bmo-artifact html-read <file>` gives a page's title and its words in order, a block to a
   line, headings as markdown headings and list items as dashes, scripts and styles not words.
   - Every picture written inside the page as a data address stands in the reading as a markdown picture
@@ -228,9 +248,17 @@ place.
     names by a class or an id, and takes the design's type in the light palette over what it wrote for
     bare elements; where the reader's scheme is dark, it is drawn inverted with its hues turned back, and
     its pictures and films inverted again.
-  - **A dark scheme of its own:** the page draws itself, and its own questions about the scheme are
-    answered with the reader's scheme.
+  - **A dark scheme of its own:** the page draws itself in the reader's scheme.
+  - **A page's questions about the scheme are answered with the scheme it is drawn in:** a rule asking
+    `prefers-color-scheme` and a script's `matchMedia` asking it, a diagram's library choosing its theme
+    among them, read the reader's scheme on a page in the design or with a dark scheme of its own, and light
+    on a page drawn inverted, which is drawn light and turned. The root's `color-scheme` says the same. A
+    reader whose scheme is whatever the system asks leaves the questions to the system, but on a page drawn
+    inverted.
   - The sheet stands before anything the page draws, so the first paint is already in the scheme.
+  - **Exactly one sheet goes out, the reader's.** Lines an earlier serving put ahead of a page — the sheet,
+    marked `data-archive-sheet`, and each line marked `data-archive-prelude` — are left out of what goes out
+    where a page was filed carrying them, and are never read as the page's own design.
 - **The parts a page builds with.** A page written on the design is plain HTML in a body the sheet lays
   out, drawing headings, paragraphs, lists, tables, quotations, code, figures and folds as a markdown
   document's, with these named parts beside them:
@@ -243,17 +271,38 @@ place.
   - a table, which scrolls sideways inside itself where it is wider than the column;
   - a `footer`, which closes the page in the muted ink.
 - **Hosting it.** The page goes out on its document's content route, and an HTML attachment on its own.
-  - What goes out is the file as kept, with only a few lines ahead of it: one lets its copy buttons work
-    in the sandbox, one hands a pressed picture to its frame (「Pictures open whole」), and one opens a
-    link the page opens in its own window in a tab of its own. A download is the file itself.
-  - **Sandbox:** it runs its own scripts, sandboxed, with an opaque origin of its own. It opens no
-    connection, submits no form, loads what it is drawn with from inside itself or over https, and reaches
-    nothing of the screen it was opened from.
+  - What goes out is the file as kept, with only a few lines ahead of it: the sheet, the line answering its
+    questions about the scheme, one that lets its copy buttons work in the sandbox, one that hands a pressed
+    picture to its frame (「Pictures open whole」), one that opens a link the page opens in its own window
+    in a tab of its own, and, where the page writes an `audio` element, the player's script and the line
+    that stands each sound in it. A download is the file itself.
+  - **Sandbox:** it runs its own scripts, sandboxed, with an opaque origin of its own. It submits no form,
+    loads what it is drawn with from inside itself or over https, opens no connection but to the address
+    it was served from, where only what answers any origin can be read — a sound's bytes for the player's
+    waveform — and reaches nothing of the screen it was opened from.
   - **Framing:** it may be framed by the screen that opened it, and by no other site.
   - **One sandbox for both.** The sandbox, the rest of the policy and the lines that go ahead of the page
     are kept in the design's files; the server sends the page under them, and the console bundle's frame
     gives the page the same sandbox.
-  - Every other attachment goes out under the policy that lets nothing on it run.
+  - Every other attachment goes out under the policy that lets nothing on it run. An attachment read on a
+    share link or a reading answers any origin, so the player in a sandboxed page reads its waveform.
+
+### Readings
+
+A page the console's own reader opens stands in a sandbox of its own origin, which carries none of the
+reader's sign-in, so its sounds are handed to it on addresses a token opens.
+
+- **A reading token** is the document's number and the second the reading ends, signed with the service's
+  key, in URL-safe base64. It is written into the page's lines each time the content route serves a page
+  that writes an `audio` element to the console, and nothing of it is kept: a token whose signature does not
+  hold, or whose time has passed, opens nothing.
+- **A reading lasts twelve hours,** and opening the page again writes a new one.
+- **The key** is drawn from the service's token where the settings name one, so a reading outlives a
+  restart; with none, one is drawn as the process starts.
+- **What a reading opens:** that one document's attachments, as the share reads open them, an HTML
+  attachment as a hosted page whose sounds are handed the same reading.
+- **The player's script** goes out on its own address named by the digest of its bytes, open to anyone
+  and kept by whoever loaded it; a page of a share link and a page of a reading load the same one.
 
 ## How a document is drawn
 
@@ -271,11 +320,11 @@ sheet and the console bundle reads to draw a document.
 - **The body:** 16px words on a loose line; a section ruled off under its heading; a quotation a box on
   the sunk surface with an accent rule down its left; a table a rounded box on the raised surface with its
   head row on the sunk surface; code on the sunk surface; links in the accent.
-- **The listen band is the reader's, for every kind.** The sounds heard at a document's head stand in it,
-  each in the design's own player, under the masthead of a markdown document and above the frame of a page,
-  outside the page's sandbox. A player plays its sound through the attachment route the screen reads the
-  document on, the share route on a share page, which answers a ranged read. A document with no such sound
-  has no band.
+- **The listen band is the reader's, for a markdown document.** The sounds heard at its head stand in it,
+  each in the design's own player, under its masthead. A player plays its sound through the attachment route
+  the screen reads the document on, the share route on a share page, which answers a ranged read. A document
+  with no such sound has no band. A page has no band of the reader's: its sounds stand where the page writes
+  them (「An HTML page」).
   - **What stands in it:** every sound with the role `head`, and, beside a head sound whose name carries a
     language (「Attachments」), every sound named as it is with another language in that place, in the order
     the files were kept.
@@ -317,9 +366,9 @@ A picture in a document opens in the picture viewer, for a markdown document and
   - one document at `/archive/<id>`: its masthead — its labels on a secondary line under its title, each name
     and value, that wraps — its file drawn as markdown with a table of contents of its kind's depth, its files
     after it, its references beside it, each with the picture its preview declares; a page fills the screen in
-    its frame, under the listen band where it has one;
+    its frame;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
-    other document; a page fills the window, under the listen band where it has one.
+    other document; a page fills the window.
 - **A share page reads as its document before anything runs:** the document's title, its description and
   its cover picture stand as the page's preview head, the link is its canonical address, and it asks
   search engines not to index or follow it.

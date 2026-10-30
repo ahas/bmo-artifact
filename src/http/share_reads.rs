@@ -9,7 +9,7 @@ use schemars::generate::SchemaGenerator;
 
 use super::attachments::{attachment_bytes, attachment_page};
 use super::documents::{content, document, picture};
-use super::files::Asking;
+use super::files::{Asking, Opened, Reach, any_origin};
 use super::references::{cited_in, reference, reference_image, reference_page};
 use super::shares::{shared_document, token_parameter};
 use crate::kinds;
@@ -19,8 +19,9 @@ use crate::wire::{
   AttachmentPage, ContentQuery, Document, DocumentKind, PageQuery, Reference, ReferencePage,
 };
 
-/// Every share read's path, as the manifest names them under `shareReads`, `GET /shares/{token}` among them.
-pub const SHARE_READS: [&str; 10] = [
+/// Every share read's path, as the manifest names them under `shareReads`, `GET /shares/{token}` among them,
+/// and the reading's attachment read and the player's script, which a hosted page asks for with no session.
+pub const SHARE_READS: [&str; 12] = [
   "/shares/{token}",
   "/shares/{token}/document",
   "/shares/{token}/kind",
@@ -31,6 +32,8 @@ pub const SHARE_READS: [&str; 10] = [
   "/shares/{token}/references",
   "/shares/{token}/references/{referenceId}",
   "/shares/{token}/references/{referenceId}/image",
+  "/readings/{token}/attachments/{attachmentId}",
+  "/player/{token}",
 ];
 
 // The document the call's token opens.
@@ -109,8 +112,9 @@ impl Route for ReadSharedContent {
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = opened(&mut call).await?;
     let asking = Asking::of(&call)?;
+    let reach = Reach::new(Opened::Share(call.path_text("token").await?), Self::PATH);
 
-    content(call.standing(), &asking, id).await
+    content(call.standing(), &asking, id, &reach).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
@@ -196,8 +200,9 @@ impl Route for ReadSharedAttachment {
     let id = opened(&mut call).await?;
     let attachment = call.path_id("attachmentId").await?;
     let asking = Asking::of(&call)?;
+    let reach = Reach::new(Opened::Share(call.path_text("token").await?), Self::PATH);
 
-    attachment_bytes(call.standing(), &asking, id, attachment).await
+    Ok(any_origin(attachment_bytes(call.standing(), &asking, id, attachment, &reach).await?))
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {

@@ -51,6 +51,17 @@ function words(): Plugin {
   };
 }
 
+// bmo-ui's audio player script as the packed bmo-ui carries it, beside the module: the service answers it to
+// a hosted page that writes a sound (`docs/archive.md`, "An HTML page").
+function player(): Plugin {
+  return {
+    name: "artifact-player",
+    generateBundle() {
+      this.emitFile({ type: "asset", fileName: "bmo-audio-player.js", source: readFileSync(here("./node_modules/bmo-ui/dist/bmo-audio-player.js")) });
+    }
+  };
+}
+
 export default defineConfig({
   // The module runs in the browser alone: what Nuxt states of the side a file runs on is stated here.
   define: { "import.meta.client": "true", "import.meta.server": "false" },
@@ -68,7 +79,8 @@ export default defineConfig({
       dts: false
     }),
     Components({ dirs: ["app/components"], resolvers: [componentOf], dts: false }),
-    words()
+    words(),
+    player()
   ],
   build: {
     outDir: "dist",

@@ -36,9 +36,7 @@
         v-else-if="hosted"
         :title="held.document.title"
         :kind="kindText"
-        :page="(scheme, download) => contentAddress(documentId, scheme, download)"
-        :attachments="held.attachments"
-        :address="fileAddress"
+        :page="(asked) => contentAddress(documentId, asked)"
         :properties="properties"
         :share="openShare"
       />
@@ -191,7 +189,7 @@ const bodyProps = computed(() => ({
   address: fileAddress,
   properties: properties.value,
   labels: held.value?.document.labels ?? null,
-  documentUrl: contentAddress(documentId.value, undefined, true),
+  documentUrl: contentAddress(documentId.value, { download: true }),
   share: openShare
 }));
 

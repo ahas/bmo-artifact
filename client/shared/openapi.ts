@@ -296,6 +296,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/player/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** bmo-ui's audio player script, named by the digest of its bytes. */
+        get: operations["readPlayer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/publications": {
         parameters: {
             query?: never;
@@ -307,6 +324,23 @@ export interface paths {
         put?: never;
         /** File a document and open a link to it with no end. */
         post: operations["createPublications"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/readings/{token}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One attachment's bytes of the document a reading opens, with Range. */
+        get: operations["readReadingsAttachmentsByTokenAttachmentId"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -547,8 +581,8 @@ export interface components {
              */
             name: string;
             /**
-             * @description The caller's word for its part in the document; `head` marks a file a reader is shown at its head, a
-             *     sound in the listen band, for a page as for a markdown document.
+             * @description The caller's word for its part in the document; `head` marks a file a reader is shown at a markdown
+             *     document's head, a sound in the listen band. A page stands its sounds where it writes them.
              */
             role: string | null;
         };
@@ -1122,6 +1156,11 @@ export interface operations {
                 /** @description Send the file itself to keep, under its name. */
                 download?: boolean | null;
                 /**
+                 * @description The language a hosted page's player speaks, a locale of the console bundle's words; English where none
+                 *     is named or the words hold none of it.
+                 */
+                language?: string | null;
+                /**
                  * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
                  *     none is named.
                  */
@@ -1165,6 +1204,11 @@ export interface operations {
             query?: {
                 /** @description Send the file itself to keep, under its name. */
                 download?: boolean | null;
+                /**
+                 * @description The language a hosted page's player speaks, a locale of the console bundle's words; English where none
+                 *     is named or the words hold none of it.
+                 */
+                language?: string | null;
                 /**
                  * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
                  *     none is named.
@@ -1393,6 +1437,30 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    readPlayer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The script's file name, carrying the digest of its bytes. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description bmo-ui's audio player script, named by the digest of its bytes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/javascript": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     createPublications: {
         parameters: {
             query?: never;
@@ -1413,6 +1481,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Publication"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    readReadingsAttachmentsByTokenAttachmentId: {
+        parameters: {
+            query?: {
+                /** @description Send the file itself to keep, under its name. */
+                download?: boolean | null;
+                /**
+                 * @description The language a hosted page's player speaks, a locale of the console bundle's words; English where none
+                 *     is named or the words hold none of it.
+                 */
+                language?: string | null;
+                /**
+                 * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
+                 *     none is named.
+                 */
+                scheme?: string | null;
+            };
+            header?: {
+                /** @description One byte range of the file. */
+                Range?: string;
+            };
+            path: {
+                /** @description The reading token. */
+                token: string;
+                attachmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One attachment's bytes of the document a reading opens, with Range. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            /** @description One attachment's bytes of the document a reading opens, with Range. */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
                 };
             };
             default: components["responses"]["Error"];
@@ -1612,6 +1730,11 @@ export interface operations {
                 /** @description Send the file itself to keep, under its name. */
                 download?: boolean | null;
                 /**
+                 * @description The language a hosted page's player speaks, a locale of the console bundle's words; English where none
+                 *     is named or the words hold none of it.
+                 */
+                language?: string | null;
+                /**
                  * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
                  *     none is named.
                  */
@@ -1656,6 +1779,11 @@ export interface operations {
             query?: {
                 /** @description Send the file itself to keep, under its name. */
                 download?: boolean | null;
+                /**
+                 * @description The language a hosted page's player speaks, a locale of the console bundle's words; English where none
+                 *     is named or the words hold none of it.
+                 */
+                language?: string | null;
                 /**
                  * @description The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where
                  *     none is named.

@@ -132,7 +132,9 @@ answers reads as `record`.
 - **`GET /documents/{documentId}/content`** sends the file: `text/markdown` for a markdown kind, never
   cached. A page goes out as a hosted page (docs/archive.md, 「An HTML page」): its prelude ahead of its
   first element in the scheme `scheme` names, `light`, `dark` or `system`, the design's default where none is named, under the
-  sandboxed page policy. `download=true` sends the file itself to keep, under its name. 404 `not-found`
+  sandboxed page policy. Its sounds stand in the player speaking the language `language` names, a locale of the
+  console bundle's words, English where it names none or one the words do not hold, and play from a reading
+  address (「Readings」). `download=true` sends the file itself to keep, under its name. 404 `not-found`
   where the document has no file inside its folder.
 - **`GET /documents/{documentId}/picture`** sends the picture a link's preview card shows: the first its
   body draws by a kept file's name (docs/archive.md, 「Attachments」), else the first it keeps, upright,
@@ -147,14 +149,14 @@ answers reads as `record`.
 | `mediaType` | its type as kept |
 | `kind` | what it is read as: `image`, `audio`, `video`, `text`, `page` or `file` |
 | `byteCount` | its size |
-| `role` | the caller's word for its part in the document, null for none; `head` marks a file a reader is shown at the document's head, a narration's sound among them, which the reader plays in the listen band for a page as for a markdown document; a sound named as a head sound is with another language stands beside it there (docs/archive.md, 「How a document is drawn」) |
+| `role` | the caller's word for its part in the document, null for none; `head` marks a file a reader is shown at a markdown document's head, a narration's sound among them, which the reader plays in the listen band; a sound named as a head sound is with another language stands beside it there (docs/archive.md, 「How a document is drawn」). A page stands its sounds where it writes them, by their names (docs/archive.md, 「An HTML page」) |
 | `createdAt` | when it was kept |
 
 | Route | Takes | Answers |
 |---|---|---|
 | `GET /documents/{documentId}/attachments` | query `after?`, `limit?` | 200, a page of attachments, in the order they were kept |
 | `POST /documents/{documentId}/attachments` | `name`, `mediaType`, `role?`, `content` in base64 | 201, the attachment |
-| `GET /documents/{documentId}/attachments/{attachmentId}` | query `scheme?`, `download?`; the `Range` header | 200 or 206, the bytes |
+| `GET /documents/{documentId}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes |
 
 - **A file is kept as docs/archive.md 「Attachments」 says:** its kind read from its bytes and its name, a
   picture kept upright as AVIF, a name the document already keeps refused `bad-request`. One file is at
@@ -213,14 +215,16 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 |---|---|---|
 | `GET /shares/{token}/document` | | 200, the document |
 | `GET /shares/{token}/kind` | | 200, the document's kind, as `GET /document-kinds` lists it |
-| `GET /shares/{token}/content` | query `scheme?`, `download?` | 200, the file |
+| `GET /shares/{token}/content` | query `scheme?`, `language?`, `download?` | 200, the file |
 | `GET /shares/{token}/picture` | | 200, the cover picture as JPEG |
 | `GET /shares/{token}/attachments` | query `after?`, `limit?` | 200, a page of attachments |
-| `GET /shares/{token}/attachments/{attachmentId}` | query `scheme?`, `download?`; the `Range` header | 200 or 206, the bytes |
+| `GET /shares/{token}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes, answering any origin |
 | `GET /shares/{token}/references` | query `after?`, `limit?` | 200, a page of references |
 | `GET /shares/{token}/references/{referenceId}` | | 200, the reference, its preview read |
 | `GET /shares/{token}/references/{referenceId}/image` | | 200, the page's preview picture |
 
+- **A page a share read sends** has its sounds play from the share route of their attachments
+  (docs/archive.md, 「An HTML page」).
 - **Every read and every making sweeps away the links whose time has passed,** each a `share.deleted`.
 - **`POST /shares`** refuses an `expiresAt` not in the future `bad-request`, and a document that does not
   stand `not-found`.
@@ -235,6 +239,23 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 - **A reader with no token of the service's** opens a link through whoever serves the service to a
   browser: it reads the link, then the document and everything of it through the share reads, each carrying
   the token.
+
+### Readings
+
+A reading token opens one document's attachments to the page the console's own reader opens, for twelve
+hours, and the player's script goes out on its own (docs/archive.md, 「Readings」). Both are share reads: a
+console relays them with no session, as a sandboxed page asks for them with none.
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /readings/{token}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes, answering any origin |
+| `GET /player/{token}` | | 200, the player's script, the token being its file's name |
+
+- **A reading token whose signature does not hold, or whose time has passed,** is `not-found`, and so is an
+  attachment of another document.
+- **The player's file name** is `bmo-audio-player`, the first sixteen hexadecimal digits of the SHA-256 of
+  its bytes and `.js`; it goes out as `text/javascript`, kept a year. Any other name, or a bundle built with no
+  player, is `not-found`.
 
 ## Publications
 
@@ -400,12 +421,14 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
   `artifact.title.screen`, its icon, its screens under `/archive`, the service `artifact`, the paths of its
   module, its stylesheet and its words, and the role `member`. Every call the screens make stands under the
   API prefix `/`; no screen needs the owner key, reads the event stream or opens a socket, and no event is
-  raised as a notice. Under `shareReads` it names `GET /shares/{token}` and every share read (「Share links」),
-  the reads the share page makes.
+  raised as a notice. Under `shareReads` it names `GET /shares/{token}`, every share read (「Share links」),
+  the reads the share page makes, and the reading's attachment read and the player's script (「Readings」),
+  which a hosted page makes.
 - **The module and the stylesheet** are the files the build of `client/` writes into the folder the settings
-  name, read when the service starts. Each is answered at `/console/` and a name carrying the first sixteen
-  hexadecimal digits of the SHA-256 of its bytes, so its path changes whenever its bytes do, and may be kept
-  by whoever loaded it. A file name the manifest does not name is `not-found`.
+  name, read when the service starts, beside bmo-ui's audio player script, which the build copies there and
+  the service answers on its own route (「Readings」). Each is answered at `/console/` and a name carrying the
+  first sixteen hexadecimal digits of the SHA-256 of its bytes, so its path changes whenever its bytes do,
+  and may be kept by whoever loaded it. A file name the manifest does not name is `not-found`.
 - **The words** are each locale's words of the bundle's pack under the locale's code, every key under
   `artifact`, as the build writes them beside the module.
 - **Where the folder holds no module,** the manifest, the module, the stylesheet and the words are all

@@ -11,9 +11,13 @@ use axum::response::Response;
 use headers::{Header, Range};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
-use super::hosted_page::{KEPT_FILE_POLICY, hosted_page, hosted_page_policy, reader_scheme};
+use super::hosted_page::{
+  KEPT_FILE_POLICY, PageSounds, SoundFile, hosted_page, hosted_page_policy, reader_scheme, writes_sound,
+};
 use crate::Refusal;
-use crate::plumbing::http::{Call, Refused};
+use crate::plumbing::http::{Call, Refused, Standing};
+use crate::readings::now_seconds;
+use crate::store::attachments;
 use crate::wire::ContentQuery;
 
 /// How long a reader's own cache may keep a kept file.
@@ -117,14 +121,107 @@ pub async fn kept_file(
   Ok(response)
 }
 
-/// A page sent whole with its prelude in it, in the scheme asked for.
-pub async fn hosted_file(file: &KeptFile, scheme: Option<&str>, cache: &str) -> Result<Response, Refused> {
+/// Who a hosted page goes out to, which decides the addresses its sounds play from (`docs/archive.md`, "An
+/// HTML page" and "Readings").
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Opened {
+  /// The console's own reader, whose page is handed a reading of its own.
+  Console,
+  /// The holder of a share link, by its token.
+  Share(String),
+  /// The holder of a reading, by its token.
+  Reading(String),
+}
+
+/// Where a hosted page goes out: who it goes out to, and the route it goes out on, which every address it is
+/// handed is written relative to, so it holds under whatever prefix a console relays the service at.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Reach {
+  pub opened: Opened,
+  pub route: &'static str,
+}
+
+impl Reach {
+  pub fn new(opened: Opened, route: &'static str) -> Self {
+    Self { opened, route }
+  }
+
+  // The way from the route's own address back to the root of the service's API.
+  fn up(&self) -> String {
+    "../".repeat(self.route.split('/').filter(|part| !part.is_empty()).count().saturating_sub(1))
+  }
+}
+
+/// A response that answers any origin, for a sandboxed page that reads it from an origin of its own.
+pub fn any_origin(mut response: Response) -> Response {
+  response
+    .headers_mut()
+    .insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+
+  response
+}
+
+/// What a page of `document` going out at `reach` is handed for its sounds: each file the document keeps at an
+/// address the sandboxed page loads, the player's script, and the player's words in `language`.
+pub async fn page_sounds(
+  standing: &Standing,
+  document: i64,
+  reach: &Reach,
+  language: Option<&str>,
+) -> Result<PageSounds, Refused> {
+  let up = reach.up();
+  let opened = match &reach.opened {
+    Opened::Console => format!("readings/{}", standing.readings.issue(document, now_seconds())),
+    Opened::Share(token) => format!("shares/{token}"),
+    Opened::Reading(token) => format!("readings/{token}"),
+  };
+  let (kept, _) = attachments::list(standing.db().await?, document, None, i64::from(u16::MAX)).await?;
+  let files = kept
+    .into_iter()
+    .map(|kept| {
+      let play = format!("{up}{opened}/attachments/{}", kept.attachment.id);
+
+      (
+        kept.attachment.name,
+        SoundFile {
+          download: format!("{play}?download=true"),
+          play,
+        },
+      )
+    })
+    .collect();
+  let (locale, words) = standing.console.player_words(language);
+
+  Ok(PageSounds {
+    player: standing.console.player.as_ref().map(|player| format!("{up}player/{}", player.name)),
+    files,
+    words,
+    locale,
+  })
+}
+
+/// A page of `document` sent whole with its prelude in it, in the scheme asked for, its sounds handed the
+/// addresses `reach` loads them at. A page goes out to be read once and never kept, since what it is handed
+/// ends.
+pub async fn hosted_file(
+  standing: &Standing,
+  file: &KeptFile,
+  asked: &ContentQuery,
+  document: i64,
+  reach: &Reach,
+) -> Result<Response, Refused> {
   let html = tokio::fs::read_to_string(&file.path).await.map_err(unread)?;
-  let mut response = Response::new(Body::from(hosted_page(&html, reader_scheme(scheme))));
+  let sounds = if writes_sound(&html) {
+    Some(page_sounds(standing, document, reach, asked.language.as_deref()).await?)
+  } else {
+    None
+  };
+  let page = hosted_page(&html, reader_scheme(asked.scheme.as_deref()), sounds.as_ref());
+  let mut response = Response::new(Body::from(page));
   let headers = response.headers_mut();
 
   set(headers, header::CONTENT_TYPE, "text/html; charset=utf-8");
-  set(headers, header::CACHE_CONTROL, cache);
+  set(headers, header::CACHE_CONTROL, NO_STORE);
   set(headers, header::CONTENT_DISPOSITION, "inline");
 
   Ok(response)
@@ -146,14 +243,22 @@ impl Asking {
   }
 }
 
-/// A kept file sent under the isolation its type is let, as it is asked for: a page as a hosted page unless
-/// it is asked for to keep, and every other file as a file nothing on which may run.
-pub async fn send(asking: &Asking, file: &KeptFile, cache: &str) -> Result<Response, Refused> {
+/// A kept file of `document` sent under the isolation its type is let, as it is asked for: a page as a hosted
+/// page going out at `reach` unless it is asked for to keep, and every other file as a file nothing on which
+/// may run.
+pub async fn send(
+  standing: &Standing,
+  asking: &Asking,
+  file: &KeptFile,
+  cache: &str,
+  document: i64,
+  reach: &Reach,
+) -> Result<Response, Refused> {
   let asked = &asking.query;
   let download = asked.download == Some(true);
   let page = file.media_type.split(';').next().is_some_and(|kind| kind.trim() == "text/html");
   let mut response = if page && !download {
-    hosted_file(file, asked.scheme.as_deref(), cache).await?
+    hosted_file(standing, file, asked, document, reach).await?
   } else {
     kept_file(file, download, asking.range.as_deref(), cache).await?
   };

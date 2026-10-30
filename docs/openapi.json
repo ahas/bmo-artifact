@@ -46,7 +46,7 @@
             "type": "string"
           },
           "role": {
-            "description": "The caller's word for its part in the document; `head` marks a file a reader is shown at its head, a\nsound in the listen band, for a page as for a markdown document.",
+            "description": "The caller's word for its part in the document; `head` marks a file a reader is shown at a markdown\ndocument's head, a sound in the listen band. A page stands its sounds where it writes them.",
             "type": [
               "string",
               "null"
@@ -833,7 +833,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.10"
+    "version": "0.1.0-rev.11"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1417,6 +1417,19 @@
             }
           },
           {
+            "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
             "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
             "in": "query",
             "name": "scheme",
@@ -1501,6 +1514,19 @@
               "description": "Send the file itself to keep, under its name.",
               "type": [
                 "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+              "type": [
+                "string",
                 "null"
               ]
             }
@@ -1976,6 +2002,46 @@
         "x-console": "closed"
       }
     },
+    "/player/{token}": {
+      "get": {
+        "operationId": "readPlayer",
+        "parameters": [
+          {
+            "description": "The script's file name, carrying the digest of its bytes.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/javascript": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "bmo-ui's audio player script, named by the digest of its bytes."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "bmo-ui's audio player script, named by the digest of its bytes.",
+        "tags": [
+          "readings"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "not-found"
+        ],
+        "x-console": "open"
+      }
+    },
     "/publications": {
       "post": {
         "operationId": "createPublications",
@@ -2014,6 +2080,116 @@
           "forbidden"
         ],
         "x-console": "closed"
+      }
+    },
+    "/readings/{token}/attachments/{attachmentId}": {
+      "get": {
+        "operationId": "readReadingsAttachmentsByTokenAttachmentId",
+        "parameters": [
+          {
+            "description": "The reading token.",
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "attachmentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Send the file itself to keep, under its name.",
+            "in": "query",
+            "name": "download",
+            "required": false,
+            "schema": {
+              "description": "Send the file itself to keep, under its name.",
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
+            "in": "query",
+            "name": "scheme",
+            "required": false,
+            "schema": {
+              "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "One byte range of the file.",
+            "in": "header",
+            "name": "Range",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "One attachment's bytes of the document a reading opens, with Range."
+          },
+          "206": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "contentEncoding": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "One attachment's bytes of the document a reading opens, with Range."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "One attachment's bytes of the document a reading opens, with Range.",
+        "tags": [
+          "readings"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found"
+        ],
+        "x-console": "open"
       }
     },
     "/scopes/{scope}": {
@@ -2412,6 +2588,19 @@
             }
           },
           {
+            "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
             "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
             "in": "query",
             "name": "scheme",
@@ -2496,6 +2685,19 @@
               "description": "Send the file itself to keep, under its name.",
               "type": [
                 "boolean",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "description": "The language a hosted page's player speaks, a locale of the console bundle's words; English where none\nis named or the words hold none of it.",
+              "type": [
+                "string",
                 "null"
               ]
             }
@@ -2876,6 +3078,9 @@
     },
     {
       "name": "publications"
+    },
+    {
+      "name": "readings"
     },
     {
       "name": "scopes"

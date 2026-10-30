@@ -212,6 +212,10 @@ pub struct ContentQuery {
   /// none is named.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub scheme: Option<String>,
+  /// The language a hosted page's player speaks, a locale of the console bundle's words; English where none
+  /// is named or the words hold none of it.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub language: Option<String>,
   /// Send the file itself to keep, under its name.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub download: Option<bool>,
@@ -263,8 +267,8 @@ pub struct Attachment {
   /// What it is read as: `image`, `audio`, `video`, `text`, `page` or `file`.
   pub kind: String,
   pub byte_count: i64,
-  /// The caller's word for its part in the document; `head` marks a file a reader is shown at its head, a
-  /// sound in the listen band, for a page as for a markdown document.
+  /// The caller's word for its part in the document; `head` marks a file a reader is shown at a markdown
+  /// document's head, a sound in the listen band. A page stands its sounds where it writes them.
   pub role: Option<String>,
   /// Epoch milliseconds.
   pub created_at: i64,

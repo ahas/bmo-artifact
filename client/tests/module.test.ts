@@ -27,8 +27,9 @@ afterAll(() => {
 });
 
 describe("the module built", () => {
-  test("is one module, its stylesheet and its words", () => {
-    expect(readdirSync(out).sort()).toEqual(["bundle.css", "bundle.js", "words.json"]);
+  test("is one module, its stylesheet and its words, with bmo-ui's audio player script beside them", () => {
+    expect(readdirSync(out).sort()).toEqual(["bmo-audio-player.js", "bundle.css", "bundle.js", "words.json"]);
+    expect(readFileSync(join(out, "bmo-audio-player.js"))).toEqual(readFileSync(join(ROOT, "node_modules/bmo-ui/dist/bmo-audio-player.js")));
   });
 
   test("exports a default and imports only the libraries the console shares, by their own paths", () => {

@@ -6,7 +6,7 @@ use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::response::Response;
 use schemars::generate::SchemaGenerator;
 
-use super::files::{Asking, KeptFile, NO_STORE, PRIVATE_DAY, inside_root, send};
+use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, inside_root, send};
 use crate::Refusal;
 use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
@@ -197,11 +197,16 @@ pub async fn document_file(standing: &Standing, row: &documents::Row) -> Result<
 }
 
 /// A document's file as it is asked for: a page as a hosted page, any other kind as its markdown.
-pub async fn content(standing: &Standing, asking: &Asking, id: i64) -> Result<Response, Refused> {
+pub async fn content(
+  standing: &Standing,
+  asking: &Asking,
+  id: i64,
+  reach: &Reach,
+) -> Result<Response, Refused> {
   let row = document(standing, id).await?;
   let file = document_file(standing, &row).await?;
 
-  send(asking, &file, NO_STORE).await
+  send(standing, asking, &file, NO_STORE, id, reach).await
 }
 
 /// A document's cover picture as the card a link's preview shows.
@@ -241,7 +246,7 @@ impl Route for ReadContent {
     let id = call.path_id("documentId").await?;
     let asking = Asking::of(&call)?;
 
-    content(call.standing(), &asking, id).await
+    content(call.standing(), &asking, id, &Reach::new(Opened::Console, Self::PATH)).await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {

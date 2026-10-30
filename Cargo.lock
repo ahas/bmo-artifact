@@ -453,7 +453,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-artifact"
-version = "0.1.0-rev.10"
+version = "0.1.0-rev.11"
 dependencies = [
  "avif-parse",
  "axum",
@@ -466,6 +466,7 @@ dependencies = [
  "ego-tree",
  "futures-util",
  "headers",
+ "hmac",
  "htmd",
  "image",
  "inventory",

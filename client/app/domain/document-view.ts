@@ -161,9 +161,9 @@ export function languageOf(attachment: ArtifactAttachment): string | null {
 }
 
 /**
- * The sounds heard at a document's head, in the reader's listen band whatever the document's kind
- * (`docs/archive.md`, "How a document is drawn"): every sound marked `head`, and beside a head sound whose
- * name carries a language, every sound named as it is in another language, in the order they were kept.
+ * The sounds heard at a markdown document's head, in the reader's listen band (`docs/archive.md`, "How a
+ * document is drawn"): every sound marked `head`, and beside a head sound whose name carries a language,
+ * every sound named as it is in another language, in the order they were kept.
  */
 export function headSounds(attachments: readonly ArtifactAttachment[]): ArtifactAttachment[] {
   const sounds = attachments.filter((one) => one.kind === "audio");

@@ -1,8 +1,8 @@
 <template>
-  <!-- The listen band (docs/archive.md, "How a document is drawn"): the sounds heard at a document's head,
-       each in the design's own player and labelled with the language it is in where its name says one. The
-       reader draws it for every kind, under a markdown document's masthead and above a page's frame, outside
-       the page's sandbox, where its players reach the document's files on the route the screen reads it on. -->
+  <!-- The listen band (docs/archive.md, "How a document is drawn"): the sounds heard at a markdown
+       document's head, each in the design's own player and labelled with the language it is in where its
+       name says one, under the masthead, where its players reach the document's files on the route the
+       screen reads it on. -->
   <section :aria-label="$t('artifact.label.listen')" class="flex flex-col gap-2" data-listen>
     <p class="document-eyebrow">{{ $t("artifact.label.listen") }}</p>
     <div class="grid gap-x-6 gap-y-3" :class="props.sounds.length > 1 ? 'sm:grid-cols-2' : ''">

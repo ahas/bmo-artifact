@@ -67,11 +67,11 @@ client/                    the console bundle (see "The console bundle")
   dist/                    the module's build, which git ignores
   i18n/                    the bundle's words, one pack a locale
   vendor/                  the packed bmo-ui the bundle's own install takes
-  patches/                 bmo-ui's patch to a dependency, applied in this install
+  patches/                 bmo-ui's patches to its dependencies, applied in this install
   design/                  the document design the server and the bundle both read
     document.json          the palettes, the page sheet's rules and which pictures open the viewer
     hosted-page.json       the sandbox a kept page runs in and the rest of the policy it is sent under
-    bridges/               the clipboard, link and picture scripts written ahead of a kept page
+    bridges/               the clipboard, link, picture, scheme and sound scripts written ahead of a kept page
   app/
     pages/archive/         the list, one document, and one shared document
     components/            the document body, its text, attachments, references, pictures and page frame
@@ -123,7 +123,8 @@ The plumbing is what every command and every route stands on, and it knows none 
   for a console that builds its bundles in.
 - **The browser module.** `bun run module` builds `module/entry.ts`, whose default export is the routes of
   the three screens, into one ECMAScript module, `dist/bundle.js`, its stylesheet, `dist/bundle.css`, and
-  its words, `dist/words.json`, each locale's pack under its code. Every import of `vue`, `vue-router`,
+  its words, `dist/words.json`, each locale's pack under its code, beside bmo-ui's audio player script,
+  `dist/bmo-audio-player.js`, copied as the packed bmo-ui carries it. Every import of `vue`, `vue-router`,
   `vue-i18n`, `nuxt/app`, `@nuxt/ui` and bmo-ui stays an import, written as the package's own path; the
   rest, marked and DOMPurify among it, is carried in the module. What Nuxt's build would supply is supplied
   by this one: the Vue and Nuxt functions a file uses without importing them are imported from `vue` and
@@ -138,7 +139,7 @@ The plumbing is what every command and every route stands on, and it knows none 
   against, marked optional so no install looks for it in a registry. For the bundle's own install, a
   packed copy kept under `client/vendor/`, named by version, is a development dependency taken from that
   file; moving to another bmo-ui version replaces the copy and both manifest lines together. bmo-ui's
-  patch under `client/patches/` applies in this install.
+  patches under `client/patches/` apply in this install.
 - **Under the console's title bar.** The list's and one document's routes ask for the console's bar in their meta,
   so a console that offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws
   it over them under the manifest's title and icon, and they draw no bar of their own; a document's screen lays the

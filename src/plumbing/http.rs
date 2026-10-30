@@ -27,6 +27,7 @@ use crate::plumbing::openapi::Operation;
 use crate::plumbing::refusal::Refusal;
 use crate::pool::Archive;
 use crate::reader::{ExplorerReader, PageReader};
+use crate::readings::ReadingKey;
 use crate::settings::Settings;
 use crate::store::documents::settle;
 use crate::wording::{Wording, WordingError};
@@ -194,6 +195,8 @@ pub struct Standing {
   pub events: Publisher,
   /// The console bundle the settings' folder holds, read when the server starts.
   pub console: Arc<ConsoleBundle>,
+  /// The key reading tokens are signed with (`docs/archive.md`, "Readings").
+  pub readings: ReadingKey,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
@@ -221,6 +224,7 @@ impl Standing {
     let wording = Wording::read(settings.wording.file.as_deref())?;
     let previews = Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::clone(&reader)));
     let console = Arc::new(ConsoleBundle::read(&settings.console.bundle));
+    let readings = ReadingKey::of(&settings.server.token);
 
     Ok(Self {
       settings,
@@ -230,6 +234,7 @@ impl Standing {
       previews,
       events: Publisher::default(),
       console,
+      readings,
       settled: Arc::default(),
     })
   }

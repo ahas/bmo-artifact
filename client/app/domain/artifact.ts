@@ -50,16 +50,32 @@ export function readDocument(id: number): Promise<ArtifactDocument> {
   return $fetch<ArtifactDocument>(artifactAddress(`/documents/${id}`));
 }
 
-/** Where a document's file is served: a page in the scheme named, as a hosted page. */
-export function contentAddress(id: number, scheme?: string, download = false): string {
+/**
+ * How a page is asked for: the scheme it is drawn in and the language its player speaks, as a hosted page,
+ * or the file itself to keep.
+ */
+export interface PageAsked {
+  scheme?: string;
+  language?: string;
+  download?: boolean;
+}
+
+/** A page's asking as the query its address carries; empty where nothing is asked. */
+export function pageQuery(asked: PageAsked): string {
   const query = new URLSearchParams();
 
-  if (scheme !== undefined) query.set("scheme", scheme);
-  if (download) query.set("download", "true");
+  if (asked.scheme !== undefined) query.set("scheme", asked.scheme);
+  if (asked.language !== undefined) query.set("language", asked.language);
+  if (asked.download === true) query.set("download", "true");
 
   const rest = query.toString();
 
-  return artifactAddress(`/documents/${id}/content${rest === "" ? "" : `?${rest}`}`);
+  return rest === "" ? "" : `?${rest}`;
+}
+
+/** Where a document's file is served: a page as asked, as a hosted page. */
+export function contentAddress(id: number, asked: PageAsked = {}): string {
+  return artifactAddress(`/documents/${id}/content${pageQuery(asked)}`);
 }
 
 /** A markdown document's file as its text. */

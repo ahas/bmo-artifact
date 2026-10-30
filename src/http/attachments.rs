@@ -7,7 +7,7 @@ use base64::engine::general_purpose::STANDARD;
 use schemars::generate::SchemaGenerator;
 
 use super::documents::document;
-use super::files::{Asking, KeptFile, PRIVATE_DAY, inside_root, send};
+use super::files::{Asking, KeptFile, Opened, PRIVATE_DAY, Reach, inside_root, send};
 use crate::Refusal;
 use crate::documents::keeper::{Handed, keep};
 use crate::events::EventKind;
@@ -41,6 +41,7 @@ pub async fn attachment_bytes(
   asking: &Asking,
   id: i64,
   attachment: i64,
+  reach: &Reach,
 ) -> Result<Response, Refused> {
   let kept = attachments::read(standing.db().await?, id, attachment)
     .await?
@@ -57,7 +58,7 @@ pub async fn attachment_bytes(
     name: kept.attachment.name,
   };
 
-  send(asking, &file, PRIVATE_DAY).await
+  send(standing, asking, &file, PRIVATE_DAY, id, reach).await
 }
 
 pub struct ListAttachments;
@@ -153,7 +154,8 @@ impl Route for ReadAttachment {
     let attachment = call.path_id("attachmentId").await?;
     let asking = Asking::of(&call)?;
 
-    attachment_bytes(call.standing(), &asking, id, attachment).await
+    attachment_bytes(call.standing(), &asking, id, attachment, &Reach::new(Opened::Console, Self::PATH))
+      .await
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {

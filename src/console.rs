@@ -32,6 +32,11 @@ pub const OWNER_KEY: bool = false;
 const MODULE_FILE: &str = "bundle.js";
 const STYLESHEET_FILE: &str = "bundle.css";
 const WORDS_FILE: &str = "words.json";
+// bmo-ui's audio player script, which the build copies beside the module (`docs/archive.md`, "Readings").
+const PLAYER_FILE: &str = "bmo-audio-player.js";
+
+/// The language the player speaks where the reader names none the words hold.
+pub const PLAYER_LANGUAGE: &str = "en";
 
 // How many hexadecimal digits of a file's digest its path carries.
 const DIGEST_DIGITS: usize = 16;
@@ -125,6 +130,8 @@ pub struct ConsoleBundle {
   pub stylesheet: Option<BundleFile>,
   /// Each locale's words under its code.
   pub words: Option<Vec<u8>>,
+  /// bmo-ui's audio player script, which a hosted page that writes a sound loads.
+  pub player: Option<BundleFile>,
 }
 
 impl ConsoleBundle {
@@ -134,6 +141,7 @@ impl ConsoleBundle {
       module: BundleFile::read(folder, MODULE_FILE, "text/javascript; charset=utf-8"),
       stylesheet: BundleFile::read(folder, STYLESHEET_FILE, "text/css; charset=utf-8"),
       words: std::fs::read(folder.join(WORDS_FILE)).ok(),
+      player: BundleFile::read(folder, PLAYER_FILE, "text/javascript; charset=utf-8"),
     }
   }
 
@@ -167,6 +175,26 @@ impl ConsoleBundle {
   /// The words, none where no bundle was built.
   pub fn words(&self) -> Option<&[u8]> {
     self.words.as_deref().filter(|_| self.module.is_some())
+  }
+
+  /// The player's script under the name carrying its digest, none for any other name.
+  pub fn player(&self, name: &str) -> Option<&BundleFile> {
+    self.player.as_ref().filter(|file| file.name == name)
+  }
+
+  /// The player's words in the language `language` names, keyed as bmo-ui's language pack keys them, and the
+  /// language they are in: the bundle's `artifact.player` words of that locale, else of English, else none.
+  pub fn player_words(&self, language: Option<&str>) -> (String, serde_json::Value) {
+    let packs: serde_json::Value = self
+      .words
+      .as_deref()
+      .and_then(|words| serde_json::from_slice(words).ok())
+      .unwrap_or_default();
+    let spoken = language
+      .filter(|language| packs[*language]["artifact"]["player"].is_object())
+      .unwrap_or(PLAYER_LANGUAGE);
+
+    (spoken.to_owned(), packs[spoken]["artifact"]["player"].clone())
   }
 
   /// The module or the stylesheet the manifest names by `name`, none for any other name.

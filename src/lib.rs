@@ -17,6 +17,7 @@ pub mod openapi;
 pub mod plumbing;
 pub mod pool;
 pub mod reader;
+pub mod readings;
 pub mod settings;
 pub mod store;
 pub mod wire;

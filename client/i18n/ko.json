@@ -75,6 +75,27 @@
       "list_failed": "목록을 읽지 못했습니다.",
       "open_failed": "문서를 열지 못했습니다.",
       "read_failed": "문서를 읽지 못했습니다."
+    },
+    "player": {
+      "common": {
+        "action": {
+          "play": "재생",
+          "pause": "일시정지",
+          "mute": "음소거",
+          "unmute": "음소거 해제"
+        },
+        "label": {
+          "play_position": "재생 위치",
+          "unplayable": "재생할 수 없음",
+          "volume": "볼륨"
+        },
+        "aria": {
+          "download_named": "{name} 다운로드"
+        },
+        "status": {
+          "loading": "불러오는 중…"
+        }
+      }
     }
   }
 }

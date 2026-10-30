@@ -232,6 +232,7 @@ fn content() -> ArtifactTool {
     |client, key: DocumentKey| async move {
       let asked = ContentQuery {
         scheme: None,
+        language: None,
         download: Some(true),
       };
       let content = client.content(key.document_id, &asked).await?;

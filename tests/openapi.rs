@@ -65,6 +65,8 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "GET /shares/{token}/references",
     "GET /shares/{token}/references/{referenceId}",
     "GET /shares/{token}/references/{referenceId}/image",
+    "GET /readings/{token}/attachments/{attachmentId}",
+    "GET /player/{token}",
     "POST /imports",
     "GET /imports/{importId}",
     "GET /scopes/{scope}",
