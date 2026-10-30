@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { contentsOf, drawnNames, fileAddresses, filesAround, hostInitial, hostOf, keptNames, kindOf, textPreview } from "../../app/domain/document-view";
+import { contentsOf, drawnNames, fileAddresses, filesAround, headSounds, hostInitial, hostOf, keptNames, kindOf, languageOf, textPreview } from "../../app/domain/document-view";
 
 import type { ArtifactAttachment } from "../../shared/types";
 
@@ -61,6 +61,39 @@ describe("a document's files", () => {
     expect(address("/data/searches/9/images/")).toBeNull();
     expect(keptNames("https://example.com/kept.avif")).toEqual(["https://example.com/kept.avif"]);
     expect(filesAround(files, drawn).after.map((one) => one.id)).toEqual([6]);
+  });
+});
+
+describe("the listen band", () => {
+  test("holds a page's head sound, labelled with the language its name carries", () => {
+    const files = [attachment(1, "index.html", "page"), attachment(2, "narration-en.ogg", "audio", "head"), attachment(3, "figure-1.png", "image")];
+
+    expect(headSounds(files).map((one) => one.id)).toEqual([2]);
+    expect(languageOf(files[1]!)).toBe("English");
+  });
+
+  test("lists a narration in two languages as two sounds, the one with no role beside the head sound named as it is", () => {
+    const files = [attachment(1, "narration-ko.ogg", "audio", "head"), attachment(2, "narration-en.ogg", "audio"), attachment(3, "song-fr.ogg", "audio")];
+    const sounds = headSounds(files);
+    const labels = sounds.map(languageOf);
+
+    expect(sounds.map((one) => one.id)).toEqual([1, 2]);
+    expect(labels[0]).not.toBeNull();
+    expect(labels[0]).not.toBe("English");
+    expect(labels[1]).toBe("English");
+    expect(filesAround(files, new Set()).after.map((one) => one.id)).toEqual([3]);
+  });
+
+  test("is empty for a document with no sound marked for its head", () => {
+    const files = [attachment(1, "narration-en.ogg", "audio"), attachment(2, "voice.mp3", "audio"), attachment(3, "cover-en.png", "image", "head")];
+
+    expect(headSounds(files)).toEqual([]);
+  });
+
+  test("labels a sound only by a language its name carries", () => {
+    expect(languageOf(attachment(1, "voice.mp3", "audio", "head"))).toBeNull();
+    expect(languageOf(attachment(2, "take-1.ogg", "audio", "head"))).toBeNull();
+    expect(languageOf(attachment(3, "take-zz.ogg", "audio", "head"))).toBeNull();
   });
 });
 

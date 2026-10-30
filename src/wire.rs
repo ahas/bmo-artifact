@@ -255,14 +255,16 @@ pub struct PageQuery {
 pub struct Attachment {
   pub id: i64,
   pub document_id: i64,
-  /// The name it is shown and named by in the body.
+  /// The name it is shown and named by in the body; a last part such as `-ko` before the extension is the
+  /// language it is in.
   pub name: String,
   /// Its type as kept.
   pub media_type: String,
   /// What it is read as: `image`, `audio`, `video`, `text`, `page` or `file`.
   pub kind: String,
   pub byte_count: i64,
-  /// The caller's word for its part in the document; `head` marks a file a reader is shown at its head.
+  /// The caller's word for its part in the document; `head` marks a file a reader is shown at its head, a
+  /// sound in the listen band, for a page as for a markdown document.
   pub role: Option<String>,
   /// Epoch milliseconds.
   pub created_at: i64,

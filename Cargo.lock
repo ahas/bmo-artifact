@@ -453,7 +453,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-artifact"
-version = "0.1.0-rev.9"
+version = "0.1.0-rev.10"
 dependencies = [
  "avif-parse",
  "axum",
@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "bmo-explorer"
-version = "0.1.0-rev.3"
+version = "0.1.0-rev.5"
 dependencies = [
  "avif-parse",
  "base64 0.22.1",

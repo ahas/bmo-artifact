@@ -42,11 +42,11 @@
             "type": "string"
           },
           "name": {
-            "description": "The name it is shown and named by in the body.",
+            "description": "The name it is shown and named by in the body; a last part such as `-ko` before the extension is the\nlanguage it is in.",
             "type": "string"
           },
           "role": {
-            "description": "The caller's word for its part in the document; `head` marks a file a reader is shown at its head.",
+            "description": "The caller's word for its part in the document; `head` marks a file a reader is shown at its head, a\nsound in the listen band, for a page as for a markdown document.",
             "type": [
               "string",
               "null"
@@ -833,7 +833,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.9"
+    "version": "0.1.0-rev.10"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -136,6 +136,9 @@ address and the file root are settings; no other unit reads or writes either.
   name under the route it reads the document on.
 - **The role is the caller's word for the file's part.** `head` marks a file a reader is shown at the
   document's head; a narration's sound is attached with it.
+- **A name may carry a language** as its last part, a two-letter language code after a hyphen and before
+  the extension, as `narration-ko.ogg` and `narration-en.ogg` do. A code no language is known by is no
+  language.
 - **Bounds:** one file is at most 64 MiB through the API, and a document keeps one file of each name.
 
 ## References
@@ -208,6 +211,8 @@ place.
 
 - **Filing it:** the page is filed as its HTML, untouched. A page carries what it draws inside itself or
   over https, so it takes no body; files may still be attached beside it.
+- **A page carries no player of its own.** A sound to be heard with it is attached beside it with the role
+  `head`, and the reader plays it in the listen band above the page (「How a document is drawn」).
 - **Reading it:** `bmo-artifact html-read <file>` gives a page's title and its words in order, a block to a
   line, headings as markdown headings and list items as dashes, scripts and styles not words.
   - Every picture written inside the page as a data address stands in the reading as a markdown picture
@@ -234,7 +239,6 @@ place.
   - a `lede` box for the key answer;
   - an `aside` for a note, toned `ok` or `warn`;
   - a `chip` for a short state, toned `ok`, `warn` or `bad`;
-  - a `listen` band holding an audio player and a line on what it says;
   - a `grid` of boxes side by side, which fold to one column on a phone;
   - a table, which scrolls sideways inside itself where it is wider than the column;
   - a `footer`, which closes the page in the muted ink.
@@ -267,7 +271,16 @@ sheet and the console bundle reads to draw a document.
 - **The body:** 16px words on a loose line; a section ruled off under its heading; a quotation a box on
   the sunk surface with an accent rule down its left; a table a rounded box on the raised surface with its
   head row on the sunk surface; code on the sunk surface; links in the accent.
-- **A file with the role `head` stands at the head,** a sound in a player, before the body.
+- **The listen band is the reader's, for every kind.** The sounds heard at a document's head stand in it,
+  each in the design's own player, under the masthead of a markdown document and above the frame of a page,
+  outside the page's sandbox. A player plays its sound through the attachment route the screen reads the
+  document on, the share route on a share page, which answers a ranged read. A document with no such sound
+  has no band.
+  - **What stands in it:** every sound with the role `head`, and, beside a head sound whose name carries a
+    language (「Attachments」), every sound named as it is with another language in that place, in the order
+    the files were kept.
+  - **Each sound is labelled** with the language its name carries, in that language's own words; a sound
+    whose name carries none stands with no label.
 - **Diagrams** in a markdown body are fenced `mermaid` blocks, drawn in the design's colours; in a page,
   inline SVG in the page's own colours. A diagram names no colour of its own, so it is right in both
   schemes.
@@ -304,9 +317,9 @@ A picture in a document opens in the picture viewer, for a markdown document and
   - one document at `/archive/<id>`: its masthead — its labels on a secondary line under its title, each name
     and value, that wraps — its file drawn as markdown with a table of contents of its kind's depth, its files
     after it, its references beside it, each with the picture its preview declares; a page fills the screen in
-    its frame;
+    its frame, under the listen band where it has one;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
-    other document.
+    other document; a page fills the window, under the listen band where it has one.
 - **A share page reads as its document before anything runs:** the document's title, its description and
   its cover picture stand as the page's preview head, the link is its canonical address, and it asks
   search engines not to index or follow it.

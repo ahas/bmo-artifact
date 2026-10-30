@@ -541,9 +541,15 @@ export interface components {
             kind: string;
             /** @description Its type as kept. */
             mediaType: string;
-            /** @description The name it is shown and named by in the body. */
+            /**
+             * @description The name it is shown and named by in the body; a last part such as `-ko` before the extension is the
+             *     language it is in.
+             */
             name: string;
-            /** @description The caller's word for its part in the document; `head` marks a file a reader is shown at its head. */
+            /**
+             * @description The caller's word for its part in the document; `head` marks a file a reader is shown at its head, a
+             *     sound in the listen band, for a page as for a markdown document.
+             */
             role: string | null;
         };
         /** @description A file to attach. */

@@ -21,17 +21,7 @@
 
       <!-- A sound marked for the head is heard before the text is read, so it stands under the
            masthead rather than among the files after the body. -->
-      <section v-if="files.head.length > 0" :aria-label="$t('artifact.label.listen')" class="flex flex-col gap-2">
-        <p class="document-eyebrow">{{ $t("artifact.label.listen") }}</p>
-        <AudioPlayer
-          v-for="sound in files.head"
-          :key="sound.id"
-          :src="props.address(sound)"
-          :download="props.address(sound, true)"
-          :name="sound.name"
-          :size="sizeText(sound.byteCount)"
-        />
-      </section>
+      <ArtifactListen v-if="files.head.length > 0" :sounds="files.head" :address="props.address" />
 
       <p v-if="props.markdown.trim() === ''" class="text-sm text-muted">{{ $t("artifact.status.empty") }}</p>
       <ArtifactText v-else :markdown="props.markdown" :files="named" :slugs="props.slugs" />
@@ -50,7 +40,6 @@ import { DOCUMENT_PALETTE } from "../../shared/document-design";
 import { VIEWER_PICTURES } from "../../shared/document-pictures";
 import { plainPress, pressedPictures } from "../domain/document-pictures";
 import { drawnNames, fileAddresses, filesAround } from "../domain/document-view";
-import { sizeText } from "../domain/sizes";
 
 import type { BarAction, BarProperty } from "bmo-ui/app/domain/tabs";
 import type { ArtifactAttachment } from "../../shared/types";

@@ -131,15 +131,57 @@ export function fileAddresses(attachments: readonly ArtifactAttachment[], addres
   };
 }
 
+// What a file's name says of the language it is in (`docs/archive.md`, "Attachments"): the name with that
+// part taken out, and the language's two-letter code, for a name whose last part before the extension is a
+// code some language is known by; null for any other name.
+function spokenIn(name: string): { rest: string; language: string } | null {
+  const found = /^(.+)-([a-z]{2})(\.[^.]+)$/i.exec(name);
+
+  if (found === null) return null;
+
+  const language = found[2]!.toLowerCase();
+
+  return languageName(language) === null ? null : { rest: `${found[1]}${found[3]}`, language };
+}
+
+// A language's name in its own words, null for a code no language is known by.
+function languageName(language: string): string | null {
+  try {
+    return new Intl.DisplayNames([language], { type: "language", fallback: "none" }).of(language) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** The language a file's name says it is in, named in its own words; null where the name says none. */
+export function languageOf(attachment: ArtifactAttachment): string | null {
+  const spoken = spokenIn(attachment.name);
+
+  return spoken === null ? null : languageName(spoken.language);
+}
+
 /**
- * The files a document keeps, split as a reader meets them: the sounds marked to be heard at its head,
- * and the files that stand after the body, every one but a picture the body already draws by its name.
+ * The sounds heard at a document's head, in the reader's listen band whatever the document's kind
+ * (`docs/archive.md`, "How a document is drawn"): every sound marked `head`, and beside a head sound whose
+ * name carries a language, every sound named as it is in another language, in the order they were kept.
+ */
+export function headSounds(attachments: readonly ArtifactAttachment[]): ArtifactAttachment[] {
+  const sounds = attachments.filter((one) => one.kind === "audio");
+  const heads = sounds.filter((one) => one.role === "head");
+  const told = new Set(heads.flatMap((one) => spokenIn(one.name)?.rest ?? []));
+
+  return sounds.filter((one) => one.role === "head" || told.has(spokenIn(one.name)?.rest ?? ""));
+}
+
+/**
+ * The files a document keeps, split as a reader meets them: the sounds heard at its head, and the files
+ * that stand after the body, every one but a picture the body already draws by its name.
  */
 export function filesAround(
   attachments: readonly ArtifactAttachment[],
   drawn: ReadonlySet<string>
 ): { head: ArtifactAttachment[]; after: ArtifactAttachment[] } {
-  const head = attachments.filter((one) => one.role === "head" && one.kind === "audio");
+  const head = headSounds(attachments);
 
   return {
     head,

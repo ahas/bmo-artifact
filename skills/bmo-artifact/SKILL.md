@@ -52,8 +52,11 @@ A document written for somebody is handed over as a link, never as a file attach
 `artifact_attach` keeps a file beside a document: `documentId`, `name`, `mediaType`, `content` in base64
 and an optional `role`. A body draws a kept picture by naming it: `![a caption](name.png)`, so file the
 body first, then attach the pictures it names. `role: "head"` marks a file a reader is shown at the
-document's head, a narration's sound among them. A name the document already keeps is refused; one file is
-at most 64 MiB.
+document's head, a narration's sound among them: the reader plays it in its own listen band, above a page as
+under a markdown document's title, so a page carries no player of its own. A narration in several languages
+names each sound with its language last, as `narration-ko.ogg` and `narration-en.ogg`; one marked `head`
+brings the others into the band beside it, each labelled with its language. A name the document already
+keeps is refused; one file is at most 64 MiB.
 
 ## Finding and reading
 

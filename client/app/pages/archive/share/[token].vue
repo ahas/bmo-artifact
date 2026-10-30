@@ -2,7 +2,7 @@
   <!-- One document read by somebody holding its link. It is the body, the files it keeps and the pages
        it refers to, and nothing else: no sidebar, no title bar, and no control that leads anywhere in
        this console. On a phone the side rises from the bottom edge over the text. A document that is a
-       page of its own is that page filling the window, and nothing around it. -->
+       page of its own is that page filling the window, under the listen band where it has one. -->
   <ScreenFrame class="document-paper">
     <div v-if="failed !== ''" role="alert" class="flex min-h-0 flex-1 items-center justify-center p-4">
       <p class="text-sm text-error">{{ failed }}</p>
@@ -16,6 +16,8 @@
       v-else-if="held.kind?.hosted === true"
       :title="held.document.title"
       :page="(scheme, download) => sharedContentAddress(token, scheme, download)"
+      :attachments="held.attachments"
+      :address="bodyProps.address"
       :chrome="false"
     />
 

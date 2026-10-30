@@ -4,7 +4,8 @@
        the rest of the screen. The page's own scroll is the only one here. The frame names the scheme
        the console stands in, so the page is drawn in it from its first frame and again when the
        screen mode changes (docs/archive.md, "How a document is drawn"). A share page has no header:
-       the page fills the window. -->
+       the page fills the window. The sounds heard at the page's head stand in the reader's listen band
+       above the frame, outside the page's sandbox. -->
   <div class="flex min-h-0 flex-1 flex-col">
     <header v-if="props.chrome" class="flex shrink-0 flex-col gap-2 border-b border-default px-4 py-3">
       <h1 class="truncate text-xl font-semibold text-highlighted" :title="props.title">{{ props.title }}</h1>
@@ -15,6 +16,10 @@
       </div>
     </header>
 
+    <div v-if="sounds.length > 0" class="document-paper shrink-0 border-b border-default px-4 py-3">
+      <ArtifactListen class="mx-auto w-full max-w-3xl" :sounds="sounds" :address="props.address" />
+    </div>
+
     <ArtifactHostedFrame :src="framed" :title="props.title" />
   </div>
 </template>
@@ -24,15 +29,19 @@ import { useDarkScheme } from "bmo-ui/app/domain/scheme";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENT_PALETTE } from "../../shared/document-design";
-import { schemeOf } from "../domain/document-view";
+import { headSounds, schemeOf } from "../domain/document-view";
 
 import type { BarAction, BarProperty } from "bmo-ui/app/domain/tabs";
+import type { ArtifactAttachment } from "../../shared/types";
 
 interface Props {
   title: string;
   kind?: string | null;
   // Where the page is served in a scheme, and where it is saved.
   page: (scheme: string, download?: boolean) => string;
+  // The files the page keeps beside it, and where one is served and taken to be saved.
+  attachments: readonly ArtifactAttachment[];
+  address: (attachment: ArtifactAttachment, download?: boolean) => string;
   properties?: BarProperty[];
   // Opens the share dialog, where the screen offers one.
   share?: (() => void) | null;
@@ -43,6 +52,7 @@ interface Props {
 const { t } = useI18n();
 const props = withDefaults(defineProps<Props>(), { kind: null, properties: () => [], share: null, chrome: true });
 const dark = useDarkScheme();
+const sounds = computed(() => headSounds(props.attachments));
 
 useHead({ style: [{ key: "document-palette", innerHTML: DOCUMENT_PALETTE }] });
 

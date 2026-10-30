@@ -143,11 +143,11 @@ answers reads as `record`.
 | Field | Holds |
 |---|---|
 | `id`, `documentId` | the attachment and its document |
-| `name` | the name it is shown and named by in the body |
+| `name` | the name it is shown and named by in the body; a last part such as `-ko` before the extension is the language it is in (docs/archive.md, 「Attachments」) |
 | `mediaType` | its type as kept |
 | `kind` | what it is read as: `image`, `audio`, `video`, `text`, `page` or `file` |
 | `byteCount` | its size |
-| `role` | the caller's word for its part in the document, null for none; `head` marks a file a reader is shown at the document's head, a narration's sound among them |
+| `role` | the caller's word for its part in the document, null for none; `head` marks a file a reader is shown at the document's head, a narration's sound among them, which the reader plays in the listen band for a page as for a markdown document; a sound named as a head sound is with another language stands beside it there (docs/archive.md, 「How a document is drawn」) |
 | `createdAt` | when it was kept |
 
 | Route | Takes | Answers |
@@ -425,7 +425,7 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
 
 | Unit | Through | For |
 |---|---|---|
-| bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.2 | an import's page and figures; a reference's preview and picture |
+| bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.5 | an import's page and figures; a reference's preview and picture |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
   (bmo-explorer's `docs/api.md`, 「The client」). It checks every address before it connects and paces each

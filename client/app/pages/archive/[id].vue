@@ -37,6 +37,8 @@
         :title="held.document.title"
         :kind="kindText"
         :page="(scheme, download) => contentAddress(documentId, scheme, download)"
+        :attachments="held.attachments"
+        :address="fileAddress"
         :properties="properties"
         :share="openShare"
       />

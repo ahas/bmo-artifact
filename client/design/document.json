@@ -78,7 +78,7 @@
     "body>header:first-child>p.eyebrow{margin:0 0 8px;color:var(--doc-accent)}",
     ".muted{color:var(--doc-muted)}",
     "li>ul,li>ol{margin:4px 0}",
-    ".lede,aside,.listen,.grid,.table{margin:16px 0}",
+    ".lede,aside,.grid,.table{margin:16px 0}",
     "blockquote>:first-child,aside>:first-child,.lede>:first-child,.grid>*>:first-child{margin-top:0}",
     "blockquote>:last-child,aside>:last-child,.lede>:last-child,.grid>*>:last-child{margin-bottom:0}",
     ".lede{padding:16px 20px;border-left:4px solid var(--doc-accent);border-radius:0 8px 8px 0;background:var(--doc-sunk);font-size:18px;line-height:1.7}",
@@ -90,8 +90,6 @@
     ".chip.ok{background:var(--doc-ok-soft);color:var(--doc-ok)}.chip.warn{background:var(--doc-warn-soft);color:var(--doc-warn)}.chip.bad{background:var(--doc-accent-soft);color:var(--doc-accent)}",
     ".grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:16px}",
     ".grid>*{margin:0;padding:16px;border:1px solid var(--doc-rule);border-radius:8px;background:var(--doc-surface)}",
-    ".listen{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;border:1px solid var(--doc-rule);border-left:4px solid var(--doc-accent);border-radius:0 8px 8px 0;background:var(--doc-surface)}",
-    ".listen>:not(audio){margin:0;color:var(--doc-muted);font-size:14px}.listen audio{flex:1 1 16rem;min-width:0;height:40px}",
     ".table{max-width:100%;overflow-x:auto;border:1px solid var(--doc-rule);border-radius:8px;background:var(--doc-surface)}",
     ":not(.table)>table{display:block;max-width:100%;width:max-content;overflow-x:auto;border:1px solid var(--doc-rule);border-radius:8px}",
     ".table>table{width:100%;margin:0}",
@@ -101,7 +99,7 @@
     "summary{padding:12px 0}details[open]>summary{border-bottom:1px solid var(--doc-rule-soft)}",
     "footer{margin-top:64px;padding-top:16px;border-top:1px solid var(--doc-rule);color:var(--doc-muted);font-size:14px}",
     "@media (max-width:640px){body{padding:32px 16px 64px}.lede{font-size:16px}}",
-    "@media print{body{max-width:none;padding:0}.listen{display:none}}"
+    "@media print{body{max-width:none;padding:0}}"
   ],
   "viewer": {
     "pictures": "img:not(a[href] img, button img, [role=\"button\"] img, label img, summary img, [onclick] img, [onclick], [data-archive-no-viewer] img, [data-archive-no-viewer])",
