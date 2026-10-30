@@ -231,8 +231,9 @@ place.
   - **The address a sound plays from** is one the sandboxed page can load: on a share link, the share route
     of the attachment; on the console's own reading, a reading address (「Readings」). A name the document
     keeps no file under leaves the player saying it cannot be played.
-  - Where the player's script cannot be loaded, each `audio` element stays the browser's own, its address
-    rewritten the same way.
+  - Each `audio` element's address is rewritten as the page is read, before the browser asks for it, so a
+    kept file is only ever asked for at its loadable address; where the player's script cannot be loaded,
+    the element stays the browser's own at that address.
 - **Reading it:** `bmo-artifact html-read <file>` gives a page's title and its words in order, a block to a
   line, headings as markdown headings and list items as dashes, scripts and styles not words.
   - Every picture written inside the page as a data address stands in the reading as a markdown picture

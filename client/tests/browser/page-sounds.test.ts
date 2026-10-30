@@ -76,7 +76,7 @@ const PRELUDE = [
 const PAGE = `<!doctype html>${PRELUDE}<html lang="en"><head><title>Read</title></head><body>
   <h1>Read</h1>
   <section id="band" class="band"><p>Listen while you read</p>
-    <audio id="ko" src="attachment:narration-ko.ogg" data-language="ko" controls preload="none"></audio>
+    <audio id="ko" src="attachment:narration-ko.ogg" data-language="ko" controls></audio>
     <audio id="missing" src="attachment:none.ogg" data-language="en"></audio>
   </section>
   <p>Body.</p>
@@ -87,12 +87,17 @@ const FRAMING = `<iframe id="page" src="${PAGE_ADDRESS}" sandbox="${HOSTED_PAGE_
 
 let browser: Browser;
 let page: Page;
+const asked: string[] = [];
 
 describe.skipIf(!ready)("a page's sounds and scheme", () => {
   beforeAll(async () => {
     browser = await chromium.launch();
     // The reader's system asks light; the reader's scheme is dark.
     page = await browser.newPage({ viewport: { width: 800, height: 600 }, colorScheme: "light" });
+    page.on("request", (request) => asked.push(request.url()));
+    page.on("console", (message) => {
+      if (message.type() === "error") asked.push(message.text());
+    });
     await page.context().route(/^https?:/, (route) => {
       const address = route.request().url().split("?")[0];
 
@@ -158,6 +163,11 @@ describe.skipIf(!ready)("a page's sounds and scheme", () => {
 
   test("leaves a sound the document keeps no file for saying it cannot be played", async () => {
     await page.frameLocator("#page").locator("#missing").getByText("Cannot be played").waitFor();
+  });
+
+  test("never asks for a sound at the address the page wrote, only at the one it was handed", () => {
+    expect(asked.filter((one) => one.includes("attachment:narration-ko.ogg") || one.includes("ERR_UNKNOWN_URL_SCHEME"))).toEqual([]);
+    expect(asked).toContain(SOUND_ADDRESS);
   });
 
   test("answers the page's question about the scheme with the reader's, not the system's", async () => {
