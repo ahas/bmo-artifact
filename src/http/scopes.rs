@@ -4,14 +4,12 @@
 use axum::http::{Method, StatusCode};
 use axum::response::Response;
 use schemars::generate::SchemaGenerator;
-use serde_json::json;
 
+use super::documents::let_go;
 use crate::Refusal;
-use crate::documents::keeper::document_folder;
-use crate::events::EventKind;
 use crate::plumbing::http::{Call, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, json_answer, query, text_parameter};
-use crate::store::{documents, scopes};
+use crate::store::scopes;
 use crate::wire::{DryRunQuery, ScopeCounts, ScopeHolding};
 
 fn scope_parameter() -> serde_json::Value {
@@ -90,20 +88,7 @@ impl Route for ReleaseScope {
     let db = standing.db().await?;
 
     for id in scopes::documents(db, &scope).await? {
-      let tokens = documents::delete(db, id).await?;
-      let _ = std::fs::remove_dir_all(document_folder(&standing.settings.files.root, id));
-
-      for token in tokens {
-        standing
-          .events
-          .publish(db, EventKind::ShareDeleted, Some(&scope), &json!({ "token": token }))
-          .await?;
-      }
-
-      standing
-        .events
-        .publish(db, EventKind::DocumentDeleted, Some(&scope), &json!({ "id": id }))
-        .await?;
+      let_go(standing, id, Some(&scope)).await?;
     }
 
     scopes::drop_imports(db, &scope).await?;

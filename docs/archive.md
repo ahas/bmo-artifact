@@ -168,8 +168,8 @@ address and the file root are settings; no other unit reads or writes either.
   the links whose time has passed.
 - **A link that has ended leaves a note of what it opened:** its token, the document, that document's title,
   the second it ended and why it did, held where no live link stands. A link ends by its time passing, by a
-  caller ending it, or by its document being let go of with its scope, and each of the three leaves the note
-  before the link goes, so the row and the link are never both lost. The token then answers what stood, and
+  caller ending it, or by its document being let go of, alone or with its scope, and each of the three leaves
+  the note before the link goes, so the row and the link are never both lost. The token then answers what stood, and
   never nothing at all (docs/api.md, 「Share links」). A note says what stood, never what it said: the body is
   the document's, and a note outlives it.
 - **A document with no end is the ordinary hand-over:** `POST /publications` files a document and opens its

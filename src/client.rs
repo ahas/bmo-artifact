@@ -198,6 +198,13 @@ impl ArtifactClient {
     Self::json(self.request(Method::PATCH, &format!("/documents/{document_id}")).json(change)).await
   }
 
+  /// `DELETE /documents/{documentId}`.
+  pub async fn release_document(&self, document_id: i64) -> Result<(), ClientFailure> {
+    Self::sent(self.request(Method::DELETE, &format!("/documents/{document_id}")))
+      .await
+      .map(drop)
+  }
+
   /// `GET /documents/{documentId}/content`.
   pub async fn content(&self, document_id: i64, query: &ContentQuery) -> Result<Content, ClientFailure> {
     Self::bytes(self.get(&format!("/documents/{document_id}/content"), query)).await

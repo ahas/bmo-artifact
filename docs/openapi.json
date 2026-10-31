@@ -833,7 +833,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.12"
+    "version": "0.1.0-rev.13"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1168,6 +1168,39 @@
       }
     },
     "/documents/{documentId}": {
+      "delete": {
+        "operationId": "deleteDocumentsByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Let go of a document with its files, attachments, references and share link."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Let go of a document with its files, attachments, references and share link.",
+        "tags": [
+          "documents"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "closed"
+      },
       "get": {
         "operationId": "readDocumentsByDocumentId",
         "parameters": [

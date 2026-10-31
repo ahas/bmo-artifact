@@ -1,15 +1,17 @@
-//! The documents (`docs/api.md`, "Documents"): the list with its filters, a document filed, read and
-//! rewritten, its file and its cover picture.
+//! The documents (`docs/api.md`, "Documents"): the list with its filters, a document filed, read,
+//! rewritten and let go of, its file and its cover picture.
 
 use axum::body::Body;
 use axum::http::{HeaderValue, Method, StatusCode, header};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use schemars::generate::SchemaGenerator;
+use serde_json::json;
 
 use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, inside_root, send};
 use crate::Refusal;
 use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
+use crate::documents::keeper::document_folder;
 use crate::events::EventKind;
 use crate::kinds;
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
@@ -156,6 +158,59 @@ impl Route for ChangeDocument {
 }
 
 crate::route!(ChangeDocument);
+
+/// One document let go of with its files, attachments, references and share link, each link a
+/// `share.deleted` and the document a `document.deleted` under the scope it was held in.
+pub async fn let_go(standing: &Standing, id: i64, scope: Option<&str>) -> Result<(), Refused> {
+  let db = standing.db().await?;
+  let tokens = documents::delete(db, id).await?;
+  let _ = std::fs::remove_dir_all(document_folder(&standing.settings.files.root, id));
+
+  for token in tokens {
+    standing
+      .events
+      .publish(db, EventKind::ShareDeleted, scope, &json!({ "token": token }))
+      .await?;
+  }
+
+  standing
+    .events
+    .publish(db, EventKind::DocumentDeleted, scope, &json!({ "id": id }))
+    .await?;
+
+  Ok(())
+}
+
+pub struct ReleaseDocument;
+
+impl Route for ReleaseDocument {
+  const METHOD: Method = Method::DELETE;
+  const PATH: &'static str = "/documents/{documentId}";
+
+  async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    let id = call.path_id("documentId").await?;
+    let standing = call.standing();
+    let held = document(standing, id).await?.document;
+
+    let_go(standing, id, held.scope.as_deref()).await?;
+
+    Ok(StatusCode::NO_CONTENT.into_response())
+  }
+
+  fn operation(&self, _generator: &mut SchemaGenerator) -> Operation {
+    Operation {
+      id: "deleteDocumentsByDocumentId",
+      tag: "documents",
+      summary: "Let go of a document with its files, attachments, references and share link.",
+      parameters: vec![id_parameter("documentId")],
+      body: None,
+      answers: vec![(204, None)],
+      codes: &["unauthorized", "bad-request", "not-found"],
+    }
+  }
+}
+
+crate::route!(ReleaseDocument);
 
 /// The file a document reads from: for a page, the HTML it keeps; for any other kind, its markdown.
 pub async fn document_file(standing: &Standing, row: &documents::Row) -> Result<KeptFile, Refused> {

@@ -1,6 +1,7 @@
 //! Share links, scopes and the event stream as a caller reaches them (`docs/api.md`, "Share links",
 //! "Scopes" and "Events"): a link made once and answered again, read, listed and ended, swept once its time
-//! has passed; what a scope holds counted, previewed and let go of; and the events each change leaves.
+//! has passed; what a scope holds counted, previewed and let go of; one document let go of alone; and the
+//! events each change leaves.
 
 mod support;
 
@@ -231,6 +232,72 @@ async fn a_scope_is_counted_previewed_and_let_go_of_with_its_documents_and_their
     [
       "document.created",
       "document.created",
+      "share.created",
+      "share.deleted",
+      "document.deleted"
+    ]
+  );
+}
+
+#[tokio::test]
+async fn one_document_is_let_go_of_with_its_files_and_its_link_and_an_unknown_one_is_not_found() {
+  let service = Service::new().await;
+  let kept = filed(&service, "Kept", "team-a").await;
+  let gone = filed(&service, "Gone", "team-a").await;
+  let file = attached(&service, gone, "notes.txt", b"Gone words.").await;
+  let token =
+    service.call(Method::POST, "/shares", Some(json!({ "documentId": gone }))).await.json()["token"]
+      .as_str()
+      .expect("a token")
+      .to_owned();
+  let folder = service.files.path().join("searches").join(gone.to_string());
+
+  assert!(folder.exists());
+
+  let released = service.call(Method::DELETE, &format!("/documents/{gone}"), None).await;
+
+  assert_eq!(released.status, StatusCode::NO_CONTENT);
+  assert_eq!(
+    service.call(Method::GET, &format!("/documents/{gone}"), None).await.status,
+    StatusCode::NOT_FOUND
+  );
+  assert_eq!(
+    service
+      .call(Method::GET, &format!("/documents/{gone}/attachments/{file}"), None)
+      .await
+      .status,
+    StatusCode::NOT_FOUND
+  );
+  assert!(!folder.exists());
+
+  let ended = service.call(Method::GET, &format!("/shares/{token}"), None).await;
+
+  assert_eq!((ended.status, ended.json()["code"].clone()), (StatusCode::GONE, json!("gone")));
+  assert_eq!(
+    service.call(Method::GET, &format!("/documents/{kept}"), None).await.status,
+    StatusCode::OK
+  );
+  assert_eq!(
+    service.call(Method::GET, "/scopes/team-a", None).await.json()["counts"],
+    json!({ "documents": 1, "attachments": 0, "shares": 0, "imports": 0 })
+  );
+
+  for id in [gone, gone + 1000] {
+    let absent = service.call(Method::DELETE, &format!("/documents/{id}"), None).await;
+
+    assert_eq!(
+      (absent.status, absent.json()["code"].clone()),
+      (StatusCode::NOT_FOUND, json!("not-found")),
+      "{id}"
+    );
+  }
+
+  assert_eq!(
+    service.event_kinds().await,
+    [
+      "document.created",
+      "document.created",
+      "attachment.created",
       "share.created",
       "share.deleted",
       "document.deleted"

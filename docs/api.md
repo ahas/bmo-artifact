@@ -109,6 +109,7 @@ answers reads as `record`.
 | `POST /documents` | `kind`, `title`, `body?`, `html?`, `scope?`, `actorName`, `labels`, `description?` | 201, the document |
 | `GET /documents/{documentId}` | | 200, the document |
 | `PATCH /documents/{documentId}` | `title?`, `body?`, `html?`, `labels` | 200, the document |
+| `DELETE /documents/{documentId}` | | 204 |
 | `GET /documents/{documentId}/content` | query `scheme?`, `download?` | 200, the file |
 | `GET /documents/{documentId}/picture` | | 200, the cover picture as JPEG |
 | `GET /document-kinds` | query `after?`, `limit?` | 200, a page of kinds |
@@ -129,6 +130,10 @@ answers reads as `record`.
   `labels` replaces the labels whole; a `title`, `body` or `html` given replaces that one, and its
   references are read again from a new body. A body for a page or HTML for any other kind is refused
   409 `conflict`.
+- **`DELETE /documents/{documentId}` lets go of the document** as letting go of its scope lets go of each it
+  holds (「Scopes」): its row, its labels, its files, attachments and references, and its share link, which
+  leaves its note behind. A reading issued for it opens nothing after. An import that filed it keeps its own
+  record. It is a `document.deleted`, and its link a `share.deleted`.
 - **`GET /documents/{documentId}/content`** sends the file: `text/markdown` for a markdown kind, never
   cached. A page goes out as a hosted page (docs/archive.md, 「An HTML page」): its prelude ahead of its
   first element in the scheme `scheme` names, `light`, `dark` or `system`, the design's default where none is named, under the
@@ -233,7 +238,7 @@ what the route under `/documents/{documentId}` it stands for answers for that do
   are the whole of what the link opens.
 - **A link that has ended leaves a note of what it opened** (docs/archive.md, 「Share links」): its token and
   that token alone answers 410 `gone`, with the sentence naming the document's title and its number, where the
-  link ended by its time, by `DELETE /shares/{token}` or by its document being let go of with its scope. `GET
+  link ended by its time, by `DELETE /shares/{token}` or by its document being let go of. `GET
   /shares/{token}` and every share read of that token answer so, and no live link stands there any more.
 - **A token that never named a link is `not-found`,** with the plain sentence saying so.
 - **A reader with no token of the service's** opens a link through whoever serves the service to a
@@ -318,8 +323,8 @@ whole」).
   and `state`: null for a read, `released` once let go of, `preview` for a dry run. A scope holding
   nothing is `not-found`.
 - **Letting go** removes every document held under the scope with its files, attachments, references and
-  share links, and every import asked under it. Each document removed is a `document.deleted` and each
-  link a `share.deleted`.
+  share links, each as `DELETE /documents/{documentId}` lets go of one, and every import asked under it.
+  Each document removed is a `document.deleted` and each link a `share.deleted`.
 
 ## Events
 
@@ -327,7 +332,7 @@ whole」).
 |---|---|---|
 | `document.created` | a document filed, by a caller or an import | the document |
 | `document.changed` | a document rewritten | the document |
-| `document.deleted` | a document let go of with its scope | `id` |
+| `document.deleted` | a document let go of, alone or with its scope | `id` |
 | `attachment.created` | a file attached | the attachment |
 | `share.created` | a link made | the link |
 | `share.deleted` | a link taken away, swept or let go of | `token` |

@@ -42,6 +42,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "POST /documents",
     "GET /documents/{documentId}",
     "PATCH /documents/{documentId}",
+    "DELETE /documents/{documentId}",
     "GET /documents/{documentId}/content",
     "GET /documents/{documentId}/picture",
     "GET /documents/{documentId}/attachments",

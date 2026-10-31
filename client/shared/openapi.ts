@@ -101,7 +101,8 @@ export interface paths {
         get: operations["readDocumentsByDocumentId"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Let go of a document with its files, attachments, references and share link. */
+        delete: operations["deleteDocumentsByDocumentId"];
         options?: never;
         head?: never;
         /** Rewrite a document under its number; its share links stay. */
@@ -1064,6 +1065,27 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Document"];
                 };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteDocumentsByDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Let go of a document with its files, attachments, references and share link. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Error"];
         };
