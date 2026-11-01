@@ -182,7 +182,7 @@ async fn a_call_without_a_token_is_refused_401() {
 async fn the_console_reaches_the_screens_routes_only_under_a_role_allowing_member() {
   let service = built().await;
 
-  for path in ["/documents", "/document-kinds", "/shares"] {
+  for path in ["/documents", "/document-kinds", "/label-values?key=category", "/shares"] {
     for headers in [&[][..], &[("owner-role", "guest")][..], &[("owner-role", "")][..]] {
       let refused = service.call_by(Some(CONSOLE_TOKEN), Method::GET, path, None, headers).await;
 

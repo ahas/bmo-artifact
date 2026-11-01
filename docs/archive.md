@@ -357,19 +357,44 @@ A picture in a document opens in the picture viewer, for a markdown document and
 
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
-  - the list at `/archive`, narrowed by kind and by a phrase, each narrowing held in the address, each
-    document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps none.
-    A row is the document's title, its description, how many files it keeps and the day it was filed, and
-    exactly two badges: its kind, and, where a link to it stands, its being shared with the time the link has left. A
-    document's labels — the keywords, the rule, the question, the run a filer names it by — are search metadata,
-    no part of a row and never a badge anywhere in the list: a phrase still finds a document by them. A row
-    holds to the list's width at every width; its words wrap or are cut, and the list never scrolls sideways;
-  - one document at `/archive/<id>`: its masthead — its labels on a secondary line under its title, each name
+  - the list at `/archive`, narrowed by kind, by category, to the documents in progress and by a phrase, each
+    narrowing held in the address,
+    each document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps
+    none. A row is the document's number as `#<id>`, its title, its description, how many files it keeps and
+    the day it was filed, and at most four badges: its kind, its category where it carries one (「A document's
+    category」), its being in progress with what it still lacks where it is (「A document in progress」), and,
+    where a link to it stands, its being shared with the time the link has left. The number
+    is copied by pressing it, which opens nothing, and a phrase that is a number, with or without its `#`, finds
+    the document of that number. A document's other labels — the keywords, the rule, the question, the run a
+    filer names it by — are search metadata, no part of a row and never a badge anywhere in the list: a phrase
+    still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
+    and the list never scrolls sideways;
+  - one document at `/archive/<id>`: its number in the screen's bar, with the in-progress badge beside it while
+    the document is in progress; its masthead — its labels on a secondary line under its title, each name
     and value, that wraps — its file drawn as markdown with a table of contents of its kind's depth, its files
     after it, its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document; a page fills the window.
+- **A document's category** is its label `category`: the filer's own word for the work that made it, such as
+  the shape of the research that wrote it or the sort of report it is. The filer chooses the word and sets it
+  when it files; the service keeps it as any label and reads nothing into it.
+  - The list stands the category as a badge in the language pack's word for it (`artifact.category.<word>`),
+    and as written where the pack has none, so a filer's new word stands at once.
+  - The category filter offers every word the documents carry, from `GET /label-values` (`docs/api.md`,
+    「Labels」), most carried first, and narrows the list with `GET /documents`'s `label` as
+    `category:<word>`, so a narrowed page is a full one.
+  - A document without the label stands with no category badge, and is listed only while no category narrows
+    the list.
+- **A document in progress** is one carrying the label `pending`: what its filer still has to give it, its
+  words separated by commas, such as the research unit's `korean`, `narration-ko`, `narration-en`, `review`
+  and `review-fixes` for a page it is still finishing. The filer sets the label while it works on the
+  document and takes it away once it is done, so a document done carries none.
+  - The list and the document's bar stand it as a badge saying it is in progress, followed by what it lacks in
+    the pack's words for each (`artifact.pending.<word>`), a word the pack has none for as written.
+  - The list's in-progress switch narrows it with `GET /documents`'s `label` as `pending`, so a narrowed page
+    is a full one. The route takes one label, so the switch and the category filter narrow the list one at a
+    time: turning the switch on lets the chosen category go, and choosing a category turns the switch off.
 - **A share page reads as its document before anything runs:** the document's title, its description and
   its cover picture stand as the page's preview head, the link is its canonical address, and it asks
   search engines not to index or follow it.

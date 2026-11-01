@@ -89,6 +89,13 @@ async fn a_record_is_filed_read_listed_and_searched_by_its_words_its_labels_and_
   assert_eq!(listed("kind=learning").await.len(), 0);
   assert_eq!(listed("scope=team-b").await.len(), 0);
 
+  for phrase in [format!("{id}"), format!("%23{id}")] {
+    let page = service.call(Method::GET, &format!("/documents?q={phrase}"), None).await.json();
+
+    assert_eq!(page["items"][0]["title"], "Moving plan", "{phrase}");
+    assert_eq!(page["items"].as_array().map(Vec::len), Some(1), "{phrase}");
+  }
+
   let first = service.call(Method::GET, "/documents?limit=1", None).await.json();
 
   assert_eq!(first["more"], true);
@@ -486,6 +493,41 @@ async fn a_reference_is_read_with_its_preview_and_its_picture_through_the_reader
   assert_eq!(
     service.call(Method::GET, &format!("/documents/{id}/references"), None).await.json()["items"][0]["preview"],
     "What the source says"
+  );
+}
+
+#[tokio::test]
+async fn a_labels_values_stand_most_carried_first() {
+  let service = Service::new().await;
+
+  for (title, category) in [("One", "audit"), ("Two", "patch"), ("Three", "audit"), ("Four", "")] {
+    let mut filed = record(title, "Words.");
+
+    if !category.is_empty() {
+      filed["labels"]["category"] = json!(category);
+    }
+
+    service.call(Method::POST, "/documents", Some(filed)).await;
+  }
+
+  assert_eq!(
+    service.call(Method::GET, "/label-values?key=category", None).await.json(),
+    json!({ "items": [{ "value": "audit", "count": 2 }, { "value": "patch", "count": 1 }], "more": false })
+  );
+  assert_eq!(
+    service.call(Method::GET, "/label-values?key=category&limit=1", None).await.json(),
+    json!({ "items": [{ "value": "audit", "count": 2 }], "more": true })
+  );
+  assert_eq!(
+    service.call(Method::GET, "/label-values?key=unused", None).await.json(),
+    json!({ "items": [], "more": false })
+  );
+
+  let blank = service.call(Method::GET, "/label-values?key=%20", None).await;
+
+  assert_eq!(
+    (blank.status, blank.json()["code"].clone()),
+    (StatusCode::BAD_REQUEST, json!("bad-request"))
   );
 }
 

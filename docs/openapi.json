@@ -614,6 +614,42 @@
         ],
         "type": "string"
       },
+      "LabelValue": {
+        "description": "One value a label holds, and how many documents carry it.",
+        "properties": {
+          "count": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "count"
+        ],
+        "type": "object"
+      },
+      "LabelValuePage": {
+        "description": "A page of a label's values, the most carried first.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LabelValue"
+            },
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "more"
+        ],
+        "type": "object"
+      },
       "Nothing": {
         "description": "Nothing: the route answered 204.",
         "type": "object"
@@ -833,7 +869,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.13"
+    "version": "0.1.0-rev.14"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -2033,6 +2069,62 @@
           "forbidden"
         ],
         "x-console": "closed"
+      }
+    },
+    "/label-values": {
+      "get": {
+        "operationId": "listLabelValues",
+        "parameters": [
+          {
+            "description": "The label's key.",
+            "in": "query",
+            "name": "key",
+            "required": false,
+            "schema": {
+              "description": "The label's key.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelValuePage"
+                }
+              }
+            },
+            "description": "The values one label holds across the documents, the most carried first."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The values one label holds across the documents, the most carried first.",
+        "tags": [
+          "documents"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "forbidden"
+        ],
+        "x-console": "screen"
       }
     },
     "/player/{token}": {

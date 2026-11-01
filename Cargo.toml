@@ -4,7 +4,7 @@
 [package]
 name = "bmo-artifact"
 description = "Documents kept, searched and shared: records, learning books, imported pages and HTML pages, with their attachments, references and share links."
-version = "0.1.0-rev.13"
+version = "0.1.0-rev.14"
 edition = "2024"
 license = "MIT"
 publish = false

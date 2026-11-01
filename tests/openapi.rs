@@ -52,6 +52,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "GET /documents/{documentId}/references/{referenceId}",
     "GET /documents/{documentId}/references/{referenceId}/image",
     "GET /document-kinds",
+    "GET /label-values",
     "GET /shares",
     "POST /shares",
     "POST /publications",

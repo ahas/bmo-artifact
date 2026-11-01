@@ -1,15 +1,48 @@
 import { Lexer } from "marked";
 
 import type { Token } from "marked";
-import type { ArtifactAttachment, ArtifactKind } from "../../shared/types";
+import type { ArtifactAttachment, ArtifactDocument, ArtifactKind } from "../../shared/types";
 
 // How the document screens read what the service answers: a document's kind in the catalogue, its
-// contents out of its headings, the files its body draws and the ones that stand after it, and the
+// category, number and progress, its contents out of its headings, the files its body draws and the ones that stand after it, and the
 // sounds heard at its head.
 
 /** The kind a document's word names in the catalogue; null while the catalogue is unread. */
 export function kindOf(kinds: readonly ArtifactKind[], name: string | null | undefined): ArtifactKind | null {
   return kinds.find((kind) => kind.name === name) ?? null;
+}
+
+/** The label a document's category is kept under, the filer's own word for the work that made it (`docs/archive.md`, "Where a person reads it"). */
+export const CATEGORY_LABEL = "category";
+
+/** A document's category: its `category` label's word, null where it carries none. */
+export function categoryOf(document: Pick<ArtifactDocument, "labels">): string | null {
+  const word = document.labels[CATEGORY_LABEL]?.trim() ?? "";
+
+  return word === "" ? null : word;
+}
+
+/** The list's narrowing by a category, as `GET /documents` takes it. */
+export function categoryFilter(word: string): string {
+  return `${CATEGORY_LABEL}:${word}`;
+}
+
+/** The label a document in progress carries, naming what its filer still has to give it (`docs/archive.md`, "Where a person reads it"). */
+export const PENDING_LABEL = "pending";
+
+/** What a document in progress still lacks, in its filer's words; null for a document done. */
+export function pendingOf(document: Pick<ArtifactDocument, "labels">): string[] | null {
+  const words = (document.labels[PENDING_LABEL] ?? "")
+    .split(",")
+    .map((word) => word.trim())
+    .filter((word) => word !== "");
+
+  return words.length === 0 ? null : words;
+}
+
+/** A document's number as a person reads, says and copies it. */
+export function numberText(id: number): string {
+  return `#${id}`;
 }
 
 /** The site a page is on, without the prefix nobody reads. */

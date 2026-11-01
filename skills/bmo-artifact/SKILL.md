@@ -29,6 +29,11 @@ environment).
   caller's own grouping string, such as a project), and either `body` or `html`.
 - `record` and `learning` take a markdown `body`; `page` takes `html` and no body, and its `title` may be
   empty where the page has a `title` element. `import` is written by imports, not filed by hand.
+- The label `category` is the document's category in the archive's list: one word naming the work that
+  made it, such as `security-audit`, `security-patch` or `completion` for a report, or the research shape
+  that wrote it. Set it whenever a document is filed; the list shows it as a badge and filters by it.
+- The label `pending` marks a document still being worked on: what it still lacks, comma-separated words.
+  Set it while the document is unfinished and rewrite the labels without it once it is done.
 - Every web link the markdown makes becomes one of the document's references.
 - `artifact_rewrite` rewrites a document under its number: `documentId`, `labels` (required, they replace
   the labels whole) and any of `title`, `body`, `html`. Its attachments and share links stay.

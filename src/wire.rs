@@ -241,6 +241,33 @@ pub struct DocumentKindPage {
   pub more: bool,
 }
 
+/// What `GET /label-values` is asked: the label whose values it answers, and how many at most.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelValuesQuery {
+  /// The label's key.
+  pub key: String,
+  /// At most this many: 30 where none is given, 200 at most.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub limit: Option<i64>,
+}
+
+/// One value a label holds, and how many documents carry it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelValue {
+  pub value: String,
+  pub count: i64,
+}
+
+/// A page of a label's values, the most carried first.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct LabelValuePage {
+  pub items: Vec<LabelValue>,
+  pub more: bool,
+}
+
 /// A page asked by `after` and `limit`.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]

@@ -4,7 +4,7 @@
       <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own. -->
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
-      <!-- The search takes what width the row has, and the kind filter and the reread keep theirs. -->
+      <!-- The search takes what width the row has, and the filters and the reread keep theirs. -->
       <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }">
         <template #left>
           <UInput
@@ -41,6 +41,28 @@
             @update:model-value="holdToKind"
           />
 
+          <USelect
+            :model-value="categoryChoice"
+            :items="categoryChoices"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            :aria-label="$t('artifact.aria.category')"
+            class="w-auto"
+            @update:model-value="holdToCategory"
+          />
+
+          <UButton
+            size="sm"
+            color="neutral"
+            :variant="inProgressOnly ? 'soft' : 'ghost'"
+            icon="i-material-symbols-progress-activity"
+            :label="$t('artifact.label.in_progress_only')"
+            :aria-pressed="inProgressOnly"
+            :ui="{ label: 'max-sm:sr-only' }"
+            @click="holdToInProgress"
+          />
+
           <UTooltip :text="$t('artifact.action.refresh')">
             <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-refresh" :loading="loading" :aria-label="$t('artifact.action.refresh')" @click="reread" />
           </UTooltip>
@@ -61,11 +83,10 @@
         <p v-else-if="items.length === 0 && !loading" class="text-sm text-muted">{{ emptyText }}</p>
 
         <ul :aria-busy="loading" class="flex flex-col gap-2">
+          <!-- The whole row opens its document through the title's link stretched over it, and the number
+               stands above that link, so pressing it copies the number and opens nothing. -->
           <li v-for="item in items" :key="item.id">
-            <NuxtLink
-              :to="`/archive/${item.id}`"
-              class="flex items-start gap-3 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50"
-            >
+            <div class="relative flex items-start gap-3 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50">
               <img
                 v-if="item.hasPicture && !unpictured.has(item.id)"
                 :src="pictureAddress(item.id)"
@@ -77,13 +98,37 @@
               >
 
               <div class="flex min-w-0 flex-1 flex-col gap-2">
-                <SearchText class="line-clamp-2 text-sm font-medium break-words text-highlighted" :text="item.title" :query="searched" />
+                <NuxtLink :to="`/archive/${item.id}`" class="line-clamp-2 text-sm font-medium break-words text-highlighted before:absolute before:inset-0 before:rounded-lg before:content-['']">
+                  <SearchText :text="item.title" :query="searched" />
+                </NuxtLink>
                 <p v-if="item.description !== null" class="line-clamp-2 text-sm break-words text-muted"><SearchText :text="item.description" :query="searched" /></p>
 
-                <!-- A row carries exactly two badges, its kind and its live link; its labels are search metadata and
-                     stand in the document's own view (docs/archive.md, 「Where a person reads it」). -->
+                <!-- A row carries at most four badges, its kind, its category, its progress and its live link; its other
+                     labels are search metadata and stand in the document's own view (docs/archive.md, 「Where a person
+                     reads it」). -->
                 <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                  <UTooltip :text="copiedId === item.id ? $t('common.status.copied') : $t('artifact.action.copy_number')">
+                    <button
+                      type="button"
+                      class="relative rounded-sm text-sm font-medium tabular-nums text-muted hover:text-highlighted"
+                      :aria-label="`${$t('artifact.action.copy_number')} ${numberText(item.id)}`"
+                      data-number
+                      @click="copyNumber(item.id)"
+                    >
+                      <SearchText :text="numberText(item.id)" :query="searched" />
+                    </button>
+                  </UTooltip>
                   <UBadge color="neutral" variant="outline" size="sm" :label="kindLabel(item.kind)" />
+                  <UBadge
+                    v-if="categoryOf(item) !== null"
+                    color="info"
+                    variant="soft"
+                    size="sm"
+                    class="max-w-full"
+                    :label="categoryLabel(categoryOf(item)!)"
+                    data-category
+                  />
+                  <ArtifactPendingBadge :document="item" />
                   <UBadge
                     v-if="shares.has(item.id)"
                     color="primary"
@@ -100,7 +145,7 @@
                   <span class="ms-auto text-sm tabular-nums text-muted">{{ formatStamp(Math.floor(item.createdAt / 1000)) }}</span>
                 </span>
               </div>
-            </NuxtLink>
+            </div>
           </li>
         </ul>
 
@@ -121,13 +166,14 @@ import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENTS_PAGE_SIZE, DOCUMENTS_PHRASE_LIMIT } from "../../../shared/config";
-import { pictureAddress, readDocuments, readLiveShares, useKinds } from "../../domain/artifact";
-import { kindOf } from "../../domain/document-view";
+import { pictureAddress, readDocuments, readLabelValues, readLiveShares, useKinds } from "../../domain/artifact";
+import { copyText } from "../../domain/copy";
+import { CATEGORY_LABEL, PENDING_LABEL, categoryFilter, categoryOf, kindOf, numberText } from "../../domain/document-view";
 
-import type { ArtifactDocument, ArtifactShare } from "../../../shared/types";
+import type { ArtifactDocument, ArtifactLabelValue, ArtifactShare } from "../../../shared/types";
 
-// The documents the service keeps, newest first, narrowed by kind and found by a phrase; each
-// narrowing is held in the address, so a reload or a shared address shows the same list.
+// The documents the service keeps, newest first, narrowed by kind, by category or to those in progress, and
+// found by a phrase; each narrowing is held in the address, so a reload or a shared address shows the same list.
 
 const { t } = useI18n();
 // Whether a console offers its title bar, under the key bmo-ui's bundle contract names.
@@ -140,6 +186,14 @@ const ALL = "all";
 const typed = ref(typeof route.query.q === "string" ? route.query.q : "");
 const searched = ref(typed.value.trim());
 const kindChoice = ref(typeof route.query.kind === "string" ? route.query.kind : ALL);
+const categoryChoice = ref(typeof route.query.category === "string" ? route.query.category : ALL);
+const inProgressOnly = ref(route.query.pending === "1" && categoryChoice.value === ALL);
+// The categories the documents carry, the most carried first; a list read with none of them offers the
+// filter's one choice of every category rather than failing.
+const categories = ref<ArtifactLabelValue[]>([]);
+// The document whose number was just copied, said so in its tooltip for a moment.
+const copiedId = ref<number | null>(null);
+let copiedFor: ReturnType<typeof setTimeout> | null = null;
 
 const items = ref<ArtifactDocument[]>([]);
 const more = ref(false);
@@ -161,6 +215,7 @@ let generation = 0;
 
 onScopeDispose(() => {
   generation++;
+  if (copiedFor !== null) clearTimeout(copiedFor);
 });
 
 // A kind as the list names it: in its own words where the pack has them, and as its name where not.
@@ -171,12 +226,47 @@ function kindLabel(name: string): string {
   return said === key ? (kindOf(kinds.value, name)?.name ?? name) : said;
 }
 
+// A category as the list names it: in the pack's word where it has one, and as the filer wrote it where not.
+function categoryLabel(word: string): string {
+  const key = `artifact.category.${word}`;
+  const said = t(key);
+
+  return said === key ? word : said;
+}
+
+// The categories offered, the one held in the address among them though no document carries it now.
+const categoryChoices = computed(() => {
+  const words = categories.value.map((category) => category.value);
+
+  if (categoryChoice.value !== ALL && !words.includes(categoryChoice.value)) words.push(categoryChoice.value);
+
+  return [{ label: t("artifact.label.all_categories"), value: ALL }, ...words.map((word) => ({ label: categoryLabel(word), value: word }))];
+});
+
+async function copyNumber(id: number): Promise<void> {
+  if (!(await copyText(numberText(id)))) return;
+
+  copiedId.value = id;
+  if (copiedFor !== null) clearTimeout(copiedFor);
+  copiedFor = setTimeout(() => {
+    copiedFor = null;
+    copiedId.value = null;
+  }, 1500);
+}
+
 const kindChoices = computed(() => [
   { label: t("artifact.label.all_kinds"), value: ALL },
   ...kinds.value.map((kind) => ({ label: kindLabel(kind.name), value: kind.name }))
 ]);
 
 const emptyText = computed(() => (searched.value === "" ? t("artifact.status.no_documents") : t("artifact.status.no_match", { phrase: searched.value })));
+
+// The one label the list is narrowed by: the documents in progress while the switch is on, else the category chosen.
+function listedLabel(): string | undefined {
+  if (inProgressOnly.value) return PENDING_LABEL;
+
+  return categoryChoice.value === ALL ? undefined : categoryFilter(categoryChoice.value);
+}
 
 async function read(before?: number): Promise<void> {
   const mine = ++generation;
@@ -191,11 +281,18 @@ async function read(before?: number): Promise<void> {
       },
       () => undefined
     );
+    void readLabelValues(CATEGORY_LABEL).then(
+      (words) => {
+        if (mine === generation) categories.value = words;
+      },
+      () => undefined
+    );
   }
 
   try {
     const page = await readDocuments({
       kind: kindChoice.value === ALL ? undefined : kindChoice.value,
+      label: listedLabel(),
       q: searched.value === "" ? undefined : searched.value,
       before,
       limit: DOCUMENTS_PAGE_SIZE
@@ -217,7 +314,9 @@ function hold(): void {
   void router.replace({
     query: {
       ...(searched.value === "" ? {} : { q: searched.value }),
-      ...(kindChoice.value === ALL ? {} : { kind: kindChoice.value })
+      ...(kindChoice.value === ALL ? {} : { kind: kindChoice.value }),
+      ...(categoryChoice.value === ALL ? {} : { category: categoryChoice.value }),
+      ...(inProgressOnly.value ? { pending: "1" } : {})
     }
   });
   void read();
@@ -244,6 +343,19 @@ function clearSearch(): void {
 
 function holdToKind(value: string): void {
   kindChoice.value = value;
+  hold();
+}
+
+// The route takes one label, so the category and the in-progress switch narrow the list one at a time.
+function holdToCategory(value: string): void {
+  categoryChoice.value = value;
+  if (value !== ALL) inProgressOnly.value = false;
+  hold();
+}
+
+function holdToInProgress(): void {
+  inProgressOnly.value = !inProgressOnly.value;
+  if (inProgressOnly.value) categoryChoice.value = ALL;
   hold();
 }
 

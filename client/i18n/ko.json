@@ -7,12 +7,15 @@
     },
     "label": {
       "actor": "올린 사람",
+      "all_categories": "모든 분류",
       "all_kinds": "모든 종류",
       "attachments": "첨부",
       "changed": "수정한 시각",
       "contents": "목차",
       "created": "올린 시각",
       "files_count": "첨부 {n}",
+      "in_progress": "진행 중 · {lacks}",
+      "in_progress_only": "진행 중만",
       "link_map": "지도",
       "listen": "들으며 보세요",
       "picture_address": "주소",
@@ -37,9 +40,35 @@
       "record": "기록",
       "search": "조사"
     },
+    "category": {
+      "advisory": "보안 권고",
+      "brief": "브리핑",
+      "browse": "브라우징",
+      "completion": "완료 보고",
+      "design-review": "설계 검토",
+      "implementation": "구현 보고",
+      "investigation": "조사",
+      "manual": "매뉴얼",
+      "plan": "계획",
+      "report": "보고",
+      "search": "검색",
+      "search:basic": "기본 검색",
+      "search:exhaustive": "전수 검색",
+      "search:thorough": "꼼꼼한 검색",
+      "security-audit": "보안 감사",
+      "security-patch": "패치 보고"
+    },
+    "pending": {
+      "korean": "번역",
+      "narration-en": "영어 음성",
+      "narration-ko": "한국어 음성",
+      "review": "검수",
+      "review-fixes": "검수 반영"
+    },
     "action": {
       "back_to_list": "목록으로",
       "clear_search": "검색어 삭제",
+      "copy_number": "번호 복사",
       "document_original": "문서 원문",
       "download": "다운로드",
       "more": "더보기",
@@ -50,6 +79,7 @@
       "share": "공유"
     },
     "aria": {
+      "category": "분류",
       "document_menu": "문서 메뉴",
       "kind": "종류",
       "opens_new_tab": "(새 탭에서 열림)",

@@ -7,7 +7,7 @@ use sea_orm::{ConnectionTrait, QueryResult, Value};
 use super::{all, now_ms, one, run};
 use crate::kinds;
 use crate::plumbing::refusal::Refusal;
-use crate::wire::{Document, DocumentsQuery, Labels};
+use crate::wire::{Document, DocumentsQuery, LabelValue, Labels};
 
 /// The writer every search and import written before the kind was kept is recorded under.
 pub const SEARCHER: &str = "searcher";
@@ -153,12 +153,17 @@ pub async fn list<C: ConnectionTrait>(
 
   if !phrase.is_empty() {
     let at = bind(phrase.to_lowercase().into(), &mut values);
+    // A phrase that is a number, with or without its `#`, finds the document of that number too.
+    let numbered = match number_of(&phrase) {
+      Some(id) => format!(r#" OR d."id" = {}"#, bind(id.into(), &mut values)),
+      None => String::new(),
+    };
 
     filters.push(format!(
       r#"(strpos(lower(COALESCE(d."title", '') || ' ' || d."query"), {at}) > 0
           OR strpos(lower(COALESCE(d."topic", '') || ' ' || COALESCE(d."keywords", '')), {at}) > 0
           OR EXISTS (SELECT 1 FROM jsonb_each_text(d."labels") l WHERE strpos(lower(l."value"), {at}) > 0)
-          OR EXISTS (SELECT 1 FROM "search_findings" f WHERE f."search_id" = d."id" AND strpos(lower(f."text"), {at}) > 0))"#
+          OR EXISTS (SELECT 1 FROM "search_findings" f WHERE f."search_id" = d."id" AND strpos(lower(f."text"), {at}) > 0){numbered})"#
     ));
   }
 
@@ -189,6 +194,50 @@ pub async fn list<C: ConnectionTrait>(
   documents.truncate(usize::try_from(limit).unwrap_or(usize::MAX));
 
   Ok((documents, more))
+}
+
+/// The document number a phrase names: its digits alone, a leading `#` aside.
+pub fn number_of(phrase: &str) -> Option<i64> {
+  let digits = phrase.strip_prefix('#').unwrap_or(phrase);
+
+  if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_digit()) {
+    return None;
+  }
+
+  digits.parse().ok()
+}
+
+/// The distinct values the label `key` holds across the listed documents, the most carried first and, among
+/// equals, in the values' order; at most `limit`, and whether more stand past them.
+pub async fn label_values<C: ConnectionTrait>(
+  db: &C,
+  key: &str,
+  limit: i64,
+) -> Result<(Vec<LabelValue>, bool), Refusal> {
+  let rows = all(
+    db,
+    &format!(
+      r#"SELECT d."labels" ->> $1 AS "value", COUNT(*) AS "count" FROM "searches" d
+          WHERE {LEFT_A_DOCUMENT} AND d."labels" ->> $1 IS NOT NULL
+          GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT $2"#
+    ),
+    vec![key.into(), (limit + 1).into()],
+  )
+  .await?;
+  let mut items = rows
+    .iter()
+    .map(|row| -> Result<LabelValue, Refusal> {
+      Ok(LabelValue {
+        value: row.try_get("", "value")?,
+        count: row.try_get("", "count")?,
+      })
+    })
+    .collect::<Result<Vec<_>, _>>()?;
+  let more = items.len() as i64 > limit;
+
+  items.truncate(usize::try_from(limit).unwrap_or(usize::MAX));
+
+  Ok((items, more))
 }
 
 /// A document's row as it is filed.

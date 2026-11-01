@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { contentsOf, drawnNames, fileAddresses, filesAround, headSounds, hostInitial, hostOf, keptNames, kindOf, languageOf, textPreview } from "../../app/domain/document-view";
+import { categoryFilter, categoryOf, contentsOf, drawnNames, fileAddresses, filesAround, headSounds, hostInitial, hostOf, keptNames, kindOf, languageOf, numberText, pendingOf, textPreview } from "../../app/domain/document-view";
 
 import type { ArtifactAttachment } from "../../shared/types";
 
@@ -16,6 +16,25 @@ describe("a document's kind", () => {
 
     expect(kindOf(kinds, "record")?.contentsDepth).toBe(2);
     expect(kindOf(kinds, "search")).toBeNull();
+  });
+});
+
+describe("a document's category, number and progress", () => {
+  test("is its category label's word, and none where the label is missing or blank", () => {
+    expect(categoryOf({ labels: { category: "security-audit", topic: "x" } })).toBe("security-audit");
+    expect(categoryOf({ labels: { category: "  " } })).toBeNull();
+    expect(categoryOf({ labels: { report: "security-audit-2026-11-01" } })).toBeNull();
+  });
+
+  test("is in progress while its pending label names what it lacks, and done without one", () => {
+    expect(pendingOf({ labels: { pending: "korean, narration-ko,,review" } })).toEqual(["korean", "narration-ko", "review"]);
+    expect(pendingOf({ labels: { pending: " , " } })).toBeNull();
+    expect(pendingOf({ labels: {} })).toBeNull();
+  });
+
+  test("narrows the list by the category label, and the number reads with its mark", () => {
+    expect(categoryFilter("search:exhaustive")).toBe("category:search:exhaustive");
+    expect(numberText(463)).toBe("#463");
   });
 });
 

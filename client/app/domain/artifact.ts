@@ -11,6 +11,8 @@ import type {
   ArtifactDocumentPage,
   ArtifactKind,
   ArtifactKindPage,
+  ArtifactLabelValue,
+  ArtifactLabelValuePage,
   ArtifactReference,
   ArtifactReferencePage,
   ArtifactShare,
@@ -35,6 +37,7 @@ export function artifactAddress(path: string): string {
 /** What the list is narrowed and paged by. */
 export interface DocumentsAsked {
   kind?: string;
+  label?: string;
   q?: string;
   before?: number;
   limit: number;
@@ -139,6 +142,11 @@ export function useKinds(): Ref<ArtifactKind[]> {
   const { data } = useFetch<ArtifactKindPage>(artifactAddress("/document-kinds"), { key: "artifact-kinds", lazy: true, server: false });
 
   return computed(() => data.value?.items ?? []);
+}
+
+/** The words a label holds across the documents, the most carried first: what the list's category filter offers. */
+export async function readLabelValues(key: string): Promise<ArtifactLabelValue[]> {
+  return (await $fetch<ArtifactLabelValuePage>(artifactAddress("/label-values"), { query: { key, limit: 200 } })).items;
 }
 
 /** The live link of one document, null where it has none. */

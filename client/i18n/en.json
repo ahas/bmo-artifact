@@ -7,12 +7,15 @@
     },
     "label": {
       "actor": "Filed by",
+      "all_categories": "All categories",
       "all_kinds": "All kinds",
       "attachments": "Attachments",
       "changed": "Changed",
       "contents": "Contents",
       "created": "Filed",
       "files_count": "Files {n}",
+      "in_progress": "In progress · {lacks}",
+      "in_progress_only": "In progress only",
       "link_map": "Map",
       "listen": "Listen while you read",
       "picture_address": "Address",
@@ -37,9 +40,35 @@
       "record": "Record",
       "search": "Research"
     },
+    "category": {
+      "advisory": "Security advisory",
+      "brief": "Brief",
+      "browse": "Browsing",
+      "completion": "Completion report",
+      "design-review": "Design review",
+      "implementation": "Implementation report",
+      "investigation": "Investigation",
+      "manual": "Manual",
+      "plan": "Plan",
+      "report": "Report",
+      "search": "Search",
+      "search:basic": "Basic search",
+      "search:exhaustive": "Exhaustive search",
+      "search:thorough": "Thorough search",
+      "security-audit": "Security audit",
+      "security-patch": "Patch report"
+    },
+    "pending": {
+      "korean": "Translation",
+      "narration-en": "English narration",
+      "narration-ko": "Korean narration",
+      "review": "Review",
+      "review-fixes": "Review fixes"
+    },
     "action": {
       "back_to_list": "Back to the list",
       "clear_search": "Clear the search",
+      "copy_number": "Copy the number",
       "document_original": "Document file",
       "download": "Download",
       "more": "More",
@@ -50,6 +79,7 @@
       "share": "Share"
     },
     "aria": {
+      "category": "Category",
       "document_menu": "Document menu",
       "kind": "Kind",
       "opens_new_tab": "(opens in a new tab)",

@@ -101,6 +101,13 @@ answers reads as `record`.
 | `import` | a page brought in whole through `POST /imports` | the markdown the import wrote |
 | `page` | an HTML page kept as it stands | the HTML as filed |
 
+### Labels
+
+`GET /label-values` answers the distinct values the label `key` holds across the listed documents, each
+`value` and `count` (how many documents carry it), the most carried first and, among equals, in the
+values' order. A page answers at most `limit`, `more` where values stand past it, and takes no cursor. A
+blank `key` is refused `bad-request`. The values are the callers' own strings, matched as they are written.
+
 ### Routes
 
 | Route | Takes | Answers |
@@ -113,11 +120,13 @@ answers reads as `record`.
 | `GET /documents/{documentId}/content` | query `scheme?`, `download?` | 200, the file |
 | `GET /documents/{documentId}/picture` | | 200, the cover picture as JPEG |
 | `GET /document-kinds` | query `after?`, `limit?` | 200, a page of kinds |
+| `GET /label-values` | query `key`, `limit?` | 200, a page of the values one label holds |
 
 - **`GET /documents` filters in the reading itself,** so a filtered page is a full one. `kind` holds it to
   one kind and `scope` to one scope; `label` is `key:value` for documents whose label `key` is `value`, or
   `key` alone for those carrying it; `q`, cut to 200 characters, holds it to documents saying the phrase,
-  matched whole and without regard to case in the title, the labels and the body. A blank `q` is no search.
+  matched whole and without regard to case in the title, the labels and the body, and, where the phrase is a
+  number with or without a leading `#`, to the document of that number as well. A blank `q` is no search.
 - **`POST /documents` files a document.** `page` takes `html` and nothing in `body`; every other kind takes
   `body` and no `html`. The title is required, except for a page whose own `title` element gives one.
   Each distinct http or https link the body makes becomes one of the document's references. Refused
@@ -447,7 +456,7 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
     `forbidden`;
   - no other route: each is refused 403 `forbidden`.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
-  references and kinds, and the reading, making and ending of share links.
+  references, kinds and label values, and the reading, making and ending of share links.
 
 ## What this service calls
 

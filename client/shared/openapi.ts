@@ -297,6 +297,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/label-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The values one label holds across the documents, the most carried first. */
+        get: operations["listLabelValues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/player/{token}": {
         parameters: {
             query?: never;
@@ -792,6 +809,17 @@ export interface components {
          * @enum {string}
          */
         ImportState: "fetching" | "filed" | "failed";
+        /** @description One value a label holds, and how many documents carry it. */
+        LabelValue: {
+            /** Format: int64 */
+            count: number;
+            value: string;
+        };
+        /** @description A page of a label's values, the most carried first. */
+        LabelValuePage: {
+            items: components["schemas"]["LabelValue"][];
+            more: boolean;
+        };
         /** @description Nothing: the route answered 204. */
         Nothing: Record<string, never>;
         /** @description A document filed and a link to it opened in one call: what a document is handed to somebody as. */
@@ -1454,6 +1482,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Import"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listLabelValues: {
+        parameters: {
+            query?: {
+                /** @description The label's key. */
+                key?: string;
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The values one label holds across the documents, the most carried first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelValuePage"];
                 };
             };
             default: components["responses"]["Error"];

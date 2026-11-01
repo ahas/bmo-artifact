@@ -3,14 +3,19 @@
        parts that scroll on their own with a boundary between them; on a phone the side rises from the
        bottom edge over the text. A page fills the screen in its frame. -->
   <UDashboardPanel id="artifact-document" :ui="{ body: 'p-0 sm:p-0 gap-0 overflow-hidden [&>*]:max-w-none' }">
-    <!-- Under a console that offers its title bar the console draws it, and the way back to the list and the
-         document's number stand beside its name; alone, the screen draws its own bar holding both. -->
+    <!-- Under a console that offers its title bar the console draws it, and the way back to the list, the
+         document's number and its being in progress stand beside its name; alone, the screen draws its own bar
+         holding them. -->
     <template v-if="barOffer === null" #header>
       <UDashboardNavbar :title="$t('artifact.title.document', { id: documentId })" icon="i-material-symbols-archive-outline">
         <template #leading>
           <UTooltip :text="$t('artifact.action.back_to_list')">
             <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
           </UTooltip>
+        </template>
+
+        <template v-if="held !== null" #trailing>
+          <ArtifactPendingBadge :document="held.document" />
         </template>
       </UDashboardNavbar>
     </template>
@@ -22,6 +27,7 @@
           <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
         </UTooltip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
+        <ArtifactPendingBadge v-if="held !== null" :document="held.document" />
       </Teleport>
       <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2 p-4">
         <p class="text-sm text-error">{{ failed }}</p>
