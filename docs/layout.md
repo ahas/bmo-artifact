@@ -158,7 +158,7 @@ The plumbing is what every command and every route stands on, and it knows none 
   the bundle's reading, built on marked and cleaned by DOMPurify, turns it into HTML: a heading takes its
   contents mark, a picture or a link naming a kept file by its name is drawn from it or goes to it, a
   picture of any other address is a link, a footnote mark is raised and brings its source entry
-  forward in a popover (`docs/archive.md`, 「How a document is drawn」), and bmo-ui's code modules colour code, give fenced blocks their
+  forward in a popover or a dialog (`docs/archive.md`, 「How a document is drawn」), and bmo-ui's code modules colour code, give fenced blocks their
   copy button and draw diagrams. The reading is loaded in the browser alone, since DOMPurify cleans
   against a real document.
 - **Its own files by relative path.** No file of the bundle reaches outside `client/`, which a test in

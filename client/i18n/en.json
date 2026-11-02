@@ -4,7 +4,8 @@
       "screen": "Artifact",
       "document": "Document {id}",
       "instruction": "Instruction",
-      "references_count": "Referred pages {n}"
+      "references_count": "Referred pages {n}",
+      "source": "Source {mark}"
     },
     "label": {
       "actor": "Filed by",

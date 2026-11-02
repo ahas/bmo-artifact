@@ -346,13 +346,17 @@ sheet and the console bundle reads to draw a document.
     and in the caution tone where it carries a dagger. **In its entry** the mark is a link in the accent at
     the text's size, which scrolls the text back to where the mark first stands and marks it there for a
     moment.
-  - **Pressing a mark brings its source forward** in a popover over the mark: above it, and below only where
-    there is no room above. It holds the entry's words formatted as the body formats them, the address of
-    the page as a link that opens it in a tab of its own, and, for a dagger, that the value was checked
-    against the snippet only. A pointer resting on the mark opens it, and it stays while the pointer is on
-    the mark or inside the popover, going once the pointer has left both. A tap opens it and moves nothing:
-    the text never scrolls to the entry, and a second tap on the same mark puts it away. A press anywhere
-    else, Esc and the back gesture put it away too. A mark with no entry opens nothing.
+  - **A mark brings its source forward,** the way a wiki's footnotes do: the mark, then the entry's words
+    formatted as the body formats them, the address of the page as a link that opens it in a tab of its own,
+    and, for a dagger, that the value was checked against the snippet only. A mark with no entry opens nothing,
+    and nothing a mark is pressed with follows its link, so the address never changes.
+    - **A pointer resting on the mark** opens it in a popover over the mark: above it, and below only where
+      there is no room above. It stays while the pointer is on the mark or inside the popover, and goes once
+      the pointer has left both. A key pressed on the mark opens the same popover.
+    - **A click on the mark** scrolls the text to its entry and marks the entry there for a moment.
+    - **A tap on the mark** opens it in a dialog centred on the screen, with a close button under it, and
+      moves nothing: the text does not scroll. The close button, a tap outside the dialog, Esc and the back
+      gesture put it away.
 
 ## Pictures open whole
 

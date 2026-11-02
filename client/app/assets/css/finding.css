@@ -392,8 +392,10 @@
   color: var(--doc-ink);
 }
 
-/* The mark an entry led back to, marked where it stands for a moment so the eye finds it. */
-.markdown.markdown--finding .search-mark a[data-mark-found] {
+/* The mark an entry led back to, and the entry a mark led to, marked where it stands for a moment so the eye
+   finds it. */
+.markdown.markdown--finding .search-mark a[data-mark-found],
+.markdown.markdown--finding li[data-mark-found] {
   background: var(--ui-bg-accented);
 }
 

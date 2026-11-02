@@ -28,6 +28,8 @@ export function backMarkAt(target: EventTarget | null, root: Element): HTMLAncho
 
 /** What a source popover holds: the entry's words, formatted as drawn, and the pages it links to. */
 export interface MarkSource {
+  // The mark as the text shows it, which heads the source as its entry heads it.
+  mark: string;
   html: string;
   addresses: string[];
   snippet: boolean;
@@ -50,7 +52,7 @@ export function addressText(href: string): string {
  * links of their own. Null where the text carries no entry for the mark. The entry was cleaned with the
  * rest of the text, so what is read off it is already clean.
  */
-export function sourceOf(root: Element, name: string): MarkSource | null {
+export function sourceOf(root: Element, name: string, mark = `[${name}]`): MarkSource | null {
   const entry = root.querySelector(`[data-source="${CSS.escape(name)}"]`);
 
   if (entry === null) return null;
@@ -68,5 +70,5 @@ export function sourceOf(root: Element, name: string): MarkSource | null {
     link.replaceWith(...link.childNodes);
   });
 
-  return { html: words.innerHTML.trim(), addresses, snippet: name.endsWith("†") };
+  return { mark, html: words.innerHTML.trim(), addresses, snippet: name.endsWith("†") };
 }

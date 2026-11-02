@@ -9,6 +9,8 @@ const source = await read("../../app/components/ArtifactText.vue");
 const template = source.slice(0, source.indexOf("<script"));
 const script = source.slice(source.indexOf("<script"));
 const loader = await read("../../app/domain/finding-load.ts");
+const markSource = await read("../../app/components/ArtifactMarkSource.vue");
+const templateOf = (file: string): string => file.slice(0, file.indexOf("<script"));
 const config = await read("../../nuxt.config.ts");
 
 describe("a finding's text", () => {
@@ -50,15 +52,21 @@ describe("a finding's text", () => {
     expect(template).toContain("<ArtifactMap ");
   });
 
-  // A footnote mark brings its source forward over it, in the library's popover, above the mark, and its
-  // press follows no link (docs/archive.md, "How a document is drawn").
-  test("brings a footnote mark's source forward in a popover above the mark, read off the text itself", () => {
+  // A footnote mark brings its source forward as a wiki's footnotes do: over the mark in the library's popover, above
+  // it, for a pointer, and in a centred dialog for a finger; no press follows its link (docs/archive.md, "How a
+  // document is drawn").
+  test("brings a footnote mark's source forward in a popover above the mark, or in a dialog for a tap", () => {
+    const shown = templateOf(markSource);
+
     expect(template).toContain('<UPopover v-model:open="sourceOpen" :reference="sourceMark ?? undefined" :content="SOURCE_PLACE">');
     expect(script).toContain('side: "top"');
     expect(template).toContain('@pointerenter="holdSource" @pointerleave="leaveSource"');
-    expect(template).toContain('target="_blank"');
+    expect(template).toContain('<UModal v-model:open="dialogOpen"');
+    expect(template.match(/<ArtifactMarkSource :source="source" \/>/g)).toHaveLength(2);
+    expect(script).toContain('(event as PointerEvent).pointerType === "touch"');
     expect(script).toContain("event.preventDefault();");
-    expect(template.match(/v-html/g)).toHaveLength(2);
+    expect(shown).toContain('target="_blank"');
+    expect(template.match(/v-html/g)).toHaveLength(1);
   });
 
   test("draws the plain text while the page is hydrated, so the browser's first pass agrees with the server's", () => {

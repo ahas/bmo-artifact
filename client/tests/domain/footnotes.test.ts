@@ -42,7 +42,7 @@ describe("a footnote mark", () => {
   test("brings forward its entry's words, formatted, with the page's address apart as a link of its own", () => {
     const source = sourceOf(drawn(TEXT), "1");
 
-    expect(source).toEqual({ html: "The <strong>first</strong> page", addresses: ["https://one.example/a%20b"], snippet: false });
+    expect(source).toEqual({ mark: "[1]", html: "The <strong>first</strong> page", addresses: ["https://one.example/a%20b"], snippet: false });
   });
 
   test("says a snippet's value was checked against the snippet only", () => {

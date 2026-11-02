@@ -24,27 +24,28 @@
     <ArtifactMap v-else :query="block.block.query" />
   </Teleport>
 
-  <!-- The source a footnote mark cites, brought forward over the mark (docs/archive.md, "How a document is
-       drawn"): the entry's words as the text formats them, and each page it names as a link of its own. -->
+  <!-- The source a footnote mark cites, brought forward (docs/archive.md, "How a document is drawn"): over the mark
+       in a popover where the pointer rests on it, and in a dialog centred on the screen where a finger taps it. -->
   <UPopover v-model:open="sourceOpen" :reference="sourceMark ?? undefined" :content="SOURCE_PLACE">
     <template #content>
-      <div v-if="source !== null" class="flex max-w-80 flex-col gap-2 p-3 text-sm" data-mark-source @pointerenter="holdSource" @pointerleave="leaveSource">
-        <div v-if="source.html !== ''" class="break-words text-default [&_code]:font-mono [&_strong]:font-semibold" v-html="source.html" />
-        <a
-          v-for="address in source.addresses"
-          :key="address"
-          :href="address"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="break-all text-default underline decoration-primary underline-offset-2 hover:text-highlighted active:text-highlighted"
-          data-mark-address
-        >
-          {{ addressText(address) }}
-        </a>
-        <p v-if="source.snippet" class="text-muted">{{ $t("artifact.label.snippet_only") }}</p>
+      <div v-if="source !== null" class="max-w-80 p-3" data-mark-source @pointerenter="holdSource" @pointerleave="leaveSource">
+        <ArtifactMarkSource :source="source" />
       </div>
     </template>
   </UPopover>
+
+  <UModal v-model:open="dialogOpen" :title="$t('artifact.title.source', { mark: source?.mark ?? '' })" :ui="{ content: 'max-w-sm' }">
+    <template #content>
+      <div v-if="source !== null" data-mark-dialog>
+        <div class="p-4">
+          <ArtifactMarkSource :source="source" />
+        </div>
+        <div class="border-t border-default p-2">
+          <UButton block color="neutral" variant="ghost" :label="$t('common.action.close')" @click="dialogOpen = false" />
+        </div>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
@@ -56,7 +57,7 @@ import { useDarkScheme } from "bmo-ui/app/domain/scheme";
 import { useI18n } from "vue-i18n";
 
 import { copyText } from "../domain/copy";
-import { addressText, backMarkAt, citeId, markAt, sourceOf } from "../domain/footnotes";
+import { backMarkAt, citeId, entryId, markAt, sourceOf } from "../domain/footnotes";
 import { FINDING_BLOCK_PLACES, findingBlock } from "../domain/finding-blocks";
 import { findingReading, loadFindingReading } from "../domain/finding-load";
 
@@ -145,7 +146,8 @@ function fillBlocks(root: HTMLElement): void {
 
 // A footnote mark brings its source forward in a popover over it, above where there is room. A pointer
 // resting on the mark opens it and it stays while the pointer is on the mark or in the popover; a press
-// or a tap opens it without following the mark's link, so the text never moves under the reader.
+// opens it without following the mark's link. A finger has no pointer to rest, so a tap opens the source in a
+// dialog centred on the screen instead, and follows no link either: the text never moves under the reader.
 const SOURCE_PLACE = {
   side: "top",
   sideOffset: 4,
@@ -168,6 +170,7 @@ const HOVER_OPEN_MS = 100;
 const HOVER_CLOSE_MS = 200;
 
 const sourceOpen = ref(false);
+const dialogOpen = ref(false);
 const sourceMark = shallowRef<HTMLAnchorElement | null>(null);
 const source = shallowRef<MarkSource | null>(null);
 let openedByKey = false;
@@ -178,10 +181,11 @@ function stopHoverTimer(): void {
   hoverTimer = undefined;
 }
 
-// The source of a mark brought forward; a mark whose text carries no entry for it opens nothing.
-function showSource(mark: HTMLAnchorElement, byKey: boolean): void {
+// The source of a mark brought forward, over the mark or in the dialog; a mark whose text carries no entry for it
+// opens nothing.
+function showSource(mark: HTMLAnchorElement, byKey: boolean, inDialog = false): void {
   const name = mark.dataset["mark"] ?? "";
-  const found = shown.value === null ? null : sourceOf(shown.value, name);
+  const found = shown.value === null ? null : sourceOf(shown.value, name, mark.textContent?.trim() ?? name);
 
   stopHoverTimer();
 
@@ -190,7 +194,13 @@ function showSource(mark: HTMLAnchorElement, byKey: boolean): void {
   openedByKey = byKey;
   sourceMark.value = mark;
   source.value = found;
-  sourceOpen.value = true;
+
+  if (inDialog) {
+    sourceOpen.value = false;
+    dialogOpen.value = true;
+  } else {
+    sourceOpen.value = true;
+  }
 }
 
 function closeSource(): void {
@@ -234,10 +244,20 @@ function leaveSource(event: PointerEvent): void {
   if (sourceOpen.value && !openedByKey) hoverTimer = setTimeout(closeSource, HOVER_CLOSE_MS);
 }
 
-// A press on a mark brings its source forward and follows no link; a second tap on the mark it stands over
-// puts it away. A press on an entry's mark scrolls the text back to the mark's first place and marks it there
+// A tap on a mark opens its source in the dialog, and a key opens it over the mark. A click scrolls the text to the
+// mark's entry and marks it there for a moment, as an entry's mark leads back to the text. None of them follows the
+// mark's link, so the address never changes. A press on an entry's mark scrolls the text back to the mark's first place and marks it there
 // for a moment. Anything else is the copy buttons'.
 const FOUND_MS = 2000;
+
+// The place a mark leads to, scrolled to the middle of the text and marked there for a moment.
+function bringForward(place: HTMLElement | null): void {
+  if (place === null) return;
+
+  scrollWithin(place, "center");
+  place.dataset["markFound"] = "";
+  setTimeout(() => delete place.dataset["markFound"], FOUND_MS);
+}
 
 function onPress(event: MouseEvent): void {
   const root = shown.value;
@@ -248,8 +268,14 @@ function onPress(event: MouseEvent): void {
 
     const touched = (event as PointerEvent).pointerType === "touch";
 
-    if (touched && sourceOpen.value && sourceMark.value === mark) closeSource();
-    else showSource(mark, event.detail === 0);
+    if (touched || event.detail === 0) {
+      showSource(mark, event.detail === 0, touched);
+
+      return;
+    }
+
+    closeSource();
+    bringForward(root!.querySelector<HTMLElement>(`#${CSS.escape(entryId(mark.dataset["mark"] ?? ""))}`));
 
     return;
   }
@@ -259,13 +285,7 @@ function onPress(event: MouseEvent): void {
   if (back !== null) {
     event.preventDefault();
 
-    const place = root!.querySelector<HTMLElement>(`#${CSS.escape(citeId(back.dataset["markBack"] ?? ""))}`);
-
-    if (place === null) return;
-
-    scrollWithin(place, "center");
-    place.dataset["markFound"] = "";
-    setTimeout(() => delete place.dataset["markFound"], FOUND_MS);
+    bringForward(root!.querySelector<HTMLElement>(`#${CSS.escape(citeId(back.dataset["markBack"] ?? ""))}`));
 
     return;
   }
