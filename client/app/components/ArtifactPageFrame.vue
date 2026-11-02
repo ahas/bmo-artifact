@@ -1,16 +1,16 @@
 <template>
-  <!-- A document that is a page of its own (docs/archive.md, "An HTML page"): its title on a row
+  <!-- A document that is a page of its own (docs/artifact.md, "An HTML page"): its title on a row
        of its own, its kind and the actions on it on the row under it, and under them the page filling
        the rest of the screen. The page's own scroll is the only one here. The frame names the scheme
        the console stands in, so the page is drawn in it from its first frame and again when the
-       screen mode changes (docs/archive.md, "How a document is drawn"), and names the console's
+       screen mode changes (docs/artifact.md, "How a document is drawn"), and names the console's
        language, which the player the page's sounds stand in speaks. A share page has no header: the
        page fills the window. The reader draws no band over a page: its sounds stand where the page
-       writes them (docs/archive.md, "An HTML page"). -->
+       writes them (docs/artifact.md, "An HTML page"). -->
   <div class="flex min-h-0 flex-1 flex-col">
     <header v-if="props.chrome" class="flex shrink-0 flex-col gap-2 border-b border-default px-4 py-3">
       <!-- The title wraps between words onto two lines at most; a longer one is clamped there and the console's
-           tooltip for a cut line shows it whole (docs/archive.md, 「Where a person reads it」). -->
+           tooltip for a cut line shows it whole (docs/artifact.md, 「Where a person reads it」). -->
       <h1 class="line-clamp-2 text-lg font-semibold break-keep text-highlighted [overflow-wrap:anywhere] sm:text-xl" data-page-title>{{ props.title }}</h1>
 
       <div class="flex items-center gap-2">

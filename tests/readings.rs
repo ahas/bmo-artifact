@@ -1,4 +1,4 @@
-//! A page's sounds as the page is handed them (`docs/archive.md`, "An HTML page" and "Readings"; `docs/api.md`,
+//! A page's sounds as the page is handed them (`docs/artifact.md`, "An HTML page" and "Readings"; `docs/api.md`,
 //! "Readings"): the console's page handed a reading, a share link's page handed its share route, each read
 //! answering any origin, the player's script on its own address, the player's words in the reader's language,
 //! and a reading token that opens nothing once forged or ended.

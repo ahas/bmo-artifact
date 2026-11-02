@@ -1,4 +1,4 @@
-//! Readings (`docs/archive.md`, "Readings"): a token opening one document's attachments to the page the
+//! Readings (`docs/artifact.md`, "Readings"): a token opening one document's attachments to the page the
 //! console's own reader opens, which is the document's number and the second the reading ends, signed with
 //! the service's key. Nothing of a token is kept.
 

@@ -195,7 +195,7 @@ pub struct Standing {
   pub events: Publisher,
   /// The console bundle the settings' folder holds, read when the server starts.
   pub console: Arc<ConsoleBundle>,
-  /// The key reading tokens are signed with (`docs/archive.md`, "Readings").
+  /// The key reading tokens are signed with (`docs/artifact.md`, "Readings").
   pub readings: ReadingKey,
   // The server's stop, raised once when it is asked to end.
   stop: Arc<watch::Sender<bool>>,

@@ -1,4 +1,4 @@
-//! An HTML file read for what it says, before a document is written out of it (`docs/archive.md`, "An HTML
+//! An HTML file read for what it says, before a document is written out of it (`docs/artifact.md`, "An HTML
 //! page"): `bmo-artifact html-read`. It prints the page's title and its words, a block to a line, every picture the
 //! page carries inside itself standing as `![](<name>)` where it stood, named after `picture` or the stem asked for
 //! where one document takes the pictures of two pages; with `--pictures` those pictures are written into that

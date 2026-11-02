@@ -104,7 +104,7 @@
                 <p v-if="item.description !== null" class="line-clamp-2 text-sm break-words text-muted"><SearchText :text="item.description" :query="searched" /></p>
 
                 <!-- A row carries at most four badges, its kind, its category, its progress and whether it is public; its other
-                     labels are search metadata and stand in the document's own view (docs/archive.md, 「Where a person
+                     labels are search metadata and stand in the document's own view (docs/artifact.md, 「Where a person
                      reads it」). -->
                 <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                   <UTooltip :text="copiedId === item.id ? $t('common.status.copied') : $t('artifact.action.copy_number')">

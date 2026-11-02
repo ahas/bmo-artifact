@@ -4,7 +4,7 @@ import { categoryFilter, categoryOf, contentsOf, drawnNames, fileAddresses, file
 
 import type { ArtifactAttachment } from "../../shared/types";
 
-// How the document screens read what the service answers (`docs/archive.md`, "Kinds" and "Attachments").
+// How the document screens read what the service answers (`docs/artifact.md`, "Kinds" and "Attachments").
 
 function attachment(id: number, name: string, kind: string, role: string | null = null): ArtifactAttachment {
   return { id, documentId: 1, name, mediaType: "application/octet-stream", kind, byteCount: 1, role, createdAt: 0 };
@@ -33,7 +33,7 @@ describe("a document's category, number and progress", () => {
   });
 
   // A document's instruction is its `query` label, offered behind an action of its own rather than drawn on
-  // the masthead's labels line (docs/archive.md, "Where a person reads it").
+  // the masthead's labels line (docs/artifact.md, "Where a person reads it").
   test("reads a document's instruction off its label, and leaves it out of the labels drawn under the title", () => {
     expect(instructionOf({ labels: { query: "  find the **small** drones  " } })).toBe("find the **small** drones");
     expect(instructionOf({ labels: { query: " " } })).toBeNull();

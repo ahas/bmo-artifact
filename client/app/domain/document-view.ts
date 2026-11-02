@@ -12,7 +12,7 @@ export function kindOf(kinds: readonly ArtifactKind[], name: string | null | und
   return kinds.find((kind) => kind.name === name) ?? null;
 }
 
-/** The label a document's category is kept under, the filer's own word for the work that made it (`docs/archive.md`, "Where a person reads it"). */
+/** The label a document's category is kept under, the filer's own word for the work that made it (`docs/artifact.md`, "Where a person reads it"). */
 export const CATEGORY_LABEL = "category";
 
 /** A document's category: its `category` label's word, null where it carries none. */
@@ -27,7 +27,7 @@ export function categoryFilter(word: string): string {
   return `${CATEGORY_LABEL}:${word}`;
 }
 
-/** The label a document in progress carries, naming what its filer still has to give it (`docs/archive.md`, "Where a person reads it"). */
+/** The label a document in progress carries, naming what its filer still has to give it (`docs/artifact.md`, "Where a person reads it"). */
 export const PENDING_LABEL = "pending";
 
 /** What a document in progress still lacks, in its filer's words; null for a document done. */
@@ -40,7 +40,7 @@ export function pendingOf(document: Pick<ArtifactDocument, "labels">): string[] 
   return words.length === 0 ? null : words;
 }
 
-/** The label a document's instruction is kept under, the words it was asked for with (`docs/archive.md`, "Where a person reads it"). */
+/** The label a document's instruction is kept under, the words it was asked for with (`docs/artifact.md`, "Where a person reads it"). */
 export const INSTRUCTION_LABEL = "query";
 
 /** A document's instruction, null where it carries none. */
@@ -179,7 +179,7 @@ export function fileAddresses(attachments: readonly ArtifactAttachment[], addres
   };
 }
 
-// What a file's name says of the language it is in (`docs/archive.md`, "Attachments"): the name with that
+// What a file's name says of the language it is in (`docs/artifact.md`, "Attachments"): the name with that
 // part taken out, and the language's two-letter code, for a name whose last part before the extension is a
 // code some language is known by; null for any other name.
 function spokenIn(name: string): { rest: string; language: string } | null {
@@ -209,7 +209,7 @@ export function languageOf(attachment: ArtifactAttachment): string | null {
 }
 
 /**
- * The sounds heard at a markdown document's head, in the reader's listen band (`docs/archive.md`, "How a
+ * The sounds heard at a markdown document's head, in the reader's listen band (`docs/artifact.md`, "How a
  * document is drawn"): every sound marked `head`, and beside a head sound whose name carries a language,
  * every sound named as it is in another language, in the order they were kept.
  */

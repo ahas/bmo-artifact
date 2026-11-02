@@ -1,4 +1,4 @@
-//! A page imported as a caller asks for one (`docs/api.md`, "Imports"; `docs/archive.md`, "A page imported
+//! A page imported as a caller asks for one (`docs/api.md`, "Imports"; `docs/artifact.md`, "A page imported
 //! whole"): answered at once as fetching, read through the page reader, its figures kept or named as not
 //! kept, its links made absolute, and filed with its references; or failed with the reader's sentence.
 

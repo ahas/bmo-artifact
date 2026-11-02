@@ -1,6 +1,6 @@
 <template>
   <!-- A document that is a page of its own, standing in a frame sandboxed as the page itself is
-       (docs/archive.md, "An HTML page"), on the document paper rather than white while the page
+       (docs/artifact.md, "An HTML page"), on the document paper rather than white while the page
        arrives. A picture pressed in the page opens in the console's picture viewer, as a markdown
        document's does ("Pictures open whole"). -->
   <iframe ref="frame" :src="props.src" :title="props.title" :sandbox="HOSTED_PAGE_SANDBOX" class="artifact-paper block min-h-0 w-full flex-1 border-0" />

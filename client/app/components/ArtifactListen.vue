@@ -1,5 +1,5 @@
 <template>
-  <!-- The listen band (docs/archive.md, "How a document is drawn"): the sounds heard at a markdown
+  <!-- The listen band (docs/artifact.md, "How a document is drawn"): the sounds heard at a markdown
        document's head, each in the design's own player and labelled with the language it is in where its
        name says one, under the masthead, where its players reach the document's files on the route the
        screen reads it on. -->

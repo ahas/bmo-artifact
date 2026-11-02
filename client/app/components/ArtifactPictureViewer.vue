@@ -1,5 +1,5 @@
 <template>
-  <!-- A document's pictures opened whole (docs/archive.md, "Pictures open whole"). Opened on any
+  <!-- A document's pictures opened whole (docs/artifact.md, "Pictures open whole"). Opened on any
        picture the document lets open, it walks every such picture the document draws, in the order
        they stand, and its head carries the picture's properties and the way to open it in a tab of
        its own. -->

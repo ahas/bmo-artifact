@@ -1,7 +1,7 @@
 import design from "../design/document.json";
 
 // Which pictures of a document open the console's picture viewer, and the one message a page standing
-// in the console's frame asks for it by (`docs/archive.md`, "Pictures open whole"). A markdown document
+// in the console's frame asks for it by (`docs/artifact.md`, "Pictures open whole"). A markdown document
 // is read by the console itself; a page is read by the bridge the server writes ahead of it, since its
 // frame gives it an origin of its own that the console cannot reach into. Both read the rule from the
 // design file, so a picture opens the viewer or keeps to the document on either.

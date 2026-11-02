@@ -1,4 +1,4 @@
-//! The document tables brought to the redesigned API (`docs/archive.md`, "Where it lives"): a document's
+//! The document tables brought to the redesigned API (`docs/artifact.md`, "Where it lives"): a document's
 //! scope, actor, labels, description and change time beside its row, an attachment's role,
 //! and the imports and the events, each a table of its own. A row written before carries its old grouping
 //! number as its scope, in decimal, and its writer as its actor.

@@ -70,7 +70,7 @@ flowchart TD
 
 ## Documents
 
-A document is one row of the document tables and one file under the file root (docs/archive.md, 「Where it
+A document is one row of the document tables and one file under the file root (docs/artifact.md, 「Where it
 lives」).
 
 | Field | Holds |
@@ -88,7 +88,7 @@ lives」).
 
 ### Kinds
 
-Each kind is a module of its own answering one shape (docs/archive.md, 「Kinds」); `GET /document-kinds`
+Each kind is a module of its own answering one shape (docs/artifact.md, 「Kinds」); `GET /document-kinds`
 lists them in the catalogue's order, each `name`, `description`, `hosted` (whether the document is opened
 as the page it keeps) and `contentsDepth` (how many levels of its headings its table of contents lists,
 0 for none); its `after` is a kind's place in the catalogue, counted from 1. A row whose kind no module
@@ -133,7 +133,7 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   `bad-request` for a kind no module answers, an empty title or body, or a body and HTML given the wrong
   way round.
 - **A number that stands for no document answers 404 `not-found`** on `GET /documents/{documentId}` and
-  every route under it: none was filed under it, or its row left no document (docs/archive.md, 「Where it
+  every route under it: none was filed under it, or its row left no document (docs/artifact.md, 「Where it
   lives」).
 - **`PATCH /documents/{documentId}` rewrites it under its number;** its attachments and share links stay.
   `labels` replaces the labels whole; a `title`, `body` or `html` given replaces that one, and its
@@ -144,14 +144,14 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   leaves its note behind. A reading issued for it opens nothing after. An import that filed it keeps its own
   record. It is a `document.deleted`, and its link a `share.deleted`.
 - **`GET /documents/{documentId}/content`** sends the file: `text/markdown` for a markdown kind, never
-  cached. A page goes out as a hosted page (docs/archive.md, 「An HTML page」): its prelude ahead of its
+  cached. A page goes out as a hosted page (docs/artifact.md, 「An HTML page」): its prelude ahead of its
   first element in the scheme `scheme` names, `light`, `dark` or `system`, the design's default where none is named, under the
   sandboxed page policy. Its sounds stand in the player speaking the language `language` names, a locale of the
   console bundle's words, English where it names none or one the words do not hold, and play from a reading
   address (「Readings」). `download=true` sends the file itself to keep, under its name. 404 `not-found`
   where the document has no file inside its folder.
 - **`GET /documents/{documentId}/picture`** sends the picture a link's preview card shows: the first its
-  body draws by a kept file's name (docs/archive.md, 「Attachments」), else the first it keeps, upright,
+  body draws by a kept file's name (docs/artifact.md, 「Attachments」), else the first it keeps, upright,
   fitted inside 1200 pixels, never enlarged, laid on white, as JPEG. 404 `not-found` where it has none.
 
 ## Attachments
@@ -159,11 +159,11 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 | Field | Holds |
 |---|---|
 | `id`, `documentId` | the attachment and its document |
-| `name` | the name it is shown and named by in the body; a last part such as `-ko` before the extension is the language it is in (docs/archive.md, 「Attachments」) |
+| `name` | the name it is shown and named by in the body; a last part such as `-ko` before the extension is the language it is in (docs/artifact.md, 「Attachments」) |
 | `mediaType` | its type as kept |
 | `kind` | what it is read as: `image`, `audio`, `video`, `text`, `page` or `file` |
 | `byteCount` | its size |
-| `role` | the caller's word for its part in the document, null for none; `head` marks a file a reader is shown at a markdown document's head, a narration's sound among them, which the reader plays in the listen band; a sound named as a head sound is with another language stands beside it there (docs/archive.md, 「How a document is drawn」). A page stands its sounds where it writes them, by their names (docs/archive.md, 「An HTML page」) |
+| `role` | the caller's word for its part in the document, null for none; `head` marks a file a reader is shown at a markdown document's head, a narration's sound among them, which the reader plays in the listen band; a sound named as a head sound is with another language stands beside it there (docs/artifact.md, 「How a document is drawn」). A page stands its sounds where it writes them, by their names (docs/artifact.md, 「An HTML page」) |
 | `createdAt` | when it was kept |
 
 | Route | Takes | Answers |
@@ -172,7 +172,7 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 | `POST /documents/{documentId}/attachments` | `name`, `mediaType`, `role?`, `content` in base64 | 201, the attachment |
 | `GET /documents/{documentId}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes |
 
-- **A file is kept as docs/archive.md 「Attachments」 says:** its kind read from its bytes and its name, a
+- **A file is kept as docs/artifact.md 「Attachments」 says:** its kind read from its bytes and its name, a
   picture kept upright as AVIF, a name the document already keeps refused `bad-request`. One file is at
   most 64 MiB, refused `too-large` past it.
 - **The bytes are served** with `Range` answered 206, an HTML file as a hosted page as the content route
@@ -239,14 +239,14 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 | `GET /shares/{token}/references/{referenceId}/image` | | 200, the page's preview picture |
 
 - **A page a share read sends** has its sounds play from the share route of their attachments
-  (docs/archive.md, 「An HTML page」).
+  (docs/artifact.md, 「An HTML page」).
 - **Every read and every making sweeps away the links whose time has passed,** each a `share.deleted`.
 - **`POST /shares`** refuses an `expiresAt` not in the future `bad-request`, and a document that does not
   stand `not-found`.
 - **A share read answers for a live token alone,** and only with what that link's document holds: an
   attachment or a reference of another document is `not-found`. `GET /shares/{token}` and the share reads
   are the whole of what the link opens.
-- **A link that has ended leaves a note of what it opened** (docs/archive.md, 「Share links」): its token and
+- **A link that has ended leaves a note of what it opened** (docs/artifact.md, 「Share links」): its token and
   that token alone answers 410 `gone`, with the sentence naming the document's title and its number, where the
   link ended by its time, by `DELETE /shares/{token}` or by its document being let go of. `GET
   /shares/{token}` and every share read of that token answer so, and no live link stands there any more.
@@ -258,7 +258,7 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 ### Readings
 
 A reading token opens one document's attachments to the page the console's own reader opens, for twelve
-hours, and the player's script goes out on its own (docs/archive.md, 「Readings」). Both are share reads: a
+hours, and the player's script goes out on its own (docs/artifact.md, 「Readings」). Both are share reads: a
 console relays them with no session, as a sandboxed page asks for them with none.
 
 | Route | Takes | Answers |
@@ -288,7 +288,7 @@ somebody as, the address they keep rather than a copy they were sent.
 
 - **The document is filed as `POST /documents` files one,** taking the same body and refusing the same ways.
 - **The link has no end** and names the document rather than a body: a rewrite of that document keeps the
-  link, and the link serves the newest body whenever it is opened (docs/archive.md, 「Share links」).
+  link, and the link serves the newest body whenever it is opened (docs/artifact.md, 「Share links」).
 - **The link is a share link like any other** once made: `GET /shares`, the share reads and `DELETE
   /shares/{token}` answer it, and its token answers what stood once it has ended.
 - **Only the service's token publishes.** The console's does not reach the route, since no screen files a
@@ -297,7 +297,7 @@ somebody as, the address they keep rather than a copy they were sent.
 
 ## Imports
 
-An import brings a page in whole as a document of kind `import` (docs/archive.md, 「A page imported
+An import brings a page in whole as a document of kind `import` (docs/artifact.md, 「A page imported
 whole」).
 
 | Field | Holds |
@@ -379,7 +379,7 @@ whole」).
 - **`bmo-artifact openapi`** prints the OpenAPI document the code generates.
 - **`bmo-artifact mcp [--address <url>]`** serves the harness tools (「The harness plugin」).
 - **`bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>] [--from <line>]`** reads an HTML file
-  for its words in order, cut at the answer ceiling (docs/archive.md, 「An HTML page」).
+  for its words in order, cut at the answer ceiling (docs/artifact.md, 「An HTML page」).
 - **`bmo-artifact nouns`** prints the nouns `bmo` dispatches to this command, one a line: `html-read`. It
   reads no settings, so it answers wherever the caller stands; no noun carries a mark.
 - **The noun's words:** `html-read` is `bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>]

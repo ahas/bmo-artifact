@@ -1,4 +1,4 @@
-//! The pages a document refers to, as rows of `search_sources` (`docs/archive.md`, "References").
+//! The pages a document refers to, as rows of `search_sources` (`docs/artifact.md`, "References").
 
 use sea_orm::{ConnectionTrait, QueryResult};
 

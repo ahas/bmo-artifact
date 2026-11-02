@@ -1,4 +1,4 @@
-//! A page imported whole (`docs/archive.md`, "A page imported whole"): read as served through the page
+//! A page imported whole (`docs/artifact.md`, "A page imported whole"): read as served through the page
 //! reader, its links and pictures made absolute, its pictures and inline drawings kept as the document's
 //! files, its main content written as markdown by a maintained converter, and filed as a document of kind
 //! `import` whose references are the page itself, the address asked where the page moved, and each outside

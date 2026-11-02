@@ -1,5 +1,5 @@
 <template>
-  <!-- A document in progress, with what its filer still has to give it (docs/archive.md, 「Where a person reads it」);
+  <!-- A document in progress, with what its filer still has to give it (docs/artifact.md, 「Where a person reads it」);
        compact, its mark alone with its words in its tooltip. -->
   <UTooltip v-if="lacks !== null && props.compact" :text="said">
     <UBadge color="warning" variant="subtle" size="sm" icon="i-material-symbols-progress-activity" :aria-label="said" data-pending />

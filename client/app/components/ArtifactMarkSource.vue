@@ -1,5 +1,5 @@
 <template>
-  <!-- What a footnote mark's source entry says (docs/archive.md, "How a document is drawn"): its mark, then its
+  <!-- What a footnote mark's source entry says (docs/artifact.md, "How a document is drawn"): its mark, then its
        words as the text formats them, each page it names as a link that opens in a tab of its own, and, for a snippet's mark, that
        the value was checked against the snippet only. The words were read off the text, which was cleaned whole. -->
   <div class="flex flex-col gap-2 text-sm">

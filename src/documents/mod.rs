@@ -1,4 +1,4 @@
-//! Documents as they are filed and read (`docs/archive.md`): a document filed or rewritten, a file kept
+//! Documents as they are filed and read (`docs/artifact.md`): a document filed or rewritten, a file kept
 //! beside it, an HTML page read for what it says, the previews of the pages it refers to, its cover picture,
 //! and a page imported whole.
 

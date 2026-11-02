@@ -1,4 +1,4 @@
-//! The note a share link leaves where it stops opening (`docs/archive.md`, "Share links"): what it opened, the
+//! The note a share link leaves where it stops opening (`docs/artifact.md`, "Share links"): what it opened, the
 //! second it ended and why, kept under a token that names no live link any more.
 
 use sea_orm_migration::prelude::*;

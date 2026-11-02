@@ -1,4 +1,4 @@
-//! An HTML page read for what it says (`docs/archive.md`, "An HTML page"): its title, its description and
+//! An HTML page read for what it says (`docs/artifact.md`, "An HTML page"): its title, its description and
 //! its words a block to a line, the pictures it carries inside itself taken out. A page document's title and
 //! description are read here, and so is `bmo-artifact html-read`; a markdown body's description is read from
 //! its opening prose.

@@ -1,4 +1,4 @@
-//! The old archive's document tables moved into this service's store (docs/archive.md, 「Where it lives」,
+//! The old archive's document tables moved into this service's store (docs/artifact.md, 「Where it lives」,
 //! and the migration plan's table map for TODO #1923): one export directory read, this store written,
 //! nothing else touched.
 //!

@@ -53,7 +53,7 @@ describe("a finding's text", () => {
   });
 
   // A footnote mark brings its source forward as a wiki's footnotes do: over the mark in the library's popover, above
-  // it with a point toward it and up to 40rem wide, for a pointer, and in a centred dialog for a finger; no press follows its link (docs/archive.md, "How a
+  // it with a point toward it and up to 40rem wide, for a pointer, and in a centred dialog for a finger; no press follows its link (docs/artifact.md, "How a
   // document is drawn").
   test("brings a footnote mark's source forward in a popover above the mark, or in a dialog for a tap", () => {
     const shown = templateOf(markSource);

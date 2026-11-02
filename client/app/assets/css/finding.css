@@ -1,4 +1,4 @@
-/* A finding's text as the bundle draws it (docs/archive.md, "How a document is drawn"). Every rule
+/* A finding's text as the bundle draws it (docs/artifact.md, "How a document is drawn"). Every rule
    is written under the finding's own container, which also carries `markdown` so bmo-ui draws its
    fenced blocks, their copy button and its diagrams; the two classes together outweigh a host's own
    rules for its markdown, so a finding reads the same in any console that extends the bundle. Every

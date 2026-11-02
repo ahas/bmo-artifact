@@ -24,7 +24,7 @@
     <ArtifactMap v-else :query="block.block.query" />
   </Teleport>
 
-  <!-- The source a footnote mark cites, brought forward (docs/archive.md, "How a document is drawn"): over the mark
+  <!-- The source a footnote mark cites, brought forward (docs/artifact.md, "How a document is drawn"): over the mark
        in a popover where the pointer rests on it, and in a dialog centred on the screen where a finger taps it. -->
   <UPopover v-model:open="sourceOpen" :reference="sourceMark ?? undefined" :content="SOURCE_PLACE" arrow>
     <template #content>

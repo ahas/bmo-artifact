@@ -21,5 +21,5 @@ export const SHARE_SPANS = [
 ] as const;
 
 // The sandbox a kept page runs in, which the screen's frame gives the page it stands as the service's
-// policy gives it (`docs/archive.md`, "An HTML page").
+// policy gives it (`docs/artifact.md`, "An HTML page").
 export const HOSTED_PAGE_SANDBOX: string = hosting.sandbox;

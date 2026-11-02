@@ -1,4 +1,4 @@
-//! A picture laid on white wherever its transparency would be lost (`docs/archive.md`, "Where a person reads
+//! A picture laid on white wherever its transparency would be lost (`docs/artifact.md`, "Where a person reads
 //! it"). Carried from picture-ground.test.ts.
 
 use std::io::Cursor;

@@ -1,4 +1,4 @@
-//! A kept HTML page as it goes out to be opened (`docs/archive.md`, "An HTML page" and "Pictures open whole"):
+//! A kept HTML page as it goes out to be opened (`docs/artifact.md`, "An HTML page" and "Pictures open whole"):
 //! the file as kept, with only a few lines put ahead of its own — the archive's sheet for the reader's scheme,
 //! the bridge that answers the page's scheme queries with the scheme it is drawn in, the clipboard, picture
 //! and link bridges a page in a sandbox of its own origin needs, and for a page that writes a sound the
@@ -151,7 +151,7 @@ pub struct SoundFile {
   pub download: String,
 }
 
-/// What a page that writes a sound is handed with it (`docs/archive.md`, "An HTML page"): the player's
+/// What a page that writes a sound is handed with it (`docs/artifact.md`, "An HTML page"): the player's
 /// script, where the bundle carries one, and each file the document keeps by its name, at addresses the
 /// sandboxed page loads; the words the player says and their language.
 #[derive(Clone, Debug, PartialEq, Serialize)]

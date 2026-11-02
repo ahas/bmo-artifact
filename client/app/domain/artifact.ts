@@ -156,7 +156,7 @@ export async function shareOf(documentId: number): Promise<ArtifactShare | null>
   return page.items[0] ?? null;
 }
 
-/** Every live link, by the document it opens: what the list's share badges read (docs/archive.md, 「Where a person reads it」). */
+/** Every live link, by the document it opens: what the list's share badges read (docs/artifact.md, 「Where a person reads it」). */
 export async function readLiveShares(): Promise<Map<number, ArtifactShare>> {
   const links = new Map<number, ArtifactShare>();
   let after: number | undefined;

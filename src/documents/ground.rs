@@ -1,5 +1,5 @@
 //! The white a picture is laid on wherever its transparency would be lost, and the picture a share link's
-//! preview card shows (`docs/archive.md`, "The share page"). JPEG has no transparency, and what fills it when
+//! preview card shows (`docs/artifact.md`, "The share page"). JPEG has no transparency, and what fills it when
 //! nothing is said is black; a chat app or a dark screen shows it on its own dark ground. The diagrams a
 //! search keeps are black lines and words on a transparent ground, drawn for paper, so on either they
 //! vanish. A picture with no transparency covers the white wholly and never shows it.

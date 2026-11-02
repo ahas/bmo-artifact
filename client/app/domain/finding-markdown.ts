@@ -17,7 +17,7 @@ import type { RendererThis, Token, TokenizerAndRendererExtension, Tokens } from 
 // A finding is written a line at a time, so a newline is a line break. The HTML typed into it stands
 // as the characters it was typed as, and a tilde is a range and never a strike. A heading takes the
 // mark the contents beside the text steer by, a footnote mark is a raised number linking to its
-// source entry and the entry's mark a link back to it (`docs/archive.md`, "How a document is drawn"),
+// source entry and the entry's mark a link back to it (`docs/artifact.md`, "How a document is drawn"),
 // and a picture is a picture only where the caller hands an address for it — the console's
 // own copy of a picture the record holds, or a file the document keeps by its name; anything it does
 // not answer for stands as a link, so a line of somebody else's text never makes the reader's

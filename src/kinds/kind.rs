@@ -1,4 +1,4 @@
-//! The shape every kind of document answers (`docs/archive.md`, "Kinds").
+//! The shape every kind of document answers (`docs/artifact.md`, "Kinds").
 
 use crate::wire::DocumentKind;
 

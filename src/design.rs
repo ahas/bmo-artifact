@@ -1,4 +1,4 @@
-//! The archive's one document design (`docs/archive.md`, "How a document is drawn"), read from
+//! The archive's one document design (`docs/artifact.md`, "How a document is drawn"), read from
 //! `client/design/document.json`, which the console plugin bundle carries and reads too: the palette of each
 //! scheme, the sheet a page document goes out with, and which pictures open the picture viewer.
 
@@ -36,7 +36,7 @@ impl DocumentScheme {
   }
 }
 
-/// How a page is drawn, read off what it brings (`docs/archive.md`, "An HTML page").
+/// How a page is drawn, read off what it brings (`docs/artifact.md`, "An HTML page").
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PageDesign {
   /// It brings no stylesheet of its own, and is drawn wholly in the archive's design.
@@ -155,7 +155,7 @@ fn element_sheet(scope: &str) -> String {
   )
 }
 
-/// The sheet a page goes out with, for the scheme its reader reads in (`docs/archive.md`, "An HTML page").
+/// The sheet a page goes out with, for the scheme its reader reads in (`docs/artifact.md`, "An HTML page").
 pub fn page_sheet(scheme: DocumentScheme, design: PageDesign) -> String {
   match design {
     PageDesign::Archive => {

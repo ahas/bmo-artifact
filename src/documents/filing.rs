@@ -1,4 +1,4 @@
-//! A document filed and rewritten (`docs/archive.md`, "Filing a document"): its kind decides whether it
+//! A document filed and rewritten (`docs/artifact.md`, "Filing a document"): its kind decides whether it
 //! takes a markdown body or HTML, its row and its body are written together with its file, and each distinct
 //! web link its body makes becomes one of its references. Nothing is written for a refusal.
 

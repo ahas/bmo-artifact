@@ -1,5 +1,5 @@
 // How a finding's footnote marks answer a reader, read off the text the finding reading drew
-// (`docs/archive.md`, "How a document is drawn"): a mark in the text names the source entry it cites,
+// (`docs/artifact.md`, "How a document is drawn"): a mark in the text names the source entry it cites,
 // and an entry's own mark leads back to the mark's first place in the text.
 
 /** Where a mark's source entry stands. */

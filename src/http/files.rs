@@ -1,4 +1,4 @@
-//! A kept file put on the wire (`docs/archive.md`, "An HTML page"; `docs/api.md`, "Documents" and
+//! A kept file put on the wire (`docs/artifact.md`, "An HTML page"; `docs/api.md`, "Documents" and
 //! "Attachments"): it plays and seeks where it stands, is saved rather than shown when the caller asks for a
 //! download, and nothing on it is ever let run, except an HTML page, which runs as a page in a sandbox of
 //! its own origin and goes out with its prelude.
@@ -121,7 +121,7 @@ pub async fn kept_file(
   Ok(response)
 }
 
-/// Who a hosted page goes out to, which decides the addresses its sounds play from (`docs/archive.md`, "An
+/// Who a hosted page goes out to, which decides the addresses its sounds play from (`docs/artifact.md`, "An
 /// HTML page" and "Readings").
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Opened {

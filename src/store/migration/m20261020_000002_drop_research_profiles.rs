@@ -1,5 +1,5 @@
 //! `research_profiles` taken away with its rows: this service runs no research, and nothing here reads or
-//! writes the table (`docs/archive.md`, "Where it lives").
+//! writes the table (`docs/artifact.md`, "Where it lives").
 
 use sea_orm_migration::prelude::*;
 

@@ -52,7 +52,7 @@ function words(): Plugin {
 }
 
 // bmo-ui's audio player script as the packed bmo-ui carries it, beside the module: the service answers it to
-// a hosted page that writes a sound (`docs/archive.md`, "An HTML page").
+// a hosted page that writes a sound (`docs/artifact.md`, "An HTML page").
 function player(): Plugin {
   return {
     name: "artifact-player",

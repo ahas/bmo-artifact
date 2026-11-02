@@ -1,5 +1,5 @@
 <template>
-  <!-- A document's text in the document design (docs/archive.md, "How a document is drawn"): the
+  <!-- A document's text in the document design (docs/artifact.md, "How a document is drawn"): the
        masthead — its kind over its title, the actions on it on the row under it, a rule in the ink
        closing it — then the sounds marked to be heard at its head, its body, and the other files it
        keeps after that. The reading width is the text's own, so the gutter stands outside it. -->
@@ -9,7 +9,7 @@
         <div class="flex flex-col gap-2">
           <p v-if="props.kind !== null" class="artifact-eyebrow">{{ props.kind }}</p>
           <h1 class="artifact-title">{{ props.title }}</h1>
-          <!-- Its labels, the names a filer finds it by, on a secondary line that wraps (docs/archive.md, 「Where a person
+          <!-- Its labels, the names a filer finds it by, on a secondary line that wraps (docs/artifact.md, 「Where a person
                reads it」). -->
           <p v-if="labelLine !== ''" class="text-sm break-words text-muted" data-document-labels>{{ labelLine }}</p>
         </div>

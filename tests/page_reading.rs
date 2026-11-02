@@ -1,4 +1,4 @@
-//! How a document is read without the database (`docs/archive.md`): a page read for its title, its
+//! How a document is read without the database (`docs/artifact.md`): a page read for its title, its
 //! description and its words, the pictures inside it taken out, a markdown body's description and the links
 //! it makes, a file told by its bytes, and a kept file's name.
 

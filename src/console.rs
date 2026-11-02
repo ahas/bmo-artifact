@@ -32,7 +32,7 @@ pub const OWNER_KEY: bool = false;
 const MODULE_FILE: &str = "bundle.js";
 const STYLESHEET_FILE: &str = "bundle.css";
 const WORDS_FILE: &str = "words.json";
-// bmo-ui's audio player script, which the build copies beside the module (`docs/archive.md`, "Readings").
+// bmo-ui's audio player script, which the build copies beside the module (`docs/artifact.md`, "Readings").
 const PLAYER_FILE: &str = "bmo-audio-player.js";
 
 /// The language the player speaks where the reader names none the words hold.

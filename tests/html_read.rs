@@ -1,5 +1,5 @@
 //! `bmo-artifact html-read` as a caller runs it: a page read with the pictures inside it written out, and its
-//! words cut at the answer ceiling with the line to carry on from named (`docs/archive.md`, "An HTML
+//! words cut at the answer ceiling with the line to carry on from named (`docs/artifact.md`, "An HTML
 //! page").
 
 mod support;

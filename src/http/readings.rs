@@ -1,4 +1,4 @@
-//! The reading routes (`docs/archive.md`, "Readings"; `docs/api.md`, "Readings"): the addresses a page the
+//! The reading routes (`docs/artifact.md`, "Readings"; `docs/api.md`, "Readings"): the addresses a page the
 //! console's own reader opens loads its sounds from, opened by a reading token, and the player's script those
 //! pages and a share link's load.
 

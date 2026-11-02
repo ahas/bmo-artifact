@@ -7,7 +7,7 @@ import { HOSTED_PAGE_SANDBOX } from "../../shared/config";
 
 import type { Browser, Page } from "playwright-core";
 
-// A page's sounds and its questions about the scheme (`docs/archive.md`, "An HTML page"), checked in a real
+// A page's sounds and its questions about the scheme (`docs/artifact.md`, "An HTML page"), checked in a real
 // browser where the page stands in a frame sandboxed as the console's is, under the policy every hosted page
 // goes out with. The page writes its own band with an `audio` element naming the kept file; the lines ahead
 // of it are the design's bridges and bmo-ui's player script, put together as the server puts them, and the

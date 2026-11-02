@@ -160,7 +160,7 @@ The plumbing is what every command and every route stands on, and it knows none 
   the bundle's reading, built on marked and cleaned by DOMPurify, turns it into HTML: a heading takes its
   contents mark, a picture or a link naming a kept file by its name is drawn from it or goes to it, a
   picture of any other address is a link, a footnote mark is raised and brings its source entry
-  forward in a popover or a dialog (`docs/archive.md`, 「How a document is drawn」), and bmo-ui's code modules colour code, give fenced blocks their
+  forward in a popover or a dialog (`docs/artifact.md`, 「How a document is drawn」), and bmo-ui's code modules colour code, give fenced blocks their
   copy button and draw diagrams. The reading is loaded in the browser alone, since DOMPurify cleans
   against a real document.
 - **Its own files by relative path.** No file of the bundle reaches outside `client/`, which a test in
@@ -176,7 +176,7 @@ The plumbing is what every command and every route stands on, and it knows none 
 ## Storage
 
 - **Database.** PostgreSQL, at the address the settings name. The document tables, `imports` and
-  `events` are this repository's own (`docs/archive.md`, "Where it lives").
+  `events` are this repository's own (`docs/artifact.md`, "Where it lives").
 - **Schema.** The migrations run in order: the document tables in the shape the earlier archive declares
   them; the research profiles' table, then the pair that makes and takes away two tables no longer this
   repository's; the redesign, which adds a document's scope, actor, labels, description and change time,
@@ -185,7 +185,7 @@ The plumbing is what every command and every route stands on, and it knows none 
   database whose record names a migration it does not know. `bmo-artifact migrate` brings the database
   the settings name up to date.
 - **Settling** happens once in each process, before the first statement on the document tables
-  (`docs/archive.md`, "The tables"). `migrate` does not settle, since it may run before the tables exist.
+  (`docs/artifact.md`, "The tables"). `migrate` does not settle, since it may run before the tables exist.
 - **Statements** bind each number at its widest width, so the driver never refuses a statement it has
   prepared because a value comes in a different width; a statement prepared before a table's shape changed
   under the process is run once more on a fresh connection.

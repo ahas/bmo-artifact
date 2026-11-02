@@ -1,4 +1,4 @@
-//! One file kept beside a document (`docs/archive.md`, "Attachments"): read for what it is from its bytes
+//! One file kept beside a document (`docs/artifact.md`, "Attachments"): read for what it is from its bytes
 //! and its name, written under the document's own folder, a picture redrawn the way a kept picture is, and
 //! its row written. Nothing is written for a refusal.
 

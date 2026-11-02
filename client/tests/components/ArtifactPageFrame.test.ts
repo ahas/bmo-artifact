@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-// Where a document's sounds stand (`docs/archive.md`, "How a document is drawn" and "An HTML page"): a markdown
+// Where a document's sounds stand (`docs/artifact.md`, "How a document is drawn" and "An HTML page"): a markdown
 // document's in the reader's listen band under its masthead, a page's where the page writes them, inside its
 // sandboxed frame, with no band of the reader's over it. The components are read rather than mounted, as the
 // file that ships decides what stands where.
@@ -44,7 +44,7 @@ describe("a markdown document's listen band", () => {
 });
 
 // A document's instruction stands behind a button of the screen's bar for every kind, never under its title
-// (`docs/archive.md`, "Where a person reads it").
+// (`docs/artifact.md`, "Where a person reads it").
 describe("a document's instruction", () => {
   test("opens from the screen's bar, in the console's bar and in the screen's own alike, and is drawn under no title", () => {
     const template = templateOf(screen);
@@ -57,7 +57,7 @@ describe("a document's instruction", () => {
   });
 });
 
-// A title stands on the type scale and is never cut mid-word with nothing to read it whole by (`docs/archive.md`,
+// A title stands on the type scale and is never cut mid-word with nothing to read it whole by (`docs/artifact.md`,
 // "How a document is drawn" and "Where a person reads it").
 describe("a document's title", () => {
   test("in a page's row wraps between words onto two lines at most and leaves its tooltip to the cut-line layer", () => {
@@ -86,7 +86,7 @@ describe("a document's title", () => {
   });
 });
 
-// A document in progress keeps the screen's bar to one row on a phone (`docs/archive.md`, "Where a person reads it").
+// A document in progress keeps the screen's bar to one row on a phone (`docs/artifact.md`, "Where a person reads it").
 describe("a document's in-progress badge", () => {
   test("stands as its mark alone with its words in its tooltip in a phone's bar, in both bars", async () => {
     const badge = templateOf(await read("../../app/components/ArtifactPendingBadge.vue"));

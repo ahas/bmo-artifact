@@ -1,4 +1,4 @@
-//! The kinds a document is filed as (`docs/archive.md`, "Kinds"): what a research found, a record, study
+//! The kinds a document is filed as (`docs/artifact.md`, "Kinds"): what a research found, a record, study
 //! material, a page imported whole and an HTML page the service hosts.
 //!
 //! A kind is its own module and answers for itself through `Kind`. This module is the catalogue and nothing

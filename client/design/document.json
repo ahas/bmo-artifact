@@ -1,5 +1,5 @@
 {
-  "about": "The archive's one document design (docs/archive.md, \"How a document is drawn\" and \"Pictures open whole\"): the palette of each scheme, the sheet a page document goes out with, and which pictures open the picture viewer. The server builds a page's sheet and its picture bridge from this file, and the console plugin bundle reads the same file, so both draw and open pictures by one rule. Each palette colour is named as its sheet variable is, after --doc-.",
+  "about": "The archive's one document design (docs/artifact.md, \"How a document is drawn\" and \"Pictures open whole\"): the palette of each scheme, the sheet a page document goes out with, and which pictures open the picture viewer. The server builds a page's sheet and its picture bridge from this file, and the console plugin bundle reads the same file, so both draw and open pictures by one rule. Each palette colour is named as its sheet variable is, after --doc-.",
   "palettes": {
     "light": [
       ["paper", "#f6f5f1"],

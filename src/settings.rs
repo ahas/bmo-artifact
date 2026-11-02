@@ -109,7 +109,7 @@ pub struct WordingFile {
   pub file: Option<PathBuf>,
 }
 
-/// How the document tables are settled (`docs/archive.md`, "`searches`").
+/// How the document tables are settled (`docs/artifact.md`, "`searches`").
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Documents {
   /// The prefix that marks a row naming no kind as an import; none marks no row so.

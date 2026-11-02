@@ -1,4 +1,4 @@
-//! The rows a document is written and read as (`docs/archive.md`, "Where it lives"): the document tables
+//! The rows a document is written and read as (`docs/artifact.md`, "Where it lives"): the document tables
 //! settled once a process opens them, a document's row read as the API answers it, the list with its
 //! filters, a row filed and rewritten, its body as its one finding, and a document let go of.
 

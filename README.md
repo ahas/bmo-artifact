@@ -29,7 +29,7 @@ of the local settings a deployment gives.
 |---|---|
 | `docs/api.md` | The API: the routes, the events, the commands, the client, the MCP tools and the call to bmo-explorer |
 | `docs/openapi.json` | The API as an OpenAPI 3.1 document, generated from the code |
-| `docs/archive.md` | The design of the documents, which the API reaches and the layout places |
+| `docs/artifact.md` | The design of the documents, which the API reaches and the layout places |
 | `docs/layout.md` | The layout, the plumbing, the console bundle, the storage, the version, the declaration and the checks |
 | `PERSONAL-DATA.md` | The personal data no file may hold, and the check that holds it |
 

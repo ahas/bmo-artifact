@@ -1,4 +1,4 @@
-//! The rows of the files a document keeps, `archive_attachments` (`docs/archive.md`, "Attachments"), read
+//! The rows of the files a document keeps, `archive_attachments` (`docs/artifact.md`, "Attachments"), read
 //! as the API answers them. Its times are epoch seconds, answered in milliseconds.
 
 use sea_orm::{ConnectionTrait, QueryResult};

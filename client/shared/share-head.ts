@@ -1,4 +1,4 @@
-// The head a share link's page is sent with (`docs/archive.md`, "Where a person reads it"): one list for
+// The head a share link's page is sent with (`docs/artifact.md`, "Where a person reads it"): one list for
 // every kind of document, so a link reads the same in a chat app's preview whichever kind it opens.
 
 // A tag names what it says either by `name` or, for OpenGraph, by `property`.

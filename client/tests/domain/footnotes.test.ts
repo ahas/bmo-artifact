@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { addressText, backMarkAt, markAt, sourceOf } from "../../app/domain/footnotes";
 
 // How a footnote mark answers a reader, read off the text as the finding reading draws it and the cleaning
-// leaves it (`docs/archive.md`, "How a document is drawn").
+// leaves it (`docs/artifact.md`, "How a document is drawn").
 
 function drawn(html: string): HTMLElement {
   const root = document.createElement("div");

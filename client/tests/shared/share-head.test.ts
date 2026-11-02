@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { SHARE_ROBOTS, shareHeadTags } from "../../shared/share-head";
 
-// The head a share link's page is sent with (`docs/archive.md`, "Where a person reads it").
+// The head a share link's page is sent with (`docs/artifact.md`, "Where a person reads it").
 
 describe("a share link's head", () => {
   test("carries the document's title, description and picture, kept out of every index", () => {

@@ -1,5 +1,5 @@
 //! The share links of documents, as rows of `web_search_shares`, and the notes they leave in
-//! `web_search_share_notes` where they stop opening (`docs/archive.md`, "Share links"). This is the one module
+//! `web_search_share_notes` where they stop opening (`docs/artifact.md`, "Share links"). This is the one module
 //! that writes either table. Its times are epoch seconds; a link is answered in milliseconds.
 //!
 //! A link is a row rather than a signature: a link is read back long after it was made, and taken away before

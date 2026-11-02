@@ -8,7 +8,7 @@ import type { Size } from "bmo-ui/app/domain/zoom";
 import type { Translate } from "bmo-ui/shared/wording";
 import type { DocumentPicture, PictureRun } from "../../shared/document-pictures";
 
-// A document's pictures as the viewer walks them (`docs/archive.md`, "Pictures open whole"): every
+// A document's pictures as the viewer walks them (`docs/artifact.md`, "Pictures open whole"): every
 // picture the document draws on the screen that the shared rule lets open, in the order they stand.
 
 // The web address a document's picture was found at, which a picture the console shows from its own

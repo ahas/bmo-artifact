@@ -1,5 +1,5 @@
 //! A document's cover picture (`docs/api.md`, "Documents"): the first picture its body draws by a kept
-//! file's name (`docs/archive.md`, "Attachments"), else the first picture it keeps, drawn as a link's
+//! file's name (`docs/artifact.md`, "Attachments"), else the first picture it keeps, drawn as a link's
 //! preview card shows it.
 
 use std::path::PathBuf;

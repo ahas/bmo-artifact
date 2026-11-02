@@ -1,4 +1,4 @@
-//! A kept HTML page as it goes out (`docs/archive.md`, "An HTML page"): where its prelude stands, the design
+//! A kept HTML page as it goes out (`docs/artifact.md`, "An HTML page"): where its prelude stands, the design
 //! it is drawn in, its sheet in each scheme, and the scheme its reader reads in.
 //! Carried from hosted-page.test.ts.
 
