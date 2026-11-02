@@ -345,7 +345,8 @@
 /* A footnote mark in a finding's text: a raised number that brings its source forward, at the caption size
    rather than the smaller size a browser gives raised text. A value read only in a search snippet carries a
    dagger and the caution tone, so it is told apart at a glance. The colour is set on the mark's words rather
-   than its link, which a console drawing the text colours as it colours every link. */
+   than its link, which a console drawing the text colours as it colours every link; the link's underline is
+   taken away with an important declaration, the one kind a console's own rule for links does not outrank. */
 .markdown.markdown--finding .search-mark {
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
@@ -355,7 +356,7 @@
 .markdown.markdown--finding .search-mark a {
   padding: 0 0.15em;
   border-radius: 0.25rem;
-  text-decoration: none;
+  text-decoration: none !important;
 }
 
 .markdown.markdown--finding .search-mark a:hover {
@@ -378,12 +379,12 @@
    size and in the accent, taking the ink and an underline under the pointer and the press. */
 .markdown.markdown--finding .search-mark-back {
   font-variant-numeric: tabular-nums;
-  text-decoration: none;
+  text-decoration: none !important;
 }
 
 .markdown.markdown--finding .search-mark-back:hover,
 .markdown.markdown--finding .search-mark-back:active {
-  text-decoration: underline;
+  text-decoration: underline !important;
 }
 
 .markdown.markdown--finding .search-mark-back:hover .search-mark-number,
