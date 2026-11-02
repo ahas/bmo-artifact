@@ -250,12 +250,18 @@ function textMark(name: string, href: string, text: string): string {
   const place = first ? ` id="${escapeHtml(citeId(name))}"` : "";
   const note = snippet && !entry ? ` title="${escapeHtml(speak("artifact.label.snippet_only"))}"` : "";
 
-  return `<sup class="search-mark${snippet ? " search-mark-snippet" : ""}"><a href="${escapeHtml(href)}" data-mark="${escapeHtml(name)}"${place}${note}>${escapeHtml(text)}</a></sup>`;
+  return `<sup class="search-mark${snippet ? " search-mark-snippet" : ""}"><a href="${escapeHtml(href)}" data-mark="${escapeHtml(name)}"${place}${note}>${markNumber(text)}</a></sup>`;
 }
 
 // The mark an entry opens with: a link back to the mark's first place in the text.
 function entryMark(name: string, text: string): string {
-  return `<a href="#${escapeHtml(encodeURIComponent(citeId(name)))}" class="search-mark-back" data-mark-back="${escapeHtml(name)}">${escapeHtml(text)}</a>`;
+  return `<a href="#${escapeHtml(encodeURIComponent(citeId(name)))}" class="search-mark-back" data-mark-back="${escapeHtml(name)}">${markNumber(text)}</a>`;
+}
+
+// A mark's words stand in an element of their own, which takes the mark's colour: a console that draws the text
+// colours every link in it, and a colour set on the words themselves holds whatever the link is given.
+function markNumber(text: string): string {
+  return `<span class="search-mark-number">${escapeHtml(text)}</span>`;
 }
 
 // The inline tokens a list item opens with, in a tight list and a loose one alike.

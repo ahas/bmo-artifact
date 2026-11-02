@@ -36,7 +36,7 @@
           :href="address"
           target="_blank"
           rel="noopener noreferrer"
-          class="break-all text-primary underline underline-offset-2 hover:text-highlighted active:text-highlighted"
+          class="break-all text-default underline decoration-primary underline-offset-2 hover:text-highlighted active:text-highlighted"
           data-mark-address
         >
           {{ addressText(address) }}

@@ -342,9 +342,10 @@
   color: var(--ui-text-muted);
 }
 
-/* A footnote mark in a finding's text: a raised number that brings its source forward, at the caption
-   size rather than the smaller size a browser gives raised text. A value read only in a search snippet
-   carries a dagger and the warning colour, so it is told apart at a glance. */
+/* A footnote mark in a finding's text: a raised number that brings its source forward, at the caption size
+   rather than the smaller size a browser gives raised text. A value read only in a search snippet carries a
+   dagger and the caution tone, so it is told apart at a glance. The colour is set on the mark's words rather
+   than its link, which a console drawing the text colours as it colours every link. */
 .markdown.markdown--finding .search-mark {
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
@@ -354,7 +355,6 @@
 .markdown.markdown--finding .search-mark a {
   padding: 0 0.15em;
   border-radius: 0.25rem;
-  color: var(--doc-accent);
   text-decoration: none;
 }
 
@@ -366,10 +366,12 @@
   background: var(--ui-bg-accented);
 }
 
-/* Named with both of its classes, so a sheet a console carries that repeats the mark's own rule after this one
-   still leaves a snippet's mark in the caution tone. */
-.markdown.markdown--finding .search-mark.search-mark-snippet a {
-  color: var(--ui-warning);
+.markdown.markdown--finding .search-mark-number {
+  color: var(--doc-accent);
+}
+
+.markdown.markdown--finding .search-mark-snippet .search-mark-number {
+  color: var(--doc-warn);
 }
 
 /* The mark that opens a source entry: a link back to where the mark first stands in the text, at the text's
@@ -382,6 +384,11 @@
 .markdown.markdown--finding .search-mark-back:hover,
 .markdown.markdown--finding .search-mark-back:active {
   text-decoration: underline;
+}
+
+.markdown.markdown--finding .search-mark-back:hover .search-mark-number,
+.markdown.markdown--finding .search-mark-back:active .search-mark-number {
+  color: var(--doc-ink);
 }
 
 /* The mark an entry led back to, marked where it stands for a moment so the eye finds it. */

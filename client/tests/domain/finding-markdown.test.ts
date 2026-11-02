@@ -158,7 +158,7 @@ describe("a finding, as the read API answers it", () => {
   test("raises its footnote marks as links naming their mark, a snippet's apart", () => {
     const html = findingHtml(t, "1. 63 dollars[1](#mark-1), 11,890[2†](#mark-2%E2%80%A0)\n[3](https://x.example) as it is");
 
-    expect(html).toContain('<sup class="search-mark"><a href="#mark-1" data-mark="1">1</a></sup>');
+    expect(html).toContain('<sup class="search-mark"><a href="#mark-1" data-mark="1"><span class="search-mark-number">1</span></a></sup>');
     expect(html).toContain('class="search-mark search-mark-snippet"');
     expect(html).toContain('data-mark="2†"');
     expect(html).toContain('title="artifact.label.snippet_only"');
@@ -189,11 +189,11 @@ describe("a finding, as the read API answers it", () => {
       ].join("\n")
     );
 
-    expect(html).toContain('a weight<sup class="search-mark"><a href="#mark-1" data-mark="1" id="cite-1">[1]</a></sup> and');
-    expect(html).toContain('<a href="#mark-5" data-mark="5" id="cite-5">[5]</a></sup><sup class="search-mark"><a href="#mark-6" data-mark="6" id="cite-6">[6]</a>');
-    expect(html).toContain('<sup class="search-mark search-mark-snippet"><a href="#mark-10%E2%80%A0" data-mark="10†" id="cite-10†">[10†]</a></sup>');
+    expect(html).toContain('a weight<sup class="search-mark"><a href="#mark-1" data-mark="1" id="cite-1"><span class="search-mark-number">[1]</span></a></sup> and');
+    expect(html).toContain('<a href="#mark-5" data-mark="5" id="cite-5"><span class="search-mark-number">[5]</span></a></sup><sup class="search-mark"><a href="#mark-6" data-mark="6" id="cite-6"><span class="search-mark-number">[6]</span></a>');
+    expect(html).toContain('<sup class="search-mark search-mark-snippet"><a href="#mark-10%E2%80%A0" data-mark="10†" id="cite-10†"><span class="search-mark-number">[10†]</span></a></sup>');
     // Only a mark's first place is where its entry leads back to.
-    expect(html).toContain('<td><sup class="search-mark"><a href="#mark-5" data-mark="5">[5]</a></sup>');
+    expect(html).toContain('<td><sup class="search-mark"><a href="#mark-5" data-mark="5"><span class="search-mark-number">[5]</span></a></sup>');
     expect(html.match(/id="cite-5"/g)).toHaveLength(1);
     // A snippet's mark with an entry says so in its popover, not in a title of its own.
     expect(html).not.toContain("title=");
@@ -201,9 +201,9 @@ describe("a finding, as the read API answers it", () => {
     expect(html).toContain("an index a[7] as written");
     expect(html).toContain("<li>[8] a note with no page</li>");
     expect(html).toContain(
-      '<li id="mark-1" data-source="1"><a href="#cite-1" class="search-mark-back" data-mark-back="1">[1]</a> <a href="https://one.example/a">The <strong>first</strong> page</a></li>'
+      '<li id="mark-1" data-source="1"><a href="#cite-1" class="search-mark-back" data-mark-back="1"><span class="search-mark-number">[1]</span></a> <a href="https://one.example/a">The <strong>first</strong> page</a></li>'
     );
-    expect(html).toContain('<li id="mark-10†" data-source="10†"><a href="#cite-10%E2%80%A0" class="search-mark-back" data-mark-back="10†">[10†]</a>');
+    expect(html).toContain('<li id="mark-10†" data-source="10†"><a href="#cite-10%E2%80%A0" class="search-mark-back" data-mark-back="10†"><span class="search-mark-number">[10†]</span></a>');
   });
 
   test("leaves bracketed numbers as written in a body with no source entries", () => {
