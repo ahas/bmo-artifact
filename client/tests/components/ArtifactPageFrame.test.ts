@@ -71,10 +71,10 @@ describe("a document's title", () => {
 
   test("in a markdown document's masthead stands at the section title step at every width", async () => {
     const sheet = await read("../../app/assets/css/document.css");
-    const title = sheet.slice(sheet.indexOf(".document-title {"));
+    const title = sheet.slice(sheet.indexOf(".artifact-title {"));
 
     expect(title.slice(0, title.indexOf("}"))).toContain("font-size: 1.5rem;");
-    expect(sheet.match(/\.document-title\b/g)).toHaveLength(1);
+    expect(sheet.match(/\.artifact-title\b/g)).toHaveLength(1);
   });
 
   test("in a page's own masthead heads a section at 20px and a part at 18px, at every width", async () => {

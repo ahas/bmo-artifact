@@ -5,16 +5,16 @@
    The title breaks only between words, so a Korean word is never split and only a word with no
    break in it breaks inside itself, and its lines run the reading width with no word alone on the
    last. */
-.document-paper {
+.artifact-paper {
   background-color: var(--doc-paper);
   color: var(--doc-ink);
 }
 
-.document-masthead {
+.artifact-masthead {
   border-bottom: 2px solid var(--doc-ink);
 }
 
-.document-eyebrow {
+.artifact-eyebrow {
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25rem;
@@ -22,7 +22,7 @@
   color: var(--doc-accent);
 }
 
-.document-title {
+.artifact-title {
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.25;

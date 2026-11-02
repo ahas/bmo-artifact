@@ -15,7 +15,7 @@ use support::ROOT;
 use support::service::{CONSOLE_TOKEN, Service, TOKEN};
 
 const MODULE: &[u8] = b"export default { routes: [] };\n";
-const STYLESHEET: &[u8] = b".document-paper { color: red; }\n";
+const STYLESHEET: &[u8] = b".artifact-paper { color: red; }\n";
 const WORDS: &[u8] = br#"{"en":{"artifact":{"title":{"screen":"Artifact"}}},"ko":{"artifact":{"title":{"screen":"Artifact"}}}}"#;
 
 async fn built() -> Service {

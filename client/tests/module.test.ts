@@ -48,6 +48,6 @@ describe("the module built", () => {
   });
 
   test("has a stylesheet with the screens' own classes", () => {
-    expect(readFileSync(join(out, "bundle.css"), "utf8")).toContain(".document-paper");
+    expect(readFileSync(join(out, "bundle.css"), "utf8")).toContain(".artifact-paper");
   });
 });

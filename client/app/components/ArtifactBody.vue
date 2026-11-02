@@ -5,10 +5,10 @@
        keeps after that. The reading width is the text's own, so the gutter stands outside it. -->
   <div class="w-full min-w-0 p-4 sm:p-6" data-document-pictures @click="onPress">
     <article class="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-8">
-      <header class="document-masthead flex flex-col gap-4 pb-6">
+      <header class="artifact-masthead flex flex-col gap-4 pb-6">
         <div class="flex flex-col gap-2">
-          <p v-if="props.kind !== null" class="document-eyebrow">{{ props.kind }}</p>
-          <h1 class="document-title">{{ props.title }}</h1>
+          <p v-if="props.kind !== null" class="artifact-eyebrow">{{ props.kind }}</p>
+          <h1 class="artifact-title">{{ props.title }}</h1>
           <!-- Its labels, the names a filer finds it by, on a secondary line that wraps (docs/archive.md, 「Where a person
                reads it」). -->
           <p v-if="labelLine !== ''" class="text-sm break-words text-muted" data-document-labels>{{ labelLine }}</p>

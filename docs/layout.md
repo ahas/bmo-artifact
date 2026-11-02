@@ -131,7 +131,9 @@ The plumbing is what every command and every route stands on, and it knows none 
   `nuxt/app`, a component a template names is imported from its file, the bundle's own, Nuxt UI's or
   bmo-ui's, the link component is made from the console's Nuxt app, and a page's meta is stated on its
   route. The stylesheet is the bundle's own sheets and the utility classes its files use, built against
-  bmo-ui's stylesheet without carrying it.
+  bmo-ui's stylesheet without carrying it. The classes its own sheets declare for a document's ground and
+  masthead are named under the bundle's name, `artifact-`, so no rule a console keeps under a name of its own
+  reaches them: a console's sheets stand above a bundle's, and a rule of the same name there would win.
 - **The Nuxt layer.** It extends bmo-ui and adds the same pages, components, domain modules and
   stylesheets. Its declaration, `console-bundle.json`, names the bundle `artifact`, the service `artifact`,
   its screens under `/archive` and its words in `i18n/`, in the fields the service's manifest answers.

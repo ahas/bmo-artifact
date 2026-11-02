@@ -72,7 +72,7 @@
       />
 
       <div v-else-if="narrow" class="flex min-h-0 flex-1 flex-col">
-        <div class="document-paper min-h-0 flex-1 overflow-y-auto">
+        <div class="artifact-paper min-h-0 flex-1 overflow-y-auto">
           <ArtifactBody v-bind="bodyProps" :references="openSide" />
         </div>
 
@@ -87,7 +87,7 @@
 
       <USplitter v-else id="artifact-splitter" auto-save-id="bmo-artifact-splitter" :items="SIDES" :ui="{ handle: SPLIT_HANDLE }" class="min-h-0 flex-1">
         <template #body>
-          <div class="document-paper min-h-0 min-w-0 flex-1 overflow-y-auto">
+          <div class="artifact-paper min-h-0 min-w-0 flex-1 overflow-y-auto">
             <ArtifactBody v-bind="bodyProps" />
           </div>
         </template>
