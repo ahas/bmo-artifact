@@ -16,16 +16,18 @@
 
         <template v-if="held !== null" #trailing>
           <ArtifactPendingBadge :document="held.document" />
-          <UButton
-            v-if="instruction !== null"
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            icon="i-material-symbols-assignment-outline"
-            :label="$t('artifact.action.instruction')"
-            data-instruction
-            @click="openInstruction"
-          />
+          <UTooltip v-if="instruction !== null" :text="$t('artifact.action.instruction')" :disabled="!phone">
+            <UButton
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              icon="i-material-symbols-assignment-outline"
+              :label="phone ? undefined : $t('artifact.action.instruction')"
+              :aria-label="$t('artifact.action.instruction')"
+              data-instruction
+              @click="openInstruction"
+            />
+          </UTooltip>
         </template>
       </UDashboardNavbar>
     </template>
@@ -38,16 +40,18 @@
         </UTooltip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
         <ArtifactPendingBadge v-if="held !== null" :document="held.document" />
-        <UButton
-          v-if="instruction !== null"
-          size="sm"
-          color="neutral"
-          variant="ghost"
-          icon="i-material-symbols-assignment-outline"
-          :label="$t('artifact.action.instruction')"
-          data-instruction
-          @click="openInstruction"
-        />
+        <UTooltip v-if="instruction !== null" :text="$t('artifact.action.instruction')" :disabled="!phone">
+          <UButton
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            icon="i-material-symbols-assignment-outline"
+            :label="phone ? undefined : $t('artifact.action.instruction')"
+            :aria-label="$t('artifact.action.instruction')"
+            data-instruction
+            @click="openInstruction"
+          />
+        </UTooltip>
       </Teleport>
       <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2 p-4">
         <p class="text-sm text-error">{{ failed }}</p>
@@ -145,6 +149,9 @@ const SIDES: SplitterItem[] = [
 
 const route = useRoute();
 const narrow = useNarrow("(max-width: 1023px)");
+// On a phone the bar keeps the console's name in view, so the instruction's button stands as its icon, named in
+// its tooltip.
+const phone = useNarrow();
 const sideOpen = ref(false);
 const shareOpen = ref(false);
 const instructionOpen = ref(false);

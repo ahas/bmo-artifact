@@ -366,7 +366,9 @@
   background: var(--ui-bg-accented);
 }
 
-.markdown.markdown--finding .search-mark-snippet a {
+/* Named with both of its classes, so a sheet a console carries that repeats the mark's own rule after this one
+   still leaves a snippet's mark in the caution tone. */
+.markdown.markdown--finding .search-mark.search-mark-snippet a {
   color: var(--ui-warning);
 }
 

@@ -419,8 +419,8 @@ A picture in a document opens in the picture viewer, for a markdown document and
   question a research was given. The filer sets it; the service keeps it as any label.
   - The document's screen draws it under no title. The masthead's labels line and a page's properties leave
     it out, and the screen's bar offers a button 「Instruction」 (`artifact.action.instruction`) beside the
-    document's number, which opens it drawn as markdown in a sheet: from the side on a wide screen, from the
-    bottom edge on a phone.
+    document's number, its icon alone on a phone and named in its tooltip there, which opens it drawn as
+    markdown in a sheet: from the side on a wide screen, from the bottom edge on a phone.
   - A document without the label offers no such action, whatever its kind. The list shows no instruction,
     and a phrase still finds a document by it, as by any label.
 - **A share page reads as its document before anything runs:** the document's title, its description and
