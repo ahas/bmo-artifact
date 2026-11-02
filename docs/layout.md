@@ -212,11 +212,13 @@ The plumbing is what every command and every route stands on, and it knows none 
   and the health a deployment waits on.
 
 The service is one unit, `deploy/bmo-artifact.service`, started as `bmo-artifact serve` and marked `bot`:
-a deployment links and enables it, restarts it, waits on `bmo-artifact health` answering on the address
-the settings name, and watches it stay up. A release reads its own values from `settings.local.toml`, a
-link into the data root's `env/artifact.toml`, so the deployment's backup carries them. A backup of this
-unit must include the document tables, `imports`, `events` and the `searches/` folder under the file
-root; the whole-data-root backup and its restore drill belong to the testbed.
+a deployment links and enables it, restarts it, and is up once `bmo-artifact health` answers ready on the
+address the settings name. A stop ends the event streams and lets the calls under way finish,
+and the unit waits for the service to end however long that takes, never escalating the stop to a kill. A
+release reads its own values from `settings.local.toml`, a link into the data root's `env/artifact.toml`, so
+the deployment's backup carries them. A backup of this unit must include the document tables, `imports`,
+`events` and the `searches/` folder under the file root; the whole-data-root backup and its restore drill
+belong to the testbed.
 
 ## Tests
 

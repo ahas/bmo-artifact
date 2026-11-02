@@ -261,6 +261,32 @@ impl Service {
     (status, String::new())
   }
 
+  /// Whether a stream opened at `uri` ends once the server's stop is raised, after its first frame.
+  pub async fn stream_ends_on_stop(&self, uri: &str) -> bool {
+    use futures_util::StreamExt;
+
+    let request = Request::builder().uri(uri).header("authorization", format!("Bearer {TOKEN}"));
+    let response = self
+      .router
+      .clone()
+      .oneshot(request.body(Body::empty()).expect("a request"))
+      .await
+      .expect("an answer");
+    let mut stream = response.into_body().into_data_stream();
+
+    if stream.next().await.is_none() {
+      return false;
+    }
+
+    self.standing.stop();
+
+    while let Some(chunk) = stream.next().await {
+      chunk.expect("a frame");
+    }
+
+    true
+  }
+
   /// The kinds of the events kept, oldest first.
   pub async fn event_kinds(&self) -> Vec<String> {
     let page = self

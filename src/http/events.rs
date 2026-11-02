@@ -10,7 +10,7 @@ use std::time::Duration;
 use axum::http::{Method, StatusCode, header};
 use axum::response::sse::{Event as SseEvent, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
-use futures_util::stream;
+use futures_util::{StreamExt, stream};
 use schemars::generate::SchemaGenerator;
 use serde_json::json;
 use tokio::sync::watch;
@@ -130,6 +130,8 @@ impl Route for ListEvents {
       Some(after) => after,
       None => events::newest(db).await?.unwrap_or(0),
     };
+    // The stream ends with the server's stop.
+    let stopped = standing.stopped();
     let reading = Reading {
       newest: standing.events.watch(),
       standing: Arc::clone(&standing),
@@ -140,7 +142,7 @@ impl Route for ListEvents {
     };
 
     Ok(
-      Sse::new(stream::unfold(reading, next))
+      Sse::new(stream::unfold(reading, next).take_until(stopped))
         .keep_alive(KeepAlive::new().interval(KEEP_ALIVE))
         .into_response(),
     )

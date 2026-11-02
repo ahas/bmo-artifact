@@ -5,7 +5,6 @@
 pub mod html_read;
 
 use std::path::PathBuf;
-use std::time::Duration;
 
 use clap::Args;
 use tokio::net::TcpListener;
@@ -151,6 +150,7 @@ impl Verb for Serve {
       );
     }
 
+    let stopping = standing.clone();
     let router = router(standing).map_err(|faults| {
       VerbError::Refused(format!("the routes cannot be served: {}", faults.join("; ")))
     })?;
@@ -161,7 +161,10 @@ impl Verb for Serve {
     eprintln!("bmo-artifact {} listens on {listen}", crate::VERSION);
 
     axum::serve(listener, router)
-      .with_graceful_shutdown(stopped())
+      .with_graceful_shutdown(async move {
+        stopped().await;
+        stopping.stop();
+      })
       .await
       .map_err(|why| VerbError::Refused(format!("the server stopped: {why}")))?;
 
@@ -174,9 +177,6 @@ crate::verb!(Serve);
 /// `health`.
 pub struct Health;
 
-/// How long `health` waits for the service.
-pub const HEALTH_WAIT: Duration = Duration::from_secs(5);
-
 impl Verb for Health {
   const NAME: &'static str = "health";
   const ABOUT: &'static str =
@@ -186,10 +186,7 @@ impl Verb for Health {
 
   async fn run(&self, _: Nothing, shell: &Shell) -> Result<Answer, VerbError> {
     let client = ArtifactClient::of_settings(&shell.settings, None);
-    let health = tokio::time::timeout(HEALTH_WAIT, client.health())
-      .await
-      .map_err(|_| VerbError::Refused("the service did not answer within five seconds".to_owned()))?
-      .map_err(|why| VerbError::Refused(why.to_string()))?;
+    let health = client.health().await.map_err(|why| VerbError::Refused(why.to_string()))?;
 
     match health.reason {
       None if health.ready => Ok(vec![format!("ready: bmo-artifact {}", health.version)].into()),

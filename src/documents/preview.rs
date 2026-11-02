@@ -7,7 +7,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex as StdMutex, PoisonError};
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -17,8 +16,6 @@ use crate::helpers::picture::raster_type;
 use crate::now_ms;
 use crate::reader::{PageReader, Picture, Preview};
 
-/// How long one read of a page or a picture is waited for.
-pub const PREVIEW_WAIT: Duration = Duration::from_secs(10);
 /// How long a preview is kept.
 pub const PREVIEW_TTL_MS: i64 = 7 * 24 * 60 * 60 * 1000;
 /// How long a picture is kept.
@@ -119,10 +116,7 @@ impl PreviewCache {
       return held;
     }
 
-    let preview = match tokio::time::timeout(PREVIEW_WAIT, self.reader.preview(url)).await {
-      Err(_) => return None,
-      Ok(read) => read.ok(),
-    };
+    let preview = self.reader.preview(url).await.ok();
     let entry = PreviewEntry {
       fetched_at: (self.now)(),
       preview: preview.clone(),
@@ -164,17 +158,14 @@ impl PreviewCache {
       return held;
     }
 
-    let image = match tokio::time::timeout(PREVIEW_WAIT, self.reader.picture(url)).await {
-      Err(_) => return None,
-      Ok(read) => read.ok().and_then(|picture| {
-        let media_type = raster_type(&picture.bytes)?;
+    let image = self.reader.picture(url).await.ok().and_then(|picture| {
+      let media_type = raster_type(&picture.bytes)?;
 
-        Some(Picture {
-          media_type: media_type.to_owned(),
-          bytes: picture.bytes,
-        })
-      }),
-    };
+      Some(Picture {
+        media_type: media_type.to_owned(),
+        bytes: picture.bytes,
+      })
+    });
 
     if let Some(image) = &image {
       write_atomically(&bytes, &image.bytes);

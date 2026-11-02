@@ -306,6 +306,15 @@ async fn one_document_is_let_go_of_with_its_files_and_its_link_and_an_unknown_on
 }
 
 #[tokio::test]
+async fn the_stream_ends_when_the_server_is_stopped() {
+  let service = Service::new().await;
+
+  filed(&service, "One", "team-a").await;
+
+  assert!(service.stream_ends_on_stop("/events?after=0").await);
+}
+
+#[tokio::test]
 async fn the_events_are_paged_narrowed_by_kind_and_scope_and_a_resume_before_the_window_is_gone() {
   let service = Service::new().await;
 

@@ -199,7 +199,8 @@ work that page cites.
 
 - **A preview is read through bmo-explorer's client** (「What this service calls」) and kept under the file
   root: a preview for a week, a picture for a month, a failure for a day. The list answers what is kept; one
-  reference read alone reads its preview where none is kept fresh.
+  reference read alone reads its preview where none is kept fresh, and waits for bmo-explorer's answer however
+  long it takes.
 - **The image** goes out as the type its bytes are, not sniffed and sandboxed; 404 `not-found` where the
   page declares none or it could not be fetched.
 
@@ -358,6 +359,8 @@ whole」).
   reader reads the collections again.
 - **A comment line every fifteen seconds** keeps the stream open, and an event reaches a reader within a
   second of being kept.
+- **The stream ends when the service is stopped,** and the reader resumes after its last event once the
+  service answers again.
 
 ## Health
 
@@ -371,8 +374,8 @@ whole」).
 - **`bmo-artifact serve`** settles the document tables and answers the routes.
 - **`bmo-artifact migrate`** brings the database the settings name up to the schema and prints how many
   migrations it ran; the deployment and the testbed's template run it.
-- **`bmo-artifact health`** asks the service the settings name, waiting at most five seconds, and ends 0
-  where it answers ready.
+- **`bmo-artifact health`** asks the service the settings name, waits for the answer however long it takes,
+  and ends 0 where it answers ready; a refused or broken connection ends it 1.
 - **`bmo-artifact openapi`** prints the OpenAPI document the code generates.
 - **`bmo-artifact mcp [--address <url>]`** serves the harness tools (「The harness plugin」).
 - **`bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>] [--from <line>]`** reads an HTML file
@@ -387,8 +390,9 @@ whole」).
 
 `bmo_artifact::client` is the service's own Rust client: one method for each route, sending and reading
 the types of `bmo_artifact::wire`, which the routes answer with and the OpenAPI document is generated from.
-A refusal comes back as the route's status with its `code` and `error`. The command and the MCP server reach
-the service through it. The console bundle reads the TypeScript types generated from `docs/openapi.json`.
+A refusal comes back as the route's status with its `code` and `error`. A call waits for its answer however
+long the service takes, and ends only with the answer or a refused or broken connection. The command and the
+MCP server reach the service through it. The console bundle reads the TypeScript types generated from `docs/openapi.json`.
 
 ## The harness plugin
 

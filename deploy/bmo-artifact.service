@@ -10,6 +10,9 @@ WorkingDirectory=%h/.local/share/bmo-artifact/deploy
 ExecStart=%h/.local/share/bmo-artifact/deploy/bin/bmo-artifact serve
 Restart=on-failure
 RestartSec=5
+# A stop ends the event streams and lets the calls under way finish, and the unit waits for the service to end
+# however long that takes; it is never escalated to a kill.
+TimeoutStopSec=infinity
 
 [Install]
 WantedBy=default.target

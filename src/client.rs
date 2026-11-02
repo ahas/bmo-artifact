@@ -2,8 +2,6 @@
 //! the types of `wire`. The command and the MCP server reach the service through it, and so may any other
 //! Rust caller.
 
-use std::time::Duration;
-
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use reqwest::{Method, RequestBuilder, Response, header};
 use serde::Serialize;
@@ -19,9 +17,6 @@ use crate::wire::{
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
 const SEGMENT: &AsciiSet = &NON_ALPHANUMERIC.remove(b'-').remove(b'.').remove(b'_').remove(b'~');
-
-/// How long one call is waited for.
-pub const CALL_WAIT: Duration = Duration::from_secs(120);
 
 fn segment(value: &str) -> String {
   utf8_percent_encode(value, SEGMENT).to_string()
@@ -81,7 +76,7 @@ impl ArtifactClient {
     Self {
       address: address.trim_end_matches('/').to_owned(),
       token: token.to_owned(),
-      http: reqwest::Client::builder().timeout(CALL_WAIT).build().unwrap_or_default(),
+      http: reqwest::Client::new(),
     }
   }
 

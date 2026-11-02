@@ -18,7 +18,7 @@ use sea_orm::DatabaseConnection;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::json;
-use tokio::sync::OnceCell;
+use tokio::sync::{OnceCell, watch};
 
 use crate::console::{ConsoleBundle, screen_admits};
 use crate::documents::preview::PreviewCache;
@@ -197,6 +197,8 @@ pub struct Standing {
   pub console: Arc<ConsoleBundle>,
   /// The key reading tokens are signed with (`docs/archive.md`, "Readings").
   pub readings: ReadingKey,
+  // The server's stop, raised once when it is asked to end.
+  stop: Arc<watch::Sender<bool>>,
   // Whether the document tables have been settled in this process.
   settled: Arc<OnceCell<()>>,
 }
@@ -235,8 +237,23 @@ impl Standing {
       events: Publisher::default(),
       console,
       readings,
+      stop: Arc::new(watch::channel(false).0),
       settled: Arc::default(),
     })
+  }
+
+  /// The server's stop raised: every stream open ends, so the shutdown waits for nothing that never ends.
+  pub fn stop(&self) {
+    self.stop.send_replace(true);
+  }
+
+  /// Ends once the server's stop is raised.
+  pub fn stopped(&self) -> impl Future<Output = ()> + Send + 'static {
+    let mut heard = self.stop.subscribe();
+
+    async move {
+      let _ = heard.wait_for(|raised| *raised).await;
+    }
   }
 
   /// The database, its document tables settled before the first statement asked of them
