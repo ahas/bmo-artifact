@@ -74,6 +74,10 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
   assert_eq!(read["ownerKey"], false);
   assert_eq!(read["apiPrefix"], "/");
   assert_eq!(read["words"], "/console/words");
+  assert_eq!(
+    (read["screenPath"].clone(), read["formerScreenPaths"].clone()),
+    (json!("/artifact"), json!(["/archive"]))
+  );
   assert_eq!(read["shareReads"], manifest["shareReads"]);
   assert!(
     read["shareReads"]
@@ -87,7 +91,17 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
   )
   .expect("the declaration reads");
 
-  for field in ["name", "title", "icon", "screenPath", "serviceName", "events", "websocket", "pushKinds"] {
+  for field in [
+    "name",
+    "title",
+    "icon",
+    "screenPath",
+    "formerScreenPaths",
+    "serviceName",
+    "events",
+    "websocket",
+    "pushKinds",
+  ] {
     assert_eq!(manifest[field], declaration[field], "{field}");
   }
 

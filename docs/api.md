@@ -436,7 +436,8 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
 | `GET /console/{file}` | | 200, the module or the stylesheet the manifest names |
 
 - **The manifest** is the contract's shape: the bundle `artifact`, its menu title the key
-  `artifact.title.screen`, its icon, its screens under `/archive`, the service `artifact`, the paths of its
+  `artifact.title.screen`, its icon, its screens under `/artifact`, the path `/archive` as the one former screen
+  path they stood under, the service `artifact`, the paths of its
   module, its stylesheet and its words, and the role `member`. Every call the screens make stands under the
   API prefix `/`; no screen needs the owner key, reads the event stream or opens a socket, and no event is
   raised as a notice. Under `shareReads` it names `GET /shares/{token}`, every share read (「Share links」),
@@ -506,10 +507,11 @@ worker:
 
 - **The console that serves this bundle:** it calls this service with the console's token, finds the bundle
   by its manifest and loads its module (bmo-ui's `docs/console-bundles.md`). A share link is opened by a
-  reader who is not signed in, so the console serves the bundle's `/archive/share/<token>` screen and relays
+  reader who is not signed in, so the console serves the bundle's `/artifact/share/<token>` screen and relays
   the share reads the manifest names without its sign-in and with no role (bmo-ui's `docs/console-bundles.md`,
-  「Share pages」), and sets this service's share address to that screen's; this service answers only callers
-  holding one of its tokens.
+  「Share pages」), answers every address under the former screen path `/archive` as moved to the same address
+  under `/artifact` (「A screen that moved」), and sets this service's share address to that screen's; this
+  service answers only callers holding one of its tokens.
 - **The callers of the routes this service no longer serves:** research runs and their settings,
   narrations, the holding read by a chat id and the filing verbs are gone. A research run or a narration
   is a client's own work that files through this service's MCP server, and what a caller files is held

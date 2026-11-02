@@ -626,6 +626,11 @@ export interface components {
             bundle: string;
             /** @description Whether the screens read the event stream. */
             events: boolean;
+            /**
+             * @description The paths the screens stood under before, each of whose addresses a console answers as moved to the
+             *     same address under the screen path.
+             */
+            formerScreenPaths: string[];
             /** @description The icon drawn beside that name. */
             icon: string;
             /** @description The bundle's name, its words' namespace. */

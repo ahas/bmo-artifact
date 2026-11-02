@@ -44,7 +44,7 @@ describe("the package packed from client/", () => {
   test("carries the Nuxt configuration a host extends, the layer's files and the design files", () => {
     expect(manifest.main).toBe("./nuxt.config.ts");
     expect(manifest.files).toEqual(expect.arrayContaining(["nuxt.config.ts", "app", "shared", "design", "patches"]));
-    expect(carried.map((path) => relative(ROOT, path))).toEqual(expect.arrayContaining([join("design", "document.json"), join("design", "hosted-page.json"), join("app", "pages", "archive", "index.vue")]));
+    expect(carried.map((path) => relative(ROOT, path))).toEqual(expect.arrayContaining([join("design", "document.json"), join("design", "hosted-page.json"), join("app", "pages", "artifact", "index.vue")]));
   });
 
   // bmo-ui is a peer the host supplies: a dependency a package names by a file inside itself is not one

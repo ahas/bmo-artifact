@@ -10,8 +10,8 @@ const templateOf = (source: string): string => source.slice(0, source.indexOf("<
 const frame = await read("../../app/components/ArtifactPageFrame.vue");
 const body = await read("../../app/components/ArtifactBody.vue");
 const listen = await read("../../app/components/ArtifactListen.vue");
-const screen = await read("../../app/pages/archive/[id].vue");
-const shared = await read("../../app/pages/archive/share/[token].vue");
+const screen = await read("../../app/pages/artifact/[id].vue");
+const shared = await read("../../app/pages/artifact/share/[token].vue");
 
 describe("a page's sounds", () => {
   test("have no band of the reader's over the page's frame", () => {

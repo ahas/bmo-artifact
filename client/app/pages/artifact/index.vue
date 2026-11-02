@@ -98,7 +98,7 @@
               >
 
               <div class="flex min-w-0 flex-1 flex-col gap-2">
-                <NuxtLink :to="`/archive/${item.id}`" class="line-clamp-2 text-sm font-medium break-words text-highlighted before:absolute before:inset-0 before:rounded-lg before:content-['']">
+                <NuxtLink :to="`/artifact/${item.id}`" class="line-clamp-2 text-sm font-medium break-words text-highlighted before:absolute before:inset-0 before:rounded-lg before:content-['']">
                   <SearchText :text="item.title" :query="searched" />
                 </NuxtLink>
                 <p v-if="item.description !== null" class="line-clamp-2 text-sm break-words text-muted"><SearchText :text="item.description" :query="searched" /></p>

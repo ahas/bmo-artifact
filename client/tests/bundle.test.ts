@@ -14,6 +14,7 @@ interface Declaration {
   name: string;
   serviceName: string;
   screenPath: string;
+  formerScreenPaths: string[];
   languagePack: string;
 }
 
@@ -50,7 +51,7 @@ function keysHeld(value: unknown, at = ""): string[] {
 
 describe("the bundle's declaration", () => {
   test("names this service, its screen path and its words", () => {
-    expect(declaration).toMatchObject({ name: "artifact", serviceName: "artifact", screenPath: "/archive", languagePack: "i18n" });
+    expect(declaration).toMatchObject({ name: "artifact", serviceName: "artifact", screenPath: "/artifact", formerScreenPaths: ["/archive"], languagePack: "i18n" });
   });
 
   test("is carried by the package with the words it names", () => {

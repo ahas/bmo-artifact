@@ -43,6 +43,9 @@ pub struct ConsoleManifest {
   pub icon: String,
   /// The path the screens stand under.
   pub screen_path: String,
+  /// The paths the screens stood under before, each of whose addresses a console answers as moved to the
+  /// same address under the screen path.
+  pub former_screen_paths: Vec<String>,
   /// The service's name, which a console relays it under.
   pub service_name: String,
   /// The path the module is answered at.

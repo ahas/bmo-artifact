@@ -73,7 +73,7 @@ client/                    the console bundle (see "The console bundle")
     hosted-page.json       the sandbox a kept page runs in and the rest of the policy it is sent under
     bridges/               the clipboard, link, picture, scheme and sound scripts written ahead of a kept page
   app/
-    pages/archive/         the list, one document, and one shared document
+    pages/artifact/        the list, one document, and one shared document
     components/            the document body, its text, attachments, references, pictures and page frame
     domain/                the service's calls through the relay, what a screen reads off a document, the text's reading
     assets/css/            the masthead's and the text's stylesheets
@@ -136,7 +136,8 @@ The plumbing is what every command and every route stands on, and it knows none 
   reaches them: a console's sheets stand above a bundle's, and a rule of the same name there would win.
 - **The Nuxt layer.** It extends bmo-ui and adds the same pages, components, domain modules and
   stylesheets. Its declaration, `console-bundle.json`, names the bundle `artifact`, the service `artifact`,
-  its screens under `/archive` and its words in `i18n/`, in the fields the service's manifest answers.
+  its screens under `/artifact`, the path `/archive` they stood under before among its former screen paths, and
+  its words in `i18n/`, in the fields the service's manifest answers.
 - **bmo-ui is a peer.** The manifest names bmo-ui as a peer at the one version the bundle is built
   against, marked optional so no install looks for it in a registry. For the bundle's own install, a
   packed copy kept under `client/vendor/`, named by version, is a development dependency taken from that
@@ -150,8 +151,8 @@ The plumbing is what every command and every route stands on, and it knows none 
   no bar either way.
 - **Names.** Every component is named with the prefix `Artifact`, every word is a key under `artifact.`
   in the bundle's own pack beside the `common.*` keys the console answers for bmo-ui, and every page
-  stands under `/archive`: the list, one document at `/archive/<id>`, and one shared document at
-  `/archive/share/<token>`.
+  stands under `/artifact`: the list, one document at `/artifact/<id>`, and one shared document at
+  `/artifact/share/<token>`.
 - **Calls.** A screen calls this service's routes at the address bmo-ui's `relay` module answers for the
   service `artifact`, and nothing else. That address stands under the console app's base path, so a
   picture, a file or a frame the browser loads by its address reaches the relay as a call does. The types

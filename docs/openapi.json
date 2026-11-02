@@ -122,6 +122,13 @@
             "description": "Whether the screens read the event stream.",
             "type": "boolean"
           },
+          "formerScreenPaths": {
+            "description": "The paths the screens stood under before, each of whose addresses a console answers as moved to the\nsame address under the screen path.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "icon": {
             "description": "The icon drawn beside that name.",
             "type": "string"
@@ -185,6 +192,7 @@
           "title",
           "icon",
           "screenPath",
+          "formerScreenPaths",
           "serviceName",
           "bundle",
           "words",

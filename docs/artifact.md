@@ -385,7 +385,7 @@ A picture in a document opens in the picture viewer, for a markdown document and
 
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
-  - the list at `/archive`, narrowed by kind, by category, to the documents in progress and by a phrase, each
+  - the list at `/artifact`, narrowed by kind, by category, to the documents in progress and by a phrase, each
     narrowing held in the address,
     each document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps
     none. A row is the document's number as `#<id>`, its title, its description, how many files it keeps and
@@ -398,15 +398,18 @@ A picture in a document opens in the picture viewer, for a markdown document and
     filer names it by — are search metadata, no part of a row and never a badge anywhere in the list: a phrase
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
     and the list never scrolls sideways;
-  - one document at `/archive/<id>`: its number in the screen's bar, with the in-progress badge beside it while
+  - one document at `/artifact/<id>`: its number in the screen's bar, with the in-progress badge beside it while
     the document is in progress and the button opening its instruction where it carries one; its masthead — its labels but its instruction on a secondary line under its
     title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
     a table of contents of its kind's depth, its files after it, its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame, under a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
     most two lines; a title longer than that is cut at the end of the second line and shows whole in the
     console's tooltip for a cut line, and one shown whole carries no tooltip;
-  - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
+  - one shared document at `/artifact/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document; a page fills the window.
+- **The screens' former path, `/archive`, still reaches them.** The manifest names it among its former screen paths,
+  so a console answers every address under it — the list, a document, a share link handed out under it — with a
+  308 to the same address under `/artifact` (bmo-ui's `docs/console-bundles.md`, 「A screen that moved」).
 - **A document's category** is its label `category`: the filer's own word for the work that made it, such as
   the shape of the research that wrote it or the sort of report it is. The filer chooses the word and sets it
   when it files; the service keeps it as any label and reads nothing into it.

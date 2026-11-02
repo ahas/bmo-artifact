@@ -10,7 +10,7 @@
       <UDashboardNavbar :title="$t('artifact.title.document', { id: documentId })" icon="i-material-symbols-archive-outline">
         <template #leading>
           <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
-            <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
+            <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
           </HintTip>
         </template>
 
@@ -36,7 +36,7 @@
       <!-- The way back to the list, the document's number and its instruction, beside the console bar's name. -->
       <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
         <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
-          <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
+          <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
         </HintTip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
         <ArtifactPendingBadge v-if="held !== null" :document="held.document" :compact="phone" />
