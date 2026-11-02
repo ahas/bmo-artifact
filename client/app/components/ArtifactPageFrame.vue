@@ -9,7 +9,9 @@
        writes them (docs/archive.md, "An HTML page"). -->
   <div class="flex min-h-0 flex-1 flex-col">
     <header v-if="props.chrome" class="flex shrink-0 flex-col gap-2 border-b border-default px-4 py-3">
-      <h1 class="truncate text-xl font-semibold text-highlighted" :title="props.title">{{ props.title }}</h1>
+      <!-- The title wraps between words onto two lines at most; a longer one is clamped there and the console's
+           tooltip for a cut line shows it whole (docs/archive.md, 「Where a person reads it」). -->
+      <h1 class="line-clamp-2 text-lg font-semibold break-keep text-highlighted [overflow-wrap:anywhere] sm:text-xl" data-page-title>{{ props.title }}</h1>
 
       <div class="flex items-center gap-2">
         <UBadge v-if="props.kind !== null" color="neutral" variant="outline" :label="props.kind" />

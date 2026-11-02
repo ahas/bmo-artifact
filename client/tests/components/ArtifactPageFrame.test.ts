@@ -56,3 +56,32 @@ describe("a document's instruction", () => {
     expect(templateOf(body)).not.toContain("description");
   });
 });
+
+// A title stands on the type scale and is never cut mid-word with nothing to read it whole by (`docs/archive.md`,
+// "How a document is drawn" and "Where a person reads it").
+describe("a document's title", () => {
+  test("in a page's row wraps between words onto two lines at most and leaves its tooltip to the cut-line layer", () => {
+    const template = templateOf(frame);
+
+    expect(template).toContain('<h1 class="line-clamp-2 text-lg font-semibold break-keep text-highlighted [overflow-wrap:anywhere] sm:text-xl" data-page-title>');
+    expect(template).not.toContain("truncate");
+    expect(template.match(/<h1 [^>]*>/g)).toHaveLength(1);
+    expect(template.match(/<h1 [^>]*>/)![0]).not.toContain(":title");
+  });
+
+  test("in a markdown document's masthead stands at the section title step at every width", async () => {
+    const sheet = await read("../../app/assets/css/document.css");
+    const title = sheet.slice(sheet.indexOf(".document-title {"));
+
+    expect(title.slice(0, title.indexOf("}"))).toContain("font-size: 1.5rem;");
+    expect(sheet.match(/\.document-title\b/g)).toHaveLength(1);
+  });
+
+  test("in a page's own masthead heads a section at 20px and a part at 18px, at every width", async () => {
+    const design = JSON.parse(await read("../../design/document.json")) as { element_rules: [string, string][]; narrow_element_rules: [string, string][] };
+    const size = (selector: string): string | undefined => design.element_rules.find(([one]) => one === selector)?.[1].match(/font-size:(\d+px)/)?.[1];
+
+    expect([size("h1"), size("h2"), size("h3"), size("h4,h5,h6")]).toEqual(["24px", "20px", "18px", "16px"]);
+    expect(design.narrow_element_rules.filter(([selector]) => /^h\d/.test(selector))).toEqual([]);
+  });
+});

@@ -315,9 +315,12 @@ sheet and the console bundle reads to draw a document.
   surface, the ink in three strengths, a rule and a softer one, an accent, and a calm and a caution tone.
 - **The reader's scheme** is light, dark, or whatever the reader's system asks. The request names it; a
   request that names none reads in the design's default, dark.
-- **The masthead:** the kind's label over the title in the accent, the title large and bold across the
-  reading width, breaking only between words unless a word has no break in it, and a rule in the ink
-  closing it.
+- **The masthead:** the kind's label over the title in the accent, the title bold at the console's section
+  title step, 24px at every width, across the reading width, breaking only between words unless a word has
+  no break in it, and a rule in the ink closing it.
+- **The headings follow the console's type scale,** one step under the title: a page's own top heading is the
+  title at 24px, a section 20px, a part of one 18px, and anything deeper the body's 16px in bold, at every
+  width; a markdown body's sections stand at 20px under its 24px masthead title.
 - **The body:** 16px words on a loose line; a section ruled off under its heading; a quotation a box on
   the sunk surface with an accent rule down its left; a table a rounded box on the raised surface with its
   head row on the sunk surface; code on the sunk surface; links in the accent.
@@ -399,7 +402,9 @@ A picture in a document opens in the picture viewer, for a markdown document and
     the document is in progress and the button opening its instruction where it carries one; its masthead — its labels but its instruction on a secondary line under its
     title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
     a table of contents of its kind's depth, its files after it, its references beside it, each with the picture its preview declares; a page fills the screen in
-    its frame;
+    its frame, under a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
+    most two lines; a title longer than that is cut at the end of the second line and shows whole in the
+    console's tooltip for a cut line, and one shown whole carries no tooltip;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document; a page fills the window.
 - **A document's category** is its label `category`: the filer's own word for the work that made it, such as
