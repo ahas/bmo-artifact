@@ -66,8 +66,6 @@ interface Props {
   documentUrl?: string | null;
   // The pages it refers to, where they do not stand beside it.
   references?: (() => void) | null;
-  // Where the instruction it was asked for with is opened, where it carries one.
-  instruction?: (() => void) | null;
   // Where the link that hands this document to somebody outside is made.
   share?: (() => void) | null;
 }
@@ -82,7 +80,6 @@ const props = withDefaults(defineProps<Props>(), {
   labels: null,
   documentUrl: null,
   references: null,
-  instruction: null,
   share: null
 });
 
@@ -129,7 +126,6 @@ function download(url: string): void {
 }
 
 const actions = computed<BarAction[]>(() => [
-  ...(props.instruction === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: props.instruction }]),
   ...(props.references === null ? [] : [{ id: "references", label: t("artifact.label.references"), icon: "i-material-symbols-link", onSelect: props.references }]),
   ...(props.documentUrl === null ? [] : [{ id: "document", label: t("artifact.action.document_original"), icon: "i-material-symbols-file-save-outline", onSelect: () => download(props.documentUrl!) }]),
   ...(props.share === null ? [] : [{ id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: props.share }])

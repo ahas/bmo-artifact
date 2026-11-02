@@ -4,8 +4,8 @@
        bottom edge over the text. A page fills the screen in its frame. -->
   <UDashboardPanel id="artifact-document" :ui="{ body: 'p-0 sm:p-0 gap-0 overflow-hidden [&>*]:max-w-none' }">
     <!-- Under a console that offers its title bar the console draws it, and the way back to the list, the
-         document's number and its being in progress stand beside its name; alone, the screen draws its own bar
-         holding them. -->
+         document's number, its being in progress and its instruction where it carries one stand beside its name;
+         alone, the screen draws its own bar holding them. -->
     <template v-if="barOffer === null" #header>
       <UDashboardNavbar :title="$t('artifact.title.document', { id: documentId })" icon="i-material-symbols-archive-outline">
         <template #leading>
@@ -16,18 +16,38 @@
 
         <template v-if="held !== null" #trailing>
           <ArtifactPendingBadge :document="held.document" />
+          <UButton
+            v-if="instruction !== null"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            icon="i-material-symbols-assignment-outline"
+            :label="$t('artifact.action.instruction')"
+            data-instruction
+            @click="openInstruction"
+          />
         </template>
       </UDashboardNavbar>
     </template>
 
     <template #body>
-      <!-- The way back to the list and the document's number, beside the console bar's name. -->
+      <!-- The way back to the list, the document's number and its instruction, beside the console bar's name. -->
       <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
         <UTooltip :text="$t('artifact.action.back_to_list')">
           <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
         </UTooltip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
         <ArtifactPendingBadge v-if="held !== null" :document="held.document" />
+        <UButton
+          v-if="instruction !== null"
+          size="sm"
+          color="neutral"
+          variant="ghost"
+          icon="i-material-symbols-assignment-outline"
+          :label="$t('artifact.action.instruction')"
+          data-instruction
+          @click="openInstruction"
+        />
       </Teleport>
       <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2 p-4">
         <p class="text-sm text-error">{{ failed }}</p>
@@ -45,7 +65,6 @@
         :page="(asked) => contentAddress(documentId, asked)"
         :properties="properties"
         :share="openShare"
-        :instruction="instruction === null ? null : openInstruction"
       />
 
       <div v-else-if="narrow" class="flex min-h-0 flex-1 flex-col">
@@ -207,7 +226,6 @@ const bodyProps = computed(() => ({
   address: fileAddress,
   properties: properties.value,
   labels: held.value === null ? null : labelsBesideInstruction(held.value.document.labels),
-  instruction: instruction.value === null ? null : openInstruction,
   documentUrl: contentAddress(documentId.value, { download: true }),
   share: openShare
 }));

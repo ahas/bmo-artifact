@@ -390,7 +390,7 @@ A picture in a document opens in the picture viewer, for a markdown document and
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
     and the list never scrolls sideways;
   - one document at `/archive/<id>`: its number in the screen's bar, with the in-progress badge beside it while
-    the document is in progress; its masthead — its labels but its instruction on a secondary line under its
+    the document is in progress and the button opening its instruction where it carries one; its masthead — its labels but its instruction on a secondary line under its
     title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
     a table of contents of its kind's depth, its files after it, its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame;
@@ -418,8 +418,9 @@ A picture in a document opens in the picture viewer, for a markdown document and
 - **A document's instruction** is its label `query`: the words the document was asked for with, as the
   question a research was given. The filer sets it; the service keeps it as any label.
   - The document's screen draws it under no title. The masthead's labels line and a page's properties leave
-    it out, and the actions on the document offer 「Instruction」 (`artifact.action.instruction`), which opens
-    it drawn as markdown in a sheet: from the side on a wide screen, from the bottom edge on a phone.
+    it out, and the screen's bar offers a button 「Instruction」 (`artifact.action.instruction`) beside the
+    document's number, which opens it drawn as markdown in a sheet: from the side on a wide screen, from the
+    bottom edge on a phone.
   - A document without the label offers no such action, whatever its kind. The list shows no instruction,
     and a phrase still finds a document by it, as by any label.
 - **A share page reads as its document before anything runs:** the document's title, its description and

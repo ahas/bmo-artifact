@@ -42,3 +42,17 @@ describe("a markdown document's listen band", () => {
     expect(template).not.toContain("<audio");
   });
 });
+
+// A document's instruction stands behind a button of the screen's bar for every kind, never under its title
+// (`docs/archive.md`, "Where a person reads it").
+describe("a document's instruction", () => {
+  test("opens from the screen's bar, in the console's bar and in the screen's own alike, and is drawn under no title", () => {
+    const template = templateOf(screen);
+
+    expect(template.match(/data-instruction/g)).toHaveLength(2);
+    expect(template.match(/@click="openInstruction"/g)).toHaveLength(2);
+    expect(template).toContain('<ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />');
+    expect(screen).toContain("labelsBesideInstruction(held.value.document.labels)");
+    expect(templateOf(body)).not.toContain("description");
+  });
+});

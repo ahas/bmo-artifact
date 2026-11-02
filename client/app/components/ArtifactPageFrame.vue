@@ -39,14 +39,12 @@ interface Props {
   properties?: BarProperty[];
   // Opens the share dialog, where the screen offers one.
   share?: (() => void) | null;
-  // Opens the instruction the page was asked for with, where it carries one.
-  instruction?: (() => void) | null;
   // Whether the page stands under its title and actions, or fills the window alone.
   chrome?: boolean;
 }
 
 const { t, locale } = useI18n();
-const props = withDefaults(defineProps<Props>(), { kind: null, properties: () => [], share: null, instruction: null, chrome: true });
+const props = withDefaults(defineProps<Props>(), { kind: null, properties: () => [], share: null, chrome: true });
 const dark = useDarkScheme();
 
 useHead({ style: [{ key: "document-palette", innerHTML: DOCUMENT_PALETTE }] });
@@ -68,7 +66,6 @@ function download(): void {
 }
 
 const actions = computed<BarAction[]>(() => [
-  ...(props.instruction === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: props.instruction }]),
   { id: "open", label: t("artifact.action.open_new_tab"), icon: "i-material-symbols-open-in-new", onSelect: openPage },
   { id: "download", label: t("artifact.action.download"), icon: "i-material-symbols-download", onSelect: download },
   ...(props.share === null ? [] : [{ id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: props.share }])
