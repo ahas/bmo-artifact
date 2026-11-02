@@ -1,7 +1,7 @@
 //! The OpenAPI document (`docs/api.md`, "The wire"): the committed one is what the code generates, and it
 //! states every route, event and tool the API document names, at the repository's version.
 
-mod support;
+use crate::support;
 
 use std::collections::BTreeSet;
 use std::path::Path;

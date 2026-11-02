@@ -2,7 +2,7 @@
 //! filed by kind, listed and searched, read, rewritten, their files sent, their attachments kept and sent,
 //! the pages they refer to, and the kinds and readiness the service answers.
 
-mod support;
+use crate::support;
 
 use axum::http::{Method, StatusCode};
 use base64::Engine;

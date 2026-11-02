@@ -1,7 +1,7 @@
 //! The settings: the committed file reads, the local file overrides it, and the environment overrides
 //! both (`docs/layout.md`, "Settings").
 
-mod support;
+use crate::support;
 
 use std::collections::HashMap;
 use std::fs;

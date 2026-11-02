@@ -183,18 +183,6 @@ impl Scratch {
       .expect("the statement runs");
   }
 
-  /// The texts a statement answers in its first column, in its order.
-  pub async fn texts(&self, sql: &str) -> Vec<String> {
-    self
-      .db
-      .query_all(Statement::from_string(DbBackend::Postgres, sql))
-      .await
-      .expect("the statement reads")
-      .iter()
-      .map(|row| row.try_get_by_index::<String>(0).expect("a text"))
-      .collect()
-  }
-
   /// A count a statement answers.
   pub async fn count(&self, sql: &str, values: Vec<Value>) -> i64 {
     let row = self

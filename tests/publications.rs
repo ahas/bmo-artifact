@@ -2,7 +2,7 @@
 //! call, the link read by a reader with no session behind it, still opening after the service is stood up
 //! again, what it leaves where it ends, and the plain refusal of a token that never named one.
 
-mod support;
+use crate::support;
 
 use axum::http::{Method, StatusCode};
 use serde_json::{Value, json};

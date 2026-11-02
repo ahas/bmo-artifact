@@ -1,7 +1,7 @@
 //! The document wording file: the English default's lines fill in with their marks, a file the settings name
 //! is read in its place and held to the same keys (`docs/api.md`, "The document wording").
 
-mod support;
+use crate::support;
 
 use std::collections::HashMap;
 use std::fs;

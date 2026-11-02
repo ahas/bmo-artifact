@@ -2,7 +2,7 @@
 //! `bmo-artifact mcp` answers the handshake at the repository's version and lists exactly its twelve tools;
 //! a tool's call reaches the service through the client and a refusal comes back as a tool error.
 
-mod support;
+use crate::support;
 
 use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, Command, Stdio};

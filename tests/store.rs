@@ -2,7 +2,7 @@
 //! moved under a prepared one, refused in the carried code's own terms, and run on the database the
 //! settings name (`docs/layout.md`, "Storage" and "Plumbing").
 
-mod support;
+use crate::support;
 
 use std::collections::HashMap;
 use std::path::Path;

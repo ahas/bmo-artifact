@@ -1,7 +1,7 @@
 //! The layout: no folder named after its parent, Cargo's manifest the only build manifest at the root,
 //! and no test standing in `src/` (`docs/layout.md`).
 
-mod support;
+use crate::support;
 
 use std::fs;
 use std::path::Path;

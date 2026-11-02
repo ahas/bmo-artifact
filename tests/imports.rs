@@ -2,7 +2,7 @@
 //! whole"): answered at once as fetching, read through the page reader, its figures kept or named as not
 //! kept, its links made absolute, and filed with its references; or failed with the reader's sentence.
 
-mod support;
+use crate::support;
 
 use std::time::Duration;
 

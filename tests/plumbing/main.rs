@@ -1,6 +1,12 @@
 //! The plumbing: how a command's answer ends the binary, and how the router answers, refuses and reads a
 //! call behind the bearer token (`docs/layout.md`, "Plumbing"; `docs/api.md`, "The wire" and "The command").
 
+// A target of its own (bmo-chat's docs/conventions.md, 「Rust builds」): its stand-in verbs register themselves
+// in the process's verb table, and in the main target they would stand among the service's own routes in every
+// router and in the OpenAPI document the other tests generate.
+
+#[allow(dead_code)]
+#[path = "../support/mod.rs"]
 mod support;
 
 use std::collections::HashMap;

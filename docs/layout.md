@@ -226,7 +226,10 @@ belong to the testbed.
 
 ## Tests
 
-- **Server.** The Rust tests live in `tests/`; no test module stands in `src/`.
+- **Server.** The Rust tests live in `tests/`; no test module stands in `src/`. They are one test target,
+  `tests/main.rs`, each file of tests a module of it (bmo-chat's `docs/conventions.md`, 「Rust builds」), but
+  the plumbing's: its stand-in verbs and routes register themselves in the process, so they stand in a target
+  of their own, `tests/plumbing/main.rs`.
 - **Routes.** A route test stands the router up over a scratch PostgreSQL database and a file root of
   its own, with a page reader the test fills, and calls it as a caller would, token and all.
   - The scratch database is made on the server `BMO_TEST_POSTGRES` names: the first test of a binary

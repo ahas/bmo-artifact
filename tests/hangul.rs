@@ -2,7 +2,7 @@
 //! console bundle's language pack, the folder its declaration names, holds the words a person reads in
 //! each language, and is the one place another language stands.
 
-mod support;
+use crate::support;
 
 use std::fs;
 use std::path::Path;

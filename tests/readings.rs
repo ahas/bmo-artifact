@@ -3,7 +3,7 @@
 //! answering any origin, the player's script on its own address, the player's words in the reader's language,
 //! and a reading token that opens nothing once forged or ended.
 
-mod support;
+use crate::support;
 
 use axum::http::{Method, StatusCode};
 use base64::Engine;

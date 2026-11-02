@@ -2,7 +2,7 @@
 //! clients of the units this service calls, in any manifest or as the first segment of a path in Rust
 //! (`docs/layout.md`, "Dependency check").
 
-mod support;
+use crate::support;
 
 use std::fs;
 use std::path::{Component, Path, PathBuf};

@@ -2,7 +2,7 @@
 //! bmo-ui's own reading of the contract and agreeing with the declaration the layer carries, the module's path
 //! following its bytes, and the guard each kind of route stands behind.
 
-mod support;
+use crate::support;
 
 use std::io::Write;
 use std::path::Path;

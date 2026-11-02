@@ -2,7 +2,7 @@
 //! words cut at the answer ceiling with the line to carry on from named (`docs/artifact.md`, "An HTML
 //! page").
 
-mod support;
+use crate::support;
 
 use support::cli::{Ran, cli};
 

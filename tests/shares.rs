@@ -3,7 +3,7 @@
 //! has passed; what a scope holds counted, previewed and let go of; one document let go of alone; and the
 //! events each change leaves.
 
-mod support;
+use crate::support;
 
 use axum::http::{Method, StatusCode};
 use base64::Engine;

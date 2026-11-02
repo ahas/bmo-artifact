@@ -2,7 +2,7 @@
 //! `searches` columns, `search_images` settled into the attachments without adding a picture, the refusal of
 //! a store already holding rows, the dry run, and the count-and-sample compare.
 
-mod support;
+use crate::support;
 
 use std::path::Path;
 

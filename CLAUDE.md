@@ -45,7 +45,8 @@ These rules hold every change to this repository.
 
 - `Cargo.toml` is the only manifest at the root, and no directory is named after its parent; the
   layout check in `tests/` holds both.
-- Tests live in `tests/`. No test module stands in `src/`.
+- Tests live in `tests/`, one test target, `tests/main.rs`, each file of tests a module of it (bmo-chat's
+  `docs/conventions.md`, 「Rust builds」). No test module stands in `src/`.
 
 ## The stages of a change
 

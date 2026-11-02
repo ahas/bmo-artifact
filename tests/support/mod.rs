@@ -1,8 +1,5 @@
 //! What the repository checks share: the root, and the walk over the files they read.
 
-// Each test file is its own crate and uses only part of this module.
-#![allow(dead_code)]
-
 pub mod cli;
 pub mod scratch;
 pub mod service;
