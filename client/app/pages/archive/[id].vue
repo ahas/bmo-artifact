@@ -9,14 +9,14 @@
     <template v-if="barOffer === null" #header>
       <UDashboardNavbar :title="$t('artifact.title.document', { id: documentId })" icon="i-material-symbols-archive-outline">
         <template #leading>
-          <UTooltip :text="$t('artifact.action.back_to_list')">
+          <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
             <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
-          </UTooltip>
+          </HintTip>
         </template>
 
         <template v-if="held !== null" #trailing>
           <ArtifactPendingBadge :document="held.document" :compact="phone" />
-          <UTooltip v-if="instruction !== null" :text="$t('artifact.action.instruction')" :disabled="!phone">
+          <HintTip v-if="instruction !== null" class="flex" :text="$t('artifact.action.instruction')" press :disabled="!phone">
             <UButton
               size="sm"
               color="neutral"
@@ -27,7 +27,7 @@
               data-instruction
               @click="openInstruction"
             />
-          </UTooltip>
+          </HintTip>
         </template>
       </UDashboardNavbar>
     </template>
@@ -35,12 +35,12 @@
     <template #body>
       <!-- The way back to the list, the document's number and its instruction, beside the console bar's name. -->
       <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
-        <UTooltip :text="$t('artifact.action.back_to_list')">
+        <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
           <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
-        </UTooltip>
+        </HintTip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
         <ArtifactPendingBadge v-if="held !== null" :document="held.document" :compact="phone" />
-        <UTooltip v-if="instruction !== null" :text="$t('artifact.action.instruction')" :disabled="!phone">
+        <HintTip v-if="instruction !== null" class="flex" :text="$t('artifact.action.instruction')" press :disabled="!phone">
           <UButton
             size="sm"
             color="neutral"
@@ -51,7 +51,7 @@
             data-instruction
             @click="openInstruction"
           />
-        </UTooltip>
+        </HintTip>
       </Teleport>
       <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2 p-4">
         <p class="text-sm text-error">{{ failed }}</p>

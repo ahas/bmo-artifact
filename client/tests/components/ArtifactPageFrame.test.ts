@@ -91,8 +91,11 @@ describe("a document's in-progress badge", () => {
   test("stands as its mark alone with its words in its tooltip in a phone's bar, in both bars", async () => {
     const badge = templateOf(await read("../../app/components/ArtifactPendingBadge.vue"));
 
-    expect(badge).toContain('<UTooltip v-if="lacks !== null && props.compact" :text="said">');
+    expect(badge).toContain('<HintTip v-if="lacks !== null && props.compact" class="flex" :text="said">');
     expect(badge).toContain(':aria-label="said" data-pending />');
     expect(templateOf(screen).match(/<ArtifactPendingBadge [^>]*:compact="phone" \/>/g)).toHaveLength(2);
+    // A finger reaches every tooltip of the bar through the shared one: by a tap on the badge, by resting on a button.
+    expect(templateOf(screen)).not.toContain("<UTooltip");
+    expect(templateOf(screen).match(/<HintTip [^>]* press[ >]/g)).toHaveLength(4);
   });
 });
