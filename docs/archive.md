@@ -422,7 +422,8 @@ A picture in a document opens in the picture viewer, for a markdown document and
   and `review-fixes` for a page it is still finishing. The filer sets the label while it works on the
   document and takes it away once it is done, so a document done carries none.
   - The list and the document's bar stand it as a badge saying it is in progress, followed by what it lacks in
-    the pack's words for each (`artifact.pending.<word>`), a word the pack has none for as written.
+    the pack's words for each (`artifact.pending.<word>`), a word the pack has none for as written. On a phone
+    the bar stands the badge as its mark alone, its words in its tooltip, so the bar keeps to one row.
   - The list's in-progress switch narrows it with `GET /documents`'s `label` as `pending`, so a narrowed page
     is a full one. The route takes one label, so the switch and the category filter narrow the list one at a
     time: turning the switch on lets the chosen category go, and choosing a category turns the switch off.

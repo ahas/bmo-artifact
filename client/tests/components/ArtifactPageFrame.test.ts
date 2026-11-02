@@ -85,3 +85,14 @@ describe("a document's title", () => {
     expect(design.narrow_element_rules.filter(([selector]) => /^h\d/.test(selector))).toEqual([]);
   });
 });
+
+// A document in progress keeps the screen's bar to one row on a phone (`docs/archive.md`, "Where a person reads it").
+describe("a document's in-progress badge", () => {
+  test("stands as its mark alone with its words in its tooltip in a phone's bar, in both bars", async () => {
+    const badge = templateOf(await read("../../app/components/ArtifactPendingBadge.vue"));
+
+    expect(badge).toContain('<UTooltip v-if="lacks !== null && props.compact" :text="said">');
+    expect(badge).toContain(':aria-label="said" data-pending />');
+    expect(templateOf(screen).match(/<ArtifactPendingBadge [^>]*:compact="phone" \/>/g)).toHaveLength(2);
+  });
+});

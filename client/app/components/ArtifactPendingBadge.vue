@@ -1,6 +1,10 @@
 <template>
-  <!-- A document in progress, with what its filer still has to give it (docs/archive.md, 「Where a person reads it」). -->
-  <UBadge v-if="lacks !== null" color="warning" variant="subtle" size="sm" icon="i-material-symbols-progress-activity" class="max-w-full" :label="said" data-pending />
+  <!-- A document in progress, with what its filer still has to give it (docs/archive.md, 「Where a person reads it」);
+       compact, its mark alone with its words in its tooltip. -->
+  <UTooltip v-if="lacks !== null && props.compact" :text="said">
+    <UBadge color="warning" variant="subtle" size="sm" icon="i-material-symbols-progress-activity" :aria-label="said" data-pending />
+  </UTooltip>
+  <UBadge v-else-if="lacks !== null" color="warning" variant="subtle" size="sm" icon="i-material-symbols-progress-activity" class="max-w-full" :label="said" data-pending />
 </template>
 
 <script setup lang="ts">
@@ -10,7 +14,11 @@ import { pendingOf } from "../domain/document-view";
 
 import type { ArtifactDocument } from "../../shared/types";
 
-const props = defineProps<{ document: Pick<ArtifactDocument, "labels"> }>();
+const props = defineProps<{
+  document: Pick<ArtifactDocument, "labels">;
+  // Whether it stands as its mark alone, as in a phone's bar.
+  compact?: boolean;
+}>();
 const { t } = useI18n();
 
 const lacks = computed(() => pendingOf(props.document));

@@ -15,7 +15,7 @@
         </template>
 
         <template v-if="held !== null" #trailing>
-          <ArtifactPendingBadge :document="held.document" />
+          <ArtifactPendingBadge :document="held.document" :compact="phone" />
           <UTooltip v-if="instruction !== null" :text="$t('artifact.action.instruction')" :disabled="!phone">
             <UButton
               size="sm"
@@ -39,7 +39,7 @@
           <UButton to="/archive" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
         </UTooltip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
-        <ArtifactPendingBadge v-if="held !== null" :document="held.document" />
+        <ArtifactPendingBadge v-if="held !== null" :document="held.document" :compact="phone" />
         <UTooltip v-if="instruction !== null" :text="$t('artifact.action.instruction')" :disabled="!phone">
           <UButton
             size="sm"
