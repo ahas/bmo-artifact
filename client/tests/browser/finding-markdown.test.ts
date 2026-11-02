@@ -140,6 +140,33 @@ describe.skipIf(!ready)("what a finding lets reach the page", () => {
     });
   }, 30_000);
 
+  // A bare mark and its source entry carry the places a press moves between, which must come through the
+  // cleaning, and an entry's page still opens in a tab of its own while its mark stays in the text.
+  test("keeps a bare mark's place and its source entry's through the cleaning", async () => {
+    await drawn("a weight[1] and a snippet[2†]\n\n- [1] [The **first** page](https://one.example/a)\n- [2†] [Second](https://two.example)");
+
+    const seen = await page.evaluate(() => {
+      const out = document.getElementById("out")!;
+
+      return {
+        places: [...out.querySelectorAll("[id]")].map((element) => element.id),
+        sources: [...out.querySelectorAll("li[data-source]")].map((entry) => entry.getAttribute("data-source")),
+        back: [...out.querySelectorAll("a[data-mark-back]")].map((link) => [link.getAttribute("href"), link.getAttribute("target")]),
+        page: [...out.querySelectorAll("li a[href^='https']")].map((link) => link.getAttribute("target"))
+      };
+    });
+
+    expect(seen).toEqual({
+      places: ["cite-1", "cite-2†", "mark-1", "mark-2†"],
+      sources: ["1", "2†"],
+      back: [
+        ["#cite-1", null],
+        ["#cite-2%E2%80%A0", null]
+      ],
+      page: ["_blank", "_blank"]
+    });
+  }, 30_000);
+
   test("keeps the column count a table's box is laid out by through the cleaning", async () => {
     await drawn("| A | B |\n|---|---|\n| 1 | 2 |");
 

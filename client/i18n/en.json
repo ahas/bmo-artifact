@@ -3,6 +3,7 @@
     "title": {
       "screen": "Artifact",
       "document": "Document {id}",
+      "instruction": "Instruction",
       "references_count": "Referred pages {n}"
     },
     "label": {
@@ -24,7 +25,9 @@
       "picture_resolution_value": "{width} × {height}",
       "references": "Referred pages",
       "scope": "Scope",
-      "shared": "Shared · {until}",
+      "public": "Public",
+      "public_until": "Public until {date}",
+      "private": "Private",
       "snippet_only": "Checked against the snippet only",
       "span_1h": "1 hour",
       "span_24h": "24 hours",
@@ -71,6 +74,7 @@
       "copy_number": "Copy the number",
       "document_original": "Document file",
       "download": "Download",
+      "instruction": "Instruction",
       "more": "More",
       "open_new_tab": "Open in a new tab",
       "open_page": "Open the page",

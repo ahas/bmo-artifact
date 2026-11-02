@@ -370,6 +370,23 @@
   color: var(--ui-warning);
 }
 
+/* The mark that opens a source entry: a link back to where the mark first stands in the text, at the text's
+   size and in the accent, taking the ink and an underline under the pointer and the press. */
+.markdown.markdown--finding .search-mark-back {
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+
+.markdown.markdown--finding .search-mark-back:hover,
+.markdown.markdown--finding .search-mark-back:active {
+  text-decoration: underline;
+}
+
+/* The mark an entry led back to, marked where it stands for a moment so the eye finds it. */
+.markdown.markdown--finding .search-mark a[data-mark-found] {
+  background: var(--ui-bg-accented);
+}
+
 /* A rise and a fall a search marks with an up and a down triangle, in the colours a Korean market
    reads them in: red up, blue down. Each theme takes the shade that still reads at 4.5:1 on every
    surface of the document palette a finding's words stand on: the 700 in the light theme and the 300

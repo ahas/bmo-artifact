@@ -2,6 +2,7 @@ import { isDiagram } from "bmo-ui/app/domain/diagram";
 import DOMPurify from "dompurify";
 import { Marked, Renderer, Tokenizer } from "marked";
 
+import { citeId, entryId } from "./footnotes";
 import { addressAsWritten, isWebAddress } from "./web-address";
 
 import type { Translate } from "bmo-ui/shared/wording";
@@ -16,7 +17,8 @@ import type { RendererThis, Token, TokenizerAndRendererExtension, Tokens } from 
 // A finding is written a line at a time, so a newline is a line break. The HTML typed into it stands
 // as the characters it was typed as, and a tilde is a range and never a strike. A heading takes the
 // mark the contents beside the text steer by, a footnote mark is a raised number linking to its
-// source, and a picture is a picture only where the caller hands an address for it — the console's
+// source entry and the entry's mark a link back to it (`docs/archive.md`, "How a document is drawn"),
+// and a picture is a picture only where the caller hands an address for it — the console's
 // own copy of a picture the record holds, or a file the document keeps by its name; anything it does
 // not answer for stands as a link, so a line of somebody else's text never makes the reader's
 // browser call a server of its choosing.
@@ -53,6 +55,10 @@ const FINDING_BLOCK = /^::: (fold|gallery)(?: ([^\n]*))?\n([\s\S]*?)\n:::(?:\n|$
 const FINDING_MAP = /^::: map ([^\n]+)(?:\n|$)/;
 
 const FOOTNOTE_HREF = /^#mark-(.+)$/;
+
+// A footnote mark written straight into the text: a page's number in square brackets, a dagger after it
+// where the value was read only in a snippet. A bracket a link's address follows is that link's words.
+const BARE_MARK = /^\[(\d{1,4}†?)\](?!\()/;
 
 const ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 
@@ -195,12 +201,101 @@ const marketMoves: TokenizerAndRendererExtension = {
   renderer: (token) => `<span class="${token["rise"] === true ? "search-rise" : "search-fall"}">${escapeHtml(token.raw)}</span>`
 };
 
+// A bare mark is read as a mark wherever it is written; whether it is drawn as one is settled once the
+// whole text has been read, by whether the text carries a source entry for it (see sourceEntries).
+const bareMarks: TokenizerAndRendererExtension = {
+  name: "footnoteMark",
+  level: "inline",
+  start: (src) => {
+    const at = src.search(/\[\d/);
+
+    return at === -1 ? undefined : at;
+  },
+  tokenizer: (src) => {
+    const mark = BARE_MARK.exec(src);
+
+    return mark === null ? undefined : { type: "footnoteMark", raw: mark[0], name: mark[1]!, entry: false };
+  },
+  renderer: (token) => {
+    const name = token["name"] as string;
+
+    if (token["entry"] === true) return entryMark(name, token.raw);
+
+    return findingEntries.has(name) ? textMark(name, `#mark-${encodeURIComponent(name)}`, token.raw) : escapeHtml(token.raw);
+  }
+};
+
 // The picture sources of the finding being read, and the marks its headings take. Reading is
 // synchronous, so the one being read is the one set here for the length of that call.
 let findingImages: ImageSource = () => null;
 let findingFiles: ImageSource = () => null;
 let findingSlugs: readonly string[] = [];
 let slugsTaken = 0;
+// The marks the finding being read carries a source entry for, and those already drawn in its text,
+// whose first place the entry's mark leads back to.
+let findingEntries = new Set<string>();
+let marksDrawn = new Set<string>();
+
+// A mark in the text: a raised number whose link names the mark, which the screen answers by bringing
+// the source forward. The first of a name with an entry carries the place its entry's mark leads back
+// to. A snippet's mark says it was checked against the snippet only, in its popover where it has an
+// entry and in its own title where it has none.
+function textMark(name: string, href: string, text: string): string {
+  const snippet = name.endsWith("†");
+  const entry = findingEntries.has(name);
+  const first = entry && !marksDrawn.has(name);
+
+  marksDrawn.add(name);
+
+  const place = first ? ` id="${escapeHtml(citeId(name))}"` : "";
+  const note = snippet && !entry ? ` title="${escapeHtml(speak("artifact.label.snippet_only"))}"` : "";
+
+  return `<sup class="search-mark${snippet ? " search-mark-snippet" : ""}"><a href="${escapeHtml(href)}" data-mark="${escapeHtml(name)}"${place}${note}>${escapeHtml(text)}</a></sup>`;
+}
+
+// The mark an entry opens with: a link back to the mark's first place in the text.
+function entryMark(name: string, text: string): string {
+  return `<a href="#${escapeHtml(encodeURIComponent(citeId(name)))}" class="search-mark-back" data-mark-back="${escapeHtml(name)}">${escapeHtml(text)}</a>`;
+}
+
+// The inline tokens a list item opens with, in a tight list and a loose one alike.
+function itemInline(item: Tokens.ListItem): Token[] {
+  const first = item.tokens[0] as { tokens?: Token[] } | undefined;
+
+  return first?.tokens ?? [];
+}
+
+// The mark a list item is the source entry of: an item opening with a bare mark and going on with a link.
+function entryOf(item: Tokens.ListItem): string | null {
+  const [head, ...rest] = itemInline(item);
+
+  return head?.type === "footnoteMark" && rest.some((token) => token.type === "link") ? (head["name"] as string) : null;
+}
+
+// Every source entry of a finding, wherever its list stands, each entry's opening mark taken as the
+// entry's own rather than as a mark in the text.
+function sourceEntries(tokens: readonly Token[], found: Set<string>): Set<string> {
+  for (const token of tokens) {
+    if (token.type === "list") {
+      for (const item of (token as Tokens.List).items) {
+        const name = entryOf(item);
+
+        if (name !== null) {
+          found.add(name);
+          (itemInline(item)[0] as Tokens.Generic)["entry"] = true;
+        }
+      }
+    }
+
+    const inner = (token as { tokens?: Token[] }).tokens;
+    const items = (token as { items?: Token[] }).items;
+
+    if (inner !== undefined) sourceEntries(inner, found);
+    if (items !== undefined) sourceEntries(items, found);
+  }
+
+  return found;
+}
 
 // The words the reading puts on what it draws — a copy button's name, a mark's note — asked of the
 // translator the caller handed in, and held only while one finding is being built.
@@ -265,7 +360,7 @@ const findings = new Marked({
   async: false,
   gfm: true,
   breaks: true,
-  extensions: [findingBlock, marketMoves],
+  extensions: [findingBlock, marketMoves, bareMarks],
   tokenizer: { emStrong: koreanStrong, url: sentenceUrl },
   renderer: {
     html: ({ text }) => escapeHtml(text),
@@ -283,9 +378,15 @@ const findings = new Marked({
 
       return `<h${depth}${slug === undefined ? "" : ` id="${escapeHtml(slug)}" data-heading="${escapeHtml(slug)}"`}>${inside}</h${depth}>`;
     },
-    // A footnote mark is a raised number; its link names the mark, and the screen brings the source
-    // forward when it is pressed. A link naming one of the document's own files goes to where that
-    // file is served.
+    // A source entry stands where its mark leads, and says which mark it is the source of.
+    listitem(item) {
+      const html = Renderer.prototype.listitem.call(this as unknown as Renderer, item);
+      const name = entryOf(item);
+
+      return name === null ? html : html.replace(/^<li>/, `<li id="${escapeHtml(entryId(name))}" data-source="${escapeHtml(name)}">`);
+    },
+    // A footnote mark written as a link to its mark is drawn as a bare one is. A link naming one of the
+    // document's own files goes to where that file is served.
     link({ href, text, tokens }) {
       const mark = FOOTNOTE_HREF.exec(href);
 
@@ -295,10 +396,7 @@ const findings = new Marked({
         return file === null ? false : `<a href="${escapeHtml(file)}">${this.parser.parseInline(tokens)}</a>`;
       }
 
-      const name = decodeURIComponent(mark[1] ?? "");
-      const snippet = name.endsWith("†");
-
-      return `<sup class="search-mark${snippet ? " search-mark-snippet" : ""}"><a href="${escapeHtml(href)}" data-mark="${escapeHtml(name)}"${snippet ? ` title="${escapeHtml(speak("artifact.label.snippet_only"))}"` : ""}>${escapeHtml(text)}</a></sup>`;
+      return textMark(decodeURIComponent(mark[1] ?? ""), href, text);
     },
     image: (picture) => {
       const source = pictureSource(picture.href);
@@ -328,14 +426,21 @@ export function findingHtml(t: Translate, markdown: string, sources: FindingSour
   findingFiles = sources.files ?? (() => null);
   findingSlugs = sources.slugs ?? [];
   slugsTaken = 0;
+  marksDrawn = new Set();
 
   try {
-    return findings.parse(markdown, { async: false });
+    const tokens = findings.lexer(markdown);
+
+    findingEntries = sourceEntries(tokens, new Set());
+
+    return findings.parser(tokens);
   } finally {
     speak = before;
     findingImages = () => null;
     findingFiles = () => null;
     findingSlugs = [];
+    findingEntries = new Set();
+    marksDrawn = new Set();
   }
 }
 

@@ -3,6 +3,7 @@
     "title": {
       "screen": "아티팩트",
       "document": "문서 {id}",
+      "instruction": "지시문",
       "references_count": "참조 페이지 {n}"
     },
     "label": {
@@ -24,7 +25,9 @@
       "picture_resolution_value": "{width} × {height}",
       "references": "참조 페이지",
       "scope": "범위",
-      "shared": "공유 중 · {until}",
+      "public": "공개",
+      "public_until": "공개 · {date}까지",
+      "private": "비공개",
       "snippet_only": "요약문만 확인",
       "span_1h": "1시간",
       "span_24h": "24시간",
@@ -38,7 +41,7 @@
       "learning": "학습자료",
       "page": "페이지",
       "record": "기록",
-      "search": "조사"
+      "search": "리서치"
     },
     "category": {
       "advisory": "보안 권고",
@@ -47,7 +50,7 @@
       "completion": "완료 보고",
       "design-review": "설계 검토",
       "implementation": "구현 보고",
-      "investigation": "조사",
+      "investigation": "심층 조사",
       "manual": "매뉴얼",
       "plan": "계획",
       "report": "보고",
@@ -71,6 +74,7 @@
       "copy_number": "번호 복사",
       "document_original": "문서 원문",
       "download": "다운로드",
+      "instruction": "지시문",
       "more": "더보기",
       "open_new_tab": "새 탭에서 열기",
       "open_page": "페이지 열기",

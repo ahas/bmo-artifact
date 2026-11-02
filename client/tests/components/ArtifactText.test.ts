@@ -14,7 +14,7 @@ const config = await read("../../nuxt.config.ts");
 describe("a finding's text", () => {
   test("stands as the markdown it was answered as until there is HTML to stand instead", () => {
     expect(template).toContain('<div v-if="html === null" v-bind="$attrs" class="break-words whitespace-pre-wrap">{{ props.markdown }}</div>');
-    expect(template).toContain('<div v-else ref="shown" v-bind="$attrs" class="markdown markdown--finding" @click="copyFromPress(t, $event, copyText)" v-html="html" />');
+    expect(template).toMatch(/<div\s+v-else\s+ref="shown"\s+v-bind="\$attrs"\s+class="markdown markdown--finding"[^>]*\sv-html="html"\s*\/>/);
   });
 
   // A fenced block's copy button is drawn with the text, so the press on it is taken where the text
@@ -22,7 +22,8 @@ describe("a finding's text", () => {
   test("takes a press on a fenced block's copy button", () => {
     expect(script).toContain('import { copyFromPress } from "bmo-ui/app/domain/code-copy";');
     expect(script).toContain('import { copyText } from "../domain/copy";');
-    expect(template.match(/v-html/g)).toHaveLength(1);
+    expect(script).toContain("copyFromPress(t, event, copyText);");
+    expect(template).toContain('@click="onPress"');
   });
 
   test("says when its formatted form is on the page, with the element that holds it", () => {
@@ -47,6 +48,17 @@ describe("a finding's text", () => {
     expect(template).toContain("<ArtifactFold ");
     expect(template).toContain("<ArtifactGallery ");
     expect(template).toContain("<ArtifactMap ");
+  });
+
+  // A footnote mark brings its source forward over it, in the library's popover, above the mark, and its
+  // press follows no link (docs/archive.md, "How a document is drawn").
+  test("brings a footnote mark's source forward in a popover above the mark, read off the text itself", () => {
+    expect(template).toContain('<UPopover v-model:open="sourceOpen" :reference="sourceMark ?? undefined" :content="SOURCE_PLACE">');
+    expect(script).toContain('side: "top"');
+    expect(template).toContain('@pointerenter="holdSource" @pointerleave="leaveSource"');
+    expect(template).toContain('target="_blank"');
+    expect(script).toContain("event.preventDefault();");
+    expect(template.match(/v-html/g)).toHaveLength(2);
   });
 
   test("draws the plain text while the page is hydrated, so the browser's first pass agrees with the server's", () => {

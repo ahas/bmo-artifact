@@ -45,6 +45,7 @@
         :page="(asked) => contentAddress(documentId, asked)"
         :properties="properties"
         :share="openShare"
+        :instruction="instruction === null ? null : openInstruction"
       />
 
       <div v-else-if="narrow" class="flex min-h-0 flex-1 flex-col">
@@ -75,6 +76,8 @@
         </template>
       </USplitter>
 
+      <ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />
+
       <ShareLinkDialog v-model:open="shareOpen" :road="road" :spans="spans" :subject="held?.document.title" />
     </template>
   </UDashboardPanel>
@@ -103,7 +106,7 @@ import {
   referenceImageAddress,
   shareRoad
 } from "../../domain/artifact";
-import { contentsOf, kindOf } from "../../domain/document-view";
+import { contentsOf, instructionOf, kindOf, labelsBesideInstruction } from "../../domain/document-view";
 
 import type { SplitterItem } from "@nuxt/ui";
 import type { BarProperty } from "bmo-ui/app/domain/tabs";
@@ -125,6 +128,7 @@ const route = useRoute();
 const narrow = useNarrow("(max-width: 1023px)");
 const sideOpen = ref(false);
 const shareOpen = ref(false);
+const instructionOpen = ref(false);
 
 const documentId = computed(() => Number(route.params.id));
 
@@ -166,7 +170,7 @@ const properties = computed<BarProperty[]>(() => {
   if (document === undefined) return [];
 
   return [
-    ...(hosted.value ? Object.entries(document.labels).map(([label, value]) => ({ label, value })) : []),
+    ...(hosted.value ? Object.entries(labelsBesideInstruction(document.labels)).map(([label, value]) => ({ label, value })) : []),
     { label: t("artifact.label.actor"), value: document.actorName },
     ...(document.scope === null ? [] : [{ label: t("artifact.label.scope"), value: document.scope, mono: true }]),
     { label: t("artifact.label.created"), value: formatStamp(Math.floor(document.createdAt / 1000)) },
@@ -182,6 +186,14 @@ function openShare(): void {
   shareOpen.value = true;
 }
 
+// The instruction the document was asked for with, offered behind an action of its own rather than drawn under
+// its title.
+const instruction = computed(() => (held.value === null ? null : instructionOf(held.value.document)));
+
+function openInstruction(): void {
+  instructionOpen.value = true;
+}
+
 function openSide(): void {
   sideOpen.value = true;
 }
@@ -194,7 +206,8 @@ const bodyProps = computed(() => ({
   attachments: held.value?.attachments ?? [],
   address: fileAddress,
   properties: properties.value,
-  labels: held.value?.document.labels ?? null,
+  labels: held.value === null ? null : labelsBesideInstruction(held.value.document.labels),
+  instruction: instruction.value === null ? null : openInstruction,
   documentUrl: contentAddress(documentId.value, { download: true }),
   share: openShare
 }));

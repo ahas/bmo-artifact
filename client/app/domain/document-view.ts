@@ -40,6 +40,21 @@ export function pendingOf(document: Pick<ArtifactDocument, "labels">): string[] 
   return words.length === 0 ? null : words;
 }
 
+/** The label a document's instruction is kept under, the words it was asked for with (`docs/archive.md`, "Where a person reads it"). */
+export const INSTRUCTION_LABEL = "query";
+
+/** A document's instruction, null where it carries none. */
+export function instructionOf(document: Pick<ArtifactDocument, "labels">): string | null {
+  const words = document.labels[INSTRUCTION_LABEL]?.trim() ?? "";
+
+  return words === "" ? null : words;
+}
+
+/** A document's labels but its instruction, which its screen offers behind an action of its own. */
+export function labelsBesideInstruction(labels: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(labels).filter(([name]) => name !== INSTRUCTION_LABEL));
+}
+
 /** A document's number as a person reads, says and copies it. */
 export function numberText(id: number): string {
   return `#${id}`;

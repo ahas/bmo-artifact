@@ -334,6 +334,25 @@ sheet and the console bundle reads to draw a document.
 - **Diagrams** in a markdown body are fenced `mermaid` blocks, drawn in the design's colours; in a page,
   inline SVG in the page's own colours. A diagram names no colour of its own, so it is right in both
   schemes.
+- **Footnote marks** cite the pages a markdown body rests on, as a research's body does.
+  - **A mark** is a number in square brackets, with a dagger after the number where the value was read only
+    in a search's snippet, written straight into the text, or written as a link to `#mark-` and the mark's
+    name.
+  - **A source entry** is a list item that opens with a mark and goes on with a link to the page, as the
+    list closing a research's body has one for each mark. A bare bracketed number is a mark only where the
+    body carries an entry for it, so a number in brackets anywhere else stays as it is written. The body is
+    drawn as filed; nothing in it is rewritten for its marks.
+  - **In the text** a mark is a raised number, bracketed as written, at the caption size, in the accent,
+    and in the caution tone where it carries a dagger. **In its entry** the mark is a link in the accent at
+    the text's size, which scrolls the text back to where the mark first stands and marks it there for a
+    moment.
+  - **Pressing a mark brings its source forward** in a popover over the mark: above it, and below only where
+    there is no room above. It holds the entry's words formatted as the body formats them, the address of
+    the page as a link that opens it in a tab of its own, and, for a dagger, that the value was checked
+    against the snippet only. A pointer resting on the mark opens it, and it stays while the pointer is on
+    the mark or inside the popover, going once the pointer has left both. A tap opens it and moves nothing:
+    the text never scrolls to the entry, and a second tap on the same mark puts it away. A press anywhere
+    else, Esc and the back gesture put it away too. A mark with no entry opens nothing.
 
 ## Pictures open whole
 
@@ -363,16 +382,17 @@ A picture in a document opens in the picture viewer, for a markdown document and
     none. A row is the document's number as `#<id>`, its title, its description, how many files it keeps and
     the day it was filed, and at most four badges: its kind, its category where it carries one (「A document's
     category」), its being in progress with what it still lacks where it is (「A document in progress」), and,
-    where a link to it stands, its being shared with the time the link has left. The number
+    at the row's trailing edge right of the day, whether it is public: public while a link to it stands,
+    naming the day the link ends where it has one, and private where none stands. The number
     is copied by pressing it, which opens nothing, and a phrase that is a number, with or without its `#`, finds
     the document of that number. A document's other labels — the keywords, the rule, the question, the run a
     filer names it by — are search metadata, no part of a row and never a badge anywhere in the list: a phrase
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
     and the list never scrolls sideways;
   - one document at `/archive/<id>`: its number in the screen's bar, with the in-progress badge beside it while
-    the document is in progress; its masthead — its labels on a secondary line under its title, each name
-    and value, that wraps — its file drawn as markdown with a table of contents of its kind's depth, its files
-    after it, its references beside it, each with the picture its preview declares; a page fills the screen in
+    the document is in progress; its masthead — its labels but its instruction on a secondary line under its
+    title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
+    a table of contents of its kind's depth, its files after it, its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame;
   - one shared document at `/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document; a page fills the window.
@@ -395,6 +415,13 @@ A picture in a document opens in the picture viewer, for a markdown document and
   - The list's in-progress switch narrows it with `GET /documents`'s `label` as `pending`, so a narrowed page
     is a full one. The route takes one label, so the switch and the category filter narrow the list one at a
     time: turning the switch on lets the chosen category go, and choosing a category turns the switch off.
+- **A document's instruction** is its label `query`: the words the document was asked for with, as the
+  question a research was given. The filer sets it; the service keeps it as any label.
+  - The document's screen draws it under no title. The masthead's labels line and a page's properties leave
+    it out, and the actions on the document offer 「Instruction」 (`artifact.action.instruction`), which opens
+    it drawn as markdown in a sheet: from the side on a wide screen, from the bottom edge on a phone.
+  - A document without the label offers no such action, whatever its kind. The list shows no instruction,
+    and a phrase still finds a document by it, as by any label.
 - **A share page reads as its document before anything runs:** the document's title, its description and
   its cover picture stand as the page's preview head, the link is its canonical address, and it asks
   search engines not to index or follow it.

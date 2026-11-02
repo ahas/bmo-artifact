@@ -103,7 +103,7 @@
                 </NuxtLink>
                 <p v-if="item.description !== null" class="line-clamp-2 text-sm break-words text-muted"><SearchText :text="item.description" :query="searched" /></p>
 
-                <!-- A row carries at most four badges, its kind, its category, its progress and its live link; its other
+                <!-- A row carries at most four badges, its kind, its category, its progress and whether it is public; its other
                      labels are search metadata and stand in the document's own view (docs/archive.md, 「Where a person
                      reads it」). -->
                 <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -129,20 +129,34 @@
                     data-category
                   />
                   <ArtifactPendingBadge :document="item" />
-                  <UBadge
-                    v-if="shares.has(item.id)"
-                    color="primary"
-                    variant="subtle"
-                    size="sm"
-                    icon="i-material-symbols-link"
-                    class="max-w-full"
-                    :label="$t('artifact.label.shared', { until: shareUntilText(t, shareEnd(shares.get(item.id)!), now) })"
-                    data-shared
-                  />
                   <span v-if="item.attachmentCount > 0" class="text-sm text-muted tabular-nums">
                     {{ $t("artifact.label.files_count", { n: countText(item.attachmentCount) }) }}
                   </span>
-                  <span class="ms-auto text-sm tabular-nums text-muted">{{ formatStamp(Math.floor(item.createdAt / 1000)) }}</span>
+                  <!-- Right of the day, whether the document is public: a live link to it makes it public, until the
+                       day the link ends where it has one; with no link it is private. The two keep to the row's
+                       trailing edge together, the badge going under the day where the row runs out of width. -->
+                  <span class="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                    <span class="text-sm tabular-nums text-muted">{{ formatStamp(Math.floor(item.createdAt / 1000)) }}</span>
+                    <UBadge
+                      v-if="shares?.has(item.id)"
+                      color="primary"
+                      variant="subtle"
+                      size="sm"
+                      icon="i-material-symbols-public"
+                      class="max-w-full"
+                      :label="visibilityLabel(shareEnd(shares!.get(item.id)!))"
+                      data-shared
+                    />
+                    <UBadge
+                      v-else-if="shares !== null"
+                      color="neutral"
+                      variant="outline"
+                      size="sm"
+                      icon="i-material-symbols-lock-outline"
+                      :label="$t('artifact.label.private')"
+                      data-private
+                    />
+                  </span>
                 </span>
               </div>
             </div>
@@ -160,8 +174,7 @@
 <script setup lang="ts">
 import { failureText } from "bmo-ui/app/domain/errors";
 import { countText } from "bmo-ui/app/domain/numbers";
-import { shareUntilText } from "bmo-ui/app/domain/share-links";
-import { formatStamp, useNowSeconds } from "bmo-ui/app/domain/time";
+import { formatShortDay, formatStamp } from "bmo-ui/app/domain/time";
 import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -202,14 +215,19 @@ const loaded = ref(false);
 const failed = ref("");
 // The documents whose cover picture did not load, each left without one rather than drawn broken.
 const unpictured = ref(new Set<number>());
-// The live links by the document each opens, read beside every reading of the list; a list read with none of them
-// stands with no share badge rather than failing.
-const shares = ref(new Map<number, ArtifactShare>());
-const { now } = useNowSeconds();
+// The live links by the document each opens, read beside every reading of the list. Until they are read, and where
+// reading them failed, no row says whether it is public, rather than calling every document private.
+const shares = ref<Map<number, ArtifactShare> | null>(null);
 
 // When a link ends, in the seconds the share words read, or null for a link with no end.
 function shareEnd(link: ArtifactShare): number | null {
   return link.expiresAt === null ? null : Math.floor(link.expiresAt / 1000);
+}
+
+// What a document with a live link is: public, and public until the day its link ends where it has one. The
+// day is named, never the time left, which reads a day short or long as the hours turn.
+function visibilityLabel(end: number | null): string {
+  return end === null ? t("artifact.label.public") : t("artifact.label.public_until", { date: formatShortDay(t, end) });
 }
 let generation = 0;
 

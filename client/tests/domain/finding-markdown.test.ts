@@ -165,6 +165,55 @@ describe("a finding, as the read API answers it", () => {
     expect(html).toContain('<a href="https://x.example">3</a>');
   });
 
+  // A research's body cites its pages with bare marks and closes with a list of them, an entry a mark and a
+  // link; the body is drawn as filed, so the marks are read where it is drawn.
+  test("raises a bare mark its body carries a source entry for, and leads each entry's mark back to it", () => {
+    const html = findingHtml(
+      t,
+      [
+        "## Answer",
+        "",
+        "1. a weight[1] and two pages[5][6], a snippet's price[10†], an index a[7] as written",
+        "",
+        "| Part | Source |",
+        "| --- | --- |",
+        "| frame | [5][6] |",
+        "",
+        "## Sources",
+        "",
+        "- [1] [The **first** page](https://one.example/a)",
+        "- [5] [Fifth](https://five.example)",
+        "- [6] [Sixth](https://six.example)",
+        "- [10†] [A snippet](https://ten.example)",
+        "- [8] a note with no page"
+      ].join("\n")
+    );
+
+    expect(html).toContain('a weight<sup class="search-mark"><a href="#mark-1" data-mark="1" id="cite-1">[1]</a></sup> and');
+    expect(html).toContain('<a href="#mark-5" data-mark="5" id="cite-5">[5]</a></sup><sup class="search-mark"><a href="#mark-6" data-mark="6" id="cite-6">[6]</a>');
+    expect(html).toContain('<sup class="search-mark search-mark-snippet"><a href="#mark-10%E2%80%A0" data-mark="10†" id="cite-10†">[10†]</a></sup>');
+    // Only a mark's first place is where its entry leads back to.
+    expect(html).toContain('<td><sup class="search-mark"><a href="#mark-5" data-mark="5">[5]</a></sup>');
+    expect(html.match(/id="cite-5"/g)).toHaveLength(1);
+    // A snippet's mark with an entry says so in its popover, not in a title of its own.
+    expect(html).not.toContain("title=");
+    // A bracketed number the body carries no entry for stands as written, and so does an item with no page.
+    expect(html).toContain("an index a[7] as written");
+    expect(html).toContain("<li>[8] a note with no page</li>");
+    expect(html).toContain(
+      '<li id="mark-1" data-source="1"><a href="#cite-1" class="search-mark-back" data-mark-back="1">[1]</a> <a href="https://one.example/a">The <strong>first</strong> page</a></li>'
+    );
+    expect(html).toContain('<li id="mark-10†" data-source="10†"><a href="#cite-10%E2%80%A0" class="search-mark-back" data-mark-back="10†">[10†]</a>');
+  });
+
+  test("leaves bracketed numbers as written in a body with no source entries", () => {
+    const html = findingHtml(t, "a list[1] and a range [2][3]\n\n- [4] just a note");
+
+    expect(html).not.toContain("search-mark");
+    expect(html).toContain("a list[1] and a range [2][3]");
+    expect(html).toContain("<li>[4] just a note</li>");
+  });
+
   // The owner asked for a table of contents that lands on the section it names, so a heading takes the
   // mark the contents steer by. The marks are the caller's, in the order the headings stand.
   test("gives its headings the marks the contents were built with", () => {

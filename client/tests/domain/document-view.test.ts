@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { categoryFilter, categoryOf, contentsOf, drawnNames, fileAddresses, filesAround, headSounds, hostInitial, hostOf, keptNames, kindOf, languageOf, numberText, pendingOf, textPreview } from "../../app/domain/document-view";
+import { categoryFilter, categoryOf, contentsOf, drawnNames, fileAddresses, filesAround, headSounds, hostInitial, hostOf, instructionOf, keptNames, kindOf, labelsBesideInstruction, languageOf, numberText, pendingOf, textPreview } from "../../app/domain/document-view";
 
 import type { ArtifactAttachment } from "../../shared/types";
 
@@ -30,6 +30,15 @@ describe("a document's category, number and progress", () => {
     expect(pendingOf({ labels: { pending: "korean, narration-ko,,review" } })).toEqual(["korean", "narration-ko", "review"]);
     expect(pendingOf({ labels: { pending: " , " } })).toBeNull();
     expect(pendingOf({ labels: {} })).toBeNull();
+  });
+
+  // A document's instruction is its `query` label, offered behind an action of its own rather than drawn on
+  // the masthead's labels line (docs/archive.md, "Where a person reads it").
+  test("reads a document's instruction off its label, and leaves it out of the labels drawn under the title", () => {
+    expect(instructionOf({ labels: { query: "  find the **small** drones  " } })).toBe("find the **small** drones");
+    expect(instructionOf({ labels: { query: " " } })).toBeNull();
+    expect(instructionOf({ labels: { topic: "drones" } })).toBeNull();
+    expect(labelsBesideInstruction({ query: "find", topic: "drones", category: "search:exhaustive" })).toEqual({ topic: "drones", category: "search:exhaustive" });
   });
 
   test("narrows the list by the category label, and the number reads with its mark", () => {
