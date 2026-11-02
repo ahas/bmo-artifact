@@ -350,13 +350,15 @@ sheet and the console bundle reads to draw a document.
     formatted as the body formats them, the address of the page as a link that opens it in a tab of its own,
     and, for a dagger, that the value was checked against the snippet only. A mark with no entry opens nothing,
     and nothing a mark is pressed with follows its link, so the address never changes.
-    - **A pointer resting on the mark** opens it in a popover over the mark: above it, and below only where
-      there is no room above. It stays while the pointer is on the mark or inside the popover, and goes once
-      the pointer has left both. A key pressed on the mark opens the same popover.
+    - **A pointer resting on the mark** opens it in a popover over the mark: centred on the mark with a
+      point toward it, as wide as its words up to 40rem, above the mark, and below only where there is no
+      room above. It stays while the pointer is on the mark or inside the popover, and goes once the pointer
+      has left both. A key pressed on the mark opens the same popover.
     - **A click on the mark** scrolls the text to its entry and marks the entry there for a moment.
-    - **A tap on the mark** opens it in a dialog centred on the screen, with a close button under it, and
-      moves nothing: the text does not scroll. The close button, a tap outside the dialog, Esc and the back
-      gesture put it away.
+    - **A tap on the mark** opens it in a dialog centred on the screen over the dimmed page, with a close
+      button under it, and moves nothing: the text does not scroll and the page under the dialog stays
+      still while it stands. The close button, a tap outside the dialog, Esc and the back gesture put it
+      away.
 
 ## Pictures open whole
 

@@ -26,9 +26,9 @@
 
   <!-- The source a footnote mark cites, brought forward (docs/archive.md, "How a document is drawn"): over the mark
        in a popover where the pointer rests on it, and in a dialog centred on the screen where a finger taps it. -->
-  <UPopover v-model:open="sourceOpen" :reference="sourceMark ?? undefined" :content="SOURCE_PLACE">
+  <UPopover v-model:open="sourceOpen" :reference="sourceMark ?? undefined" :content="SOURCE_PLACE" arrow>
     <template #content>
-      <div v-if="source !== null" class="max-w-80 p-3" data-mark-source @pointerenter="holdSource" @pointerleave="leaveSource">
+      <div v-if="source !== null" class="max-w-[min(40rem,calc(100vw-1rem))] p-3" data-mark-source @pointerenter="holdSource" @pointerleave="leaveSource">
         <ArtifactMarkSource :source="source" />
       </div>
     </template>
