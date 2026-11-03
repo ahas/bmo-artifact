@@ -136,8 +136,9 @@ The plumbing is what every command and every route stands on, and it knows none 
   reaches them: a console's sheets stand above a bundle's, and a rule of the same name there would win.
 - **The Nuxt layer.** It extends bmo-ui and adds the same pages, components, domain modules and
   stylesheets. Its declaration, `console-bundle.json`, names the bundle `artifact`, the service `artifact`,
-  its screens under `/artifact`, the path `/archive` they stood under before among its former screen paths, and
-  its words in `i18n/`, in the fields the service's manifest answers.
+  its screens under `/artifact`, the path `/archive` they stood under before among its former screen paths, the
+  read a console asks for a share page's head, and its words in `i18n/`, in the fields the service's manifest
+  answers.
 - **bmo-ui is a peer.** The manifest names bmo-ui as a peer at the one version the bundle is built
   against, marked optional so no install looks for it in a registry. For the bundle's own install, a
   packed copy kept under `client/vendor/`, named by version, is a development dependency taken from that

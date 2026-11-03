@@ -8,6 +8,7 @@ use axum::http::{HeaderMap, StatusCode};
 use sha2::{Digest, Sha256};
 
 use crate::Refusal;
+use crate::http::share_head::SHARE_HEAD;
 use crate::http::share_reads::SHARE_READS;
 use crate::wire::ConsoleManifest;
 
@@ -35,7 +36,7 @@ const WORDS_FILE: &str = "words.json";
 // bmo-ui's audio player script, which the build copies beside the module (`docs/artifact.md`, "Readings").
 const PLAYER_FILE: &str = "bmo-audio-player.js";
 
-/// The language the player speaks where the reader names none the words hold.
+/// The language the player speaks, and a share head is told in, where the reader names none the words hold.
 pub const PLAYER_LANGUAGE: &str = "en";
 
 // How many hexadecimal digits of a file's digest its path carries.
@@ -170,6 +171,7 @@ impl ConsoleBundle {
       websocket: false,
       push_kinds: Vec::new(),
       share_reads: SHARE_READS.iter().map(|path| (*path).to_owned()).collect(),
+      share_head: SHARE_HEAD.into(),
     })
   }
 
@@ -196,6 +198,18 @@ impl ConsoleBundle {
       .unwrap_or(PLAYER_LANGUAGE);
 
     (spoken.to_owned(), packs[spoken]["artifact"]["player"].clone())
+  }
+
+  /// The bundle's words under its namespace in the locale `language` names, else in English; none where no
+  /// bundle was built or the words hold neither.
+  pub fn words_in(&self, language: Option<&str>) -> Option<serde_json::Value> {
+    let mut packs: serde_json::Value = serde_json::from_slice(self.words()?).ok()?;
+    let spoken = language
+      .filter(|language| packs[*language]["artifact"].is_object())
+      .unwrap_or(PLAYER_LANGUAGE);
+    let words = packs[spoken]["artifact"].take();
+
+    words.is_object().then_some(words)
   }
 
   /// The module or the stylesheet the manifest names by `name`, none for any other name.

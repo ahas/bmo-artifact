@@ -255,6 +255,30 @@ what the route under `/documents/{documentId}` it stands for answers for that do
   browser: it reads the link, then the document and everything of it through the share reads, each carrying
   the token.
 
+The **share head** answers what a live link reads as before it is opened, the preview a chat app or a browser
+draws its card from, as data a console writes into the head of the page it serves at the link's address
+(bmo-ui's `docs/console-bundles.md`, 「Share pages」; docs/artifact.md, 「Where a person reads it」):
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /shares/{token}/head` | query `language?` | 200, the head |
+
+| Field | Holds |
+|---|---|
+| `title` | the document's title, as the page shows it |
+| `description` | the document's description led by its kind's word where the page names the kind over the title, joined in the pack's sentence; absent where the document has none |
+| `image` | `/shares/{token}/picture` with the link's token, the share read of the cover picture; absent where the document keeps none |
+| `url` | the link's address, as `GET /shares/{token}` answers it |
+| `locale` | the pack's `artifact.preview.locale` |
+| `siteName` | the pack's `artifact.preview.site_name` |
+| `type` | `article` |
+| `kind` | the pack's word for the document's kind, as written where the pack has none; absent for a kind the page draws whole with no title over it |
+
+- **The words are the console bundle's pack** in the language `language` names, a locale of the bundle's words,
+  and in English where none is named or the words hold none of it.
+- **It is held to the token** as a share read is: a token that never named a link is `not-found`, one whose
+  link has ended `gone`, and where no bundle was built it is `not-found`.
+
 ### Readings
 
 A reading token opens one document's attachments to the page the console's own reader opens, for twelve
@@ -442,7 +466,8 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
   API prefix `/`; no screen needs the owner key, reads the event stream or opens a socket, and no event is
   raised as a notice. Under `shareReads` it names `GET /shares/{token}`, every share read (「Share links」),
   the reads the share page makes, and the reading's attachment read and the player's script (「Readings」),
-  which a hosted page makes.
+  which a hosted page makes. Under `shareHead` it names `GET /shares/{token}/head` (「Share links」), which a
+  console asks for a share page's head.
 - **The module and the stylesheet** are the files the build of `client/` writes into the folder the settings
   name, read when the service starts, beside bmo-ui's audio player script, which the build copies there and
   the service answers on its own route (「Readings」). Each is answered at `/console/` and a name carrying the
@@ -453,7 +478,7 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
 - **Where the folder holds no module,** the manifest, the module, the stylesheet and the words are all
   `not-found`, so a console leaves the service out.
 - **The guard.** A call with the console's token is the console relaying for a reader, and it reaches:
-  - the manifest, the words, the module, the stylesheet, `GET /shares/{token}` and the share reads with no
+  - the manifest, the words, the module, the stylesheet, `GET /shares/{token}`, the share head and the share reads with no
     role and no owner key, since a reader with no sign-in opens a share page by them; a share read is held to
     its token;
   - every other route the screens use where its `Owner-Role` header is a role that

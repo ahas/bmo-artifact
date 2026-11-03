@@ -74,6 +74,19 @@ pub async fn shared_document(standing: &Standing, token: &str) -> Result<i64, Re
   Err(no_live_link(db, token).await?)
 }
 
+/// The live link a token names, as the API answers it, swept first; a token that names no live link answers as
+/// `shared_document` says.
+pub async fn shared_link(standing: &Standing, token: &str) -> Result<Share, Refused> {
+  sweep(standing).await?;
+
+  let db = standing.db().await?;
+  let Some(link) = shares::by_token(db, token).await? else {
+    return Err(no_live_link(db, token).await?);
+  };
+
+  Ok(link.wire(&standing.settings.share.address))
+}
+
 pub struct ListShares;
 
 impl Route for ListShares {
@@ -185,16 +198,8 @@ impl Route for ReadShare {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let token = call.path_text("token").await?;
-    let standing = call.standing();
 
-    sweep(standing).await?;
-
-    let db = standing.db().await?;
-    let Some(link) = shares::by_token(db, &token).await? else {
-      return Err(no_live_link(db, &token).await?);
-    };
-
-    Ok(answer(StatusCode::OK, &link.wire(&standing.settings.share.address)))
+    Ok(answer(StatusCode::OK, &shared_link(call.standing(), &token).await?))
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {

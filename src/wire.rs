@@ -67,6 +67,8 @@ pub struct ConsoleManifest {
   pub push_kinds: Vec<String>,
   /// The reads a share token alone permits, each a path pattern carrying `{token}`.
   pub share_reads: Vec<String>,
+  /// The read a console asks for a share page's head, a path pattern carrying `{token}`.
+  pub share_head: String,
 }
 
 /// One event: its number, its kind, when it was kept and the member it is about.
@@ -357,6 +359,42 @@ pub struct Share {
   pub created_at: i64,
   /// Epoch milliseconds; null for a link with no end.
   pub expires_at: Option<i64>,
+}
+
+/// What a live link reads as before it is opened (`docs/api.md`, "Share links"): the values a console writes
+/// into the head of the page it serves at the link's address.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ShareHead {
+  /// The document's title, as the page shows it.
+  pub title: String,
+  /// The document's description, led by its kind's word where the page names the kind over the title; absent
+  /// where the document has none.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub description: Option<String>,
+  /// The share read of the cover picture, carrying the token; absent where the document keeps none.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub image: Option<String>,
+  /// The link's address.
+  pub url: String,
+  /// The locale of the language the words are in, as Open Graph writes one: `ko_KR`.
+  pub locale: String,
+  /// The name the card stands under.
+  pub site_name: String,
+  /// The Open Graph type: `article`.
+  pub r#type: String,
+  /// The word the page names the document's kind by; absent where the page names none.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub kind: Option<String>,
+}
+
+/// The language a share head is asked in.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct HeadQuery {
+  /// A locale of the console bundle's words; English where none is named or the words hold none of it.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub language: Option<String>,
 }
 
 /// A page of live links, oldest first.

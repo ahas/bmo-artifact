@@ -454,9 +454,11 @@ A picture in a document opens in the picture viewer, for a markdown document and
     document keeps one, and neither where it keeps none; `twitter:card` is `summary_large_image` with a
     picture and `summary` without;
   - a request that search engines not index or follow it, a link that opens nothing included.
-- **The head reaches a card only where the page is rendered on the server.** A console that builds the bundle
-  in renders the head into the page it sends; a console that loads the module in the browser sends its own
-  shell, and the head stands once the module runs, after a chat app has read the page.
+- **The head reaches a card with no script run.** The service answers the head's values as data at
+  `GET /shares/{token}/head` (docs/api.md, 「Share links」), in the language the console asks in, and its manifest
+  names that read under `shareHead`, so a console that loads the module in the browser writes the tags into the
+  page it serves at the link's address (bmo-ui's `docs/console-bundles.md`, 「Share pages」); a console that builds
+  the bundle in renders them as the page is rendered. The page still sets its head once the module runs.
 - **A link that has ended says so on its page:** the reader is told the link has ended, where a token that
   never named one is told the document could not be opened.
 

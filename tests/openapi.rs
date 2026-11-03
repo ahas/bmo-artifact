@@ -58,6 +58,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "POST /publications",
     "GET /shares/{token}",
     "DELETE /shares/{token}",
+    "GET /shares/{token}/head",
     "GET /shares/{token}/document",
     "GET /shares/{token}/kind",
     "GET /shares/{token}/content",
@@ -88,6 +89,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   assert_eq!(reach("/console-manifest", "get"), "open");
   assert_eq!(reach("/console/{file}", "get"), "open");
   assert_eq!(reach("/shares/{token}", "get"), "open");
+  assert_eq!(reach("/shares/{token}/head", "get"), "open");
   assert_eq!(reach("/shares/{token}", "delete"), "screen");
 
   for read in bmo_artifact::http::share_reads::SHARE_READS {

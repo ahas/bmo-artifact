@@ -8,5 +8,6 @@
   "languagePack": "i18n",
   "events": false,
   "websocket": false,
-  "pushKinds": []
+  "pushKinds": [],
+  "shareHead": "/shares/{token}/head"
 }

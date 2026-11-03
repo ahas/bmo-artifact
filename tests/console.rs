@@ -79,6 +79,7 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
     (json!("/artifact"), json!(["/archive"]))
   );
   assert_eq!(read["shareReads"], manifest["shareReads"]);
+  assert_eq!(read["shareHead"], "/shares/{token}/head");
   assert!(
     read["shareReads"]
       .as_array()
@@ -101,6 +102,7 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
     "events",
     "websocket",
     "pushKinds",
+    "shareHead",
   ] {
     assert_eq!(manifest[field], declaration[field], "{field}");
   }

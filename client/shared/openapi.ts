@@ -487,6 +487,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/shares/{token}/head": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What a live link reads as before it is opened, as a console writes it into the page's head. */
+        get: operations["listSharesHeadByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/shares/{token}/kind": {
         parameters: {
             query?: never;
@@ -645,6 +662,8 @@ export interface components {
             screenPath: string;
             /** @description The service's name, which a console relays it under. */
             serviceName: string;
+            /** @description The read a console asks for a share page's head, a path pattern carrying `{token}`. */
+            shareHead: string;
             /** @description The reads a share token alone permits, each a path pattern carrying `{token}`. */
             shareReads: string[];
             /** @description The path the stylesheet is answered at, where the bundle has one. */
@@ -887,6 +906,31 @@ export interface components {
             expiresAt: number | null;
             token: string;
             /** @description The share address, a `/` and the token. */
+            url: string;
+        };
+        /**
+         * @description What a live link reads as before it is opened (`docs/api.md`, "Share links"): the values a console writes
+         *     into the head of the page it serves at the link's address.
+         */
+        ShareHead: {
+            /**
+             * @description The document's description, led by its kind's word where the page names the kind over the title; absent
+             *     where the document has none.
+             */
+            description?: string | null;
+            /** @description The share read of the cover picture, carrying the token; absent where the document keeps none. */
+            image?: string | null;
+            /** @description The word the page names the document's kind by; absent where the page names none. */
+            kind?: string | null;
+            /** @description The locale of the language the words are in, as Open Graph writes one: `ko_KR`. */
+            locale: string;
+            /** @description The name the card stands under. */
+            siteName: string;
+            /** @description The document's title, as the page shows it. */
+            title: string;
+            /** @description The Open Graph type: `article`. */
+            type: string;
+            /** @description The link's address. */
             url: string;
         };
         /** @description A link to make. */
@@ -1911,6 +1955,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Document"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listSharesHeadByToken: {
+        parameters: {
+            query?: {
+                /** @description A locale of the console bundle's words; English where none is named or the words hold none of it. */
+                language?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description The share link's token. */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What a live link reads as before it is opened, as a console writes it into the page's head. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareHead"];
                 };
             };
             default: components["responses"]["Error"];

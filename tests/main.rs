@@ -22,6 +22,7 @@ mod picture_ground;
 mod publications;
 mod readings;
 mod settings;
+mod share_head;
 mod shares;
 mod store;
 mod wording;
