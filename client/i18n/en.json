@@ -131,6 +131,11 @@
           "loading": "Loading…"
         }
       }
+    },
+    "preview": {
+      "described": "{kind} · {description}",
+      "locale": "en_US",
+      "site_name": "BMO"
     }
   }
 }

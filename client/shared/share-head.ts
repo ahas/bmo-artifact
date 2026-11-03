@@ -8,12 +8,19 @@ export type ShareMetaTag = { name: string; property?: never; content: string } |
 // opens nothing as much as one that opens its document.
 export const SHARE_ROBOTS: ShareMetaTag = { name: "robots", content: "noindex, nofollow" };
 
-/** What a link reads as before it is opened: the document's title, its description and its picture. */
+/** What a link reads as before it is opened. */
 export interface SharedHead {
+  // The document's title, as the page shows it.
   title: string;
+  // What the preview says of the document, the kind's word ahead of it where the page names one, null for none.
   description: string | null;
   // The cover picture's whole address, null for a document with none.
   image: string | null;
+  // The link's own address, the share address the service's settings name and the token.
+  link: string;
+  // The name the preview stands under, and the locale of the language the page is shown in.
+  siteName: string;
+  locale: string;
 }
 
 export interface ShareHeadTags {
@@ -22,26 +29,38 @@ export interface ShareHeadTags {
   canonical: string;
 }
 
-/** The tags of one link, opened at `link`, which is its canonical address. */
-export function shareHeadTags(head: SharedHead, link: string): ShareHeadTags {
-  const described = head.description !== null && head.description !== "";
-  const description = head.description ?? "";
+/**
+ * What the preview says of a document: its description, led by the kind's word where the page names the kind
+ * over the title, joined as the language pack's sentence does; null where the document has no description.
+ */
+export function previewDescription(description: string | null, kind: string | null, joined: (kind: string, description: string) => string): string | null {
+  if (description === null || description === "") return null;
+
+  return kind === null || kind === "" ? description : joined(kind, description);
+}
+
+/** The tags of one link, its own address the canonical one. */
+export function shareHeadTags(head: SharedHead): ShareHeadTags {
+  const description = head.description === "" ? null : head.description;
+  const image = head.image;
 
   return {
     title: head.title,
-    canonical: link,
+    canonical: head.link,
     meta: [
       SHARE_ROBOTS,
-      ...(described ? [{ name: "description", content: description }] : []),
+      ...(description === null ? [] : [{ name: "description", content: description }]),
       { property: "og:type", content: "article" },
+      { property: "og:site_name", content: head.siteName },
+      { property: "og:locale", content: head.locale },
       { property: "og:title", content: head.title },
-      ...(described ? [{ property: "og:description", content: description }] : []),
-      { property: "og:url", content: link },
-      ...(head.image === null ? [] : [{ property: "og:image", content: head.image }]),
-      { name: "twitter:card", content: head.image === null ? "summary" : "summary_large_image" },
+      ...(description === null ? [] : [{ property: "og:description", content: description }]),
+      { property: "og:url", content: head.link },
+      ...(image === null ? [] : [{ property: "og:image", content: image }]),
+      { name: "twitter:card", content: image === null ? "summary" : "summary_large_image" },
       { name: "twitter:title", content: head.title },
-      ...(described ? [{ name: "twitter:description", content: description }] : []),
-      ...(head.image === null ? [] : [{ name: "twitter:image", content: head.image }])
+      ...(description === null ? [] : [{ name: "twitter:description", content: description }]),
+      ...(image === null ? [] : [{ name: "twitter:image", content: image }])
     ]
   };
 }

@@ -438,9 +438,25 @@ A picture in a document opens in the picture viewer, for a markdown document and
     markdown in a sheet: from the side on a wide screen, from the bottom edge on a phone.
   - A document without the label offers no such action, whatever its kind. The list shows no instruction,
     and a phrase still finds a document by it, as by any label.
-- **A share page reads as its document before anything runs:** the document's title, its description and
-  its cover picture stand as the page's preview head, the link is its canonical address, and it asks
-  search engines not to index or follow it.
+- **A share page reads as its document before anything runs:** its head is the preview a chat app or a
+  browser draws the link's card from, the same tags for every kind, each value written as an attribute's
+  text and escaped as the head is rendered, so no title or description closes its tag:
+  - its title, `og:title` and `twitter:title`: the document's title, as the page shows it;
+  - its description, `og:description` and `twitter:description`: the document's description (「Filing a
+    document」: the filer's, else the opening of its body), led by the kind's word where the page names the
+    kind over the title — a markdown document's, so a research reads as the pack's word for `search` — joined in
+    the pack's sentence `artifact.preview.described`; none of the three where the document has no description;
+  - `og:type` article, and `og:url` and the canonical link: the link's address, the share address the settings
+    name and the token, as `GET /shares/{token}` answers it;
+  - `og:site_name` and `og:locale`: the pack's words `artifact.preview.site_name` and `artifact.preview.locale`
+    in the language the page is shown in, so a page shown in Korean is `ko_KR`;
+  - `og:image` and `twitter:image`: the cover picture's whole address through the share reads, where the
+    document keeps one, and neither where it keeps none; `twitter:card` is `summary_large_image` with a
+    picture and `summary` without;
+  - a request that search engines not index or follow it, a link that opens nothing included.
+- **The head reaches a card only where the page is rendered on the server.** A console that builds the bundle
+  in renders the head into the page it sends; a console that loads the module in the browser sends its own
+  shell, and the head stands once the module runs, after a chat app has read the page.
 - **A link that has ended says so on its page:** the reader is told the link has ended, where a token that
   never named one is told the document could not be opened.
 

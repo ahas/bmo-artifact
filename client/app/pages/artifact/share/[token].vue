@@ -58,7 +58,7 @@ import { FULL_SHEET, SPLIT_HANDLE } from "bmo-ui/app/domain/side-parts";
 import { useI18n } from "vue-i18n";
 
 import { DOCUMENT_PALETTE } from "../../../../shared/document-design";
-import { SHARE_ROBOTS, shareHeadTags } from "../../../../shared/share-head";
+import { SHARE_ROBOTS, previewDescription, shareHeadTags } from "../../../../shared/share-head";
 import { contentsOf } from "../../../domain/document-view";
 import {
   linkEnded,
@@ -66,6 +66,7 @@ import {
   readSharedContent,
   readSharedDocument,
   readSharedKind,
+  readSharedLink,
   readSharedReference,
   readSharedReferences,
   sharedAttachmentAddress,
@@ -111,13 +112,15 @@ onScopeDispose(() => {
   generation++;
 });
 
-const kindText = computed(() => {
-  const name = held.value?.document.kind ?? "";
+// A kind's name in the pack's word for it, and as written where the pack has none.
+function kindWordOf(name: string): string {
   const key = `artifact.kind.${name}`;
   const said = t(key);
 
   return said === key ? name : said;
-});
+}
+
+const kindText = computed(() => kindWordOf(held.value?.document.kind ?? ""));
 const contents = computed(() => contentsOf(held.value?.markdown ?? "", held.value?.kind?.contentsDepth ?? 2));
 
 const bodyProps = computed(() => ({
@@ -151,17 +154,30 @@ async function goTo(slug: string): Promise<void> {
 const link = useRequestURL({ xForwardedHost: true });
 const { data: head } = await useAsyncData(`artifact-share-head:${token.value}`, async () => {
   try {
-    const document = await readSharedDocument(token.value);
+    const [shared, document, kind] = await Promise.all([readSharedLink(token.value), readSharedDocument(token.value), readSharedKind(token.value)]);
 
     // A document that keeps no picture has none to show.
     const image = document.hasPicture ? new URL(sharedPictureAddress(token.value), link.origin).toString() : null;
+    // The kind's word leads the description where the page names the kind over the title, as it does for
+    // every document but a page.
+    const kindWord = kind.hosted ? null : kindWordOf(document.kind);
+    const description = previewDescription(document.description, kindWord, (word, said) =>
+      t("artifact.preview.described", { kind: word, description: said })
+    );
 
-    return { title: document.title, description: document.description, image };
+    return {
+      title: document.title,
+      description,
+      image,
+      link: shared.url,
+      siteName: t("artifact.preview.site_name"),
+      locale: t("artifact.preview.locale")
+    };
   } catch {
     return null;
   }
 });
-const tags = computed(() => (head.value === null || head.value === undefined ? null : shareHeadTags(head.value, link.toString())));
+const tags = computed(() => (head.value === null || head.value === undefined ? null : shareHeadTags(head.value)));
 
 // The page stands on the document paper from its first frame, the skeleton included.
 useHead({

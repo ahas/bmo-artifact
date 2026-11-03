@@ -1,13 +1,26 @@
 import { artifactAddress, everyPage, pageQuery } from "./artifact";
 
 import type { PageAsked } from "./artifact";
-import type { ArtifactAttachment, ArtifactAttachmentPage, ArtifactDocument, ArtifactKind, ArtifactReference, ArtifactReferencePage } from "../../shared/types";
+import type {
+  ArtifactAttachment,
+  ArtifactAttachmentPage,
+  ArtifactDocument,
+  ArtifactKind,
+  ArtifactReference,
+  ArtifactReferencePage,
+  ArtifactShare
+} from "../../shared/types";
 
 // The reads a share page makes of the one document its link opens, each a share read carrying the token
 // (`docs/api.md`, "Share links"), which is the whole of what a reader with no sign-in holds.
 
 function sharedAddress(token: string, path = ""): string {
   return artifactAddress(`/shares/${encodeURIComponent(token)}${path}`);
+}
+
+/** The link itself: its address, the share address the service's settings name and the token. */
+export function readSharedLink(token: string): Promise<ArtifactShare> {
+  return $fetch<ArtifactShare>(sharedAddress(token));
 }
 
 /** The document the link opens. */
