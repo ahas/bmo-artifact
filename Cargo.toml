@@ -48,7 +48,7 @@ lol_html = "3.0.1"
 # A path segment the client writes.
 percent-encoding = "2.3.2"
 # The links a markdown body makes, and the headings its contents are read from.
-pulldown-cmark = { version = "0.13.4", default-features = false }
+pulldown-cmark = { version = "0.13.6", default-features = false }
 # A share link's token's bytes.
 rand = "0.9.2"
 # A kept AVIF picture's AV1 frames decoded.
