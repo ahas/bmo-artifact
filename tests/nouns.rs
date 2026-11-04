@@ -30,8 +30,8 @@ fn the_nouns_are_printed_one_a_line_from_any_directory() {
   let done = nouns_from(elsewhere.path());
 
   assert!(done.status.success(), "{}", String::from_utf8_lossy(&done.stderr));
-  assert_eq!(String::from_utf8_lossy(&done.stdout), "html-read\n");
-  assert_eq!(NOUNS, ["html-read"]);
+  assert_eq!(String::from_utf8_lossy(&done.stdout), "archive doc\nhtml-read\n");
+  assert_eq!(NOUNS, ["archive doc", "html-read"]);
 }
 
 #[test]

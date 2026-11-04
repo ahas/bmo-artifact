@@ -404,11 +404,32 @@ whole」).
 - **`bmo-artifact mcp [--address <url>]`** serves the harness tools (「The harness plugin」).
 - **`bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>] [--from <line>]`** reads an HTML file
   for its words in order, cut at the answer ceiling (docs/artifact.md, 「An HTML page」).
-- **`bmo-artifact nouns`** prints the nouns `bmo` dispatches to this command, one a line: `html-read`. It
-  reads no settings, so it answers wherever the caller stands; no noun carries a mark.
-- **The noun's words:** `html-read` is `bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>]
-  [--from <line>]`. It calls no route: it reads the file where it stands.
+- **`bmo-artifact archive doc`** files or rewrites a document from a shell (「The archive verb」).
+- **`bmo-artifact nouns`** prints the nouns `bmo` dispatches to this command, one a line: `archive doc` and
+  `html-read`. It reads no settings, so it answers wherever the caller stands; no noun carries a mark.
+- **The nouns' words:** `html-read` is `bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>]
+  [--from <line>]`. It calls no route: it reads the file where it stands. `archive doc` is below.
+- **The settings a command stands on** are the ones in the directory it was started in, where `settings.toml`
+  stands there; from any other directory, the deployed release's own, beside the binary's `bin/`.
 - **How a command ends:** 0 on success; a refusal on standard error and 1 otherwise.
+
+## The archive verb
+
+`bmo archive doc --title <words> (--body <file> | --html <file>) [--replace <id>] [--chat <room>] [--by <name>]`
+files a document from a shell and prints its number and the permanent link to hand to a reader, a line each.
+
+| Option | What it does |
+|---|---|
+| `--title <words>` | Its title; required |
+| `--body <file>` | Its words, as markdown: a `record` |
+| `--html <file>` | An HTML page as it stands: a `page`; exactly one of `--body` and `--html` is named |
+| `--replace <id>` | Rewrites that document under its number, which keeps its link and its attachments, in place of filing a new one |
+| `--chat <room>` | The room it is held under as its `scope`; it is the owner's own where left out |
+| `--by <name>` | Who files it: `BMO_TURN_AGENT` where left out, then `USER` |
+
+- **A new document goes through `POST /publications`,** a rewrite through `PATCH /documents/{documentId}` and
+  `POST /shares`, which answers the live link that stands.
+- **It speaks no narration.** A narration is a sound a client attaches (`POST /documents/{documentId}/attachments`).
 
 ## The client
 

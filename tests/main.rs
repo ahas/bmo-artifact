@@ -3,6 +3,7 @@
 
 mod support;
 
+mod archive_doc;
 mod console;
 mod dependencies;
 mod documents;

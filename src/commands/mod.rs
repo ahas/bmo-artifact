@@ -1,7 +1,8 @@
 //! The command's words (`docs/api.md`, "The command"), each registered beside its own run: the service, the
-//! schema, the readiness asked, the OpenAPI document, the MCP server, the nouns it declares, an HTML file
-//! read and the version.
+//! schema, the readiness asked, the OpenAPI document, the MCP server, the nouns it declares, a document filed
+//! from a shell, an HTML file read and the version.
 
+pub mod archive_doc;
 pub mod html_read;
 
 use std::path::PathBuf;
@@ -36,9 +37,9 @@ impl Verb for Version {
 
 crate::verb!(Version);
 
-/// The nouns `bmo` dispatches to this command (`docs/api.md`, "The command"): the page read alone, which a
-/// caller runs on the machine the file stands on. No noun carries a mark.
-pub const NOUNS: &[&str] = &["html-read"];
+/// The nouns `bmo` dispatches to this command (`docs/api.md`, "The command"): a document filed from a shell, and
+/// the page read, each run on the machine its file stands on. No noun carries a mark.
+pub const NOUNS: &[&str] = &["archive doc", "html-read"];
 
 /// `nouns`.
 pub struct Nouns;

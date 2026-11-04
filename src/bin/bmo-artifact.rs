@@ -61,9 +61,9 @@ async fn main() -> ExitCode {
   ExitCode::from(ended.code)
 }
 
-// The shell the settings of the starting directory make, or the sentence saying why there is none.
+// The shell the settings a command stands on make, or the sentence saying why there is none.
 fn shell() -> Result<Shell, String> {
-  let settings = Settings::load().map_err(|why| why.to_string())?;
+  let settings = Settings::for_command().map_err(|why| why.to_string())?;
 
   Shell::new(settings).map_err(|why| why.to_string())
 }

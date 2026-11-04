@@ -127,6 +127,24 @@ impl Settings {
     Self::read(Path::new("."), None)
   }
 
+  /// The settings a command stands on (`docs/api.md`, "The command"): the starting directory's where its
+  /// settings file stands there, else the deployed release's own, beside the binary's `bin/`.
+  pub fn for_command() -> Result<Self, SettingsError> {
+    if Path::new(SETTINGS_FILE).exists() {
+      return Self::load();
+    }
+
+    let release = std::env::current_exe()
+      .ok()
+      .and_then(|binary| binary.canonicalize().ok())
+      .and_then(|binary| binary.parent()?.parent().map(Path::to_path_buf));
+
+    match release {
+      Some(release) => Self::read(&release, None),
+      None => Self::load(),
+    }
+  }
+
   /// The settings files in `dir`, with `environment` over them, or this process's environment where
   /// none is given.
   pub fn read(dir: &Path, environment: Option<HashMap<String, String>>) -> Result<Self, SettingsError> {
