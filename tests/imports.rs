@@ -46,6 +46,22 @@ async fn settled(service: &Service, id: i64) -> Value {
   panic!("import {id} is still fetching");
 }
 
+// Every change told, read again until the import's own change is among them: its row moves on before the
+// task publishes that change, a statement later.
+async fn told_events(service: &Service) -> Vec<String> {
+  for _ in 0..500 {
+    let kinds = service.event_kinds().await;
+
+    if kinds.iter().any(|kind| kind == "import.changed") {
+      return kinds;
+    }
+
+    tokio::time::sleep(Duration::from_millis(10)).await;
+  }
+
+  panic!("the import's change was never told");
+}
+
 #[tokio::test]
 async fn a_page_is_read_its_figures_kept_and_filed_as_an_import_with_its_references() {
   let service = Service::new().await;
@@ -119,7 +135,7 @@ async fn a_page_is_read_its_figures_kept_and_filed_as_an_import_with_its_referen
     ["https://site.example/article", "https://site.example/a", "https://other.example/x"]
   );
   assert_eq!(
-    service.event_kinds().await,
+    told_events(&service).await,
     [
       "import.created",
       "document.created",
