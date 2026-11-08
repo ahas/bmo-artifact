@@ -8,6 +8,7 @@ use std::fs;
 use std::path::Path;
 
 use bmo_artifact::settings::{LOCAL_SETTINGS_FILE, SETTINGS_FILE, Settings};
+use bmo_artifact::wording::{ENGLISH, Wording};
 use support::ROOT;
 
 /// A directory holding the committed settings file, and the local file where one is given.
@@ -30,9 +31,9 @@ fn the_committed_settings_read() {
 
   assert_eq!(settings.server.listen.to_string(), "127.0.0.1:3230");
   assert_eq!(settings.database.url, "postgres://localhost/bmo_artifact");
-  assert_eq!(settings.files.root, Path::new("data"));
+  assert_eq!(settings.files.root, dir.path().join("data"));
   assert_eq!(settings.wording.file, None);
-  assert_eq!(settings.explorer.data_root, Path::new("data"));
+  assert_eq!(settings.explorer.data_root, dir.path().join("data"));
   // No token is committed, so the committed settings let no caller in, and no share address.
   assert_eq!((settings.server.token.as_str(), settings.share.address.as_str()), ("", ""));
 }
@@ -48,7 +49,34 @@ fn the_wording_file_the_token_and_the_share_address_are_set_like_any_key() {
 
   assert_eq!(settings.share.address, "https://documents.invalid/share");
   assert_eq!(settings.server.token, "a-token");
-  assert_eq!(settings.wording.file.as_deref(), Some(Path::new("documents.yaml")));
+  assert_eq!(settings.wording.file.as_deref(), Some(dir.path().join("documents.yaml").as_path()));
+}
+
+#[test]
+fn a_relative_wording_file_in_a_deployed_layout_reads_beside_the_settings() {
+  let release = tempfile::tempdir().expect("a release folder");
+
+  fs::create_dir_all(release.path().join("bin")).expect("the binary folder");
+  fs::create_dir_all(release.path().join("lang")).expect("the wording folder");
+  fs::copy(Path::new(ROOT).join(SETTINGS_FILE), release.path().join(SETTINGS_FILE)).expect("the settings");
+  fs::write(
+    release.path().join(LOCAL_SETTINGS_FILE),
+    "[wording]\nfile = \"lang/documents.en.yaml\"\n",
+  )
+  .expect("the local settings");
+  let line = ENGLISH.replace("could not be kept", "was lost");
+
+  fs::write(release.path().join("lang/documents.en.yaml"), &line).expect("the wording");
+
+  let settings = Settings::read(release.path(), Some(HashMap::new())).expect("the settings read");
+  let file = settings.wording.file.expect("the wording file");
+  let expected = release.path().join("lang/documents.en.yaml");
+
+  assert_eq!(file, expected, "the wording stands on the release's own folder");
+  assert_eq!(
+    Wording::read(Some(&file)).expect("the wording reads").import.missing,
+    "Figure {n} was lost: {caption}"
+  );
 }
 
 #[test]

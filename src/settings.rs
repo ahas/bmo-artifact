@@ -52,7 +52,7 @@ pub struct Console {
   #[serde(default)]
   pub token: String,
   /// The folder the build of `client/` writes the module, its stylesheet and its words into; a relative one
-  /// is read from where the process starts.
+  /// is read from the directory the settings stand in.
   #[serde(default = "Console::default_bundle")]
   pub bundle: PathBuf,
 }
@@ -82,7 +82,8 @@ pub struct Database {
 /// The file root holding each document's folder.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Files {
-  /// The folder holding `searches/<document id>/`; a relative one is read from where the process starts.
+  /// The folder holding `searches/<document id>/`; a relative one is read from the directory the settings
+  /// stand in.
   pub root: PathBuf,
 }
 
@@ -104,8 +105,8 @@ pub struct Share {
 /// The document wording file (`docs/api.md`, "The document wording").
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct WordingFile {
-  /// The file the lines are read from; a relative one is read from where the process starts, and none
-  /// reads the English default in `lang/`.
+  /// The file the lines are read from; a relative one is read from the directory the settings stand in, and
+  /// none reads the English default in `lang/`.
   pub file: Option<PathBuf>,
 }
 
@@ -146,20 +147,41 @@ impl Settings {
   }
 
   /// The settings files in `dir`, with `environment` over them, or this process's environment where
-  /// none is given.
+  /// none is given. Every path a setting names is made to stand on `dir`, so a relative one reads from
+  /// there and not from wherever the process was started.
   pub fn read(dir: &Path, environment: Option<HashMap<String, String>>) -> Result<Self, SettingsError> {
     let environment = Environment::with_prefix(ENVIRONMENT_PREFIX)
       .prefix_separator("_")
       .separator("__")
       .source(environment);
 
-    Ok(
-      Config::builder()
-        .add_source(File::from(dir.join(SETTINGS_FILE)).format(FileFormat::Toml))
-        .add_source(File::from(dir.join(LOCAL_SETTINGS_FILE)).format(FileFormat::Toml).required(false))
-        .add_source(environment)
-        .build()?
-        .try_deserialize()?,
-    )
+    let mut settings: Self = Config::builder()
+      .add_source(File::from(dir.join(SETTINGS_FILE)).format(FileFormat::Toml))
+      .add_source(File::from(dir.join(LOCAL_SETTINGS_FILE)).format(FileFormat::Toml).required(false))
+      .add_source(environment)
+      .build()?
+      .try_deserialize()?;
+
+    settings.anchor(dir);
+
+    Ok(settings)
+  }
+
+  /// Every path the settings name, made to stand on the directory they were read from.
+  fn anchor(&mut self, dir: &Path) {
+    anchor(dir, &mut self.console.bundle);
+    anchor(dir, &mut self.files.root);
+    anchor(dir, &mut self.explorer.data_root);
+
+    if let Some(file) = self.wording.file.as_mut() {
+      anchor(dir, file);
+    }
+  }
+}
+
+/// A path made to stand on `dir` where it is relative.
+fn anchor(dir: &Path, path: &mut PathBuf) {
+  if path.is_relative() {
+    *path = dir.join(&*path);
   }
 }

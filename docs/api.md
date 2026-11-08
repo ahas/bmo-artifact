@@ -410,7 +410,9 @@ whole」).
 - **The nouns' words:** `html-read` is `bmo-artifact html-read <file> [--pictures <dir>] [--stem <name>]
   [--from <line>]`. It calls no route: it reads the file where it stands. `archive doc` is below.
 - **The settings a command stands on** are the ones in the directory it was started in, where `settings.toml`
-  stands there; from any other directory, the deployed release's own, beside the binary's `bin/`.
+  stands there; from any other directory, the deployed release's own, above the binary's `bin/`. A path a
+  setting names that is relative is read from the directory those settings stand in, wherever the process
+  was started.
 - **How a command ends:** 0 on success; a refusal on standard error and 1 otherwise.
 
 ## The archive verb
@@ -525,7 +527,8 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
 
 The settings are read at start in layers, each overriding the one before: the repository's
 `settings.toml`, then `settings.local.toml` beside it, then `BMO_ARTIFACT_<TABLE>__<KEY>` in the
-environment.
+environment. A path a key names that is relative is read from the directory those settings stand in,
+wherever the process was started.
 
 | Table | Key | What it is |
 |---|---|---|
