@@ -56,12 +56,19 @@ A document written for somebody is handed over as a link, never as a file attach
 
 `artifact_attach` keeps a file beside a document: `documentId`, `name`, `mediaType`, `content` in base64
 and an optional `role`. A body draws a kept picture by naming it: `![a caption](name.png)`, so file the
-body first, then attach the pictures it names. `role: "head"` marks a file a reader is shown at the
-document's head, a narration's sound among them: the reader plays it in its own listen band, above a page as
-under a markdown document's title, so a page carries no player of its own. A narration in several languages
-names each sound with its language last, as `narration-ko.ogg` and `narration-en.ogg`; one marked `head`
-brings the others into the band beside it, each labelled with its language. A name the document already
-keeps is refused; one file is at most 64 MiB.
+body first, then attach the pictures it names; from a shell, `bmo archive doc --file <path>`, named once for
+each file, files the body and attaches each file under its own name in one call.
+
+A document's pictures stand in its body, at the place its words speak of them, each drawn by the name it is
+attached under. An attachment the body does not draw is for a file a reader saves or plays, not for a
+picture the reader is meant to look at: the files after the body show a picture only as a small thumbnail.
+
+`role: "head"` marks a file a reader is shown at the document's head, a narration's sound among them: the
+reader plays it in its own listen band, above a page as under a markdown document's title, so a page carries
+no player of its own. A narration in several languages names each sound with its language last, as
+`narration-ko.ogg` and `narration-en.ogg`; one marked `head` brings the others into the band beside it, each
+labelled with its language. A name the document already keeps is refused, so a changed file is attached
+under a new name; one file is at most 64 MiB.
 
 ## Finding and reading
 
