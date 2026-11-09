@@ -367,11 +367,13 @@ sheet and the console bundle reads to draw a document.
 
 A picture in a document opens in the picture viewer, for a markdown document and a page alike.
 
-- **What opens it:** a plain press (the main button, no key held) on a picture the document draws. The
-  viewer stands the picture whole over the screen, to zoom, move and pinch, and steps to the document's
-  other pictures.
-- **The run it walks** is every picture of the document that would open it, in the order they stand; a
-  picture that is not drawn is not in it.
+- **What opens it:** a plain press (the main button, no key held) on a picture the document draws, or on
+  a picture's row among a markdown document's files (「The files after the body」). The viewer stands the
+  picture whole over the screen, to zoom, move and pinch, and steps to the document's other pictures.
+- **The run it walks,** from a picture in the document, is every picture of the document that would open
+  it, in the order they stand; a picture that is not drawn is not in it. From a row among the files it is
+  every picture among those files, in the order they were kept. Either run is cut to the stretch around
+  the pressed picture where the document holds more than one run carries.
 - **What stays with the document:** a picture inside a link, a button, a label or a fold's summary; one
   that answers a press of its own or stands in an element that does; a press the document's own script
   has handled; and a picture marked `data-archive-no-viewer` or standing in an element so marked.
@@ -380,6 +382,25 @@ A picture in a document opens in the picture viewer, for a markdown document and
   for pictures over the web or written into the page as data. The page's file is never touched for this.
 - **One rule for both,** kept in the design's file, which the console bundle and the page's lines both
   read.
+
+## The files after the body
+
+A markdown document's files stand after its body, on the console's screen and on a share page alike, in the
+order they were kept: every file it keeps but a sound heard in the listen band. A picture the body draws by
+its name stands among them too, so it can be saved.
+
+- **Each file is one row:** its kind's icon, its name, its size and what it offers — every row its saving,
+  and a page its opening in a tab of its own. A sound's row is the console's own player, which carries its
+  name, its size and its saving; a film plays under its row where it stands; a text shows its start under
+  its row.
+- **A picture's row leads with the picture,** filling a square at the console's avatar size in place of the
+  kind's icon, read once it comes into view; the kind's icon stands in where it does not load. No picture is
+  drawn large in the list, so a picture the body draws is drawn large once, in the body.
+- **A plain press on the picture or its name opens it whole** in the picture viewer (「Pictures open
+  whole」), which steps through the pictures among the files. The picture and its name are one button, named
+  for opening that picture in the language pack's words, so a key reaches it as any button.
+- **A row holds to the list's width at every width;** a long name is cut at the end of its line, and the
+  list never scrolls sideways.
 
 ## Where a person reads it
 
@@ -401,7 +422,7 @@ A picture in a document opens in the picture viewer, for a markdown document and
   - one document at `/artifact/<id>`: its number in the screen's bar, with the in-progress badge beside it while
     the document is in progress and the button opening its instruction where it carries one; its masthead — its labels but its instruction on a secondary line under its
     title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
-    a table of contents of its kind's depth, its files after it, its references beside it, each with the picture its preview declares; a page fills the screen in
+    a table of contents of its kind's depth, its files after it (「The files after the body」), its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame, under a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
     most two lines; a title longer than that is cut at the end of the second line and shows whole in the
     console's tooltip for a cut line, and one shown whole carries no tooltip;

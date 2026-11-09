@@ -1,8 +1,10 @@
 <template>
-  <!-- The files a document keeps beside it, after its body, in the order they were attached. Each
-       is shown the way it is read — a picture inline, a sound in the console's own player that
-       carries its name, size and download, a film in a player that plays where it stands, a text as
-       the start of it, a page as a page of its own opened in a tab — and every one can be saved. -->
+  <!-- The files a document keeps beside it, after its body, in the order they were attached
+       (docs/artifact.md, "The files after the body"). Each is one row shown the way it is read — a
+       picture as itself at the avatar size, opening whole in the document's picture viewer, a sound in
+       the console's own player that carries its name, size and download, a film in a player that plays
+       where it stands, a text as the start of it, a page as a page of its own opened in a tab — and
+       every one can be saved. -->
   <section :aria-label="$t('artifact.label.attachments')" class="flex flex-col gap-4">
     <h2 class="text-xl font-semibold text-highlighted">{{ $t("artifact.label.attachments") }} <span class="text-base font-normal text-muted tabular-nums">{{ countText(props.attachments.length) }}</span></h2>
 
@@ -16,8 +18,21 @@
           :size="sizeText(attachment.byteCount)"
         />
         <div v-else class="flex min-w-0 items-center gap-2">
-          <UIcon :name="KIND_ICONS[attachment.kind] ?? KIND_ICONS.file" class="size-5 shrink-0 text-muted" />
-          <span class="min-w-0 grow truncate text-sm font-medium text-highlighted" :title="attachment.name">{{ attachment.name }}</span>
+          <button
+            v-if="attachment.kind === 'image'"
+            type="button"
+            class="flex min-w-0 grow cursor-zoom-in items-center gap-2 rounded-md text-start focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            :aria-label="$t('artifact.action.view_picture', { name: attachment.name })"
+            data-attachment-picture
+            @click="openPicture($event, attachment)"
+          >
+            <UAvatar :src="props.address(attachment)" :alt="attachment.name" :icon="KIND_ICONS.image" loading="lazy" class="shrink-0 rounded-md" />
+            <span class="min-w-0 grow truncate text-sm font-medium text-highlighted" :title="attachment.name">{{ attachment.name }}</span>
+          </button>
+          <template v-else>
+            <UIcon :name="KIND_ICONS[attachment.kind] ?? KIND_ICONS.file" class="size-5 shrink-0 text-muted" />
+            <span class="min-w-0 grow truncate text-sm font-medium text-highlighted" :title="attachment.name">{{ attachment.name }}</span>
+          </template>
           <span class="shrink-0 text-sm text-muted tabular-nums">{{ sizeText(attachment.byteCount) }}</span>
           <UTooltip v-if="attachment.kind === 'page'" :text="$t('artifact.action.open_page')">
             <UButton
@@ -46,14 +61,7 @@
           </UTooltip>
         </div>
 
-        <img
-          v-if="attachment.kind === 'image'"
-          :src="props.address(attachment)"
-          :alt="attachment.name"
-          loading="lazy"
-          class="mx-auto max-h-[36rem] max-w-full rounded-lg border border-default bg-white text-neutral-900 object-contain"
-        >
-        <LoadingVideo v-else-if="attachment.kind === 'video'" :src="props.address(attachment)" class="max-w-full" />
+        <LoadingVideo v-if="attachment.kind === 'video'" :src="props.address(attachment)" class="max-w-full" />
         <ArtifactTextPreview v-else-if="attachment.kind === 'text'" :src="props.address(attachment)" />
       </li>
     </ul>
@@ -63,8 +71,10 @@
 <script setup lang="ts">
 import { countText } from "bmo-ui/app/domain/numbers";
 
+import { keptPictures, plainPress } from "../domain/document-pictures";
 import { sizeText } from "../domain/sizes";
 
+import type { PictureRun } from "../../shared/document-pictures";
 import type { ArtifactAttachment } from "../../shared/types";
 
 interface Props {
@@ -74,6 +84,16 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// A picture among the files opens whole in the document's picture viewer, among the other pictures
+// the files hold.
+const emit = defineEmits<{ pictures: [run: PictureRun] }>();
+
+function openPicture(event: MouseEvent, attachment: ArtifactAttachment): void {
+  const run = plainPress(event) ? keptPictures(props.attachments, attachment, (one) => props.address(one), window.location.href) : null;
+
+  if (run !== null) emit("pictures", run);
+}
 
 // The icon each kind of file is marked with.
 const KIND_ICONS: Record<string, string> = {

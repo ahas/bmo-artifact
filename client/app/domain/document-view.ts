@@ -4,7 +4,7 @@ import type { Token } from "marked";
 import type { ArtifactAttachment, ArtifactDocument, ArtifactKind } from "../../shared/types";
 
 // How the document screens read what the service answers: a document's kind in the catalogue, its
-// category, number and progress, its contents out of its headings, the files its body draws and the ones that stand after it, and the
+// category, number and progress, its contents out of its headings, the files its body names and the ones that stand after it, and the
 // sounds heard at its head.
 
 /** The kind a document's word names in the catalogue; null while the catalogue is unread. */
@@ -144,19 +144,6 @@ export function keptNames(href: string): string[] {
   return last === target || last === "" || isAddress(target) ? [target] : [target, last];
 }
 
-/** The names a markdown body draws pictures by, each as `keptNames` reads it. */
-export function drawnNames(markdown: string): Set<string> {
-  const names = new Set<string>();
-
-  walk(new Lexer().lex(markdown), (token) => {
-    if (token.type !== "image") return;
-
-    for (const name of keptNames((token as { href: string }).href)) names.add(name);
-  });
-
-  return names;
-}
-
 /**
  * Where each file a document keeps is served, by the name it is kept under, for a target that names it as
  * `keptNames` reads one; the first of two that share one.
@@ -222,19 +209,14 @@ export function headSounds(attachments: readonly ArtifactAttachment[]): Artifact
 }
 
 /**
- * The files a document keeps, split as a reader meets them: the sounds heard at its head, and the files
- * that stand after the body, every one but a picture the body already draws by its name.
+ * The files a document keeps, split as a reader meets them (`docs/artifact.md`, "The files after the
+ * body"): the sounds heard at its head, and every other file after the body, a picture the body draws
+ * by its name among them so it can be saved.
  */
-export function filesAround(
-  attachments: readonly ArtifactAttachment[],
-  drawn: ReadonlySet<string>
-): { head: ArtifactAttachment[]; after: ArtifactAttachment[] } {
+export function filesAround(attachments: readonly ArtifactAttachment[]): { head: ArtifactAttachment[]; after: ArtifactAttachment[] } {
   const head = headSounds(attachments);
 
-  return {
-    head,
-    after: attachments.filter((one) => !head.includes(one) && !(one.kind === "image" && drawn.has(one.name)))
-  };
+  return { head, after: attachments.filter((one) => !head.includes(one)) };
 }
 
 /** How many lines of an attached text its preview shows. */

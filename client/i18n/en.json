@@ -81,7 +81,8 @@
       "open_page": "Open the page",
       "original": "Original",
       "refresh": "Refresh",
-      "share": "Share"
+      "share": "Share",
+      "view_picture": "View {name}"
     },
     "aria": {
       "category": "Category",

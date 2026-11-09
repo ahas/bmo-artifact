@@ -26,7 +26,7 @@
       <p v-if="props.markdown.trim() === ''" class="text-sm text-muted">{{ $t("artifact.status.empty") }}</p>
       <ArtifactText v-else :markdown="props.markdown" :files="named" :slugs="props.slugs" />
 
-      <ArtifactAttachments v-if="files.after.length > 0" :attachments="files.after" :address="props.address" />
+      <ArtifactAttachments v-if="files.after.length > 0" :attachments="files.after" :address="props.address" @pictures="showPictures" />
     </article>
 
     <ArtifactPictureViewer ref="viewer" :title="props.title" />
@@ -39,9 +39,10 @@ import { useI18n } from "vue-i18n";
 import { DOCUMENT_PALETTE } from "../../shared/document-design";
 import { VIEWER_PICTURES } from "../../shared/document-pictures";
 import { plainPress, pressedPictures } from "../domain/document-pictures";
-import { drawnNames, fileAddresses, filesAround } from "../domain/document-view";
+import { fileAddresses, filesAround } from "../domain/document-view";
 
 import type { BarAction, BarProperty } from "bmo-ui/app/domain/tabs";
+import type { PictureRun } from "../../shared/document-pictures";
 import type { ArtifactAttachment } from "../../shared/types";
 
 // The document itself and nothing of the screen it stands on: what it is called, what kind of
@@ -90,9 +91,9 @@ const labelLine = computed(() =>
 );
 
 // A picture or a link in the body may name one of the document's files by its name, or by a path ending
-// in it, and a picture the body draws that way does not stand again among the attachments.
+// in it; a picture the body draws that way still stands among the files, small, so it can be saved.
 const named = computed(() => fileAddresses(props.attachments, (attachment) => props.address(attachment)));
-const files = computed(() => filesAround(props.attachments, drawnNames(props.markdown)));
+const files = computed(() => filesAround(props.attachments));
 
 // The document's colours, in the scheme the console stands in, and the pointer that says a picture
 // opens whole.
@@ -113,6 +114,11 @@ function onPress(event: MouseEvent): void {
   if (run === null) return;
 
   event.preventDefault();
+  viewer.value?.show(run);
+}
+
+// A picture pressed among the files opens whole among the pictures the files hold.
+function showPictures(run: PictureRun): void {
   viewer.value?.show(run);
 }
 

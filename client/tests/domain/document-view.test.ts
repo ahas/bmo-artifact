@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { categoryFilter, categoryOf, contentsOf, drawnNames, fileAddresses, filesAround, headSounds, hostInitial, hostOf, instructionOf, keptNames, kindOf, labelsBesideInstruction, languageOf, numberText, pendingOf, textPreview } from "../../app/domain/document-view";
+import { categoryFilter, categoryOf, contentsOf, fileAddresses, filesAround, headSounds, hostInitial, hostOf, instructionOf, keptNames, kindOf, labelsBesideInstruction, languageOf, numberText, pendingOf, textPreview } from "../../app/domain/document-view";
 
 import type { ArtifactAttachment } from "../../shared/types";
 
@@ -61,14 +61,12 @@ describe("a document's contents", () => {
 });
 
 describe("a document's files", () => {
-  test("stand where a reader meets them: a head sound first, a picture the body draws by its name nowhere else", () => {
+  test("stand where a reader meets them: a head sound first, every other file after the body, a picture the body draws among them", () => {
     const files = [attachment(1, "voice.mp3", "audio", "head"), attachment(2, "plan.png", "image"), attachment(3, "notes.txt", "text"), attachment(4, "song.mp3", "audio")];
-    const drawn = drawnNames("Before ![the plan](plan%2Epng) after, and [the notes](notes.txt).");
-    const split = filesAround(files, drawn);
+    const split = filesAround(files);
 
-    expect([...drawn]).toEqual(["plan.png"]);
     expect(split.head.map((one) => one.id)).toEqual([1]);
-    expect(split.after.map((one) => one.id)).toEqual([3, 4]);
+    expect(split.after.map((one) => one.id)).toEqual([2, 3, 4]);
   });
 
   test("are found by the names they are kept under", () => {
@@ -81,14 +79,12 @@ describe("a document's files", () => {
   test("are found by a path ending in the names they are kept under, and never by a web address", () => {
     const files = [attachment(5, "kept.avif", "image"), attachment(6, "notes.txt", "text")];
     const address = fileAddresses(files, (one) => `/files/${one.id}`);
-    const drawn = drawnNames("![a figure](/data/searches/9/images/kept.avif) and ![elsewhere](https://example.com/kept.avif)");
 
     expect(address("/data/searches/9/images/kept.avif")).toBe("/files/5");
     expect(address("images/kept.avif")).toBe("/files/5");
     expect(address("https://example.com/kept.avif")).toBeNull();
     expect(address("/data/searches/9/images/")).toBeNull();
     expect(keptNames("https://example.com/kept.avif")).toEqual(["https://example.com/kept.avif"]);
-    expect(filesAround(files, drawn).after.map((one) => one.id)).toEqual([6]);
   });
 });
 
@@ -109,7 +105,7 @@ describe("the listen band", () => {
     expect(labels[0]).not.toBeNull();
     expect(labels[0]).not.toBe("English");
     expect(labels[1]).toBe("English");
-    expect(filesAround(files, new Set()).after.map((one) => one.id)).toEqual([3]);
+    expect(filesAround(files).after.map((one) => one.id)).toEqual([3]);
   });
 
   test("is empty for a document with no sound marked for its head", () => {

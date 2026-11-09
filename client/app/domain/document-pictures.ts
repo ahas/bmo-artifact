@@ -7,9 +7,11 @@ import type { BarProperty } from "bmo-ui/app/domain/tabs";
 import type { Size } from "bmo-ui/app/domain/zoom";
 import type { Translate } from "bmo-ui/shared/wording";
 import type { DocumentPicture, PictureRun } from "../../shared/document-pictures";
+import type { ArtifactAttachment } from "../../shared/types";
 
 // A document's pictures as the viewer walks them (`docs/artifact.md`, "Pictures open whole"): every
-// picture the document draws on the screen that the shared rule lets open, in the order they stand.
+// picture the document draws on the screen that the shared rule lets open, in the order they stand, or,
+// pressed among the files after the body, every picture among those files, in the order they were kept.
 
 // The web address a document's picture was found at, which a picture the console shows from its own
 // copy carries beside it, and null for one the document names by a kept file's name.
@@ -48,11 +50,38 @@ export function pressedPictures(root: ParentNode, target: EventTarget | null): P
     pictures.push(picture);
   }
 
-  if (at < 0) return null;
+  return at < 0 ? null : around(pictures, at);
+}
 
+// A run on the picture at `at`, cut to the stretch around it where there are more pictures than one run
+// carries.
+function around(pictures: readonly DocumentPicture[], at: number): PictureRun {
   const from = Math.max(0, Math.min(at - MOST_PICTURES / 2, pictures.length - MOST_PICTURES));
 
   return { pictures: pictures.slice(from, from + MOST_PICTURES), at: at - from };
+}
+
+// The run the viewer opens on when `pressed` is pressed among a document's files: every picture among
+// `files`, in the order they were kept, each captioned by its name and found at the address the screen
+// serves it from, made whole against `base`. Null where `pressed` is no picture among them.
+export function keptPictures(
+  files: readonly ArtifactAttachment[],
+  pressed: ArtifactAttachment,
+  address: (attachment: ArtifactAttachment) => string,
+  base: string
+): PictureRun | null {
+  const kept = files.filter((file) => file.kind === "image");
+  const at = kept.indexOf(pressed);
+
+  if (at < 0) return null;
+
+  const pictures = kept.map((file) => {
+    const src = new URL(address(file), base).toString();
+
+    return { src, caption: file.name, address: pictureAddress(src) };
+  });
+
+  return around(pictures, at);
 }
 
 // Whether a press is the plain one that opens a picture: the main button with no key held, which the

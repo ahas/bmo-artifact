@@ -81,7 +81,8 @@
       "open_page": "페이지 열기",
       "original": "원본",
       "refresh": "새로고침",
-      "share": "공유"
+      "share": "공유",
+      "view_picture": "{name} 크게 보기"
     },
     "aria": {
       "category": "분류",
