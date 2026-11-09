@@ -417,20 +417,29 @@ whole」).
 
 ## The archive verb
 
-`bmo archive doc --title <words> (--body <file> | --html <file>) [--replace <id>] [--chat <room>] [--by <name>]`
-files a document from a shell and prints its number and the permanent link to hand to a reader, a line each.
+`bmo archive doc --title <words> (--body <file> | --html <file>) [--file <path>]... [--replace <id>] [--chat <room>] [--by <name>]`
+files a document from a shell and prints its number and the permanent link to hand to a reader, a line each,
+then a line for each file it attached, naming the attachment's number and its name.
 
 | Option | What it does |
 |---|---|
 | `--title <words>` | Its title; required |
 | `--body <file>` | Its words, as markdown: a `record` |
 | `--html <file>` | An HTML page as it stands: a `page`; exactly one of `--body` and `--html` is named |
+| `--file <path>` | A file attached to the document filed or rewritten, under its own name, the last part of its path; named again for each file |
 | `--replace <id>` | Rewrites that document under its number, which keeps its link and its attachments, in place of filing a new one |
 | `--chat <room>` | The room it is held under as its `scope`; it is the owner's own where left out |
 | `--by <name>` | Who files it: `BMO_TURN_AGENT` where left out, then `USER` |
 
 - **A new document goes through `POST /publications`,** a rewrite through `PATCH /documents/{documentId}` and
   `POST /shares`, which answers the live link that stands.
+- **Each file is attached through `POST /documents/{documentId}/attachments`** once the document is filed
+  or rewritten, in the order the files are named, its type the one the service reads from its first bytes and
+  its name (docs/artifact.md, 「Attachments」). A body draws a picture so attached by that name.
+- **A file is refused before anything is filed** where it cannot be read, where it weighs over the ceiling of
+  one file, where two files share a name, or, with `--replace`, where the document already keeps a file of
+  that name, which it reads through `GET /documents/{documentId}/attachments`: a kept file is never replaced, so a changed file is attached under a new name, which the body
+  names.
 - **It speaks no narration.** A narration is a sound a client attaches (`POST /documents/{documentId}/attachments`).
 
 ## The client

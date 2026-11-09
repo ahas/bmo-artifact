@@ -21,8 +21,8 @@ pub type Media = &'static str;
 /// The most one file handed over through the API may weigh.
 pub const ATTACHMENT_CEILING: usize = 64 * 1024 * 1024;
 
-// How much of a file is read to tell what it is.
-const SNIFF_BYTES: usize = 64 * 1024;
+/// How much of a file is read to tell what it is.
+pub const SNIFF_BYTES: usize = 64 * 1024;
 
 /// How a picture kept beside a document is written: inside this many pixels, at this AVIF quality and speed.
 pub const KEPT_PICTURE: picture::Archived = picture::Archived {

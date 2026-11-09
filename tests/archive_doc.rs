@@ -1,5 +1,6 @@
 //! `bmo archive doc` as a job's shell runs it (`docs/api.md`, "The archive verb"): a document filed with its link
-//! printed, a page filed as it stands, one rewritten under its number keeping its link, and the words it refuses.
+//! printed, a page filed as it stands, one rewritten under its number keeping its link, the files it attaches, and
+//! the words it refuses.
 
 use crate::support;
 
@@ -108,4 +109,108 @@ async fn a_page_is_filed_as_it_stands_and_what_it_refuses_files_nothing() {
   let gone = run(&address, &["--title", "Gone", "--body", "/no/such/file.md"]).await;
 
   assert_eq!(gone.code, Some(1), "{}", gone.err);
+}
+
+fn picture(root: &tempfile::TempDir, name: &str) -> String {
+  let path = root.path().join(name);
+
+  image::RgbaImage::from_pixel(40, 30, image::Rgba([200, 40, 40, 255]))
+    .save_with_format(&path, image::ImageFormat::Png)
+    .expect("the picture is written");
+
+  path.to_str().expect("a path").to_owned()
+}
+
+async fn kept(service: &Service, id: i64) -> Vec<(String, String)> {
+  let page: Value = service.call(Method::GET, &format!("/documents/{id}/attachments"), None).await.json();
+
+  page["items"]
+    .as_array()
+    .expect("a page of attachments")
+    .iter()
+    .map(|one| {
+      (
+        one["name"].as_str().unwrap_or_default().to_owned(),
+        one["kind"].as_str().unwrap_or_default().to_owned(),
+      )
+    })
+    .collect()
+}
+
+async fn filed(service: &Service) -> usize {
+  let page: Value = service.call(Method::GET, "/documents", None).await.json();
+
+  page["items"].as_array().map_or(0, Vec::len)
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn the_files_it_is_handed_are_attached_under_their_own_names_and_a_kept_name_is_never_replaced() {
+  let service = Service::new().await;
+  let address = service.listening().await;
+  let root = tempfile::tempdir().expect("a folder");
+  let body = file(&root, "report.md", "# Report\n\n![The plan](plan.png)\n");
+  let plan = picture(&root, "plan.png");
+  let notes = file(&root, "notes.md", "Notes.\n");
+  let filed_one =
+    run(&address, &["--title", "A report", "--body", &body, "--file", &plan, "--file", &notes]).await;
+
+  assert!(filed_one.ok, "{}", filed_one.err);
+
+  let id = number(&filed_one);
+  let lines: Vec<&str> = filed_one.out.lines().collect();
+
+  assert_eq!(lines.len(), 4, "{}", filed_one.out);
+  assert!(lines[2].starts_with("attachment ") && lines[2].ends_with(": plan.png"), "{}", lines[2]);
+  assert!(lines[3].ends_with(": notes.md"), "{}", lines[3]);
+  assert_eq!(
+    kept(&service, id).await,
+    [("plan.png".to_owned(), "image".to_owned()), ("notes.md".to_owned(), "text".to_owned())]
+  );
+
+  let id_word = id.to_string();
+  let again = file(&root, "again.md", "# Report\n\nOther words.\n");
+  let kept_name = run(
+    &address,
+    &["--replace", &id_word, "--title", "Renamed", "--body", &again, "--file", &plan],
+  )
+  .await;
+
+  assert_eq!(kept_name.code, Some(1), "{}", kept_name.out);
+  assert!(kept_name.err.contains("already keeps a file named plan.png"), "{}", kept_name.err);
+
+  let standing: Value = service.call(Method::GET, &format!("/documents/{id}"), None).await.json();
+
+  assert_eq!(standing["title"], "A report", "nothing is rewritten for a refusal");
+
+  let second = picture(&root, "plan-2.png");
+  let rewritten = run(&address, &["--replace", &id_word, "--body", &again, "--file", &second]).await;
+
+  assert!(rewritten.ok, "{}", rewritten.err);
+  assert!(
+    rewritten.out.lines().nth(2).is_some_and(|line| line.ends_with(": plan-2.png")),
+    "{}",
+    rewritten.out
+  );
+  assert_eq!(kept(&service, id).await.len(), 3);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_file_that_cannot_be_attached_files_nothing() {
+  let service = Service::new().await;
+  let address = service.listening().await;
+  let root = tempfile::tempdir().expect("a folder");
+  let body = file(&root, "note.md", "# Words\n");
+  let one = file(&root, "one.txt", "One.\n");
+  let other = tempfile::tempdir().expect("another folder");
+  let same_name = file(&other, "one.txt", "Another.\n");
+  let missing =
+    run(&address, &["--title", "Missing", "--body", &body, "--file", "/no/such/picture.png"]).await;
+
+  assert_eq!(missing.code, Some(1), "{}", missing.err);
+
+  let twice =
+    run(&address, &["--title", "Twice", "--body", &body, "--file", &one, "--file", &same_name]).await;
+
+  assert_eq!(twice.code, Some(1), "{}", twice.err);
+  assert_eq!(filed(&service).await, 0, "nothing is filed for a refusal");
 }
