@@ -440,6 +440,11 @@ then a line for each file it attached, naming the attachment's number and its na
   one file, where two files share a name, or, with `--replace`, where the document already keeps a file of
   that name, which it reads through `GET /documents/{documentId}/attachments`: a kept file is never replaced, so a changed file is attached under a new name, which the body
   names.
+- **A picture the body does not draw is refused, and nothing is filed.** A document's pictures stand in its
+  body (docs/artifact.md, 「Attachments」), so every picture handed with a markdown body is one the body draws by
+  its name, as a markdown picture whose target is that name. The refusal names each picture left out and the
+  form that draws it. A page draws what it carries inside itself, so a file handed with `--html` is held to
+  nothing here, and a file that is no picture is attached whether or not the body names it.
 - **It speaks no narration.** A narration is a sound a client attaches (`POST /documents/{documentId}/attachments`).
 
 ## The client

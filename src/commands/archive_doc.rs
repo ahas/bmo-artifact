@@ -10,6 +10,7 @@ use base64::engine::general_purpose::STANDARD;
 use clap::Args;
 
 use crate::client::ArtifactClient;
+use crate::documents::cover::{drawn_names, kept_names as names_drawn_by};
 use crate::documents::keeper::{ATTACHMENT_CEILING, SNIFF_BYTES, attachment_kind};
 use crate::kinds::{Kind, RecordKind};
 use crate::plumbing::verb::{Answer, Shell, Verb, VerbError};
@@ -35,7 +36,8 @@ pub struct ArchiveDocArgs {
   /// An HTML file: the page as it stands.
   #[arg(long)]
   html: Option<PathBuf>,
-  /// A file attached to it under its own name; named again for each file.
+  /// A file attached to it under its own name; named again for each file. A picture is one the markdown body
+  /// draws by that name, as ![caption](name), at the place its words speak of it.
   #[arg(long = "file")]
   files: Vec<PathBuf>,
   /// The document rewritten under its number, in place of a new one.
@@ -119,6 +121,33 @@ fn handed(files: &[PathBuf]) -> Result<Vec<Handed>, VerbError> {
   Ok(handed)
 }
 
+// What the service reads a handed file as, from its first bytes and its name.
+fn kind_of(file: &Handed) -> (&'static str, String) {
+  attachment_kind(&file.bytes[..file.bytes.len().min(SNIFF_BYTES)], &file.name)
+}
+
+// A document's pictures stand in its body: every picture handed with a markdown body is one the body draws by its
+// name, and one it leaves out is refused before anything is filed, with the form that draws it.
+fn drawn(body: &str, files: &[Handed]) -> Result<(), VerbError> {
+  let targets = drawn_names(body);
+  let draws = |name: &str| targets.iter().any(|target| names_drawn_by(target).contains(&name));
+  let left_out: Vec<&str> = files
+    .iter()
+    .filter(|file| kind_of(file).0 == "image" && !draws(&file.name))
+    .map(|file| file.name.as_str())
+    .collect();
+
+  if left_out.is_empty() {
+    return Ok(());
+  }
+
+  Err(refused(format!(
+    "the body draws no picture named {}; a document's pictures stand in its body, each drawn where its words \
+     speak of it as ![caption](name), so nothing was filed",
+    left_out.join(", ")
+  )))
+}
+
 // The names of the files a document keeps, read page by page.
 async fn kept_names(client: &ArtifactClient, document_id: i64) -> Result<HashSet<String>, VerbError> {
   let mut names = HashSet::new();
@@ -155,7 +184,7 @@ async fn attach(
   let mut lines = Vec::with_capacity(files.len());
 
   for file in files {
-    let (_, media_type) = attachment_kind(&file.bytes[..file.bytes.len().min(SNIFF_BYTES)], &file.name);
+    let (_, media_type) = kind_of(&file);
     let input = AttachmentInput {
       content: STANDARD.encode(&file.bytes),
       name: file.name,
@@ -182,6 +211,10 @@ pub async fn archive_doc(client: &ArtifactClient, args: &ArchiveDocArgs) -> Resu
   };
   let title = args.title.as_deref().map(str::trim).filter(|title| !title.is_empty());
   let files = handed(&args.files)?;
+
+  if let Some(body) = &body {
+    drawn(body, &files)?;
+  }
 
   if let Some(id) = args.replace {
     // A rewrite names every label it keeps, so the labels it stands under are carried across.

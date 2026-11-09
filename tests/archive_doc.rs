@@ -168,7 +168,7 @@ async fn the_files_it_is_handed_are_attached_under_their_own_names_and_a_kept_na
   );
 
   let id_word = id.to_string();
-  let again = file(&root, "again.md", "# Report\n\nOther words.\n");
+  let again = file(&root, "again.md", "# Report\n\n![The plan](plan.png)\n\nOther words.\n");
   let kept_name = run(
     &address,
     &["--replace", &id_word, "--title", "Renamed", "--body", &again, "--file", &plan],
@@ -183,7 +183,8 @@ async fn the_files_it_is_handed_are_attached_under_their_own_names_and_a_kept_na
   assert_eq!(standing["title"], "A report", "nothing is rewritten for a refusal");
 
   let second = picture(&root, "plan-2.png");
-  let rewritten = run(&address, &["--replace", &id_word, "--body", &again, "--file", &second]).await;
+  let redrawn = file(&root, "redrawn.md", "# Report\n\n![The plan, again](plan-2.png)\n");
+  let rewritten = run(&address, &["--replace", &id_word, "--body", &redrawn, "--file", &second]).await;
 
   assert!(rewritten.ok, "{}", rewritten.err);
   assert!(
@@ -192,6 +193,33 @@ async fn the_files_it_is_handed_are_attached_under_their_own_names_and_a_kept_na
     rewritten.out
   );
   assert_eq!(kept(&service, id).await.len(), 3);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_picture_the_body_does_not_draw_is_refused_and_nothing_is_filed() {
+  let service = Service::new().await;
+  let address = service.listening().await;
+  let root = tempfile::tempdir().expect("a folder");
+  let body = file(&root, "report.md", "# Report\n\nThe plan is attached: [plan.png](plan.png).\n");
+  let plan = picture(&root, "plan.png");
+  let notes = file(&root, "notes.md", "Notes.\n");
+  let undrawn =
+    run(&address, &["--title", "A report", "--body", &body, "--file", &plan, "--file", &notes]).await;
+
+  assert_eq!(undrawn.code, Some(1), "{}", undrawn.out);
+  assert!(undrawn.err.contains("draws no picture named plan.png"), "{}", undrawn.err);
+  assert!(undrawn.err.contains("![caption](name)"), "{}", undrawn.err);
+  assert_eq!(filed(&service).await, 0, "nothing is filed for a refusal");
+
+  // A file that is no picture is attached whether or not the body names it, and a page is held to nothing here.
+  let plain = run(&address, &["--title", "A report", "--body", &body, "--file", &notes]).await;
+
+  assert!(plain.ok, "{}", plain.err);
+
+  let page = file(&root, "page.html", "<!doctype html><title>A page</title><p>Words.</p>");
+  let hosted = run(&address, &["--title", "A page", "--html", &page, "--file", &plan]).await;
+
+  assert!(hosted.ok, "{}", hosted.err);
 }
 
 #[tokio::test(flavor = "multi_thread")]

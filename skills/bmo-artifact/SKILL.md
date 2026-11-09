@@ -62,6 +62,7 @@ each file, files the body and attaches each file under its own name in one call.
 A document's pictures stand in its body, at the place its words speak of them, each drawn by the name it is
 attached under. An attachment the body does not draw is for a file a reader saves or plays, not for a
 picture the reader is meant to look at: the files after the body show a picture only as a small thumbnail.
+`bmo archive doc` refuses a picture its markdown body does not draw.
 
 `role: "head"` marks a file a reader is shown at the document's head, a narration's sound among them: the
 reader plays it in its own listen band, above a page as under a markdown document's title, so a page carries
