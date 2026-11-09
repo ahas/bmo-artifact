@@ -37,6 +37,26 @@ pub fn kept_names(target: &str) -> Vec<&str> {
   }
 }
 
+/// The pictures of `names` a markdown body draws by no picture of that name, in the order given: a document's
+/// pictures stand in its body (`docs/artifact.md`, "Attachments"), so these are the ones left out of it.
+pub fn left_out<'a>(body: &str, names: impl IntoIterator<Item = &'a str>) -> Vec<&'a str> {
+  let targets = drawn_names(body);
+
+  names
+    .into_iter()
+    .filter(|name| !targets.iter().any(|target| kept_names(target).contains(name)))
+    .collect()
+}
+
+/// The sentence refusing pictures a body leaves out, which names them and the form that draws one.
+pub fn left_out_refusal(names: &[&str]) -> String {
+  format!(
+    "the body draws no picture named {}; a document's pictures stand in its body, each drawn where its words \
+     speak of it as ![caption](name)",
+    names.join(", ")
+  )
+}
+
 /// The kept file a document's cover is drawn from: the first picture its body draws, else the first it
 /// keeps; none where it keeps no picture.
 pub async fn cover_file<C: ConnectionTrait>(

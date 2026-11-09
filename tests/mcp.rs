@@ -173,6 +173,63 @@ async fn a_harness_files_a_document_finds_it_and_shares_it_through_the_tools() {
   );
 }
 
+// A small picture's bytes, in base64 as the attach tool takes them.
+fn picture() -> String {
+  let mut bytes = std::io::Cursor::new(Vec::new());
+
+  image::RgbaImage::from_pixel(40, 30, image::Rgba([200, 40, 40, 255]))
+    .write_to(&mut bytes, image::ImageFormat::Png)
+    .expect("the picture is written");
+
+  base64::Engine::encode(&base64::engine::general_purpose::STANDARD, bytes.into_inner())
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_picture_the_body_does_not_draw_is_refused_by_the_attach_tool_and_one_it_draws_is_attached() {
+  let service = Service::new().await;
+  let address = service.listening().await;
+  let answers = tokio::task::spawn_blocking(move || {
+    let (mut server, _) = Server::started(&address);
+    let mut call = |id: i64, name: &str, arguments: Value| {
+      server.send(json!({
+        "jsonrpc": "2.0", "id": id, "method": "tools/call", "params": { "name": name, "arguments": arguments },
+      }));
+      server.answer(id)["result"].clone()
+    };
+    let filed = call(
+      2,
+      "artifact_file",
+      json!({ "body": { "kind": "record", "title": "A report", "body": "The plan:\n\n![The plan](plan.png)\n", "actorName": "tester", "labels": {} } }),
+    );
+    let id = filed["structuredContent"]["id"].clone();
+    let attach = |name: &str, media: &str, content: String| json!({ "documentId": id, "name": name, "mediaType": media, "content": content });
+    let undrawn = call(3, "artifact_attach", attach("other.png", "image/png", picture()));
+    let drawn = call(4, "artifact_attach", attach("plan.png", "image/png", picture()));
+    let notes = call(5, "artifact_attach", attach("notes.txt", "text/plain", "Tm90ZXMuCg==".to_owned()));
+
+    (undrawn, drawn, notes)
+  })
+  .await
+  .expect("the harness ran");
+  let (undrawn, drawn, notes) = answers;
+
+  assert_eq!(undrawn["isError"], true, "{undrawn}");
+  assert!(undrawn.to_string().contains("draws no picture named other.png"), "{undrawn}");
+  assert_eq!(drawn["structuredContent"]["name"], "plan.png", "{drawn}");
+  assert_eq!(
+    notes["structuredContent"]["name"], "notes.txt",
+    "a file that is no picture is attached: {notes}"
+  );
+
+  let kept: Value = service.call(reqwest::Method::GET, "/documents/1/attachments", None).await.json();
+
+  assert_eq!(
+    kept["items"].as_array().map(Vec::len),
+    Some(2),
+    "the refused picture was not attached: {kept}"
+  );
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn a_harness_publishes_a_document_from_a_file_and_answers_its_link() {
   let service = Service::new().await;

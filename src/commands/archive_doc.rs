@@ -10,7 +10,7 @@ use base64::engine::general_purpose::STANDARD;
 use clap::Args;
 
 use crate::client::ArtifactClient;
-use crate::documents::cover::{drawn_names, kept_names as names_drawn_by};
+use crate::documents::cover::{left_out, left_out_refusal};
 use crate::documents::keeper::{ATTACHMENT_CEILING, SNIFF_BYTES, attachment_kind};
 use crate::kinds::{Kind, RecordKind};
 use crate::plumbing::verb::{Answer, Shell, Verb, VerbError};
@@ -129,23 +129,14 @@ fn kind_of(file: &Handed) -> (&'static str, String) {
 // A document's pictures stand in its body: every picture handed with a markdown body is one the body draws by its
 // name, and one it leaves out is refused before anything is filed, with the form that draws it.
 fn drawn(body: &str, files: &[Handed]) -> Result<(), VerbError> {
-  let targets = drawn_names(body);
-  let draws = |name: &str| targets.iter().any(|target| names_drawn_by(target).contains(&name));
-  let left_out: Vec<&str> = files
-    .iter()
-    .filter(|file| kind_of(file).0 == "image" && !draws(&file.name))
-    .map(|file| file.name.as_str())
-    .collect();
+  let pictures = files.iter().filter(|file| kind_of(file).0 == "image").map(|file| file.name.as_str());
+  let left = left_out(body, pictures);
 
-  if left_out.is_empty() {
+  if left.is_empty() {
     return Ok(());
   }
 
-  Err(refused(format!(
-    "the body draws no picture named {}; a document's pictures stand in its body, each drawn where its words \
-     speak of it as ![caption](name), so nothing was filed",
-    left_out.join(", ")
-  )))
+  Err(refused(format!("{}, so nothing was filed", left_out_refusal(&left))))
 }
 
 // The names of the files a document keeps, read page by page.

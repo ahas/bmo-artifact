@@ -7,7 +7,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::tool::{ArtifactTool, ToolFailure};
-use crate::kinds::Kind;
+use crate::client::ArtifactClient;
+use crate::documents::cover::{left_out, left_out_refusal};
+use crate::documents::keeper::{SNIFF_BYTES, attachment_kind};
+use crate::kinds::{Kind, kind};
 use crate::plumbing::http::BODY_LIMIT;
 use crate::wire::{
   Attachment, AttachmentInput, ContentQuery, Document, DocumentChange, DocumentInput, DocumentPage,
@@ -247,12 +250,52 @@ fn content() -> ArtifactTool {
 
 crate::tool!(content);
 
+// A picture attached to a markdown document is one its body draws (`docs/api.md`, "The harness plugin"): the
+// body as filed is read first, and a picture it draws by no picture of that name is refused before anything is
+// attached. A page's files and a file that is no picture are held to nothing here, and content the route would
+// refuse is left to the route.
+async fn drawn_by_its_body(client: &ArtifactClient, input: &AttachInput) -> Result<(), ToolFailure> {
+  let name = input.attachment.name.as_str();
+  let Ok(bytes) = STANDARD.decode(input.attachment.content.trim()) else {
+    return Ok(());
+  };
+
+  if attachment_kind(&bytes[..bytes.len().min(SNIFF_BYTES)], name).0 != "image" {
+    return Ok(());
+  }
+
+  let document = client.document(input.document_id).await?;
+
+  if kind(Some(&document.kind)).hosted() {
+    return Ok(());
+  }
+
+  let asked = ContentQuery {
+    scheme: None,
+    language: None,
+    download: Some(true),
+  };
+  let body = client.content(input.document_id, &asked).await?;
+  let left = left_out(&String::from_utf8_lossy(&body.bytes), [name]);
+
+  if left.is_empty() {
+    return Ok(());
+  }
+
+  Err(ToolFailure::Arguments(format!(
+    "{}, so nothing was attached; rewrite the body to draw it, then attach it",
+    left_out_refusal(&left)
+  )))
+}
+
 fn attach() -> ArtifactTool {
   ArtifactTool::new(
     "artifact_attach",
     "Attach a file to a document, a sound to be heard at its head among them.",
     "POST /documents/{documentId}/attachments",
     |client, input: AttachInput| async move {
+      drawn_by_its_body(&client, &input).await?;
+
       Ok::<Attachment, ToolFailure>(client.attach(input.document_id, &input.attachment).await?)
     },
   )

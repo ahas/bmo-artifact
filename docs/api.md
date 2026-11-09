@@ -465,6 +465,12 @@ Each tool is one call of the client, answered as structured content; a refusal i
 `artifact_publish`, which hands it back the document's number and the link to hand to a reader; finds earlier
 documents with `artifact_search`; and opens a link on a document already filed with `artifact_share`.
 
+**`artifact_attach` refuses a picture the document's body does not draw,** as the archive verb does (「The
+archive verb」): before it attaches a picture to a markdown document it reads the body as filed, and a picture
+the body draws by no markdown picture of that name is refused `bad-request` with the form that draws it, and
+nothing is attached. So the body is filed, or rewritten, naming its pictures first, and the pictures attached
+after. A page's files and every file that is no picture are attached as handed.
+
 | Tool | Calls | Input | Output |
 |---|---|---|---|
 | `artifact_documents` | `GET /documents` | the route's query | a page of documents |
