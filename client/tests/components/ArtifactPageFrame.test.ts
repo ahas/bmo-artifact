@@ -94,8 +94,10 @@ describe("a document's in-progress badge", () => {
     expect(badge).toContain('<HintTip v-if="lacks !== null && props.compact" class="flex" :text="said">');
     expect(badge).toContain(':aria-label="said" data-pending />');
     expect(templateOf(screen).match(/<ArtifactPendingBadge [^>]*:compact="phone" \/>/g)).toHaveLength(2);
-    // A finger reaches every tooltip of the bar through the shared one: by a tap on the badge, by resting on a button.
+    // A finger reaches every tooltip of the bar through the shared one: by a tap on the badge, by resting on a button
+    // — the way back in the screen's own bar, before the console bar's name and among its actions where that bar
+    // offers no place before it, and the instruction in each bar.
     expect(templateOf(screen)).not.toContain("<UTooltip");
-    expect(templateOf(screen).match(/<HintTip [^>]* press[ >]/g)).toHaveLength(4);
+    expect(templateOf(screen).match(/<HintTip [^>]* press[ >]/g)).toHaveLength(5);
   });
 });

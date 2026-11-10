@@ -33,9 +33,15 @@
     </template>
 
     <template #body>
-      <!-- The way back to the list, the document's number and its instruction, beside the console bar's name. -->
-      <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
+      <!-- The way back to the list before the console bar's name; the document's number and its instruction after it,
+           the way back first among them where the bar names no place before its name. -->
+      <Teleport v-if="barOffer?.screenLead" defer :to="barOffer.screenLead">
         <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
+          <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
+        </HintTip>
+      </Teleport>
+      <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
+        <HintTip v-if="!barOffer.screenLead" class="flex" :text="$t('artifact.action.back_to_list')" press>
           <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
         </HintTip>
         <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
@@ -140,8 +146,8 @@ import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactRefere
 
 const { t } = useI18n();
 // The console's title bar, where a console offers it under the key bmo-ui's bundle contract names: the place in it
-// the screen lays what acts on it as a whole.
-const barOffer = inject<{ screenActions: string } | null>("bmo-console-title-bar", null);
+// the screen lays what acts on it as a whole, after its name, and the place before its name for the way back.
+const barOffer = inject<{ screenActions: string; screenLead?: string } | null>("bmo-console-title-bar", null);
 const SIDES: SplitterItem[] = [
   { slot: "body", minSize: 40, defaultSize: 72 },
   { slot: "side", minSize: 16, defaultSize: 28 }

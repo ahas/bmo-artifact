@@ -147,7 +147,9 @@ The plumbing is what every command and every route stands on, and it knows none 
 - **Under the console's title bar.** The list's and one document's routes ask for the console's bar in their meta,
   so a console that offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws
   it over them under the manifest's title and icon, and they draw no bar of their own; a document's screen lays the
-  way back to the list and the document's number beside the bar's name, in the place the offer names. Found without
+  way back to the list before the bar's name, in the place the offer names for it, and the document's number after
+  the name, in the place the offer names for what acts on the screen — the way back first among those where the
+  offer names no place before the name. Found without
   that offer each draws its own bar, a document's holding the same two. The shared document's screen stands under
   no bar either way.
 - **Names.** Every component is named with the prefix `Artifact`, every word is a key under `artifact.`
