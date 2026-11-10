@@ -87,7 +87,7 @@ impl Drop for Server {
 
 #[test]
 fn it_lists_exactly_its_eleven_tools_at_the_repository_version() {
-  let (mut server, initialized) = Server::started("http://127.0.0.1:9");
+  let (mut server, initialized) = Server::started("http://[::1]:9");
 
   assert_eq!(initialized["result"]["serverInfo"]["name"], "bmo-artifact");
   assert_eq!(initialized["result"]["serverInfo"]["version"], bmo_artifact::VERSION);
@@ -275,7 +275,7 @@ async fn a_harness_publishes_a_document_from_a_file_and_answers_its_link() {
 
 #[test]
 fn a_tool_whose_service_does_not_answer_is_a_tool_error_and_bad_arguments_are_a_bad_request() {
-  let (mut server, _) = Server::started("http://127.0.0.1:9");
+  let (mut server, _) = Server::started("http://[::1]:9");
 
   server.send(json!({
     "jsonrpc": "2.0", "id": 2, "method": "tools/call",
