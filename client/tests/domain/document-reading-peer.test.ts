@@ -35,10 +35,11 @@ function standIn(port: number, hold: number): StandIn {
   started.push(process);
 
   void (async () => {
+    const reader = process.stdout.pipeThrough(new TextDecoderStream()).getReader();
     let rest = "";
 
-    for await (const chunk of process.stdout.pipeThrough(new TextDecoderStream())) {
-      const parts = (rest + chunk).split("\n");
+    for (let read = await reader.read(); !read.done; read = await reader.read()) {
+      const parts = (rest + read.value).split("\n");
 
       rest = parts.pop()!;
 

@@ -21,15 +21,25 @@
           <ActionGroup class="ms-auto" :actions="actions" :properties="props.properties" :label="$t('artifact.aria.document_menu')" />
         </div>
 
-        <p v-if="readingState === 'asking'" role="status" class="flex items-center gap-2 text-sm text-muted" data-reading-state="asking">
+        <!-- What did not come stays said, with the button that asks for it again spinning while it is asked. -->
+        <div v-if="missed !== null" role="status" class="flex flex-wrap items-center gap-2" :data-reading-state="readingState">
+          <p v-if="missed === 'missed'" class="text-sm text-error">{{ $t("artifact.error.translate_failed") }}</p>
+          <p v-else class="text-sm text-muted">{{ $t("artifact.status.partly_original") }}</p>
+          <UButton
+            class="ms-auto"
+            size="sm"
+            color="neutral"
+            variant="subtle"
+            icon="i-material-symbols-refresh"
+            :label="$t('artifact.action.ask_again')"
+            :loading="readingState === 'asking'"
+            @click="askAgain"
+          />
+        </div>
+        <p v-else-if="readingState === 'asking'" role="status" class="flex items-center gap-2 text-sm text-muted" data-reading-state="asking">
           <UIcon name="i-material-symbols-progress-activity" class="size-4 shrink-0 animate-spin" />
           {{ $t("artifact.status.translating") }}
         </p>
-        <div v-else-if="readingState === 'partial' || readingState === 'missed'" role="status" class="flex flex-wrap items-center gap-2" :data-reading-state="readingState">
-          <p v-if="readingState === 'missed'" class="text-sm text-error">{{ $t("artifact.error.translate_failed") }}</p>
-          <p v-else class="text-sm text-muted">{{ $t("artifact.status.partly_original") }}</p>
-          <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" icon="i-material-symbols-refresh" :label="$t('artifact.action.ask_again')" @click="props.reading?.again()" />
-        </div>
       </header>
 
       <!-- A sound marked for the head is heard before the text is read, so it stands under the
@@ -122,6 +132,18 @@ const tab = computed<ReadingTab>({
 });
 
 const readingState = computed(() => props.reading?.state.value ?? "none");
+
+// What did not come the last time the tab was asked for, kept while it is asked for again; none once all came.
+const missed = ref<"partial" | "missed" | null>(null);
+
+watch(readingState, (state) => {
+  if (state === "partial" || state === "missed") missed.value = state;
+  else if (state !== "asking") missed.value = null;
+});
+
+function askAgain(): void {
+  props.reading?.again();
+}
 
 const labelLine = computed(() =>
   Object.entries(props.labels ?? {})
