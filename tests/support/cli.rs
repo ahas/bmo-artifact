@@ -19,7 +19,11 @@ pub struct Ran {
 pub fn cli(env: &[(&str, String)], args: &[&str], stdin: Option<&str>) -> Ran {
   let mut command = Command::new(env!("CARGO_BIN_EXE_bmo-artifact"));
 
-  for (name, _) in std::env::vars().filter(|(name, _)| name.starts_with("BMO_ARTIFACT_")) {
+  // The service's settings, and the agent a harness's turn runs as, which the archive verb files under where
+  // no filer is named.
+  for (name, _) in
+    std::env::vars().filter(|(name, _)| name.starts_with("BMO_ARTIFACT_") || name == "BMO_TURN_AGENT")
+  {
     command.env_remove(name);
   }
 

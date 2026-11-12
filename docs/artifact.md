@@ -459,6 +459,30 @@ its name stands among them too, so it can be saved.
     markdown in a sheet: from the side on a wide screen, from the bottom edge on a phone.
   - A document without the label offers no such action, whatever its kind. The list shows no instruction,
     and a phrase still finds a document by it, as by any label.
+- **A document written in another language than the reader's** reads in two tabs at the head of its
+  masthead's action row: its own language and the reader's, each named in that language's own words, its own
+  first and open as the document opens. The reader's language is the console's. A markdown document on the
+  document's screen is read so; a page in its frame and a share page stand as filed, and so does every document
+  where the console names no translator.
+  - **The language a body is written in** is read from its words, code left out: each locale of the bundle's
+    pack names the script its words are written in (`artifact.reading.script`), and the body is in the locale
+    whose script writes the most of its words. A body none of whose words is in such a script, or most of whose
+    words are in the reader's, has no tabs.
+  - **The reader's tab is filled the first time it is opened,** through the translator the console names, the
+    gate's translating route (docs/api.md, 「What this service calls」). The title is asked, and the body as its
+    sections: a heading with what stands under it to the next heading, the text before the first heading one
+    of its own, each a piece of markdown that comes back as markdown and is drawn as the body is. A section
+    whose words are mostly in the reader's language, or that holds no words, is not asked and stands as filed.
+  - **A document is asked for once.** The gate keeps each translation it makes, and the bundle keeps each whole
+    reading for the life of the tab, so opening the tab again, or the document again, asks the translator for
+    nothing it already read.
+  - **While the tab is asked for,** it says it is being translated, and each section stands in the original
+    until its reading comes, taking its place the moment it does.
+  - **What did not come says so.** A section the translator could not render whole, stayed too busy for or
+    refused stands in the original, and the tab says that some parts stand in the original, with a button
+    asking again for those parts.
+  - **The contents beside the text follow the tab open.** The labels line, the listen band and its sounds, the
+    files after the body and the references stand as filed in both tabs: a narration is heard as it was filed.
 - **A share page reads as its document before anything runs:** its head is the preview a chat app or a
   browser draws the link's card from, the same tags for every kind, each value written as an attribute's
   text and escaped as the head is rendered, so no title or description closes its tag:
@@ -487,5 +511,6 @@ its name stands among them too, so it can be saved.
 
 - **Research and narration.** A research run and a spoken narration are a client's own work; each files
   what it makes here through the MCP server.
-- **Talk and translations** of a document belong to whoever keeps the talk and the translations.
+- **Talk and translations** of a document belong to whoever keeps the talk and the translations. The service
+  keeps no translation: a reader's tab is read through the console from the gate, which keeps them.
 - **Visibility per caller.** Every caller holding the token reaches every document.

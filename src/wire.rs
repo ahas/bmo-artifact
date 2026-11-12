@@ -69,6 +69,8 @@ pub struct ConsoleManifest {
   pub share_reads: Vec<String>,
   /// The read a console asks for a share page's head, a path pattern carrying `{token}`.
   pub share_head: String,
+  /// The other services the screens call through the console, each by the name the console relays it under.
+  pub calls: Vec<String>,
 }
 
 /// One event: its number, its kind, when it was kept and the member it is about.

@@ -139,7 +139,7 @@ fn the_module_path_follows_its_bytes() {
   let other = ConsoleBundle::read(
     folder_with(&[("bundle.js", b"export default { routes: [1] };\n"), ("words.json", WORDS)]).path(),
   );
-  let path = |bundle: &ConsoleBundle| bundle.manifest().expect("a manifest").bundle;
+  let path = |bundle: &ConsoleBundle| bundle.manifest(&[]).expect("a manifest").bundle;
 
   assert_eq!(path(&one), path(&same));
   assert_ne!(path(&one), path(&other));
@@ -148,13 +148,26 @@ fn the_module_path_follows_its_bytes() {
     "{}",
     path(&one)
   );
-  assert_eq!(one.manifest().expect("a manifest").stylesheet, None);
+  assert_eq!(one.manifest(&[]).expect("a manifest").stylesheet, None);
+}
+
+// The services the screens call through the console are the deployment's to name (docs/api.md, "The console"),
+// and the contract's own reading takes them under `calls`.
+#[test]
+fn the_manifest_names_the_calls_the_settings_name_and_none_of_its_own() {
+  let bundle = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
+  let named = bundle.manifest(&["gate".to_owned()]).expect("a manifest");
+  let read =
+    read_by_contract(&serde_json::to_value(&named).expect("the manifest as JSON")).expect("the contract");
+
+  assert_eq!(read["calls"], json!(["gate"]));
+  assert_eq!(bundle.manifest(&[]).expect("a manifest").calls, Vec::<String>::new());
 }
 
 #[test]
 fn a_folder_with_no_module_or_no_words_holds_no_bundle() {
-  assert_eq!(ConsoleBundle::read(folder_with(&[("words.json", WORDS)]).path()).manifest(), None);
-  assert_eq!(ConsoleBundle::read(folder_with(&[("bundle.js", MODULE)]).path()).manifest(), None);
+  assert_eq!(ConsoleBundle::read(folder_with(&[("words.json", WORDS)]).path()).manifest(&[]), None);
+  assert_eq!(ConsoleBundle::read(folder_with(&[("bundle.js", MODULE)]).path()).manifest(&[]), None);
 }
 
 #[tokio::test]

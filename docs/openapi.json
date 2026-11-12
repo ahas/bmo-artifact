@@ -118,6 +118,13 @@
             "description": "The path the module is answered at.",
             "type": "string"
           },
+          "calls": {
+            "description": "The other services the screens call through the console, each by the name the console relays it under.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "events": {
             "description": "Whether the screens read the event stream.",
             "type": "boolean"
@@ -206,7 +213,8 @@
           "websocket",
           "pushKinds",
           "shareReads",
-          "shareHead"
+          "shareHead",
+          "calls"
         ],
         "type": "object"
       },

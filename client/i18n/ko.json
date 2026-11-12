@@ -35,7 +35,8 @@
       "span_30d": "30일",
       "span_6h": "6시간",
       "span_7d": "7일",
-      "span_forever": "무기한"
+      "span_forever": "무기한",
+      "reading": "언어"
     },
     "kind": {
       "import": "원문",
@@ -82,7 +83,8 @@
       "original": "원본",
       "refresh": "새로고침",
       "share": "공유",
-      "view_picture": "{name} 크게 보기"
+      "view_picture": "{name} 크게 보기",
+      "ask_again": "다시 요청"
     },
     "aria": {
       "category": "분류",
@@ -102,7 +104,9 @@
       "no_documents": "문서 없음",
       "no_match": "‘{phrase}’ 검색 결과 없음",
       "no_references": "참조 페이지 없음",
-      "refreshing": "목록 갱신 중…"
+      "refreshing": "목록 갱신 중…",
+      "translating": "번역 중…",
+      "partly_original": "일부는 원문으로 표시됩니다."
     },
     "error": {
       "attachment_read_failed": "첨부를 읽지 못했습니다.",
@@ -110,7 +114,8 @@
       "link_ended": "이 공유 링크는 끝났습니다.",
       "list_failed": "목록을 읽지 못했습니다.",
       "open_failed": "문서를 열지 못했습니다.",
-      "read_failed": "문서를 읽지 못했습니다."
+      "read_failed": "문서를 읽지 못했습니다.",
+      "translate_failed": "문서를 번역하지 못했습니다."
     },
     "player": {
       "common": {
@@ -137,6 +142,9 @@
       "described": "{kind} · {description}",
       "locale": "ko_KR",
       "site_name": "BMO"
+    },
+    "reading": {
+      "script": "Hangul"
     }
   }
 }

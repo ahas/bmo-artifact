@@ -179,8 +179,8 @@ function spokenIn(name: string): { rest: string; language: string } | null {
   return languageName(language) === null ? null : { rest: `${found[1]}${found[3]}`, language };
 }
 
-// A language's name in its own words, null for a code no language is known by.
-function languageName(language: string): string | null {
+/** A language's name in its own words, null for a code no language is known by. */
+export function languageName(language: string): string | null {
   try {
     return new Intl.DisplayNames([language], { type: "language", fallback: "none" }).of(language) ?? null;
   } catch {

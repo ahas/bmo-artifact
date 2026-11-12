@@ -157,7 +157,8 @@ The plumbing is what every command and every route stands on, and it knows none 
   stands under `/artifact`: the list, one document at `/artifact/<id>`, and one shared document at
   `/artifact/share/<token>`.
 - **Calls.** A screen calls this service's routes at the address bmo-ui's `relay` module answers for the
-  service `artifact`, and nothing else. That address stands under the console app's base path, so a
+  service `artifact`, and the console's translator through bmo-ui's `translation` module (docs/api.md, 「What
+  this service calls」), and nothing else. That address stands under the console app's base path, so a
   picture, a file or a frame the browser loads by its address reaches the relay as a call does. The types
   it reads are generated from `docs/openapi.json` into `shared/openapi.ts` by the `api` script.
 - **A document's text is drawn by the bundle.** The service answers a markdown document's file as filed;

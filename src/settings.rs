@@ -55,6 +55,9 @@ pub struct Console {
   /// is read from the directory the settings stand in.
   #[serde(default = "Console::default_bundle")]
   pub bundle: PathBuf,
+  /// The other services the screens call through the console, each by the name the console relays it under.
+  #[serde(default)]
+  pub calls: Vec<String>,
 }
 
 impl Console {
@@ -68,6 +71,7 @@ impl Default for Console {
     Self {
       token: String::new(),
       bundle: Self::default_bundle(),
+      calls: Vec::new(),
     }
   }
 }

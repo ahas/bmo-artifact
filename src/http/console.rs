@@ -42,7 +42,8 @@ impl Route for ReadConsoleManifest {
   const CONSOLE: ConsoleReach = ConsoleReach::Open;
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
-    let manifest = call.standing().console.manifest().ok_or_else(unbuilt)?;
+    let standing = call.standing();
+    let manifest = standing.console.manifest(&standing.settings.console.calls).ok_or_else(unbuilt)?;
     let mut answered = answer(StatusCode::OK, &manifest);
 
     answered.headers_mut().insert(header::CACHE_CONTROL, HeaderValue::from_static(NO_STORE));

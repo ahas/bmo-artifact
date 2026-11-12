@@ -510,7 +510,9 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
   raised as a notice. Under `shareReads` it names `GET /shares/{token}`, every share read (「Share links」),
   the reads the share page makes, and the reading's attachment read and the player's script (「Readings」),
   which a hosted page makes. Under `shareHead` it names `GET /shares/{token}/head` (「Share links」), which a
-  console asks for a share page's head.
+  console asks for a share page's head. Under `calls` it names the other services the screens call through the
+  console, as the settings' `console.calls` names them (「What this service calls」), and none where they name
+  none; the service names no other service itself.
 - **The module and the stylesheet** are the files the build of `client/` writes into the folder the settings
   name, read when the service starts, beside bmo-ui's audio player script, which the build copies there and
   the service answers on its own route (「Readings」). Each is answered at `/console/` and a name carrying the
@@ -529,7 +531,8 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
     `forbidden`;
   - no other route: each is refused 403 `forbidden`.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
-  references, kinds and label values, and the reading, making and ending of share links.
+  references, kinds and label values, and the reading, making and ending of share links. The one call the
+  screens make beyond this service is the console's translator's (「What this service calls」).
 
 ## What this service calls
 
@@ -542,6 +545,24 @@ the bundle's manifest, its module, its stylesheet and its words, and guards ever
   host.
 - **An import** reads the page's markup with `fetch_page` and each of its pictures with `fetch_raster`.
 - **A reference's preview** is `link_preview`, and its picture `fetch_raster`.
+
+The console bundle makes one call of its own, through the console rather than through this service:
+
+| Unit | Through | For |
+|---|---|---|
+| the console's translator, the gate | bmo-ui's `translation` module, relayed by the console | a document's tab in the reader's language (`docs/artifact.md`, 「Where a person reads it」) |
+
+- **The translator is the console's to name.** The console names the service and its translating route in its
+  runtime configuration (bmo-ui's `docs/console-bundles.md`, 「Translation」), the gate's `POST /translations`
+  wherever the gate translates; the bundle names neither, and where the console names none, nothing is
+  translated. The deployment names the same service in `console.calls`, so the manifest names it under
+  `calls` and the console relays the screen's call to it.
+- **The ask** is `language`, the reader's language tag, and `originals`, the title and the sections of the body
+  as markdown; the answer is one reading for each, its `text` and whether it is `whole`. The module carries as
+  many originals in one ask, and holds as many asks out at once, as the console names, waits out a busy
+  translator, and keeps each whole reading for the life of the tab.
+- **The gate keeps every translation it makes** under its original and its language and answers a kept one
+  without its translator, so a section is translated once whoever asks for it again.
 
 ## Settings
 
@@ -556,6 +577,7 @@ wherever the process was started.
 | `server` | `token` | the service's token, which reaches every route |
 | `console` | `token` | the console's token, which reaches what the screens use (「The console」) |
 | `console` | `bundle` | the folder the build of `client/` writes the module, its stylesheet and its words into; `client/dist` where none is named |
+| `console` | `calls` | the other services the screens call through the console, each by the name the console relays it under, which the manifest names under `calls`; none where none is named |
 | `database` | `url` | the PostgreSQL database the document tables stand in |
 | `files` | `root` | the folder each document's folder stands under |
 | `explorer` | `data_root` | the data root bmo-explorer's client is opened over |

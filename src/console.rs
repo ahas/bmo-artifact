@@ -151,8 +151,9 @@ impl ConsoleBundle {
     self.module.is_some() && self.words.is_some()
   }
 
-  /// The manifest, none where no bundle was built.
-  pub fn manifest(&self) -> Option<ConsoleManifest> {
+  /// The manifest naming the other services the screens call as `calls` names them; none where no bundle was
+  /// built.
+  pub fn manifest(&self, calls: &[String]) -> Option<ConsoleManifest> {
     let module = self.module.as_ref().filter(|_| self.words.is_some())?;
 
     Some(ConsoleManifest {
@@ -172,6 +173,7 @@ impl ConsoleBundle {
       push_kinds: Vec::new(),
       share_reads: SHARE_READS.iter().map(|path| (*path).to_owned()).collect(),
       share_head: SHARE_HEAD.into(),
+      calls: calls.to_vec(),
     })
   }
 

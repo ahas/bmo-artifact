@@ -8,6 +8,7 @@ token = "artifact-token"
 [console]
 token = "artifact-console-token"
 bundle = "/srv/bmo-artifact/console"
+calls = ["translator"]
 
 [database]
 url = "postgres://artifact:secret@localhost:5432/bmo_artifact"

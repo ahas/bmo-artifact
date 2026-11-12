@@ -35,7 +35,8 @@
       "span_30d": "30 days",
       "span_6h": "6 hours",
       "span_7d": "7 days",
-      "span_forever": "No end"
+      "span_forever": "No end",
+      "reading": "Language"
     },
     "kind": {
       "import": "Original",
@@ -82,7 +83,8 @@
       "original": "Original",
       "refresh": "Refresh",
       "share": "Share",
-      "view_picture": "View {name}"
+      "view_picture": "View {name}",
+      "ask_again": "Ask again"
     },
     "aria": {
       "category": "Category",
@@ -102,7 +104,9 @@
       "no_documents": "No documents",
       "no_match": "Nothing found for ‘{phrase}’",
       "no_references": "No referred pages",
-      "refreshing": "Refreshing the list…"
+      "refreshing": "Refreshing the list…",
+      "translating": "Translating…",
+      "partly_original": "Some parts stand in the original."
     },
     "error": {
       "attachment_read_failed": "The attachment could not be read.",
@@ -110,7 +114,8 @@
       "link_ended": "This share link has ended.",
       "list_failed": "The list could not be read.",
       "open_failed": "The document could not be opened.",
-      "read_failed": "The document could not be read."
+      "read_failed": "The document could not be read.",
+      "translate_failed": "The document could not be translated."
     },
     "player": {
       "common": {
@@ -137,6 +142,9 @@
       "described": "{kind} · {description}",
       "locale": "en_US",
       "site_name": "BMO"
+    },
+    "reading": {
+      "script": "Latin"
     }
   }
 }

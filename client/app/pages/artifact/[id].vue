@@ -119,6 +119,7 @@ import { useNarrow } from "bmo-ui/app/domain/screen";
 import { scrollWithin } from "bmo-ui/app/domain/scroll-within";
 import { FULL_SHEET, SPLIT_HANDLE } from "bmo-ui/app/domain/side-parts";
 import { formatStamp } from "bmo-ui/app/domain/time";
+import { TRANSLATION_BATCH, hasTranslator, translated, translatorOf } from "bmo-ui/app/domain/translation";
 import { inject } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -135,16 +136,18 @@ import {
   referenceImageAddress,
   shareRoad
 } from "../../domain/artifact";
+import { documentReading, scriptOf } from "../../domain/document-reading";
 import { contentsOf, instructionOf, kindOf, labelsBesideInstruction } from "../../domain/document-view";
 
 import type { SplitterItem } from "@nuxt/ui";
 import type { BarProperty } from "bmo-ui/app/domain/tabs";
+import type { Script } from "../../domain/document-reading";
 import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactReference } from "../../../shared/types";
 
 // One document: its head, its file drawn as its kind reads it, the files it keeps and the pages it
 // refers to, each read from the service through the console's relay.
 
-const { t } = useI18n();
+const { t, te, locale, availableLocales } = useI18n();
 // The console's title bar, where a console offers it under the key bmo-ui's bundle contract names: the place in it
 // the screen lays what acts on it as a whole, after its name, and the place before its name for the way back.
 const barOffer = inject<{ screenActions: string; screenLead?: string } | null>("bmo-console-title-bar", null);
@@ -191,7 +194,31 @@ const kindText = computed(() => {
   return said === key ? name : said;
 });
 
-const contents = computed(() => contentsOf(held.value?.markdown ?? "", kind.value?.contentsDepth ?? 2));
+// The key each locale of the pack names the script its words are written in under (docs/artifact.md, 「Where a
+// person reads it」).
+const SCRIPT_KEY = "artifact.reading.script";
+
+// The language a tag names, by its primary subtag.
+function primary(tag: string): string {
+  return tag.split("-")[0]!.toLowerCase();
+}
+
+const scripts: Script[] = availableLocales.flatMap((code) => {
+  const script = te(SCRIPT_KEY, code) ? scriptOf(primary(code), t(SCRIPT_KEY, {}, { locale: code })) : null;
+
+  return script === null ? [] : [script];
+});
+
+// A markdown document read in its own language and, where that is not the reader's, in the reader's through the
+// translator the console names.
+const reading = documentReading(() => (held.value === null || hosted.value ? null : { title: held.value.document.title, markdown: held.value.markdown }), {
+  reader: primary(String(locale.value)),
+  scripts,
+  translate: hasTranslator() ? translated : null,
+  batch: translatorOf()?.batch ?? TRANSLATION_BATCH
+});
+
+const contents = computed(() => contentsOf(reading.markdown.value, kind.value?.contentsDepth ?? 2));
 
 // What the document is, for the properties viewer beside the title: who filed it, what it is held under and its
 // times, and for a page, which stands with no masthead, its labels too; a written document's labels stand on its
@@ -231,9 +258,10 @@ function openSide(): void {
 }
 
 const bodyProps = computed(() => ({
-  title: held.value?.document.title ?? "",
+  title: reading.title.value,
   kind: kindText.value,
-  markdown: held.value?.markdown ?? "",
+  markdown: reading.markdown.value,
+  reading: reading.written.value === null ? null : reading,
   slugs: contents.value.slugs,
   attachments: held.value?.attachments ?? [],
   address: fileAddress,

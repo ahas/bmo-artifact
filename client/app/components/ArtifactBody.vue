@@ -14,8 +14,21 @@
           <p v-if="labelLine !== ''" class="text-sm break-words text-muted" data-document-labels>{{ labelLine }}</p>
         </div>
 
-        <div v-if="actions.length > 0 || props.properties !== null" class="flex items-center gap-2">
+        <div v-if="tabs.length > 0 || actions.length > 0 || props.properties !== null" class="flex items-center gap-2">
+          <!-- A document in another language than the reader's reads in its own and in the reader's, the reader's
+               filled the first time it is opened (docs/artifact.md, 「Where a person reads it」). -->
+          <UTabs v-if="tabs.length > 0" v-model="tab" :items="tabs" :content="false" size="sm" variant="pill" :aria-label="$t('artifact.label.reading')" data-reading-tabs />
           <ActionGroup class="ms-auto" :actions="actions" :properties="props.properties" :label="$t('artifact.aria.document_menu')" />
+        </div>
+
+        <p v-if="readingState === 'asking'" role="status" class="flex items-center gap-2 text-sm text-muted" data-reading-state="asking">
+          <UIcon name="i-material-symbols-progress-activity" class="size-4 shrink-0 animate-spin" />
+          {{ $t("artifact.status.translating") }}
+        </p>
+        <div v-else-if="readingState === 'partial' || readingState === 'missed'" role="status" class="flex flex-wrap items-center gap-2" :data-reading-state="readingState">
+          <p v-if="readingState === 'missed'" class="text-sm text-error">{{ $t("artifact.error.translate_failed") }}</p>
+          <p v-else class="text-sm text-muted">{{ $t("artifact.status.partly_original") }}</p>
+          <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" icon="i-material-symbols-refresh" :label="$t('artifact.action.ask_again')" @click="props.reading?.again()" />
         </div>
       </header>
 
@@ -39,10 +52,11 @@ import { useI18n } from "vue-i18n";
 import { DOCUMENT_PALETTE } from "../../shared/document-design";
 import { VIEWER_PICTURES } from "../../shared/document-pictures";
 import { plainPress, pressedPictures } from "../domain/document-pictures";
-import { fileAddresses, filesAround } from "../domain/document-view";
+import { fileAddresses, filesAround, languageName } from "../domain/document-view";
 
 import type { BarAction, BarProperty } from "bmo-ui/app/domain/tabs";
 import type { PictureRun } from "../../shared/document-pictures";
+import type { DocumentReading, ReadingTab } from "../domain/document-reading";
 import type { ArtifactAttachment } from "../../shared/types";
 
 // The document itself and nothing of the screen it stands on: what it is called, what kind of
@@ -69,6 +83,9 @@ interface Props {
   references?: (() => void) | null;
   // Where the link that hands this document to somebody outside is made.
   share?: (() => void) | null;
+  // The document read in its own language and in the reader's, where it is written in another; the title and
+  // the markdown handed are the ones its open tab shows.
+  reading?: DocumentReading | null;
 }
 
 const { t } = useI18n();
@@ -81,8 +98,30 @@ const props = withDefaults(defineProps<Props>(), {
   labels: null,
   documentUrl: null,
   references: null,
-  share: null
+  share: null,
+  reading: null
 });
+
+// The two tabs, each named in its language's own words: the document's own first, then the reader's.
+const tabs = computed(() => {
+  const written = props.reading?.written.value ?? null;
+
+  if (props.reading === null || written === null) return [];
+
+  return [
+    { label: languageName(written) ?? written, value: "original" },
+    { label: languageName(props.reading.reader) ?? props.reading.reader, value: "reader" }
+  ];
+});
+
+const tab = computed<ReadingTab>({
+  get: () => props.reading?.tab.value ?? "original",
+  set: (open) => {
+    if (props.reading) props.reading.tab.value = open;
+  }
+});
+
+const readingState = computed(() => props.reading?.state.value ?? "none");
 
 const labelLine = computed(() =>
   Object.entries(props.labels ?? {})

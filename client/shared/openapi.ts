@@ -641,6 +641,8 @@ export interface components {
         ConsoleManifest: {
             /** @description The path the module is answered at. */
             bundle: string;
+            /** @description The other services the screens call through the console, each by the name the console relays it under. */
+            calls: string[];
             /** @description Whether the screens read the event stream. */
             events: boolean;
             /**
