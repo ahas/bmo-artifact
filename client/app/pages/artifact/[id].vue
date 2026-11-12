@@ -6,7 +6,8 @@
     <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own, holding its
          name and mark alone. Under either stands the screen's own row (docs/artifact.md, 「Where a person reads it」):
          the way back to the list at its left end, then the document's number, its being in progress and a page's
-         kind; at its right end the actions on the document as one group. -->
+         kind; at its right end all that acts on the document: the translation toggle, then the actions on it as one
+         group. -->
     <template #header>
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
@@ -20,12 +21,14 @@
           <UBadge v-if="hosted" color="neutral" variant="outline" size="sm" class="max-w-full" :label="kindText" />
         </template>
 
-        <!-- The actions never fold on a phone for being there: a markdown document's masthead already holds the
-             screen's one menu there, and a page's four or more fold into theirs at every width. -->
+        <!-- The toggle stands on its own at every width, as the view it switches is read rather than acted on. The
+             actions fold by their count alone: the row's right end is only as wide as what it holds, so it has no
+             room of its own to read, and on a phone a document offers four or more, which fold there anyway. -->
         <template #right>
+          <ActionGroup v-if="translation !== null" :actions="[translation]" :narrow-fold="false" />
           <ActionGroup
             :actions="actions"
-            :properties="hosted ? properties : null"
+            :properties="held === null ? null : properties"
             :properties-title="held?.document.title ?? null"
             :narrow-fold="false"
             :label="$t('artifact.aria.document_menu')"
@@ -48,7 +51,7 @@
 
       <div v-else-if="narrow" class="flex min-h-0 flex-1 flex-col">
         <div class="artifact-paper min-h-0 flex-1 overflow-y-auto">
-          <ArtifactBody v-bind="bodyProps" :references="openSide" />
+          <ArtifactBody v-bind="bodyProps" />
         </div>
 
         <UDrawer v-model:open="sideOpen" :title="$t('artifact.title.references_count', { n: countText(held.references.length) })" :ui="FULL_SHEET">
@@ -108,6 +111,7 @@ import {
 import { documentReading, scriptOf } from "../../domain/document-reading";
 import { contentsOf, instructionOf, kindOf, labelsBesideInstruction, numberText } from "../../domain/document-view";
 import { usePageActions } from "../../domain/hosted-page";
+import { useTranslationToggle, useWrittenActions } from "../../domain/written-document";
 
 import type { SplitterItem } from "@nuxt/ui";
 import type { BarAction, BarProperty } from "bmo-ui/app/domain/tabs";
@@ -189,6 +193,9 @@ const reading = documentReading(() => (held.value === null || hosted.value ? nul
 
 const contents = computed(() => contentsOf(reading.markdown.value, kind.value?.contentsDepth ?? 2));
 
+// The switch between the document's own language and the reader's, where it is written in another.
+const translation = useTranslationToggle(() => reading);
+
 // What the document is, for the properties among the actions on it: who filed it, what it is held under and its
 // times, and for a page, which stands with no masthead, its labels too; a written document's labels stand on its
 // masthead's secondary line.
@@ -226,16 +233,30 @@ function openInstruction(): void {
 const page: PageServed = (asked) => contentAddress(documentId.value, asked);
 const pageActions = usePageActions(() => page);
 
-// The actions on the document the screen's row offers: its instruction where it carries one, and for a page, what a
-// page offers of its own and its sharing; a markdown document offers the rest on its masthead.
-const actions = computed<BarAction[]>(() => [
-  ...(instruction.value === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: openInstruction }]),
-  ...(hosted.value ? [...pageActions.value, { id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }] : [])
-]);
-
 function openSide(): void {
   sideOpen.value = true;
 }
+
+// What a written document offers of its own: its referred pages where they do not stand beside it, and its file.
+const writtenActions = useWrittenActions({
+  file: () => contentAddress(documentId.value, { download: true }),
+  references: () => (narrow.value ? openSide : null)
+});
+
+// Each kind of document offers what it holds of its own.
+const ownActions = computed(() => (hosted.value ? pageActions.value : writtenActions.value));
+
+// All the actions on the document the screen's row offers, so none stands anywhere else on it: its instruction where
+// it carries one, what its kind offers of its own, and its sharing; its properties close the group.
+const actions = computed<BarAction[]>(() =>
+  held.value === null
+    ? []
+    : [
+        ...(instruction.value === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: openInstruction }]),
+        ...ownActions.value,
+        { id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }
+      ]
+);
 
 const bodyProps = computed(() => ({
   title: reading.title.value,
@@ -245,10 +266,7 @@ const bodyProps = computed(() => ({
   slugs: contents.value.slugs,
   attachments: held.value?.attachments ?? [],
   address: fileAddress,
-  properties: properties.value,
-  labels: held.value === null ? null : labelsBesideInstruction(held.value.document.labels),
-  documentUrl: contentAddress(documentId.value, { download: true }),
-  share: openShare
+  labels: held.value === null ? null : labelsBesideInstruction(held.value.document.labels)
 }));
 
 const sideProps = computed(() => ({

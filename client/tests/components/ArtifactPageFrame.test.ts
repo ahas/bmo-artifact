@@ -114,12 +114,44 @@ describe("a document's screen row", () => {
     expect(template.match(/<UDashboardToolbar[ >]/g)).toHaveLength(1);
   });
 
-  test("stands the way back at its left end and the actions on the document at its right end, a page's among them", () => {
+  test("stands the way back at its left end and all that acts on the document at its right end, the toggle first", () => {
     const left = row.slice(row.indexOf("#left"), row.indexOf("#right"));
+    const right = row.slice(row.indexOf("#right"));
 
     expect(left.indexOf('to="/artifact"')).toBeGreaterThan(-1);
     expect(left.indexOf('to="/artifact"')).toBeLessThan(left.indexOf("data-document-number"));
-    expect(row.slice(row.indexOf("#right"))).toContain('<ActionGroup\n            :actions="actions"\n            :properties="hosted ? properties : null"');
+    expect(right).toContain('<ActionGroup v-if="translation !== null" :actions="[translation]" :narrow-fold="false" />');
+    expect(right.indexOf(':actions="[translation]"')).toBeLessThan(right.indexOf(':actions="actions"'));
+    expect(right).toContain(':properties="held === null ? null : properties"');
+    expect(right.match(/:narrow-fold="false"/g)).toHaveLength(2);
     expect(templateOf(frame)).not.toContain("<ActionGroup");
+  });
+
+  test("offers each kind's own actions between the instruction and the sharing", () => {
+    expect(screen).toContain("const ownActions = computed(() => (hosted.value ? pageActions.value : writtenActions.value));");
+    expect(screen).toContain("references: () => (narrow.value ? openSide : null)");
+    expect(screen.indexOf('id: "instruction"')).toBeLessThan(screen.indexOf("...ownActions.value"));
+    expect(screen.indexOf("...ownActions.value")).toBeLessThan(screen.indexOf('id: "share"'));
+  });
+});
+
+// A markdown document's masthead holds no action of the console's screen: they all stand in its row, and only a share
+// page, with no such row, offers its referred pages under the title (`docs/artifact.md`, "Where a person reads it").
+describe("a markdown document's masthead", () => {
+  const masthead = templateOf(body).slice(templateOf(body).indexOf("<header"), templateOf(body).indexOf("</header>"));
+
+  test("offers its referred pages alone, and only where its screen hands them", () => {
+    expect(masthead.match(/<ActionGroup /g)).toHaveLength(1);
+    expect(masthead).not.toContain("<UTabs");
+    expect(masthead).not.toContain(":properties=");
+    expect(body.match(/id: "/g)).toHaveLength(1);
+    expect(body).toContain('id: "references"');
+    expect(templateOf(screen)).not.toContain(":references=");
+    expect(templateOf(shared)).toContain(':references="() => { sideOpen = true; }"');
+  });
+
+  test("still says what the translation says of itself under the title", () => {
+    expect(masthead).toContain('data-reading-state="asking"');
+    expect(masthead).toContain('@click="askAgain"');
   });
 });

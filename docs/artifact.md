@@ -421,16 +421,24 @@ its name stands among them too, so it can be saved.
     and the list never scrolls sideways;
   - one document at `/artifact/<id>`: the screen's own row under the bar, one line at every width, holding at its
     left end the way back to the list, then the document's number as `#<id>`, the in-progress badge while the
-    document is in progress and, for a page, its kind; and at its right end the actions on the document as one
-    group: opening its instruction where it carries one and, for a page, opening it in a tab of its own, saving
-    it, sharing it and its properties, which, being four or more, fold into one menu; its masthead — its labels but its instruction on a secondary line under its
-    title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
+    document is in progress and, for a page, its kind; and at its right end all that acts on the document, so no
+    action on it stands anywhere else on the screen: the translation toggle where a markdown document is written in
+    another language than the reader's (「A document written in another language than the reader's」), then the
+    actions on the document as one group, opening its instruction where it carries one, then for a markdown
+    document its referred pages where they do not stand beside it, saving its file, sharing it and its
+    properties, and for a page opening it in a tab of its own, saving it, sharing it and its properties; a group
+    of four or more folds into one menu, and three or fewer stand as icon buttons named in their tooltips. Then a
+    markdown document's masthead — its kind, its title, its labels but its instruction on a secondary line under
+    the title, each name and value, that wraps, and no action and no line under the title but what its
+    translation says of itself — its file drawn as markdown with
     a table of contents of its kind's depth, its files after it (「The files after the body」), its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame, under the screen's row and a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
     most two lines; a title longer than that is cut at the end of the second line and shows whole in the
     console's tooltip for a cut line, and one shown whole carries no tooltip;
   - one shared document at `/artifact/share/<token>`, alone: nothing of its state or the screens around it, and no
-    other document; a page fills the window.
+    other document; a page fills the window. With no row of the screen's over it, a markdown document's masthead
+    holds on a row under its title the one action a holder of the link has, opening its referred pages where they
+    do not stand beside it.
 - **The screens' former path, `/archive`, still reaches them.** The manifest names it among its former screen paths,
   so a console answers every address under it — the list, a document, a share link handed out under it — with a
   308 to the same address under `/artifact` (bmo-ui's `docs/console-bundles.md`, 「A screen that moved」).
@@ -457,37 +465,40 @@ its name stands among them too, so it can be saved.
 - **A document's instruction** is its label `query`: the words the document was asked for with, as the
   question a research was given. The filer sets it; the service keeps it as any label.
   - The document's screen draws it under no title. The masthead's labels line and a page's properties leave
-    it out, and the screen's row offers it first among the actions on the document at its right end, an icon
-    button named 「Instruction」 (`artifact.action.instruction`) in its tooltip, or that item of the menu the
-    actions fold into, which opens it drawn as markdown in a sheet: from the side on a wide screen, from the
-    bottom edge on a phone.
+    it out, and the screen's row offers it first among the actions on the document at its right end, after the
+    translation toggle where one stands: an icon button named 「Instruction」 (`artifact.action.instruction`) in
+    its tooltip, or that item of the menu the actions fold into, which opens it drawn as markdown in a sheet: from
+    the side on a wide screen, from the bottom edge on a phone.
   - A document without the label offers no such action, whatever its kind. The list shows no instruction,
     and a phrase still finds a document by it, as by any label.
-- **A document written in another language than the reader's** reads in two tabs at the head of its
-  masthead's action row: its own language and the reader's, each named in that language's own words, its own
-  first and open as the document opens. The reader's language is the console's. A markdown document on the
-  document's screen is read so; a page in its frame and a share page stand as filed, and so does every document
-  where the console names no translator.
+- **A document written in another language than the reader's** is read in its own language or in the reader's,
+  switched by the translation toggle at the head of the right end of the screen's row, before the actions on the
+  document: an icon button named 「Translation」 (`artifact.action.translate`) in its tooltip, on while the reader's
+  language is shown and off as the document opens, so it opens in its own. The reader's language is the
+  console's. A markdown document on the document's screen is read so; a page in its frame and a share page stand
+  as filed, and so does every document where the console names no translator.
   - **The language a body is written in** is read from its words, code left out: each locale of the bundle's
     pack names the script its words are written in (`artifact.reading.script`), and the body is in the locale
     whose script writes the most of its words. A body none of whose words is in such a script, or most of whose
-    words are in the reader's, has no tabs.
-  - **The reader's tab is filled the first time it is opened,** through the translator the console names, the
-    gate's translating route (docs/api.md, 「What this service calls」). The title is asked, and the body as its
-    sections: a heading with what stands under it to the next heading, the text before the first heading one
-    of its own, each a piece of markdown that comes back as markdown and is drawn as the body is. A section
-    whose words are mostly in the reader's language, or that holds no words, is not asked and stands as filed.
+    words are in the reader's, has no toggle.
+  - **The reader's reading is filled the first time the toggle is turned on,** through the translator the console
+    names, the gate's translating route (docs/api.md, 「What this service calls」). The title is asked, and the
+    body as its sections: a heading with what stands under it to the next heading, the text before the first
+    heading one of its own, each a piece of markdown that comes back as markdown and is drawn as the body is. A
+    section whose words are mostly in the reader's language, or that holds no words, is not asked and stands as
+    filed.
   - **A document is asked for once.** The gate keeps each translation it makes, and the bundle keeps each whole
-    reading for the life of the tab, so opening the tab again, or the document again, asks the translator for
-    nothing it already read.
-  - **While the tab is asked for,** it says it is being translated, and each section stands in the original
-    until its reading comes, taking its place the moment it does.
+    reading for the life of the browser tab, so turning the toggle on again, or opening the document again, asks
+    the translator for nothing it already read.
+  - **While the reader's reading is asked for,** the toggle spins, the masthead says under the title that the
+    document is being translated, and each section stands in the original until its reading comes, taking its
+    place the moment it does.
   - **What did not come says so.** A section the translator could not render whole, stayed too busy for or
-    refused stands in the original, and the tab says that some parts stand in the original, or, where no part
-    came, that the document could not be translated. A button beside it asks again for those parts, spinning
-    while they are asked, and the line stays until they come.
-  - **The contents beside the text follow the tab open.** The labels line, the listen band and its sounds, the
-    files after the body and the references stand as filed in both tabs: a narration is heard as it was filed.
+    refused stands in the original, and the masthead says under the title that some parts stand in the original,
+    or, where no part came, that the document could not be translated. A button beside it asks again for those
+    parts, spinning while they are asked, and the line stays until they come.
+  - **The contents beside the text follow the language shown.** The labels line, the listen band and its sounds,
+    the files after the body and the references stand as filed in both: a narration is heard as it was filed.
 - **A share page reads as its document before anything runs:** its head is the preview a chat app or a
   browser draws the link's card from, the same tags for every kind, each value written as an attribute's
   text and escaped as the head is rendered, so no title or description closes its tag:
@@ -517,5 +528,5 @@ its name stands among them too, so it can be saved.
 - **Research and narration.** A research run and a spoken narration are a client's own work; each files
   what it makes here through the MCP server.
 - **Talk and translations** of a document belong to whoever keeps the talk and the translations. The service
-  keeps no translation: a reader's tab is read through the console from the gate, which keeps them.
+  keeps no translation: a reader's reading is asked through the console from the gate, which keeps them.
 - **Visibility per caller.** Every caller holding the token reaches every document.
