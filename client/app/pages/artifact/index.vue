@@ -4,8 +4,9 @@
       <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own. -->
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
-      <!-- The search takes what width the row has, and the filters and the reread keep theirs. -->
-      <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }">
+      <!-- The search takes what width the row has, and the filters and the reread keep theirs. A bar short of the
+           room every bar gathers under folds the filters and the in-progress switch into one menu at its end. -->
+      <UDashboardToolbar ref="bar" :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }">
         <template #left>
           <UInput
             v-model="typed"
@@ -30,46 +31,58 @@
         <template #right>
           <span v-if="loading && loaded" role="status" class="sr-only">{{ $t("artifact.status.refreshing") }}</span>
 
-          <USelect
-            :model-value="kindChoice"
-            :items="kindChoices"
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            :aria-label="$t('artifact.aria.kind')"
-            class="w-auto"
-            @update:model-value="holdToKind"
-          />
+          <template v-if="!gathered">
+            <USelect
+              :model-value="kindChoice"
+              :items="kindChoices"
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              :aria-label="$t('artifact.aria.kind')"
+              class="w-auto"
+              @update:model-value="holdToKind"
+            />
 
-          <USelect
-            :model-value="categoryChoice"
-            :items="categoryChoices"
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            :aria-label="$t('artifact.aria.category')"
-            class="w-auto"
-            @update:model-value="holdToCategory"
-          />
+            <USelect
+              :model-value="categoryChoice"
+              :items="categoryChoices"
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              :aria-label="$t('artifact.aria.category')"
+              class="w-auto"
+              @update:model-value="holdToCategory"
+            />
 
-          <!-- On a phone the switch stands as the library's small square icon button, its words in its tooltip. -->
-          <HintTip class="flex" :text="$t('artifact.label.in_progress_only')" press :disabled="!phone">
             <UButton
               size="sm"
               color="neutral"
               :variant="inProgressOnly ? 'soft' : 'ghost'"
               icon="i-material-symbols-progress-activity"
-              :label="phone ? undefined : $t('artifact.label.in_progress_only')"
-              :aria-label="$t('artifact.label.in_progress_only')"
+              :label="$t('artifact.label.in_progress_only')"
               :aria-pressed="inProgressOnly"
               data-in-progress-only
               @click="holdToInProgress"
             />
-          </HintTip>
+          </template>
 
           <UTooltip :text="$t('artifact.action.refresh')">
             <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-refresh" :loading="loading" :aria-label="$t('artifact.action.refresh')" @click="reread" />
           </UTooltip>
+
+          <UDropdownMenu v-if="gathered" :items="filterItems" :content="{ align: 'end' }">
+            <UTooltip :text="$t('artifact.label.filters')">
+              <UButton
+                size="sm"
+                color="neutral"
+                :variant="narrowed ? 'soft' : 'ghost'"
+                square
+                icon="i-material-symbols-filter-list"
+                :aria-label="$t('artifact.label.filters')"
+                data-filters
+              />
+            </UTooltip>
+          </UDropdownMenu>
         </template>
       </UDashboardToolbar>
     </template>
@@ -176,9 +189,9 @@
 </template>
 
 <script setup lang="ts">
+import { useBarGathers } from "bmo-ui/app/domain/actionbar";
 import { failureText } from "bmo-ui/app/domain/errors";
 import { countText } from "bmo-ui/app/domain/numbers";
-import { useNarrow } from "bmo-ui/app/domain/screen";
 import { formatShortDay, formatStamp } from "bmo-ui/app/domain/time";
 import { inject } from "vue";
 import { useI18n } from "vue-i18n";
@@ -189,6 +202,7 @@ import { copyText } from "../../domain/copy";
 import { CATEGORY_LABEL, PENDING_LABEL, categoryFilter, categoryOf, kindOf, numberText } from "../../domain/document-view";
 
 import type { ArtifactDocument, ArtifactLabelValue, ArtifactShare } from "../../../shared/types";
+import type { DropdownMenuItem } from "@nuxt/ui";
 
 // The documents the service keeps, newest first, narrowed by kind, by category or to those in progress, and
 // found by a phrase; each narrowing is held in the address, so a reload or a shared address shows the same list.
@@ -199,7 +213,9 @@ const barOffered = inject("bmo-console-title-bar", null) !== null;
 const route = useRoute();
 const router = useRouter();
 const kinds = useKinds();
-const phone = useNarrow();
+// Whether the bar is short of the room every bar gathers under, read off the bar itself and not the window.
+const bar = useTemplateRef<{ $el: HTMLElement }>("bar");
+const gathered = useBarGathers(() => bar.value?.$el);
 
 const ALL = "all";
 const typed = ref(typeof route.query.q === "string" ? route.query.q : "");
@@ -281,6 +297,21 @@ async function copyNumber(id: number): Promise<void> {
 const kindChoices = computed(() => [
   { label: t("artifact.label.all_kinds"), value: ALL },
   ...kinds.value.map((kind) => ({ label: kindLabel(kind.name), value: kind.name }))
+]);
+
+// Whether a filter or the in-progress switch narrows the list, which the gathered menu's button stands pressed for.
+const narrowed = computed(() => kindChoice.value !== ALL || categoryChoice.value !== ALL || inProgressOnly.value);
+
+// One filter in the gathered bar's menu: its choices under its name, the standing one checked.
+function choiceGroup(heading: string, choices: readonly { label: string; value: string }[], chosen: string, hold: (value: string) => void): DropdownMenuItem[] {
+  return [{ type: "label", label: heading }, ...choices.map((choice) => ({ type: "checkbox" as const, label: choice.label, checked: chosen === choice.value, onSelect: () => hold(choice.value) }))];
+}
+
+// The gathered bar's one menu: the kind, the category, then the in-progress switch as a checked item.
+const filterItems = computed<DropdownMenuItem[][]>(() => [
+  choiceGroup(t("artifact.aria.kind"), kindChoices.value, kindChoice.value, holdToKind),
+  choiceGroup(t("artifact.aria.category"), categoryChoices.value, categoryChoice.value, holdToCategory),
+  [{ type: "checkbox", label: t("artifact.label.in_progress_only"), icon: "i-material-symbols-progress-activity", checked: inProgressOnly.value, onSelect: holdToInProgress }]
 ]);
 
 const emptyText = computed(() => (searched.value === "" ? t("artifact.status.no_documents") : t("artifact.status.no_match", { phrase: searched.value })));

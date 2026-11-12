@@ -6,8 +6,14 @@ import { describe, expect, test } from "bun:test";
 
 const read = async (path: string): Promise<string> => Bun.file(new URL(path, import.meta.url)).text();
 const templateOf = (source: string): string => source.slice(0, source.indexOf("<script"));
-const between = (source: string, start: string, end: string): string => source.slice(source.indexOf(start), source.indexOf(end));
-const list = templateOf(await read("../../app/pages/artifact/index.vue"));
+const between = (source: string, start: string, end: string): string => {
+  const from = source.indexOf(start);
+
+  return source.slice(from, source.indexOf(end, from));
+};
+const listSource = await read("../../app/pages/artifact/index.vue");
+const list = templateOf(listSource);
+const listScript = listSource.slice(listSource.indexOf("<script"));
 const gallery = templateOf(await read("../../app/components/ArtifactGallery.vue"));
 
 const buttons = (source: string): string[] => source.match(/<UButton\b[^>]*>/g) ?? [];
@@ -20,12 +26,28 @@ describe("the list's toolbar", () => {
     for (const button of buttons(toolbar)) expect(button).toContain('size="sm"');
   });
 
-  test("stands the in-progress switch as its icon alone on a phone, its words in its tooltip there", () => {
-    const tip = between(toolbar, '<HintTip class="flex" :text="$t(\'artifact.label.in_progress_only\')"', "</HintTip>");
+  test("stands the filters and the in-progress switch only where the bar has the room for them", () => {
+    const standing = between(toolbar, '<template v-if="!gathered">', "</template>");
 
-    expect(tip).toContain(':disabled="!phone"');
-    expect(tip).toContain(":label=\"phone ? undefined : $t('artifact.label.in_progress_only')\"");
-    expect(tip).not.toContain("sr-only");
+    expect(standing.match(/<USelect\b/g)).toHaveLength(2);
+    expect(standing).toContain("data-in-progress-only");
+  });
+
+  test("folds them into one filter menu at its end, a small square icon button named in its tooltip, where the bar gathers", () => {
+    const menu = between(toolbar, '<UDropdownMenu v-if="gathered"', "</UDropdownMenu>");
+    const [button] = buttons(menu);
+
+    expect(toolbar.trimEnd().endsWith("</UDropdownMenu>\n        </template>")).toBe(true);
+    expect(menu).toContain(':items="filterItems"');
+    expect(menu).toContain("<UTooltip :text=\"$t('artifact.label.filters')\">");
+    expect(button).toContain("square");
+    expect(button).toContain(":aria-label=\"$t('artifact.label.filters')\"");
+  });
+
+  test("decides whether to gather by the bar's own room, as every bar does", () => {
+    expect(listScript).toContain('import { useBarGathers } from "bmo-ui/app/domain/actionbar";');
+    expect(listScript).toContain("const gathered = useBarGathers(() => bar.value?.$el);");
+    expect(toolbar).toContain('<UDashboardToolbar ref="bar"');
   });
 });
 

@@ -15,6 +15,7 @@
       "contents": "목차",
       "created": "올린 시각",
       "files_count": "첨부 {n}",
+      "filters": "필터",
       "in_progress": "진행 중 · {lacks}",
       "in_progress_only": "진행 중만",
       "link_map": "지도",

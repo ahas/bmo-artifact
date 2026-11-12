@@ -407,8 +407,14 @@ its name stands among them too, so it can be saved.
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
   - the list at `/artifact`, narrowed by kind, by category, to the documents in progress and by a phrase, each
-    narrowing held in the address,
-    each document with its cover picture at the row's leading edge where it keeps one, and alone where it keeps
+    narrowing held in the address. Its bar holds the search, which takes the width the rest leaves it, then the
+    kind and category filters, the in-progress switch and the refresh. A bar short of the room every bar of the
+    console gathers under (bmo-ui's `actionbar`) keeps the search and the refresh standing and folds the two
+    filters and the switch into one filter menu at the row's end: each filter's choices under its name with the
+    one standing checked, and the switch as a checked item. The menu's button is named in its tooltip by the
+    pack's word for filters (`artifact.label.filters`) and stands pressed while any of the three narrows the
+    list, so a phone's search keeps the width to read what is typed in it. Each document stands with its cover
+    picture at the row's leading edge where it keeps one, and alone where it keeps
     none. A row is the document's number as `#<id>`, its title, its description, how many files it keeps and
     the day it was filed, and at most four badges: its kind, its category where it carries one (「A document's
     category」), its being in progress with what it still lacks where it is (「A document in progress」), and,
