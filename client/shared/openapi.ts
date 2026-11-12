@@ -652,6 +652,8 @@ export interface components {
             formerScreenPaths: string[];
             /** @description The icon drawn beside that name. */
             icon: string;
+            /** @description The version of bmo-ui the bundle was built on, as the bundle build wrote it beside the module. */
+            layer: string;
             /** @description The bundle's name, its words' namespace. */
             name: string;
             /** @description Whether every call the screens make needs the reader's owner key. */

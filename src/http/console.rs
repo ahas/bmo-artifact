@@ -39,7 +39,7 @@ pub struct ReadConsoleManifest;
 impl Route for ReadConsoleManifest {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = MANIFEST_ROUTE;
-  const CONSOLE: ConsoleReach = ConsoleReach::Open;
+  const CONSOLE: ConsoleReach = ConsoleReach::Face;
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let standing = call.standing();
@@ -71,7 +71,7 @@ pub struct ReadConsoleWords;
 impl Route for ReadConsoleWords {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = WORDS_PATH;
-  const CONSOLE: ConsoleReach = ConsoleReach::Open;
+  const CONSOLE: ConsoleReach = ConsoleReach::Face;
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let words = call.standing().console.words().ok_or_else(unbuilt)?.to_vec();
@@ -105,9 +105,9 @@ pub struct ReadConsoleFile;
 impl Route for ReadConsoleFile {
   const METHOD: Method = Method::GET;
   const PATH: &'static str = "/console/{file}";
-  // A reader with no sign-in loads them to open a share page, and they carry no reader's data (bmo-ui's
-  // `docs/console-bundles.md`, "Share pages").
-  const CONSOLE: ConsoleReach = ConsoleReach::Open;
+  // With no role: a reader with no sign-in loads them to open a share page, and they carry no reader's data
+  // (`docs/api.md`, "The console").
+  const CONSOLE: ConsoleReach = ConsoleReach::Face;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let name = call.path_text("file").await?;

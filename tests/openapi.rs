@@ -86,8 +86,9 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
 
   let reach = |path: &str, method: &str| document["paths"][path][method]["x-console"].clone();
 
-  assert_eq!(reach("/console-manifest", "get"), "open");
-  assert_eq!(reach("/console/{file}", "get"), "open");
+  assert_eq!(reach("/console-manifest", "get"), "face");
+  assert_eq!(reach("/console/words", "get"), "face");
+  assert_eq!(reach("/console/{file}", "get"), "face");
   assert_eq!(reach("/shares/{token}", "get"), "open");
   assert_eq!(reach("/shares/{token}/head", "get"), "open");
   assert_eq!(reach("/shares/{token}", "delete"), "screen");

@@ -8,7 +8,7 @@ use axum::http::{Method, StatusCode};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
-use support::service::{CONSOLE_TOKEN, SHARE_ADDRESS, Service};
+use support::service::{CONSOLE_TOKEN, LAYER_FILE, SHARE_ADDRESS, Service};
 
 const MODULE: &[u8] = b"export default { routes: [] };\n";
 const WORDS: &[u8] = br#"{
@@ -23,7 +23,7 @@ const WORDS: &[u8] = br#"{
 }"#;
 
 async fn built() -> Service {
-  Service::with_console(&[("bundle.js", MODULE), ("words.json", WORDS)]).await
+  Service::with_console(&[("bundle.js", MODULE), ("words.json", WORDS), LAYER_FILE]).await
 }
 
 fn png() -> Vec<u8> {

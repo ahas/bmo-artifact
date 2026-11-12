@@ -10,7 +10,7 @@ use serde_json::{Map, Value, json};
 use crate::events::EventKind;
 use crate::mcp::ENTRY;
 use crate::mcp::tool::tools;
-use crate::plumbing::http::{ConsoleReach, routes};
+use crate::plumbing::http::routes;
 use crate::wire::WireError;
 
 /// Where the schemas the routes refer to stand in the document.
@@ -45,7 +45,7 @@ pub fn openapi() -> Value {
     let mut value = operation.value();
 
     // The console's token is refused wherever it reaches the route under a guard or not at all.
-    if reach != ConsoleReach::Open
+    if reach.forbids_console()
       && let Some(codes) = value["x-codes"].as_array_mut()
       && !codes.iter().any(|code| code == "forbidden")
     {
@@ -102,7 +102,8 @@ pub fn openapi() -> Value {
           "type": "http",
           "scheme": "bearer",
           "description": "The service's token, or the console's, as the settings name them; the console's reaches \
-            each operation as its x-console says, under the Owner-Role and Owner-Key headers where it is a screen's.",
+            each operation as its x-console says, under the Owner-Role and Owner-Key headers where it is a screen's; \
+            the console face, its x-console face, takes the console's alone.",
         },
       },
     },

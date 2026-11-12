@@ -140,6 +140,10 @@
             "description": "The icon drawn beside that name.",
             "type": "string"
           },
+          "layer": {
+            "description": "The version of bmo-ui the bundle was built on, as the bundle build wrote it beside the module.",
+            "type": "string"
+          },
           "name": {
             "description": "The bundle's name, its words' namespace.",
             "type": "string"
@@ -205,6 +209,7 @@
           "screenPath",
           "formerScreenPaths",
           "serviceName",
+          "layer",
           "bundle",
           "words",
           "role",
@@ -935,7 +940,7 @@
     },
     "securitySchemes": {
       "bearer": {
-        "description": "The service's token, or the console's, as the settings name them; the console's reaches each operation as its x-console says, under the Owner-Role and Owner-Key headers where it is a screen's.",
+        "description": "The service's token, or the console's, as the settings name them; the console's reaches each operation as its x-console says, under the Owner-Role and Owner-Key headers where it is a screen's; the console face, its x-console face, takes the console's alone.",
         "scheme": "bearer",
         "type": "http"
       }
@@ -944,7 +949,7 @@
   "info": {
     "description": "Documents kept, searched and shared: records, learning books, imports and pages, each with its body, attachments, references and cover picture; share links that open a document for whoever holds the token; page imports read through bmo-explorer's client. The paths carry no prefix; whatever serves the service to a browser mounts it under its own.",
     "title": "bmo-artifact",
-    "version": "0.1.0-rev.14"
+    "version": "0.1.0-rev.15"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -974,7 +979,7 @@
           "unauthorized",
           "not-found"
         ],
-        "x-console": "open"
+        "x-console": "face"
       }
     },
     "/console/words": {
@@ -1006,7 +1011,7 @@
           "unauthorized",
           "not-found"
         ],
-        "x-console": "open"
+        "x-console": "face"
       }
     },
     "/console/{file}": {
@@ -1051,7 +1056,7 @@
           "unauthorized",
           "not-found"
         ],
-        "x-console": "open"
+        "x-console": "face"
       }
     },
     "/document-kinds": {

@@ -48,6 +48,8 @@ pub struct ConsoleManifest {
   pub former_screen_paths: Vec<String>,
   /// The service's name, which a console relays it under.
   pub service_name: String,
+  /// The version of bmo-ui the bundle was built on, as the bundle build wrote it beside the module.
+  pub layer: String,
   /// The path the module is answered at.
   pub bundle: String,
   /// The path the stylesheet is answered at, where the bundle has one.

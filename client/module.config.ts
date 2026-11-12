@@ -6,22 +6,17 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
+import { consoleBundle } from "bmo-ui/bundle/console-bundle.js";
 import { defineConfig } from "vite";
 
 import type { Plugin } from "vite";
 
-// The document screens built as the browser module a console loads (bmo-ui's `docs/console-bundles.md`,
-// "What a bundle is"; `docs/layout.md`, "The console bundle"): one ECMAScript module, its stylesheet and
-// its words under `dist/`, which the service answers. Every import of a library the console shares stays an
-// import, written as the package's own path, and everything else is carried in the module.
-
-const SHARED = ["vue", "vue-router", "vue-i18n", "nuxt/app", "@nuxt/ui", "bmo-ui"];
+// The document screens built as the browser module a console loads, with bmo-ui's bundle build
+// (`docs/layout.md`, "The console bundle"): one ECMAScript module, its stylesheet, its words and the layer it
+// was built on under `dist/`, which the service answers. The bundle build leaves the libraries the console
+// shares unbundled; everything else is carried in the module.
 
 const here = (path: string): string => fileURLToPath(new URL(path, import.meta.url));
-
-function shared(id: string): boolean {
-  return SHARED.some((name) => id === name || id.startsWith(`${name}/`));
-}
 
 // A component a screen names without importing it: the bundle's own from its folder, Nuxt UI's by its
 // name without the prefix, and the layer's where the layer has a file by that name.
@@ -66,6 +61,7 @@ export default defineConfig({
   // The module runs in the browser alone: what Nuxt states of the side a file runs on is stated here.
   define: { "import.meta.client": "true", "import.meta.server": "false" },
   plugins: [
+    consoleBundle(),
     vue(),
     tailwindcss(),
     AutoImport({
@@ -87,6 +83,6 @@ export default defineConfig({
     emptyOutDir: true,
     cssCodeSplit: false,
     lib: { entry: here("./module/entry.ts"), formats: ["es"], fileName: () => "bundle.js", cssFileName: "bundle" },
-    rolldownOptions: { external: shared, output: { codeSplitting: false } }
+    rolldownOptions: { output: { codeSplitting: false } }
   }
 });
