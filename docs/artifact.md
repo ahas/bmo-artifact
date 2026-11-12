@@ -419,11 +419,14 @@ its name stands among them too, so it can be saved.
     filer names it by — are search metadata, no part of a row and never a badge anywhere in the list: a phrase
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
     and the list never scrolls sideways;
-  - one document at `/artifact/<id>`: its number in the screen's bar, with the in-progress badge beside it while
-    the document is in progress and the button opening its instruction where it carries one; its masthead — its labels but its instruction on a secondary line under its
+  - one document at `/artifact/<id>`: the screen's own row under the bar, one line at every width, holding at its
+    left end the way back to the list, then the document's number as `#<id>`, the in-progress badge while the
+    document is in progress and, for a page, its kind; and at its right end the actions on the document as one
+    group: opening its instruction where it carries one and, for a page, opening it in a tab of its own, saving
+    it, sharing it and its properties, which, being four or more, fold into one menu; its masthead — its labels but its instruction on a secondary line under its
     title, each name and value, that wraps, and no other line under the title — its file drawn as markdown with
     a table of contents of its kind's depth, its files after it (「The files after the body」), its references beside it, each with the picture its preview declares; a page fills the screen in
-    its frame, under a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
+    its frame, under the screen's row and a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
     most two lines; a title longer than that is cut at the end of the second line and shows whole in the
     console's tooltip for a cut line, and one shown whole carries no tooltip;
   - one shared document at `/artifact/share/<token>`, alone: nothing of its state or the screens around it, and no
@@ -445,18 +448,19 @@ its name stands among them too, so it can be saved.
   words separated by commas, such as the research unit's `korean`, `narration-ko`, `narration-en`, `review`
   and `review-fixes` for a page it is still finishing. The filer sets the label while it works on the
   document and takes it away once it is done, so a document done carries none.
-  - The list and the document's bar stand it as a badge saying it is in progress, followed by what it lacks in
+  - The list and the document's row stand it as a badge whose mark spins, saying it is in progress, followed by what it lacks in
     the pack's words for each (`artifact.pending.<word>`), a word the pack has none for as written. On a phone
-    the bar stands the badge as its mark alone, its words in its tooltip, so the bar keeps to one row.
+    the document's row stands the badge as its mark alone, its words in its tooltip, so the row keeps to one line.
   - The list's in-progress switch narrows it with `GET /documents`'s `label` as `pending`, so a narrowed page
     is a full one. The route takes one label, so the switch and the category filter narrow the list one at a
     time: turning the switch on lets the chosen category go, and choosing a category turns the switch off.
 - **A document's instruction** is its label `query`: the words the document was asked for with, as the
   question a research was given. The filer sets it; the service keeps it as any label.
   - The document's screen draws it under no title. The masthead's labels line and a page's properties leave
-    it out, and the screen's bar offers a button 「Instruction」 (`artifact.action.instruction`) beside the
-    document's number, its icon alone on a phone and named in its tooltip there, which opens it drawn as
-    markdown in a sheet: from the side on a wide screen, from the bottom edge on a phone.
+    it out, and the screen's row offers it first among the actions on the document at its right end, an icon
+    button named 「Instruction」 (`artifact.action.instruction`) in its tooltip, or that item of the menu the
+    actions fold into, which opens it drawn as markdown in a sheet: from the side on a wide screen, from the
+    bottom edge on a phone.
   - A document without the label offers no such action, whatever its kind. The list shows no instruction,
     and a phrase still finds a document by it, as by any label.
 - **A document written in another language than the reader's** reads in two tabs at the head of its

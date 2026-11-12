@@ -2,7 +2,6 @@
   "artifact": {
     "title": {
       "screen": "Artifact",
-      "document": "Document {id}",
       "instruction": "Instruction",
       "references_count": "Referred pages {n}",
       "source": "Source {mark}"

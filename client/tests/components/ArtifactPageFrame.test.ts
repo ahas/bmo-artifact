@@ -12,6 +12,7 @@ const body = await read("../../app/components/ArtifactBody.vue");
 const listen = await read("../../app/components/ArtifactListen.vue");
 const screen = await read("../../app/pages/artifact/[id].vue");
 const shared = await read("../../app/pages/artifact/share/[token].vue");
+const framing = await read("../../app/domain/hosted-page.ts");
 
 describe("a page's sounds", () => {
   test("have no band of the reader's over the page's frame", () => {
@@ -21,8 +22,10 @@ describe("a page's sounds", () => {
   });
 
   test("are asked for in the scheme and the language the console stands in", () => {
-    expect(frame).toContain('props.page({ scheme: schemeOf(dark.value ? "dark" : "light"), language: locale.value })');
-    expect(templateOf(screen)).toContain(':page="(asked) => contentAddress(documentId, asked)"');
+    expect(framing).toContain('page()({ scheme: schemeOf(dark.value ? "dark" : "light"), language: locale.value })');
+    expect(frame).toContain("useFramedPage(() => props.page)");
+    expect(screen).toContain("const page: PageServed = (asked) => contentAddress(documentId.value, asked);");
+    expect(templateOf(screen)).toContain('<ArtifactPageFrame v-else-if="hosted" :title="held.document.title" :page="page" />');
     expect(templateOf(shared)).toContain(':page="(asked) => sharedContentAddress(token, asked)"');
   });
 });
@@ -43,15 +46,12 @@ describe("a markdown document's listen band", () => {
   });
 });
 
-// A document's instruction stands behind a button of the screen's bar for every kind, never under its title
+// A document's instruction stands among the actions of the screen's own row for every kind, never under its title
 // (`docs/artifact.md`, "Where a person reads it").
 describe("a document's instruction", () => {
-  test("opens from the screen's bar, in the console's bar and in the screen's own alike, and is drawn under no title", () => {
-    const template = templateOf(screen);
-
-    expect(template.match(/data-instruction/g)).toHaveLength(2);
-    expect(template.match(/@click="openInstruction"/g)).toHaveLength(2);
-    expect(template).toContain('<ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />');
+  test("opens from the screen's own row, the first of the actions on the document, and is drawn under no title", () => {
+    expect(screen).toContain('...(instruction.value === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: openInstruction }])');
+    expect(templateOf(screen)).toContain('<ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />');
     expect(screen).toContain("labelsBesideInstruction(held.value.document.labels)");
     expect(templateOf(body)).not.toContain("description");
   });
@@ -86,18 +86,40 @@ describe("a document's title", () => {
   });
 });
 
-// A document in progress keeps the screen's bar to one row on a phone (`docs/artifact.md`, "Where a person reads it").
+// A document in progress keeps the screen's row to one line on a phone (`docs/artifact.md`, "Where a person reads it").
 describe("a document's in-progress badge", () => {
-  test("stands as its mark alone with its words in its tooltip in a phone's bar, in both bars", async () => {
+  test("stands as its mark alone with its words in its tooltip in a phone's row", async () => {
     const badge = templateOf(await read("../../app/components/ArtifactPendingBadge.vue"));
 
     expect(badge).toContain('<HintTip v-if="lacks !== null && props.compact" class="flex" :text="said">');
     expect(badge).toContain(':aria-label="said" data-pending />');
-    expect(templateOf(screen).match(/<ArtifactPendingBadge [^>]*:compact="phone" \/>/g)).toHaveLength(2);
-    // A finger reaches every tooltip of the bar through the shared one: by a tap on the badge, by resting on a button
-    // — the way back in the screen's own bar, before the console bar's name and among its actions where that bar
-    // offers no place before it, and the instruction in each bar.
-    expect(templateOf(screen)).not.toContain("<UTooltip");
-    expect(templateOf(screen).match(/<HintTip [^>]* press[ >]/g)).toHaveLength(5);
+    // Its mark marks work going on, so it spins in both shapes.
+    expect(badge.match(/:ui="\{ leadingIcon: 'animate-spin' \}"/g)).toHaveLength(2);
+    expect(templateOf(screen).match(/<ArtifactPendingBadge [^>]*:compact="phone" \/>/g)).toHaveLength(1);
+  });
+});
+
+// Nothing a screen holds stands in a title bar: a document's way back stands at the left end of the screen's own row
+// under the bar, and the actions on it at its right end, under the console's bar and the screen's own alike
+// (`docs/layout.md`, "The console bundle"; `docs/artifact.md`, "Where a person reads it").
+describe("a document's screen row", () => {
+  const template = templateOf(screen);
+  const row = template.slice(template.indexOf("<UDashboardToolbar"), template.indexOf("</UDashboardToolbar>"));
+
+  test("lays nothing into the console's title bar, and its own bar holds its name and mark alone", () => {
+    expect(screen).not.toContain("screenActions");
+    expect(screen).not.toContain("screenLead");
+    expect(template).not.toContain("<Teleport");
+    expect(template).toContain(`<UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />`);
+    expect(template.match(/<UDashboardToolbar[ >]/g)).toHaveLength(1);
+  });
+
+  test("stands the way back at its left end and the actions on the document at its right end, a page's among them", () => {
+    const left = row.slice(row.indexOf("#left"), row.indexOf("#right"));
+
+    expect(left.indexOf('to="/artifact"')).toBeGreaterThan(-1);
+    expect(left.indexOf('to="/artifact"')).toBeLessThan(left.indexOf("data-document-number"));
+    expect(row.slice(row.indexOf("#right"))).toContain('<ActionGroup\n            :actions="actions"\n            :properties="hosted ? properties : null"');
+    expect(templateOf(frame)).not.toContain("<ActionGroup");
   });
 });

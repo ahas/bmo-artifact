@@ -32,13 +32,13 @@
 
     <div class="flex items-center justify-center gap-2">
       <UTooltip :text="$t('common.action.previous_picture')">
-        <UButton icon="i-material-symbols-chevron-left" color="neutral" variant="ghost" :aria-label="$t('common.action.previous_picture')" :disabled="current === 0" @click="step(-1)" />
+        <UButton icon="i-material-symbols-chevron-left" color="neutral" variant="ghost" size="sm" :aria-label="$t('common.action.previous_picture')" :disabled="current === 0" @click="step(-1)" />
       </UTooltip>
 
       <span class="text-sm text-muted tabular-nums">{{ countText(current + 1) }} / {{ countText(props.slides.length) }}</span>
 
       <UTooltip :text="$t('common.action.next_picture')">
-        <UButton icon="i-material-symbols-chevron-right" color="neutral" variant="ghost" :aria-label="$t('common.action.next_picture')" :disabled="current === props.slides.length - 1" @click="step(1)" />
+        <UButton icon="i-material-symbols-chevron-right" color="neutral" variant="ghost" size="sm" :aria-label="$t('common.action.next_picture')" :disabled="current === props.slides.length - 1" @click="step(1)" />
       </UTooltip>
     </div>
   </div>

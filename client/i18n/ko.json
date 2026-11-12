@@ -2,7 +2,6 @@
   "artifact": {
     "title": {
       "screen": "아티팩트",
-      "document": "문서 {id}",
       "instruction": "지시문",
       "references_count": "참조 페이지 {n}",
       "source": "출처 {mark}"

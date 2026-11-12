@@ -146,12 +146,11 @@ The plumbing is what every command and every route stands on, and it knows none 
   patches under `client/patches/` apply in this install.
 - **Under the console's title bar.** The list's and one document's routes ask for the console's bar in their meta,
   so a console that offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws
-  it over them under the manifest's title and icon, and they draw no bar of their own; a document's screen lays the
-  way back to the list before the bar's name, in the place the offer names for it, and the document's number after
-  the name, in the place the offer names for what acts on the screen — the way back first among those where the
-  offer names no place before the name. Found without
-  that offer each draws its own bar, a document's holding the same two. The shared document's screen stands under
-  no bar either way.
+  it over them under the manifest's title and icon, and they draw no bar of their own. Found without that offer each
+  draws its own bar, holding the screen's name and mark alone. A screen lays nothing into either bar: what acts on it
+  and its way back stand in its own row directly under the bar (bmo-ui's `docs/console-bundles.md`, 「The screen's
+  own row」), the list's toolbar and a document's row (`docs/artifact.md`, 「Where a person reads it」), the same row
+  under the console's bar and under its own. The shared document's screen stands under no bar either way.
 - **Names.** Every component is named with the prefix `Artifact`, every word is a key under `artifact.`
   in the bundle's own pack beside the `common.*` keys the console answers for bmo-ui, and every page
   stands under `/artifact`: the list, one document at `/artifact/<id>`, and one shared document at

@@ -3,62 +3,38 @@
        parts that scroll on their own with a boundary between them; on a phone the side rises from the
        bottom edge over the text. A page fills the screen in its frame. -->
   <UDashboardPanel id="artifact-document" :ui="{ body: 'p-0 sm:p-0 gap-0 overflow-hidden [&>*]:max-w-none' }">
-    <!-- Under a console that offers its title bar the console draws it, and the way back to the list, the
-         document's number, its being in progress and its instruction where it carries one stand beside its name;
-         alone, the screen draws its own bar holding them. -->
-    <template v-if="barOffer === null" #header>
-      <UDashboardNavbar :title="$t('artifact.title.document', { id: documentId })" icon="i-material-symbols-archive-outline">
-        <template #leading>
+    <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own, holding its
+         name and mark alone. Under either stands the screen's own row (docs/artifact.md, 「Where a person reads it」):
+         the way back to the list at its left end, then the document's number, its being in progress and a page's
+         kind; at its right end the actions on the document as one group. -->
+    <template #header>
+      <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
+
+      <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }" data-document-row>
+        <template #left>
           <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
             <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
           </HintTip>
+          <span class="shrink-0 text-sm tabular-nums text-muted" data-document-number>{{ numberText(documentId) }}</span>
+          <ArtifactPendingBadge v-if="held !== null" :document="held.document" :compact="phone" />
+          <UBadge v-if="hosted" color="neutral" variant="outline" size="sm" class="max-w-full" :label="kindText" />
         </template>
 
-        <template v-if="held !== null" #trailing>
-          <ArtifactPendingBadge :document="held.document" :compact="phone" />
-          <HintTip v-if="instruction !== null" class="flex" :text="$t('artifact.action.instruction')" press :disabled="!phone">
-            <UButton
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              icon="i-material-symbols-assignment-outline"
-              :label="phone ? undefined : $t('artifact.action.instruction')"
-              :aria-label="$t('artifact.action.instruction')"
-              data-instruction
-              @click="openInstruction"
-            />
-          </HintTip>
+        <!-- The actions never fold on a phone for being there: a markdown document's masthead already holds the
+             screen's one menu there, and a page's four or more fold into theirs at every width. -->
+        <template #right>
+          <ActionGroup
+            :actions="actions"
+            :properties="hosted ? properties : null"
+            :properties-title="held?.document.title ?? null"
+            :narrow-fold="false"
+            :label="$t('artifact.aria.document_menu')"
+          />
         </template>
-      </UDashboardNavbar>
+      </UDashboardToolbar>
     </template>
 
     <template #body>
-      <!-- The way back to the list before the console bar's name; the document's number and its instruction after it,
-           the way back first among them where the bar names no place before its name. -->
-      <Teleport v-if="barOffer?.screenLead" defer :to="barOffer.screenLead">
-        <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
-          <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
-        </HintTip>
-      </Teleport>
-      <Teleport v-if="barOffer !== null" defer :to="barOffer.screenActions">
-        <HintTip v-if="!barOffer.screenLead" class="flex" :text="$t('artifact.action.back_to_list')" press>
-          <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
-        </HintTip>
-        <span class="truncate text-sm text-muted">{{ $t("artifact.title.document", { id: documentId }) }}</span>
-        <ArtifactPendingBadge v-if="held !== null" :document="held.document" :compact="phone" />
-        <HintTip v-if="instruction !== null" class="flex" :text="$t('artifact.action.instruction')" press :disabled="!phone">
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="ghost"
-            icon="i-material-symbols-assignment-outline"
-            :label="phone ? undefined : $t('artifact.action.instruction')"
-            :aria-label="$t('artifact.action.instruction')"
-            data-instruction
-            @click="openInstruction"
-          />
-        </HintTip>
-      </Teleport>
       <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2 p-4">
         <p class="text-sm text-error">{{ failed }}</p>
         <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" icon="i-material-symbols-refresh" :label="$t('artifact.action.refresh')" @click="load" />
@@ -68,14 +44,7 @@
         <SkeletonText :lines="8" size="base" lastWidth="w-2/5" />
       </ContentSkeleton>
 
-      <ArtifactPageFrame
-        v-else-if="hosted"
-        :title="held.document.title"
-        :kind="kindText"
-        :page="(asked) => contentAddress(documentId, asked)"
-        :properties="properties"
-        :share="openShare"
-      />
+      <ArtifactPageFrame v-else-if="hosted" :title="held.document.title" :page="page" />
 
       <div v-else-if="narrow" class="flex min-h-0 flex-1 flex-col">
         <div class="artifact-paper min-h-0 flex-1 overflow-y-auto">
@@ -137,10 +106,12 @@ import {
   shareRoad
 } from "../../domain/artifact";
 import { documentReading, scriptOf } from "../../domain/document-reading";
-import { contentsOf, instructionOf, kindOf, labelsBesideInstruction } from "../../domain/document-view";
+import { contentsOf, instructionOf, kindOf, labelsBesideInstruction, numberText } from "../../domain/document-view";
+import { usePageActions } from "../../domain/hosted-page";
 
 import type { SplitterItem } from "@nuxt/ui";
-import type { BarProperty } from "bmo-ui/app/domain/tabs";
+import type { BarAction, BarProperty } from "bmo-ui/app/domain/tabs";
+import type { PageServed } from "../../domain/hosted-page";
 import type { Script } from "../../domain/document-reading";
 import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactReference } from "../../../shared/types";
 
@@ -148,9 +119,8 @@ import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactRefere
 // refers to, each read from the service through the console's relay.
 
 const { t, te, locale, availableLocales } = useI18n();
-// The console's title bar, where a console offers it under the key bmo-ui's bundle contract names: the place in it
-// the screen lays what acts on it as a whole, after its name, and the place before its name for the way back.
-const barOffer = inject<{ screenActions: string; screenLead?: string } | null>("bmo-console-title-bar", null);
+// Whether a console offers its title bar, under the key bmo-ui's bundle contract names.
+const barOffered = inject("bmo-console-title-bar", null) !== null;
 const SIDES: SplitterItem[] = [
   { slot: "body", minSize: 40, defaultSize: 72 },
   { slot: "side", minSize: 16, defaultSize: 28 }
@@ -158,8 +128,7 @@ const SIDES: SplitterItem[] = [
 
 const route = useRoute();
 const narrow = useNarrow("(max-width: 1023px)");
-// On a phone the bar keeps the console's name in view, so the instruction's button stands as its icon, named in
-// its tooltip.
+// On a phone the in-progress badge stands as its mark alone, so the screen's row keeps to one line.
 const phone = useNarrow();
 const sideOpen = ref(false);
 const shareOpen = ref(false);
@@ -220,7 +189,7 @@ const reading = documentReading(() => (held.value === null || hosted.value ? nul
 
 const contents = computed(() => contentsOf(reading.markdown.value, kind.value?.contentsDepth ?? 2));
 
-// What the document is, for the properties viewer beside the title: who filed it, what it is held under and its
+// What the document is, for the properties among the actions on it: who filed it, what it is held under and its
 // times, and for a page, which stands with no masthead, its labels too; a written document's labels stand on its
 // masthead's secondary line.
 const properties = computed<BarProperty[]>(() => {
@@ -252,6 +221,17 @@ const instruction = computed(() => (held.value === null ? null : instructionOf(h
 function openInstruction(): void {
   instructionOpen.value = true;
 }
+
+// Where the document is served when it is a page of its own.
+const page: PageServed = (asked) => contentAddress(documentId.value, asked);
+const pageActions = usePageActions(() => page);
+
+// The actions on the document the screen's row offers: its instruction where it carries one, and for a page, what a
+// page offers of its own and its sharing; a markdown document offers the rest on its masthead.
+const actions = computed<BarAction[]>(() => [
+  ...(instruction.value === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: openInstruction }]),
+  ...(hosted.value ? [...pageActions.value, { id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }] : [])
+]);
 
 function openSide(): void {
   sideOpen.value = true;

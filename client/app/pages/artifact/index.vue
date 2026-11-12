@@ -52,16 +52,20 @@
             @update:model-value="holdToCategory"
           />
 
-          <UButton
-            size="sm"
-            color="neutral"
-            :variant="inProgressOnly ? 'soft' : 'ghost'"
-            icon="i-material-symbols-progress-activity"
-            :label="$t('artifact.label.in_progress_only')"
-            :aria-pressed="inProgressOnly"
-            :ui="{ label: 'max-sm:sr-only' }"
-            @click="holdToInProgress"
-          />
+          <!-- On a phone the switch stands as the library's small square icon button, its words in its tooltip. -->
+          <HintTip class="flex" :text="$t('artifact.label.in_progress_only')" press :disabled="!phone">
+            <UButton
+              size="sm"
+              color="neutral"
+              :variant="inProgressOnly ? 'soft' : 'ghost'"
+              icon="i-material-symbols-progress-activity"
+              :label="phone ? undefined : $t('artifact.label.in_progress_only')"
+              :aria-label="$t('artifact.label.in_progress_only')"
+              :aria-pressed="inProgressOnly"
+              data-in-progress-only
+              @click="holdToInProgress"
+            />
+          </HintTip>
 
           <UTooltip :text="$t('artifact.action.refresh')">
             <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-refresh" :loading="loading" :aria-label="$t('artifact.action.refresh')" @click="reread" />
@@ -174,6 +178,7 @@
 <script setup lang="ts">
 import { failureText } from "bmo-ui/app/domain/errors";
 import { countText } from "bmo-ui/app/domain/numbers";
+import { useNarrow } from "bmo-ui/app/domain/screen";
 import { formatShortDay, formatStamp } from "bmo-ui/app/domain/time";
 import { inject } from "vue";
 import { useI18n } from "vue-i18n";
@@ -194,6 +199,7 @@ const barOffered = inject("bmo-console-title-bar", null) !== null;
 const route = useRoute();
 const router = useRouter();
 const kinds = useKinds();
+const phone = useNarrow();
 
 const ALL = "all";
 const typed = ref(typeof route.query.q === "string" ? route.query.q : "");
