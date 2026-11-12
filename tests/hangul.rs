@@ -1,6 +1,6 @@
 //! No Hangul in any text file of the repository: code, tests, settings and documents are English. The
-//! console bundle's language pack, the folder the bundle's build reads its words from, holds the words a person
-//! reads in each language, and is the one place another language stands.
+//! console bundle's language pack, the folder its declaration names, holds the words a person reads in
+//! each language, and is the one place another language stands.
 
 use crate::support;
 
@@ -9,9 +9,15 @@ use std::path::Path;
 
 use support::{ROOT, files_under, shown};
 
-/// The folder of the console bundle's words (`docs/layout.md`, "Root").
+/// The folder of the console bundle's words, as its declaration names it.
 fn language_pack() -> std::path::PathBuf {
-  Path::new(ROOT).join("client/i18n")
+  let client = Path::new(ROOT).join("client");
+  let declaration: serde_json::Value = serde_json::from_str(
+    &fs::read_to_string(client.join("console-bundle.json")).expect("the declaration reads"),
+  )
+  .expect("the declaration is JSON");
+
+  client.join(declaration["languagePack"].as_str().expect("the declaration names its language pack"))
 }
 
 /// Whether a character is Hangul: a syllable, a jamo or a compatibility jamo.

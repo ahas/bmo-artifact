@@ -1,6 +1,6 @@
 //! The console bundle as a console reaches it (`docs/api.md`, "The console"): the manifest read through
-//! bmo-ui's own reading of the contract, naming the layer the build wrote, the module's path following its
-//! bytes, and the guard each kind of route stands behind.
+//! bmo-ui's own reading of the contract and agreeing with the declaration the layer carries, the module's path
+//! following its bytes, and the guard each kind of route stands behind.
 
 use crate::support;
 
@@ -12,31 +12,14 @@ use axum::http::{Method, StatusCode};
 use bmo_artifact::console::ConsoleBundle;
 use serde_json::{Value, json};
 use support::ROOT;
-use support::service::{CONSOLE_TOKEN, LAYER, LAYER_FILE, Service, TOKEN};
+use support::service::{CONSOLE_TOKEN, Service, TOKEN};
 
 const MODULE: &[u8] = b"export default { routes: [] };\n";
 const STYLESHEET: &[u8] = b".artifact-paper { color: red; }\n";
 const WORDS: &[u8] = br#"{"en":{"artifact":{"title":{"screen":"Artifact"}}},"ko":{"artifact":{"title":{"screen":"Artifact"}}}}"#;
 
 async fn built() -> Service {
-  Service::with_console(&[
-    ("bundle.js", MODULE),
-    ("bundle.css", STYLESHEET),
-    ("words.json", WORDS),
-    LAYER_FILE,
-  ])
-  .await
-}
-
-// The path of the module the manifest names, as the console reads it.
-async fn module_path(service: &Service) -> String {
-  service
-    .call_by(Some(CONSOLE_TOKEN), Method::GET, "/console-manifest", None, &[])
-    .await
-    .json()["bundle"]
-    .as_str()
-    .expect("a path")
-    .to_owned()
+  Service::with_console(&[("bundle.js", MODULE), ("bundle.css", STYLESHEET), ("words.json", WORDS)]).await
 }
 
 fn folder_with(files: &[(&str, &[u8])]) -> tempfile::TempDir {
@@ -78,7 +61,7 @@ fn read_by_contract(manifest: &Value) -> Result<Value, String> {
 }
 
 #[tokio::test]
-async fn the_manifest_keeps_the_contract_and_names_the_layer_the_build_wrote() {
+async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
   let service = built().await;
   let answered = service.call_by(Some(CONSOLE_TOKEN), Method::GET, "/console-manifest", None, &[]).await;
 
@@ -87,11 +70,6 @@ async fn the_manifest_keeps_the_contract_and_names_the_layer_the_build_wrote() {
   let manifest = answered.json();
   let read = read_by_contract(&manifest).expect("the manifest keeps the contract");
 
-  assert_eq!(
-    (read["name"].clone(), read["serviceName"].clone()),
-    (json!("artifact"), json!("artifact"))
-  );
-  assert_eq!(read["layer"], LAYER);
   assert_eq!(read["role"], "member");
   assert_eq!(read["ownerKey"], false);
   assert_eq!(read["apiPrefix"], "/");
@@ -108,6 +86,26 @@ async fn the_manifest_keeps_the_contract_and_names_the_layer_the_build_wrote() {
       .is_some_and(|reads| reads.contains(&json!("/shares/{token}/document"))),
     "{read}"
   );
+
+  let declaration: Value = serde_json::from_str(
+    &std::fs::read_to_string(Path::new(ROOT).join("client/console-bundle.json")).expect("the declaration"),
+  )
+  .expect("the declaration reads");
+
+  for field in [
+    "name",
+    "title",
+    "icon",
+    "screenPath",
+    "formerScreenPaths",
+    "serviceName",
+    "events",
+    "websocket",
+    "pushKinds",
+    "shareHead",
+  ] {
+    assert_eq!(manifest[field], declaration[field], "{field}");
+  }
 
   let bundle = manifest["bundle"].as_str().expect("the module's path");
   let stylesheet = manifest["stylesheet"].as_str().expect("the stylesheet's path");
@@ -136,13 +134,10 @@ fn a_manifest_out_of_the_contract_is_refused_by_its_reading() {
 
 #[test]
 fn the_module_path_follows_its_bytes() {
-  let one =
-    ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS), LAYER_FILE]).path());
-  let same =
-    ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS), LAYER_FILE]).path());
+  let one = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
+  let same = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
   let other = ConsoleBundle::read(
-    folder_with(&[("bundle.js", b"export default { routes: [1] };\n"), ("words.json", WORDS), LAYER_FILE])
-      .path(),
+    folder_with(&[("bundle.js", b"export default { routes: [1] };\n"), ("words.json", WORDS)]).path(),
   );
   let path = |bundle: &ConsoleBundle| bundle.manifest(&[]).expect("a manifest").bundle;
 
@@ -160,8 +155,7 @@ fn the_module_path_follows_its_bytes() {
 // and the contract's own reading takes them under `calls`.
 #[test]
 fn the_manifest_names_the_calls_the_settings_name_and_none_of_its_own() {
-  let bundle =
-    ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS), LAYER_FILE]).path());
+  let bundle = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
   let named = bundle.manifest(&["gate".to_owned()]).expect("a manifest");
   let read =
     read_by_contract(&serde_json::to_value(&named).expect("the manifest as JSON")).expect("the contract");
@@ -170,21 +164,10 @@ fn the_manifest_names_the_calls_the_settings_name_and_none_of_its_own() {
   assert_eq!(bundle.manifest(&[]).expect("a manifest").calls, Vec::<String>::new());
 }
 
-// A module built without bmo-ui's bundle build names no layer, so no console could tell what it runs on.
 #[test]
-fn a_folder_lacking_the_module_the_words_or_the_layer_holds_no_bundle() {
-  let empty_layer: (&str, &[u8]) = ("layer.json", br#"{"layer":""}"#);
-
-  for files in [
-    &[("words.json", WORDS), LAYER_FILE][..],
-    &[("bundle.js", MODULE), LAYER_FILE][..],
-    &[("bundle.js", MODULE), ("words.json", WORDS)][..],
-    &[("bundle.js", MODULE), ("words.json", WORDS), empty_layer][..],
-  ] {
-    let bundle = ConsoleBundle::read(folder_with(files).path());
-
-    assert_eq!((bundle.manifest(&[]), bundle.words()), (None, None), "{files:?}");
-  }
+fn a_folder_with_no_module_or_no_words_holds_no_bundle() {
+  assert_eq!(ConsoleBundle::read(folder_with(&[("words.json", WORDS)]).path()).manifest(&[]), None);
+  assert_eq!(ConsoleBundle::read(folder_with(&[("bundle.js", MODULE)]).path()).manifest(&[]), None);
 }
 
 #[tokio::test]
@@ -205,7 +188,10 @@ async fn an_unbuilt_bundle_leaves_the_manifest_and_the_words_not_found() {
 #[tokio::test]
 async fn a_call_without_a_token_is_refused_401() {
   let service = built().await;
-  let bundle = module_path(&service).await;
+  let bundle = service.call(Method::GET, "/console-manifest", None).await.json()["bundle"]
+    .as_str()
+    .expect("a path")
+    .to_owned();
 
   for path in ["/console-manifest", "/console/words", bundle.as_str(), "/documents"] {
     let answered = service.call_by(None, Method::GET, path, None, &[("owner-role", "member")]).await;
@@ -272,26 +258,17 @@ async fn the_console_reaches_no_route_the_screens_do_not_use() {
 }
 
 #[tokio::test]
-async fn the_service_token_reaches_every_route_with_no_role_but_the_console_face() {
+async fn the_service_token_reaches_every_route_with_no_role() {
   let service = built().await;
-  let bundle = module_path(&service).await;
+  let bundle = service.call(Method::GET, "/console-manifest", None).await.json()["bundle"]
+    .as_str()
+    .expect("a path")
+    .to_owned();
 
-  for path in ["/documents", "/document-kinds"] {
+  for path in [bundle.as_str(), "/documents", "/console/words"] {
     let answered = service.call_by(Some(TOKEN), Method::GET, path, None, &[]).await;
 
     assert_eq!(answered.status, StatusCode::OK, "{path}");
-  }
-
-  for path in ["/console-manifest", "/console/words", bundle.as_str()] {
-    let refused = service
-      .call_by(Some(TOKEN), Method::GET, path, None, &[("owner-role", "administrator")])
-      .await;
-
-    assert_eq!(
-      (refused.status, refused.json()["code"].clone()),
-      (StatusCode::UNAUTHORIZED, json!("unauthorized")),
-      "{path}"
-    );
   }
 }
 

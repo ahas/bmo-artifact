@@ -59,13 +59,14 @@ skills/
 tests/
 client/                    the console bundle (see "The console bundle")
   package.json
+  console-bundle.json      the declaration a console building the bundle in reads
   bun.lock
-  nuxt.config.ts           the Nuxt app the sources are prepared and type-checked in
+  nuxt.config.ts
   module.config.ts         the build of the browser module
   module/                  the module's entry, its stylesheet's entry and what stands in for Nuxt's build there
   dist/                    the module's build, which git ignores
   i18n/                    the bundle's words, one pack a locale
-  vendor/                  the bmo-ui release file the bundle's own install takes
+  vendor/                  the packed bmo-ui the bundle's own install takes
   patches/                 bmo-ui's patches to its dependencies, applied in this install
   design/                  the document design the server and the bundle both read
     document.json          the palettes, the page sheet's rules and which pictures open the viewer
@@ -114,55 +115,51 @@ The plumbing is what every command and every route stands on, and it knows none 
 
 ## The console bundle
 
-`client/` is a Bun project of its own, the document screens as a console bundle by bmo-ui's console plugin
-contract (bmo-ui's `docs/console-bundles.md`). What the service answers of it is docs/api.md, 「The console」.
+`client/` is a Bun project of its own, a console bundle by bmo-ui's contract (bmo-ui's
+`docs/console-bundles.md`).
 
-```mermaid
-flowchart TD
-  R["bmo-ui's release file<br/>in vendor/"] --> I["the bundle's<br/>own install"]
-  I --> N["nuxt.config.ts:<br/>prepare and typecheck"]
-  I --> M["module.config.ts:<br/>bun run module"]
-  M --> D["dist/: module, stylesheet,<br/>words, layer, player"]
-  D --> S["the service,<br/>when it starts"]
-```
-
+- **One set of sources, two builds.** The pages, components, domain modules, stylesheets and words under
+  `client/` are built both as the browser module the service answers and as a Nuxt layer on bmo-ui packed
+  for a console that builds its bundles in.
 - **The browser module.** `bun run module` builds `module/entry.ts`, whose default export is the routes of
-  the three screens, with bmo-ui's bundle build (bmo-ui's `docs/boundary.md`, 「The bundle build」). It
-  writes one ECMAScript module, `dist/bundle.js`, its stylesheet, `dist/bundle.css`, its words,
-  `dist/words.json`, each locale's pack under its code, and the layer the bundle build names,
-  `dist/layer.json`, beside bmo-ui's audio player script, `dist/bmo-audio-player.js`, copied as the release
-  carries it. The libraries the bundle shares with its console are the ones bmo-ui's bundle build leaves
-  unbundled; the rest, marked and DOMPurify among it, is carried in the module.
-- **What Nuxt's build would supply** is supplied by the module's build: the Vue and Nuxt functions a file
-  uses without importing them are imported from `vue` and `nuxt/app`, a component a template names is
-  imported from its file, the bundle's own, Nuxt UI's or bmo-ui's, the link component is made from the
-  console's Nuxt app, and a page's meta is stated on its route.
-- **The stylesheet** is the bundle's own sheets and the utility classes its files use, built against bmo-ui's
-  stylesheet without carrying it. The classes its own sheets declare for a document's ground and masthead are
-  named under the bundle's name, `artifact-`, so no rule a console keeps under a name of its own reaches them:
-  a console's sheets stand above a bundle's, and a rule of the same name there would win.
-- **The Nuxt app** in `nuxt.config.ts` extends bmo-ui with the bundle's pages, components and stylesheets, so
-  the sources are prepared and type-checked as a console runs them. Nothing is built from it.
-- **bmo-ui is one release.** The bundle's own install takes the file bmo-ui's release verb wrote for the
-  version, kept under `client/vendor/` by its own name and bytes, never a copy packed from bmo-ui's source.
-  The package manifest names bmo-ui as a peer at that version, marked optional so no install looks for it in
-  a registry, and as a development dependency taken from that file; moving to another release replaces the
-  file and both lines together. bmo-ui's patches under `client/patches/` apply in this install.
-- **Under the console's title bar.** The list's and one document's routes ask for the console's bar in their
-  meta (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar). Found without that offer
-  each draws its own bar, holding the screen's name and mark alone. A screen lays nothing into either bar:
-  what acts on it and its way back stand in its own row under the bar, the list's toolbar and a document's row (`docs/artifact.md`,
-  「Where a person reads it」). The shared document's screen stands under no bar either way.
+  the three screens, into one ECMAScript module, `dist/bundle.js`, its stylesheet, `dist/bundle.css`, and
+  its words, `dist/words.json`, each locale's pack under its code, beside bmo-ui's audio player script,
+  `dist/bmo-audio-player.js`, copied as the packed bmo-ui carries it. Every import of `vue`, `vue-router`,
+  `vue-i18n`, `nuxt/app`, `@nuxt/ui` and bmo-ui stays an import, written as the package's own path; the
+  rest, marked and DOMPurify among it, is carried in the module. What Nuxt's build would supply is supplied
+  by this one: the Vue and Nuxt functions a file uses without importing them are imported from `vue` and
+  `nuxt/app`, a component a template names is imported from its file, the bundle's own, Nuxt UI's or
+  bmo-ui's, the link component is made from the console's Nuxt app, and a page's meta is stated on its
+  route. The stylesheet is the bundle's own sheets and the utility classes its files use, built against
+  bmo-ui's stylesheet without carrying it. The classes its own sheets declare for a document's ground and
+  masthead are named under the bundle's name, `artifact-`, so no rule a console keeps under a name of its own
+  reaches them: a console's sheets stand above a bundle's, and a rule of the same name there would win.
+- **The Nuxt layer.** It extends bmo-ui and adds the same pages, components, domain modules and
+  stylesheets. Its declaration, `console-bundle.json`, names the bundle `artifact`, the service `artifact`,
+  its screens under `/artifact`, the path `/archive` they stood under before among its former screen paths, the
+  read a console asks for a share page's head, and its words in `i18n/`, in the fields the service's manifest
+  answers.
+- **bmo-ui is a peer.** The manifest names bmo-ui as a peer at the one version the bundle is built
+  against, marked optional so no install looks for it in a registry. For the bundle's own install, a
+  packed copy kept under `client/vendor/`, named by version, is a development dependency taken from that
+  file; moving to another bmo-ui version replaces the copy and both manifest lines together. bmo-ui's
+  patches under `client/patches/` apply in this install.
+- **Under the console's title bar.** The list's and one document's routes ask for the console's bar in their meta,
+  so a console that offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws
+  it over them under the manifest's title and icon, and they draw no bar of their own. Found without that offer each
+  draws its own bar, holding the screen's name and mark alone. A screen lays nothing into either bar: what acts on it
+  and its way back stand in its own row directly under the bar (bmo-ui's `docs/console-bundles.md`, 「The screen's
+  own row」), the list's toolbar and a document's row (`docs/artifact.md`, 「Where a person reads it」), the same row
+  under the console's bar and under its own. The shared document's screen stands under no bar either way.
 - **Names.** Every component is named with the prefix `Artifact`, every word is a key under `artifact.`
   in the bundle's own pack beside the `common.*` keys the console answers for bmo-ui, and every page
   stands under `/artifact`: the list, one document at `/artifact/<id>`, and one shared document at
   `/artifact/share/<token>`.
 - **Calls.** A screen calls this service's routes at the address bmo-ui's `relay` module answers for the
-  service `artifact`, through the app's fetcher, and the console's translator through bmo-ui's `translation`
-  module (docs/api.md, 「What this service calls」), and nothing else. That address stands under the console
-  app's base path, so a picture, a file or a frame the browser loads by its address reaches the relay as a
-  call does. The types it reads are generated from `docs/openapi.json` into `shared/openapi.ts` by the `api`
-  script.
+  service `artifact`, and the console's translator through bmo-ui's `translation` module (docs/api.md, 「What
+  this service calls」), and nothing else. That address stands under the console app's base path, so a
+  picture, a file or a frame the browser loads by its address reaches the relay as a call does. The types
+  it reads are generated from `docs/openapi.json` into `shared/openapi.ts` by the `api` script.
 - **A document's text is drawn by the bundle.** The service answers a markdown document's file as filed;
   the bundle's reading, built on marked and cleaned by DOMPurify, turns it into HTML: a heading takes its
   contents mark, a picture or a link naming a kept file by its name is drawn from it or goes to it, a
@@ -170,6 +167,15 @@ flowchart TD
   forward in a popover or a dialog (`docs/artifact.md`, 「How a document is drawn」), and bmo-ui's code modules colour code, give fenced blocks their
   copy button and draw diagrams. The reading is loaded in the browser alone, since DOMPurify cleans
   against a real document.
+- **Its own files by relative path.** No file of the bundle reaches outside `client/`, which a test in
+  `client/tests/` holds by reading the imports of every file the package carries.
+- **How a console takes it.** A console that finds services while it runs reads the service's manifest and
+  loads the module (docs/api.md, 「The console」). A console that builds its bundles in takes the layer
+  packed from `client/` with `bun pm pack`, which prepares Nuxt's types first and writes
+  `bmo-artifact-client-<version>.tgz`, carrying the package manifest, the declaration, the words, the Nuxt
+  configuration, `app/`, `shared/`, `design/` and `patches/`, and nothing of its own tests, its module's
+  build or its copy of bmo-ui; it attaches it by the declaration. The layer's addresses stand under the app's
+  base path where the console runs bmo-ui 0.1.0-rev.6 or later.
 
 ## Storage
 
@@ -234,10 +240,9 @@ belong to the testbed.
     test ends, and the first template a binary makes drops every template and copy whose process is gone.
 - **The MCP server** is started as a harness starts it and held to its twelve tools; one test reaches a
   listening service through it, and one publishes a document from a file.
-- **The console** routes are called over a folder of the test's own holding a module, a stylesheet, words
-  and the layer file: the manifest is read through bmo-ui's `consoleManifest` by Bun in `client/` and names
-  that layer, the module's path follows its bytes, and the guard is held to its 401s and 403s on each kind of
-  route.
+- **The console** routes are called over a folder of the test's own holding a module, a stylesheet and
+  words: the manifest is read through bmo-ui's `consoleManifest` by Bun in `client/`, the module's path
+  follows its bytes, and the guard is held to its 401s and 403s on each kind of route.
 - **The OpenAPI document** committed is held to what the code generates.
 - **Repository checks.** Tests in `tests/` also hold the repository to its rules: no Hangul outside the
   bundle's language pack, no personal data in any tracked file (`PERSONAL-DATA.md`), no folder named after

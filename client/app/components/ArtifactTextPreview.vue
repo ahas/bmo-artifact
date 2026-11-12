@@ -28,11 +28,11 @@ async function load(): Promise<void> {
   failed.value = "";
 
   try {
-    // The app's fetcher, as every call through the console's relay is made; the range header says how long
-    // the whole file is, so the answer is read whole rather than its body alone.
-    const response = await $fetch.raw<ArrayBuffer>(props.src, { headers: { range: `bytes=0-${PREVIEW_BYTES - 1}` }, responseType: "arrayBuffer" });
+    const response = await fetch(props.src, { headers: { range: `bytes=0-${PREVIEW_BYTES - 1}` } });
 
-    text.value = textPreview(new Uint8Array(response._data ?? new ArrayBuffer(0)), response.headers.get("content-range"));
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    text.value = textPreview(new Uint8Array(await response.arrayBuffer()), response.headers.get("content-range"));
   } catch (error) {
     failed.value = failureText(error, t("artifact.error.attachment_read_failed"));
   }

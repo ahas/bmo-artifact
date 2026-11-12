@@ -34,7 +34,7 @@ use crate::wording::{Wording, WordingError};
 
 pub use inventory;
 
-/// How far the console's token reaches a route, and whether the service's does (`docs/api.md`, "The console").
+/// How far the console's token reaches a route (`docs/api.md`, "The console").
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConsoleReach {
   /// Not at all: the screens do not use the route.
@@ -43,9 +43,6 @@ pub enum ConsoleReach {
   Open,
   /// As a screen's call, under the role and the owner key the screens need.
   Screen,
-  /// The console's alone, with no role and no owner key: the bundle's manifest, words, module and stylesheet,
-  /// which the service's token does not reach.
-  Face,
 }
 
 impl ConsoleReach {
@@ -55,14 +52,7 @@ impl ConsoleReach {
       Self::Closed => "closed",
       Self::Open => "open",
       Self::Screen => "screen",
-      Self::Face => "face",
     }
-  }
-
-  /// Whether the console's token may be refused 403 on the route: where the screens do not use it, or under
-  /// the role and the owner key.
-  pub fn forbids_console(self) -> bool {
-    matches!(self, Self::Closed | Self::Screen)
   }
 }
 
@@ -396,18 +386,11 @@ async fn bearer(State(standing): State<Arc<Standing>>, mut request: Request, nex
   }
 }
 
-// Whether a call reaches a route: the service's token reaches every one but the console face, the console's
-// only as far as the route's reach.
+// Whether a call reaches a route: the service's token reaches every one, the console's only as far as the
+// route's reach.
 fn admitted(reach: ConsoleReach, request: &Request) -> Result<(), Refused> {
   if request.extensions().get::<Credential>() != Some(&Credential::Console) {
-    return match reach {
-      ConsoleReach::Face => Err(Refused::new(
-        StatusCode::UNAUTHORIZED,
-        "unauthorized",
-        "the console's routes take the console's token alone",
-      )),
-      ConsoleReach::Closed | ConsoleReach::Open | ConsoleReach::Screen => Ok(()),
-    };
+    return Ok(());
   }
 
   match reach {
@@ -416,7 +399,7 @@ fn admitted(reach: ConsoleReach, request: &Request) -> Result<(), Refused> {
       "forbidden",
       "the console's token does not reach this route",
     )),
-    ConsoleReach::Open | ConsoleReach::Face => Ok(()),
+    ConsoleReach::Open => Ok(()),
     ConsoleReach::Screen => screen_admits(request.headers()).map_err(Refused::from),
   }
 }

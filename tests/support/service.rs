@@ -22,10 +22,6 @@ use super::scratch::Scratch;
 pub const TOKEN: &str = "service-token";
 /// The console's token.
 pub const CONSOLE_TOKEN: &str = "console-token";
-/// The file bmo-ui's bundle build writes beside a module, naming the layer a test's bundle was built on.
-pub const LAYER_FILE: (&str, &[u8]) = ("layer.json", br#"{"layer":"0.1.0-rev.0"}"#);
-/// The layer that file names.
-pub const LAYER: &str = "0.1.0-rev.0";
 /// The address the settings put share links under.
 pub const SHARE_ADDRESS: &str = "https://documents.invalid/share";
 

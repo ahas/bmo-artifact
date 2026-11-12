@@ -4,15 +4,23 @@ import { join, resolve } from "node:path";
 
 import { WORDING_KEYS } from "bmo-ui/shared/wording-keys";
 
-// The bundle's sources as the build reads them (`docs/layout.md`, "The console bundle"): its components carry
-// its prefix, its pages stand under its screen path, and every word its screens ask for is in each of its
-// packs under its namespace, or is one the console answers for bmo-ui. The manifest naming them is the
-// service's, held to the contract by the service's own test.
+// The bundle as a console attaches it (bmo-ui's `docs/console-bundles.md`; `docs/layout.md`, "The console
+// bundle"): the declaration a console building it in reads names this service, its components carry its
+// prefix, its pages stand under its screen path, and every word its screens ask for is in each of its
+// packs under its namespace, or is one the console answers for bmo-ui. The service's own test holds the
+// declaration to the manifest the service answers.
+
+interface Declaration {
+  name: string;
+  serviceName: string;
+  screenPath: string;
+  formerScreenPaths: string[];
+  languagePack: string;
+}
 
 const ROOT = resolve(import.meta.dir, "..");
-// The bundle's name, its words' namespace and its pages' folder, and the folder of its words.
-const NAMESPACE = "artifact";
-const LANGUAGE_PACK = "i18n";
+const DECLARATION_FILE = "console-bundle.json";
+const declaration = JSON.parse(readFileSync(join(ROOT, DECLARATION_FILE), "utf8")) as Declaration;
 
 function filesUnder(dir: string): string[] {
   return readdirSync(join(ROOT, dir), { recursive: true, encoding: "utf8" }).map((one) => join(dir, one));
@@ -41,28 +49,38 @@ function keysHeld(value: unknown, at = ""): string[] {
   return Object.entries(value).flatMap(([name, inner]) => keysHeld(inner, at === "" ? name : `${at}.${name}`));
 }
 
-describe("the bundle's sources", () => {
-  test("have every component named with its prefix and every page under its screen path", () => {
+describe("the bundle's declaration", () => {
+  test("names this service, its screen path and its words", () => {
+    expect(declaration).toMatchObject({ name: "artifact", serviceName: "artifact", screenPath: "/artifact", formerScreenPaths: ["/archive"], languagePack: "i18n" });
+  });
+
+  test("is carried by the package with the words it names", () => {
+    const manifest = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { files: string[] };
+
+    expect(manifest.files).toEqual(expect.arrayContaining([DECLARATION_FILE, declaration.languagePack]));
+  });
+
+  test("has every component named with its prefix and every page under its screen path", () => {
     expect(filesUnder("app/components").filter((name) => !name.startsWith(join("app", "components", "Artifact")))).toEqual([]);
-    expect(filesUnder("app/pages").filter((name) => name.endsWith(".vue") && !name.startsWith(join("app", "pages", NAMESPACE)))).toEqual([]);
+    expect(filesUnder("app/pages").filter((name) => name.endsWith(".vue") && !name.startsWith(join("app", "pages", declaration.screenPath.slice(1))))).toEqual([]);
   });
 });
 
 describe("the bundle's words", () => {
-  const packs = readdirSync(join(ROOT, LANGUAGE_PACK)).filter((name) => name.endsWith(".json"));
+  const packs = readdirSync(join(ROOT, declaration.languagePack)).filter((name) => name.endsWith(".json"));
   const answered = new Set<string>(WORDING_KEYS);
 
   test("stand in a pack for each locale, every pack holding the same keys under the bundle's namespace", () => {
     expect(packs.sort()).toEqual(["en.json", "ko.json"]);
 
-    const held = packs.map((name) => keysHeld(JSON.parse(readFileSync(join(ROOT, LANGUAGE_PACK, name), "utf8"))).sort());
+    const held = packs.map((name) => keysHeld(JSON.parse(readFileSync(join(ROOT, declaration.languagePack, name), "utf8"))).sort());
 
     expect(held[0]).toEqual(held[1]!);
-    expect(held[0]!.filter((key) => !key.startsWith(`${NAMESPACE}.`))).toEqual([]);
+    expect(held[0]!.filter((key) => !key.startsWith(`${declaration.name}.`))).toEqual([]);
   });
 
   test("answer every key a screen asks for, beside the ones the console answers for bmo-ui", () => {
-    const held = new Set(keysHeld(JSON.parse(readFileSync(join(ROOT, LANGUAGE_PACK, "en.json"), "utf8"))));
+    const held = new Set(keysHeld(JSON.parse(readFileSync(join(ROOT, declaration.languagePack, "en.json"), "utf8"))));
     const missing = [...keysAsked()].filter((key) => !held.has(key) && !answered.has(key));
 
     expect(missing).toEqual([]);

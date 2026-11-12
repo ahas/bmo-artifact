@@ -33,9 +33,8 @@ flowchart TD
 - **Every route takes a bearer token,** as `Authorization: Bearer <token>`: the service's token or the
   console's, both named by the settings. A missing or wrong token is refused 401 `unauthorized`; an empty
   token in the settings lets no caller in by it.
-- **The service's token reaches every route but the console face,** which takes the console's token alone.
-  The console's token reaches only the console face and what its screens use, under the guard 「The console」
-  states.
+- **The service's token reaches every route.** The console's token reaches only what its screens use, under
+  the guard 「The console」 states.
 - **The paths carry no prefix.** Whatever serves the service to a browser mounts it under its own path.
 - **A caller's strings are opaque:** `scope` is what a document or an import is held under, `actorName`
   who filed it, and `labels` the caller's own metadata, an object of strings. The service stores and
@@ -52,7 +51,7 @@ flowchart TD
 | Status | `code` | When |
 |---|---|---|
 | 400 | `bad-request` | the body, the query or a path key is not the shape the route takes; the sentence names what |
-| 401 | `unauthorized` | the token is missing or wrong, or is the service's on the console face |
+| 401 | `unauthorized` | the token is missing or wrong |
 | 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs |
 | 404 | `no-route` | no route answers this method and path |
 | 404 | `not-found` | nothing stands at the key the path names |
@@ -494,10 +493,8 @@ after. A page's files and every file that is no picture are attached as handed.
 ## The console
 
 The document screens are a console bundle by bmo-ui's console plugin contract (bmo-ui's
-`docs/console-bundles.md`), the one statement of what a bundle, its manifest and its guard are. This service
-answers the bundle built from `client/` (docs/layout.md, 「The console bundle」) and uses these parts of the
-contract: a share page with its head, a former screen path, the console's title bar and the screen's own
-row, and the console's translator. What follows is what this service chooses within it.
+`docs/console-bundles.md`), built from `client/` (docs/layout.md, 「The console bundle」). The service answers
+the bundle's manifest, its module, its stylesheet and its words, and guards every route its screens use.
 
 | Route | Takes | Answers |
 |---|---|---|
@@ -505,38 +502,37 @@ row, and the console's translator. What follows is what this service chooses wit
 | `GET /console/words` | | 200, the bundle's words |
 | `GET /console/{file}` | | 200, the module or the stylesheet the manifest names |
 
-```mermaid
-flowchart TD
-  B["the build of client/"] --> F["the bundle folder:<br/>module, stylesheet,<br/>words, layer, player"]
-  F --> S["read when the<br/>service starts"]
-  S --> M["the manifest,<br/>module, stylesheet<br/>and words"]
-  S --> P["the player's script<br/>(「Readings」)"]
-  S --> H["the share head's<br/>words (「Share links」)"]
-```
-
-- **The manifest's values.** The bundle `artifact`, its menu title the key `artifact.title.screen`, its icon,
-  its screens under `/artifact`, the former screen path `/archive`, the service `artifact`, the role
-  `member`, and the API prefix left at its default. No screen needs the owner key, reads the event stream or
-  opens a socket, and no event is raised as a notice.
-- **The layer** is the version of bmo-ui the build wrote beside the module, answered as the build wrote it.
-- **The share reads** are the share link's own read, `GET /shares/{token}`, and every read of what it opens
-  under it (「Share links」), the reading's attachment read and the player's script (「Readings」); the share
-  head is `GET /shares/{token}/head`, which is no share read.
-- **The calls** are the other services the settings' `console.calls` names (「What this service calls」), none
-  where they name none; the service names no other service itself.
-- **The module and the stylesheet** are answered at `/console/` and a name carrying the first sixteen
-  hexadecimal digits of the SHA-256 of their bytes, kept a year by whoever loaded them. A name the manifest
-  does not name is `not-found`.
-- **The words** are each locale's pack of the bundle under the locale's code, as the build writes them.
-- **Where the folder holds no module, no words or no layer,** the manifest, the module, the stylesheet, the
-  words and the share head are all `not-found`, so a console leaves the service out.
-- **The console face** is the manifest, the words, the module and the stylesheet. It takes the console's
-  token alone, with no role and no owner key, since a reader with no sign-in loads the module and the
-  stylesheet to open a share page; the service's token is refused 401 `unauthorized` there.
+- **The manifest** is the contract's shape: the bundle `artifact`, its menu title the key
+  `artifact.title.screen`, its icon, its screens under `/artifact`, the path `/archive` as the one former screen
+  path they stood under, the service `artifact`, the paths of its
+  module, its stylesheet and its words, and the role `member`. Every call the screens make stands under the
+  API prefix `/`; no screen needs the owner key, reads the event stream or opens a socket, and no event is
+  raised as a notice. Under `shareReads` it names `GET /shares/{token}`, every share read (「Share links」),
+  the reads the share page makes, and the reading's attachment read and the player's script (「Readings」),
+  which a hosted page makes. Under `shareHead` it names `GET /shares/{token}/head` (「Share links」), which a
+  console asks for a share page's head. Under `calls` it names the other services the screens call through the
+  console, as the settings' `console.calls` names them (「What this service calls」), and none where they name
+  none; the service names no other service itself.
+- **The module and the stylesheet** are the files the build of `client/` writes into the folder the settings
+  name, read when the service starts, beside bmo-ui's audio player script, which the build copies there and
+  the service answers on its own route (「Readings」). Each is answered at `/console/` and a name carrying the
+  first sixteen hexadecimal digits of the SHA-256 of its bytes, so its path changes whenever its bytes do,
+  and may be kept by whoever loaded it. A file name the manifest does not name is `not-found`.
+- **The words** are each locale's words of the bundle's pack under the locale's code, every key under
+  `artifact`, as the build writes them beside the module.
+- **Where the folder holds no module,** the manifest, the module, the stylesheet and the words are all
+  `not-found`, so a console leaves the service out.
+- **The guard.** A call with the console's token is the console relaying for a reader, and it reaches:
+  - the manifest, the words, the module, the stylesheet, `GET /shares/{token}`, the share head and the share reads with no
+    role and no owner key, since a reader with no sign-in opens a share page by them; a share read is held to
+    its token;
+  - every other route the screens use where its `Owner-Role` header is a role that
+    allows `member`, either role; one with that header missing or naming no role is refused 403
+    `forbidden`;
+  - no other route: each is refused 403 `forbidden`.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
-  references, kinds and label values, and the reading, making and ending of share links. They stand behind the
-  contract's guard (「Roles and the owner key」) at the role `member`, and the service's token reaches them
-  too. Every other route refuses the console's token 403 `forbidden`.
+  references, kinds and label values, and the reading, making and ending of share links. The one call the
+  screens make beyond this service is the console's translator's (「What this service calls」).
 
 ## What this service calls
 
@@ -600,8 +596,12 @@ wherever the process was started.
 What another repository must gain or settle for this one to stand on it, each for that repository's own
 worker:
 
-- **The console that serves this bundle** follows bmo-ui's `docs/console-bundles.md` on the release of bmo-ui
-  the bundle names as its layer, and sets this service's share address to the bundle's share page; this
+- **The console that serves this bundle:** it calls this service with the console's token, finds the bundle
+  by its manifest and loads its module (bmo-ui's `docs/console-bundles.md`). A share link is opened by a
+  reader who is not signed in, so the console serves the bundle's `/artifact/share/<token>` screen and relays
+  the share reads the manifest names without its sign-in and with no role (bmo-ui's `docs/console-bundles.md`,
+  「Share pages」), answers every address under the former screen path `/archive` as moved to the same address
+  under `/artifact` (「A screen that moved」), and sets this service's share address to that screen's; this
   service answers only callers holding one of its tokens.
 - **The callers of the routes this service no longer serves:** research runs and their settings,
   narrations, the holding read by a chat id and the filing verbs are gone. A research run or a narration

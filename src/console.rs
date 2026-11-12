@@ -1,6 +1,6 @@
-//! The console bundle as the service answers it (`docs/api.md`, "The console"): the manifest a console finds
-//! the document screens by, the module, stylesheet, words and layer the build of `client/` writes, and the floor
-//! every call the screens make stands on.
+//! The console bundle as the service answers it (`docs/api.md`, "The console"; bmo-ui's
+//! `docs/console-bundles.md`): the manifest a console finds the document screens by, the module, stylesheet
+//! and words the build of `client/` writes, and the floor every call the screens make stands on.
 
 use std::path::Path;
 
@@ -33,8 +33,6 @@ pub const OWNER_KEY: bool = false;
 const MODULE_FILE: &str = "bundle.js";
 const STYLESHEET_FILE: &str = "bundle.css";
 const WORDS_FILE: &str = "words.json";
-// The layer the bundle was built on, as bmo-ui's bundle build writes it beside the module.
-const LAYER_FILE: &str = "layer.json";
 // bmo-ui's audio player script, which the build copies beside the module (`docs/artifact.md`, "Readings").
 const PLAYER_FILE: &str = "bmo-audio-player.js";
 
@@ -133,8 +131,6 @@ pub struct ConsoleBundle {
   pub stylesheet: Option<BundleFile>,
   /// Each locale's words under its code.
   pub words: Option<Vec<u8>>,
-  /// The version of bmo-ui the bundle was built on.
-  pub layer: Option<String>,
   /// bmo-ui's audio player script, which a hosted page that writes a sound loads.
   pub player: Option<BundleFile>,
 }
@@ -146,21 +142,19 @@ impl ConsoleBundle {
       module: BundleFile::read(folder, MODULE_FILE, "text/javascript; charset=utf-8"),
       stylesheet: BundleFile::read(folder, STYLESHEET_FILE, "text/css; charset=utf-8"),
       words: std::fs::read(folder.join(WORDS_FILE)).ok(),
-      layer: read_layer(folder),
       player: BundleFile::read(folder, PLAYER_FILE, "text/javascript; charset=utf-8"),
     }
   }
 
-  /// Whether the folder held a bundle: a module, its words and the layer it was built on.
+  /// Whether the folder held a bundle: a module and its words.
   pub fn built(&self) -> bool {
-    self.module.is_some() && self.words.is_some() && self.layer.is_some()
+    self.module.is_some() && self.words.is_some()
   }
 
   /// The manifest naming the other services the screens call as `calls` names them; none where no bundle was
   /// built.
   pub fn manifest(&self, calls: &[String]) -> Option<ConsoleManifest> {
-    let module = self.module.as_ref().filter(|_| self.built())?;
-    let layer = self.layer.clone()?;
+    let module = self.module.as_ref().filter(|_| self.words.is_some())?;
 
     Some(ConsoleManifest {
       name: "artifact".into(),
@@ -169,7 +163,6 @@ impl ConsoleBundle {
       screen_path: "/artifact".into(),
       former_screen_paths: vec!["/archive".into()],
       service_name: "artifact".into(),
-      layer,
       bundle: module.path(),
       stylesheet: self.stylesheet.as_ref().map(BundleFile::path),
       words: WORDS_PATH.into(),
@@ -186,7 +179,7 @@ impl ConsoleBundle {
 
   /// The words, none where no bundle was built.
   pub fn words(&self) -> Option<&[u8]> {
-    self.words.as_deref().filter(|_| self.built())
+    self.words.as_deref().filter(|_| self.module.is_some())
   }
 
   /// The player's script under the name carrying its digest, none for any other name.
@@ -229,16 +222,4 @@ impl ConsoleBundle {
       .filter(|_| self.built())
       .find(|file| file.name == name)
   }
-}
-
-// The layer the build named, none where it wrote no layer file or one that does not name a version.
-fn read_layer(folder: &Path) -> Option<String> {
-  #[derive(serde::Deserialize)]
-  struct Written {
-    layer: String,
-  }
-
-  let written: Written = serde_json::from_slice(&std::fs::read(folder.join(LAYER_FILE)).ok()?).ok()?;
-
-  Some(written.layer).filter(|layer| !layer.is_empty())
 }
