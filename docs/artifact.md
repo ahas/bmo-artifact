@@ -479,8 +479,9 @@ its name stands among them too, so it can be saved.
   - **While the tab is asked for,** it says it is being translated, and each section stands in the original
     until its reading comes, taking its place the moment it does.
   - **What did not come says so.** A section the translator could not render whole, stayed too busy for or
-    refused stands in the original, and the tab says that some parts stand in the original, with a button
-    asking again for those parts.
+    refused stands in the original, and the tab says that some parts stand in the original, or, where no part
+    came, that the document could not be translated. A button beside it asks again for those parts, spinning
+    while they are asked, and the line stays until they come.
   - **The contents beside the text follow the tab open.** The labels line, the listen band and its sounds, the
     files after the body and the references stand as filed in both tabs: a narration is heard as it was filed.
 - **A share page reads as its document before anything runs:** its head is the preview a chat app or a

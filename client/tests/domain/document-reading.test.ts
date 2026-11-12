@@ -138,6 +138,15 @@ describe("a document's reading", () => {
     expect(reading.markdown.value).toBe(`Lead words [el]\n\n${sections[1]}${sections[2]}`);
   });
 
+  test("says nothing came where the translator stayed too busy for every part", async () => {
+    const reading = documentReading(() => source(), { reader: "el", scripts: SCRIPTS, translate: async (texts) => texts.map((text) => ({ text, whole: false, untranslated: true })), batch: 16 });
+
+    reading.tab.value = "reader";
+    await settled();
+
+    expect(reading.state.value).toBe("missed");
+  });
+
   test("says nothing came where every ask was refused", async () => {
     const { calls, translate } = heldTranslator();
     const reading = documentReading(() => source(), { reader: "el", scripts: SCRIPTS, translate, batch: 16 });

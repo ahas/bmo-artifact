@@ -204,10 +204,11 @@ export function documentReading(read: () => ReadingSource | null, options: Readi
         (readings) => {
           if (mine !== generation) return;
 
+          // A text the translator stayed too busy to read comes back as itself, untranslated: it did not come.
           chunk.forEach((text, index) => {
             const reading = readings[index];
 
-            asked.set(text, reading === undefined ? { kind: "missed" } : { kind: "read", reading });
+            asked.set(text, reading === undefined || reading.untranslated === true ? { kind: "missed" } : { kind: "read", reading });
           });
         },
         () => {
