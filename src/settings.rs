@@ -22,6 +22,9 @@ pub struct Settings {
   /// Nothing set here lets no console in and reads the bundle from `client/dist`.
   #[serde(default)]
   pub console: Console,
+  /// Nothing set here reads the player from `client/player`.
+  #[serde(default)]
+  pub player: Player,
   pub database: Database,
   pub files: Files,
   pub explorer: Explorer,
@@ -51,8 +54,8 @@ pub struct Console {
   /// The console's token, which reaches what the screens use; an empty one lets no console in.
   #[serde(default)]
   pub token: String,
-  /// The folder the build of `client/` writes the module, its stylesheet and its words into; a relative one
-  /// is read from the directory the settings stand in.
+  /// The folder the build of `client/` writes the bundle into; a relative one is read from the directory the
+  /// settings stand in.
   #[serde(default = "Console::default_bundle")]
   pub bundle: PathBuf,
   /// The other services the screens call through the console, each by the name the console relays it under.
@@ -72,6 +75,29 @@ impl Default for Console {
       token: String::new(),
       bundle: Self::default_bundle(),
       calls: Vec::new(),
+    }
+  }
+}
+
+/// bmo-ui's audio player a hosted page loads (`docs/api.md`, "Readings").
+#[derive(Clone, Debug, Deserialize)]
+pub struct Player {
+  /// The folder the build of `client/` writes the player's script and its words into; a relative one is read
+  /// from the directory the settings stand in.
+  #[serde(default = "Player::default_folder")]
+  pub folder: PathBuf,
+}
+
+impl Player {
+  fn default_folder() -> PathBuf {
+    PathBuf::from("client/player")
+  }
+}
+
+impl Default for Player {
+  fn default() -> Self {
+    Self {
+      folder: Self::default_folder(),
     }
   }
 }
@@ -174,6 +200,7 @@ impl Settings {
   /// Every path the settings name, made to stand on the directory they were read from.
   fn anchor(&mut self, dir: &Path) {
     anchor(dir, &mut self.console.bundle);
+    anchor(dir, &mut self.player.folder);
     anchor(dir, &mut self.files.root);
     anchor(dir, &mut self.explorer.data_root);
 

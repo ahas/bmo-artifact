@@ -9,10 +9,10 @@ use serde::de::DeserializeOwned;
 
 use crate::settings::Settings;
 use crate::wire::{
-  Attachment, AttachmentInput, AttachmentPage, ConsoleManifest, ContentQuery, Document, DocumentChange,
-  DocumentInput, DocumentKindPage, DocumentPage, DocumentsQuery, DryRunQuery, EventPage, EventsQuery,
-  Health, Import, ImportInput, LabelValuePage, LabelValuesQuery, PageQuery, Publication, Reference,
-  ReferencePage, ScopeHolding, Share, ShareInput, SharePage, SharesQuery, WireError,
+  Attachment, AttachmentInput, AttachmentPage, ContentQuery, Document, DocumentChange, DocumentInput,
+  DocumentKindPage, DocumentPage, DocumentsQuery, DryRunQuery, EventPage, EventsQuery, Health, Import,
+  ImportInput, LabelValuePage, LabelValuesQuery, PageQuery, Publication, Reference, ReferencePage,
+  ScopeHolding, Share, ShareInput, SharePage, SharesQuery, WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -142,21 +142,6 @@ impl ArtifactClient {
   /// `GET /health`.
   pub async fn health(&self) -> Result<Health, ClientFailure> {
     Self::json(self.request(Method::GET, "/health")).await
-  }
-
-  /// `GET /console-manifest`.
-  pub async fn console_manifest(&self) -> Result<ConsoleManifest, ClientFailure> {
-    Self::json(self.request(Method::GET, "/console-manifest")).await
-  }
-
-  /// `GET /console/words`.
-  pub async fn console_words(&self) -> Result<serde_json::Value, ClientFailure> {
-    Self::json(self.request(Method::GET, "/console/words")).await
-  }
-
-  /// `GET /console/{file}`.
-  pub async fn console_file(&self, file: &str) -> Result<Content, ClientFailure> {
-    Self::bytes(self.request(Method::GET, &format!("/console/{}", segment(file)))).await
   }
 
   /// `GET /events`, as a page.

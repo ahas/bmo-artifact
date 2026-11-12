@@ -20,6 +20,8 @@ use crate::wire::ContentQuery;
 
 // What the player's script is kept for by whoever loaded it: a year, since its name changes with its bytes.
 const KEPT: &str = "public, max-age=31536000, immutable";
+// The player's script goes out as a script.
+const SCRIPT_TYPE: &str = "text/javascript; charset=utf-8";
 
 fn token_parameter() -> serde_json::Value {
   text_parameter("token", "The reading token.")
@@ -77,13 +79,13 @@ impl Route for ReadPlayer {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let name = call.path_text("token").await?;
-    let file = call.standing().console.player(&name).ok_or_else(|| {
-      Refused::from(Refusal::absent(format!("the console bundle has no player named {name}")))
+    let file = call.standing().player.script(&name).ok_or_else(|| {
+      Refused::from(Refusal::absent(format!("the player folder holds no player named {name}")))
     })?;
     let mut response = Response::new(Body::from(file.bytes.clone()));
     let headers = response.headers_mut();
 
-    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static(file.media_type));
+    headers.insert(header::CONTENT_TYPE, HeaderValue::from_static(SCRIPT_TYPE));
     headers.insert(header::CACHE_CONTROL, HeaderValue::from_static(KEPT));
     *response.status_mut() = StatusCode::OK;
 

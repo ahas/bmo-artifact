@@ -14,6 +14,7 @@ pub mod import;
 pub mod kinds;
 pub mod mcp;
 pub mod openapi;
+pub mod player;
 pub mod plumbing;
 pub mod pool;
 pub mod reader;

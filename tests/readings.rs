@@ -14,7 +14,8 @@ use sha2::{Digest, Sha256};
 use support::service::{CONSOLE_TOKEN, Service};
 
 const PLAYER: &[u8] = b"window.BmoAudioPlayer = {};";
-const WORDS: &[u8] = br#"{"en":{"artifact":{"player":{"common":{"action":{"play":"Play"}}}}},"ko":{"artifact":{"player":{"common":{"action":{"play":"Play in ko"}}}}}}"#;
+const WORDS: &[u8] =
+  br#"{"en":{"common":{"action":{"play":"Play"}}},"ko":{"common":{"action":{"play":"Play in ko"}}}}"#;
 
 // The page a research run files: its own band under its title, a sound in it by the name it is kept under.
 const PAGE: &str = r#"<!doctype html><html><head><title>Read</title><style data-archive>.band{}</style></head><body><h1>Read</h1><section class="band"><p>Listen while you read</p><audio src="attachment:narration-ko.ogg" data-language="ko"></audio></section></body></html>"#;
@@ -26,12 +27,7 @@ fn player_name() -> String {
 }
 
 async fn service() -> Service {
-  Service::with_console(&[
-    ("bundle.js", b"export default {}"),
-    ("words.json", WORDS),
-    ("bmo-audio-player.js", PLAYER),
-  ])
-  .await
+  Service::with_player(&[("words.json", WORDS), ("bmo-audio-player.js", PLAYER)]).await
 }
 
 // A page with its narration attached; the page's number and the sound's.

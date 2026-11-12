@@ -3,8 +3,9 @@
 //! every call presenting the token.
 
 use std::collections::HashMap;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -25,17 +26,82 @@ pub const CONSOLE_TOKEN: &str = "console-token";
 /// The address the settings put share links under.
 pub const SHARE_ADDRESS: &str = "https://documents.invalid/share";
 
-// The settings a service of a test stands on: its database, its file root and its console folder, and the
-// tokens and share address every test names.
-fn environment(database: String, files: &Path, console: &Path) -> HashMap<String, String> {
+/// A bundle's module, as a test's bundle folder holds it.
+pub const MODULE: &[u8] = b"export default { routes: [] };\n";
+/// A bundle's stylesheet.
+pub const STYLESHEET: &[u8] = b".artifact-paper { color: red; }\n";
+/// A bundle's words, each locale's under its code.
+pub const WORDS: &[u8] = br#"{"en":{"artifact":{"title":{"screen":"Artifact"}}},"ko":{"artifact":{"title":{"screen":"Artifact"}}}}"#;
+
+/// The bmo-ui release file the bundle's own install takes, as `client/package.json` names it.
+pub fn vendored_release() -> PathBuf {
+  let client = Path::new(ROOT).join("client");
+  let manifest: Value = serde_json::from_str(
+    &std::fs::read_to_string(client.join("package.json")).expect("the bundle's manifest"),
+  )
+  .expect("it reads");
+  let spec = manifest["devDependencies"]["bmo-ui"]
+    .as_str()
+    .expect("bmo-ui is a development dependency");
+
+  client.join(spec.strip_prefix("file:").expect("bmo-ui is taken from a file"))
+}
+
+/// The layer that release names, read from its own layer file.
+pub fn release_layer() -> &'static str {
+  static LAYER: OnceLock<String> = OnceLock::new();
+
+  LAYER.get_or_init(|| {
+    let read = Command::new("tar")
+      .arg("-xzOf")
+      .arg(vendored_release())
+      .arg("package/shared/layer.json")
+      .output()
+      .expect("tar runs");
+    let file: Value = serde_json::from_slice(&read.stdout).expect("the release's layer file");
+
+    file["layer"].as_str().expect("a layer").to_owned()
+  })
+}
+
+/// The file bmo-ui's bundle build writes beside a module, naming the layer the vendored release names.
+pub fn layer_file() -> (&'static str, &'static [u8]) {
+  static FILE: OnceLock<Vec<u8>> = OnceLock::new();
+
+  (
+    "layer.json",
+    FILE.get_or_init(|| serde_json::json!({ "layer": release_layer() }).to_string().into_bytes()),
+  )
+}
+
+/// A bundle folder's files as the build writes them: a module, a stylesheet, words and the layer file.
+pub fn built_bundle() -> [(&'static str, &'static [u8]); 4] {
+  [("bundle.js", MODULE), ("bundle.css", STYLESHEET), ("words.json", WORDS), layer_file()]
+}
+
+// The settings a service of a test stands on: its database, its file root, its console folder and its player
+// folder, and the tokens and share address every test names.
+fn environment(database: String, files: &Path, console: &Path, player: &Path) -> HashMap<String, String> {
   HashMap::from([
     ("BMO_ARTIFACT_DATABASE__URL".to_owned(), database),
     ("BMO_ARTIFACT_FILES__ROOT".to_owned(), files.display().to_string()),
     ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), TOKEN.to_owned()),
     ("BMO_ARTIFACT_CONSOLE__TOKEN".to_owned(), CONSOLE_TOKEN.to_owned()),
     ("BMO_ARTIFACT_CONSOLE__BUNDLE".to_owned(), console.display().to_string()),
+    ("BMO_ARTIFACT_PLAYER__FOLDER".to_owned(), player.display().to_string()),
     ("BMO_ARTIFACT_SHARE__ADDRESS".to_owned(), SHARE_ADDRESS.to_owned()),
   ])
+}
+
+// A folder of the test's own holding these files, by name.
+fn folder_of(files: &[(&str, &[u8])]) -> tempfile::TempDir {
+  let folder = tempfile::tempdir().expect("a folder");
+
+  for (name, bytes) in files {
+    std::fs::write(folder.path().join(name), bytes).expect("a file");
+  }
+
+  folder
 }
 
 /// The web as the stand-in reader serves it: pages, pictures and previews by address, and every address
@@ -110,27 +176,35 @@ pub struct Service {
   pub files: tempfile::TempDir,
   /// The folder the console bundle is read from.
   pub console: tempfile::TempDir,
+  /// The folder the player is read from.
+  pub player: tempfile::TempDir,
   pub web: Arc<Web>,
   pub standing: Arc<Standing>,
   router: Router,
 }
 
 impl Service {
+  /// The service over a built bundle and an empty player folder.
   pub async fn new() -> Self {
-    Self::with_console(&[]).await
+    Self::with_folders(&built_bundle(), &[]).await
   }
 
-  /// The service over a console bundle folder holding these files, by name.
+  /// The service over a console bundle folder holding these files, by name, and an empty player folder.
   pub async fn with_console(bundle: &[(&str, &[u8])]) -> Self {
+    Self::with_folders(bundle, &[]).await
+  }
+
+  /// The service over a built bundle and a player folder holding these files, by name.
+  pub async fn with_player(player: &[(&str, &[u8])]) -> Self {
+    Self::with_folders(&built_bundle(), player).await
+  }
+
+  async fn with_folders(bundle: &[(&str, &[u8])], player: &[(&str, &[u8])]) -> Self {
     let scratch = Scratch::new().await;
     let files = tempfile::tempdir().expect("a file root");
-    let console = tempfile::tempdir().expect("a console bundle folder");
-
-    for (name, bytes) in bundle {
-      std::fs::write(console.path().join(name), bytes).expect("a bundle file");
-    }
-
-    let environment = environment(scratch.address(), files.path(), console.path());
+    let console = folder_of(bundle);
+    let player = folder_of(player);
+    let environment = environment(scratch.address(), files.path(), console.path(), player.path());
     let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
     let web = Arc::new(Web::default());
     let standing =
@@ -141,6 +215,7 @@ impl Service {
       scratch,
       files,
       console,
+      player,
       web,
       standing: Arc::new(standing),
       router,
@@ -152,7 +227,12 @@ impl Service {
   pub fn restart(&mut self) {
     let settings = Settings::read(
       Path::new(ROOT),
-      Some(environment(self.scratch.address(), self.files.path(), self.console.path())),
+      Some(environment(
+        self.scratch.address(),
+        self.files.path(),
+        self.console.path(),
+        self.player.path(),
+      )),
     )
     .expect("the settings read");
     let standing =

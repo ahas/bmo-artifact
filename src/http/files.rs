@@ -190,10 +190,10 @@ pub async fn page_sounds(
       )
     })
     .collect();
-  let (locale, words) = standing.console.player_words(language);
+  let (locale, words) = standing.player.words(language);
 
   Ok(PageSounds {
-    player: standing.console.player.as_ref().map(|player| format!("{up}player/{}", player.name)),
+    player: standing.player.script.as_ref().map(|script| format!("{up}player/{}", script.name)),
     files,
     words,
     locale,

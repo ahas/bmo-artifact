@@ -1,6 +1,6 @@
 //! Routes, the calls they answer, their refusals, and the router the server stands them on, behind the
-//! bearer token every call presents and the reach each route gives the console's (`docs/api.md`, "The wire"
-//! and "The console").
+//! bearer token every call presents, the console face's guard and the reach each route gives the console's
+//! (`docs/api.md`, "The wire" and "The console").
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::future::Future;
@@ -13,6 +13,7 @@ use axum::http::{Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{MethodFilter, MethodRouter};
+use bmo_console_face::ConsoleFace;
 use schemars::generate::SchemaGenerator;
 use sea_orm::DatabaseConnection;
 use serde::Serialize;
@@ -20,9 +21,10 @@ use serde::de::DeserializeOwned;
 use serde_json::json;
 use tokio::sync::{OnceCell, watch};
 
-use crate::console::{ConsoleBundle, screen_admits};
+use crate::console;
 use crate::documents::preview::PreviewCache;
 use crate::events::Publisher;
+use crate::player::Player;
 use crate::plumbing::openapi::Operation;
 use crate::plumbing::refusal::Refusal;
 use crate::pool::Archive;
@@ -39,9 +41,9 @@ pub use inventory;
 pub enum ConsoleReach {
   /// Not at all: the screens do not use the route.
   Closed,
-  /// With no role and no owner key: what a console reads for no reader.
+  /// With no role and no owner key: a share read or the share head the manifest names.
   Open,
-  /// As a screen's call, under the role and the owner key the screens need.
+  /// As a screen's call, under the role and the owner key the console face's guard holds it to.
   Screen,
 }
 
@@ -53,6 +55,12 @@ impl ConsoleReach {
       Self::Open => "open",
       Self::Screen => "screen",
     }
+  }
+
+  /// Whether the console's token may be refused 403 on the route: where the screens do not use it, or under
+  /// the role and the owner key.
+  pub fn forbids_console(self) -> bool {
+    matches!(self, Self::Closed | Self::Screen)
   }
 }
 
@@ -193,8 +201,11 @@ pub struct Standing {
   pub previews: Arc<PreviewCache>,
   /// Where events are published.
   pub events: Publisher,
-  /// The console bundle the settings' folder holds, read when the server starts.
-  pub console: Arc<ConsoleBundle>,
+  /// The console face the settings' console stands on, built when the server starts: none where they name no
+  /// console token, or why the face refused what it was handed.
+  pub console: Result<Option<ConsoleFace>, String>,
+  /// bmo-ui's audio player the settings' player folder holds, read when the server starts.
+  pub player: Arc<Player>,
   /// The key reading tokens are signed with (`docs/artifact.md`, "Readings").
   pub readings: ReadingKey,
   // The server's stop, raised once when it is asked to end.
@@ -225,7 +236,8 @@ impl Standing {
     let archive = Archive::new(settings.database.url.clone());
     let wording = Wording::read(settings.wording.file.as_deref())?;
     let previews = Arc::new(PreviewCache::new(settings.files.root.join("web-cache"), Arc::clone(&reader)));
-    let console = Arc::new(ConsoleBundle::read(&settings.console.bundle));
+    let console = console::face(&settings.console).map_err(|why| why.to_string());
+    let player = Arc::new(Player::read(&settings.player.folder));
     let readings = ReadingKey::of(&settings.server.token);
 
     Ok(Self {
@@ -236,10 +248,16 @@ impl Standing {
       previews,
       events: Publisher::default(),
       console,
+      player,
       readings,
       stop: Arc::new(watch::channel(false).0),
       settled: Arc::default(),
     })
+  }
+
+  /// The console face, where one stands.
+  pub fn face(&self) -> Option<&ConsoleFace> {
+    self.console.as_ref().ok().and_then(Option::as_ref)
   }
 
   /// The server's stop raised: every stream open ends, so the shutdown waits for nothing that never ends.
@@ -358,7 +376,7 @@ pub fn answer(status: StatusCode, body: &impl Serialize) -> Response {
 }
 
 // Every call presents one of the settings' tokens as a bearer, and is marked with whose it is; an empty
-// token lets nobody in by it.
+// token lets nobody in by it, and the console's lets the console in only while a console face stands.
 async fn bearer(State(standing): State<Arc<Standing>>, mut request: Request, next: Next) -> Response {
   let settings = &standing.settings;
   let presented = request
@@ -366,14 +384,15 @@ async fn bearer(State(standing): State<Arc<Standing>>, mut request: Request, nex
     .get(header::AUTHORIZATION)
     .and_then(|value| value.to_str().ok())
     .and_then(|value| value.strip_prefix("Bearer "));
+  let face_stands = standing.face().is_some();
   let credential = presented.and_then(|presented| {
     [
-      (&settings.server.token, Credential::Service),
-      (&settings.console.token, Credential::Console),
+      (&settings.server.token, Credential::Service, true),
+      (&settings.console.token, Credential::Console, face_stands),
     ]
     .into_iter()
-    .find(|(token, _)| !token.is_empty() && presented == token.as_str())
-    .map(|(_, credential)| credential)
+    .find(|(token, _, admits)| *admits && !token.is_empty() && presented == token.as_str())
+    .map(|(_, credential, _)| credential)
   });
 
   match credential {
@@ -386,22 +405,19 @@ async fn bearer(State(standing): State<Arc<Standing>>, mut request: Request, nex
   }
 }
 
-// Whether a call reaches a route: the service's token reaches every one, the console's only as far as the
-// route's reach.
+// Whether a call reaches a route: the service's token reaches every one, the console's every one but those the
+// screens do not use, past the console face's guard.
 fn admitted(reach: ConsoleReach, request: &Request) -> Result<(), Refused> {
-  if request.extensions().get::<Credential>() != Some(&Credential::Console) {
-    return Ok(());
-  }
-
-  match reach {
-    ConsoleReach::Closed => Err(Refused::new(
+  if reach == ConsoleReach::Closed && request.extensions().get::<Credential>() == Some(&Credential::Console)
+  {
+    return Err(Refused::new(
       StatusCode::FORBIDDEN,
       "forbidden",
       "the console's token does not reach this route",
-    )),
-    ConsoleReach::Open => Ok(()),
-    ConsoleReach::Screen => screen_admits(request.headers()).map_err(Refused::from),
+    ));
   }
+
+  Ok(())
 }
 
 async fn no_route(request: Request) -> Response {
@@ -413,8 +429,8 @@ async fn no_route(request: Request) -> Response {
   .into_response()
 }
 
-/// The router answering every registered route behind the bearer token, or what is wrong with the routes
-/// linked in.
+/// The router answering every registered route behind the bearer token and the console face's guard, beside the
+/// face's own routes, or what is wrong with the routes linked in.
 pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
   let faults = route_faults();
 
@@ -449,12 +465,23 @@ pub fn router(standing: Standing) -> Result<Router, Vec<String>> {
     return Err(faults);
   }
 
+  let face = standing.face().cloned();
   let standing = Arc::new(standing);
-  let router = by_path
+  let routes = by_path
     .into_iter()
-    .fold(Router::new(), |router, (path, methods)| router.route(path, methods.fallback(no_route)))
+    .fold(Router::new(), |router, (path, methods)| router.route(path, methods.fallback(no_route)));
+  let routes = match &face {
+    Some(face) => face.guard_screens(routes),
+    None => routes,
+  };
+  let mut router = routes
     .fallback(no_route)
     .layer(middleware::from_fn_with_state(Arc::clone(&standing), bearer));
+
+  // The face's routes stand behind its own guard alone, which takes the console's token and no other.
+  if let Some(face) = &face {
+    router = router.merge(face.router());
+  }
 
   Ok(router.with_state(standing))
 }

@@ -17,7 +17,7 @@ These rules hold every change to this repository.
   its files. The routes this service serves and every call it makes to another unit are listed in
   `docs/api.md`.
 - **Dependencies:** crates from the registry pinned in `Cargo.toml`, and among other repositories only
-  the base libraries `bmo-chat`, `bmo-chat-client` and `bmo-ui`, and the client of each unit
+  the base libraries `bmo-chat`, `bmo-chat-client`, `bmo-console-face` and `bmo-ui`, and the client of each unit
   `docs/api.md` says this service calls. The dependency check in `tests/` holds this.
 - **The plumbing knows no command, no route and no tool.** A route registers itself beside its own
   answer and its OpenAPI operation, a harness tool beside its call, and a command takes what it needs

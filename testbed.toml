@@ -15,8 +15,9 @@ migrate = "BMO_ARTIFACT_DATABASE__URL=\"$BMO_TEST_TEMPLATE_URL\" cargo run --qui
 
 [check]
 quick = ["layout", "dependencies", "cargo-profile", "shared-versions"]
-# The base libraries, and bmo-explorer, whose published client crate the imports read pages through.
-base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-ui", "bmo-explorer"]
+# The base libraries, bmo-chat's console face among them, and bmo-explorer, whose published client crate the
+# imports read pages through.
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-explorer"]
 
 # The repository whose root holds the shared versions the manifests and the lock hold to.
 [check.shared_versions]
@@ -52,12 +53,18 @@ units = ["deploy/*.service"]
 # by default (docs/api.md, 「Health」).
 health = "cd ~/.local/share/bmo-artifact/deploy && bin/bmo-artifact health"
 
-# The console bundle's module, its stylesheet and its words, built in the release into the folder the
-# settings name by default, where the service reads them when it starts (docs/api.md, 「The console」).
+# The console bundle, built in the release into the folder the settings name by default, and bmo-ui's audio
+# player with its words into the player folder beside it, where the service reads them when it starts
+# (docs/api.md, 「The console」 and 「Readings」).
 [[deploy.step]]
 id = "console-module"
 command = "cd client && bun run module"
 phase = "before-flip"
+
+# The console probe a deployment runs once the service answers (bmo-testbed's docs/deploy.md): the address, the
+# console's token and the service's token, as the release's settings name them.
+[deploy.console]
+reach = "bin/bmo-artifact console-reach"
 
 # The document tables are brought to the schema the release carries before it is flipped, so a migration
 # runs at the deployment that brings it and no service meets a table it does not have (docs/api.md,

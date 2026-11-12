@@ -30,49 +30,6 @@ pub struct Health {
   pub version: String,
 }
 
-/// The console bundle's manifest, in the shape of bmo-ui's console plugin contract (`docs/api.md`,
-/// "The console").
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct ConsoleManifest {
-  /// The bundle's name, its words' namespace.
-  pub name: String,
-  /// The key, in the bundle's words, of the name a console's menu gives the screen.
-  pub title: String,
-  /// The icon drawn beside that name.
-  pub icon: String,
-  /// The path the screens stand under.
-  pub screen_path: String,
-  /// The paths the screens stood under before, each of whose addresses a console answers as moved to the
-  /// same address under the screen path.
-  pub former_screen_paths: Vec<String>,
-  /// The service's name, which a console relays it under.
-  pub service_name: String,
-  /// The path the module is answered at.
-  pub bundle: String,
-  /// The path the stylesheet is answered at, where the bundle has one.
-  #[serde(default, skip_serializing_if = "Option::is_none")]
-  pub stylesheet: Option<String>,
-  /// The path the words are answered at.
-  pub words: String,
-  /// The least role a reader holds to open the screens: `administrator` or `member`.
-  pub role: String,
-  /// Whether every call the screens make needs the reader's owner key.
-  pub owner_key: bool,
-  /// Whether the screens read the event stream.
-  pub events: bool,
-  /// Whether the screens open a WebSocket.
-  pub websocket: bool,
-  /// The event kinds a console may raise as a notice.
-  pub push_kinds: Vec<String>,
-  /// The reads a share token alone permits, each a path pattern carrying `{token}`.
-  pub share_reads: Vec<String>,
-  /// The read a console asks for a share page's head, a path pattern carrying `{token}`.
-  pub share_head: String,
-  /// The other services the screens call through the console, each by the name the console relays it under.
-  pub calls: Vec<String>,
-}
-
 /// One event: its number, its kind, when it was kept and the member it is about.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]

@@ -1,235 +1,108 @@
-//! The console bundle as a console reaches it (`docs/api.md`, "The console"): the manifest read through
-//! bmo-ui's own reading of the contract and agreeing with the declaration the layer carries, the module's path
-//! following its bytes, and the guard each kind of route stands behind.
+//! The console face as this service stands it up (`docs/api.md`, "The console"): the manifest it serves read
+//! through bmo-chat's face reading over the bmo-ui release the bundle vendors, the face's guard laid over the
+//! screens' routes, and how the console probe reaches the service. The face's own guard and paths are the
+//! face's tests'.
 
 use crate::support;
 
-use std::io::Write;
+use std::collections::HashMap;
 use std::path::Path;
-use std::process::{Command, Stdio};
 
 use axum::http::{Method, StatusCode};
-use bmo_artifact::console::ConsoleBundle;
-use serde_json::{Value, json};
+use bmo_artifact::console;
+use bmo_artifact::http::share_reads::SHARE_READS;
+use bmo_artifact::settings::{Console, Settings};
+use bmo_console_face::read_manifest;
+use serde_json::json;
 use support::ROOT;
-use support::service::{CONSOLE_TOKEN, Service, TOKEN};
-
-const MODULE: &[u8] = b"export default { routes: [] };\n";
-const STYLESHEET: &[u8] = b".artifact-paper { color: red; }\n";
-const WORDS: &[u8] = br#"{"en":{"artifact":{"title":{"screen":"Artifact"}}},"ko":{"artifact":{"title":{"screen":"Artifact"}}}}"#;
-
-async fn built() -> Service {
-  Service::with_console(&[("bundle.js", MODULE), ("bundle.css", STYLESHEET), ("words.json", WORDS)]).await
-}
-
-fn folder_with(files: &[(&str, &[u8])]) -> tempfile::TempDir {
-  let folder = tempfile::tempdir().expect("a folder");
-
-  for (name, bytes) in files {
-    std::fs::write(folder.path().join(name), bytes).expect("a file");
-  }
-
-  folder
-}
-
-// The layer of the bmo-ui release the bundle's own install holds, as the release's own layer file names it.
-fn installed_layer() -> Value {
-  let path = Path::new(ROOT).join("client/node_modules/bmo-ui/shared/layer.json");
-  let file: Value = serde_json::from_str(&std::fs::read_to_string(path).expect("the release's layer file"))
-    .expect("it reads");
-
-  file["layer"].clone()
-}
-
-// The manifest read by bmo-ui's `consoleManifest`, run by Bun in the bundle's own install: the manifest
-// read, or the reading's fault. The service answers no layer while the console reads the earlier contract
-// (docs/layout.md, 「The console bundle」), and the installed release's reading asks for one, so a manifest
-// naming none is handed the installed release's.
-fn read_by_contract(manifest: &Value) -> Result<Value, String> {
-  let mut manifest = manifest.clone();
-
-  if let Some(fields) = manifest.as_object_mut() {
-    fields.entry("layer").or_insert_with(installed_layer);
-  }
-
-  let mut reading = Command::new("bun")
-    .args(["tests/read-manifest.ts"])
-    .current_dir(Path::new(ROOT).join("client"))
-    .stdin(Stdio::piped())
-    .stdout(Stdio::piped())
-    .stderr(Stdio::piped())
-    .spawn()
-    .expect("bun runs in client/");
-
-  reading
-    .stdin
-    .take()
-    .expect("its input")
-    .write_all(manifest.to_string().as_bytes())
-    .expect("the manifest is handed over");
-
-  let read = reading.wait_with_output().expect("the reading ends");
-
-  if read.status.success() {
-    serde_json::from_slice(&read.stdout).map_err(|why| why.to_string())
-  } else {
-    Err(String::from_utf8_lossy(&read.stderr).into_owned())
-  }
-}
+use support::service::{
+  CONSOLE_TOKEN, MODULE, STYLESHEET, Service, TOKEN, WORDS, built_bundle, release_layer, vendored_release,
+};
 
 #[tokio::test]
-async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
-  let service = built().await;
+async fn the_manifest_served_keeps_the_contract_and_names_the_vendored_layer() {
+  let service = Service::new().await;
   let answered = service.call_by(Some(CONSOLE_TOKEN), Method::GET, "/console-manifest", None, &[]).await;
 
   assert_eq!(answered.status, StatusCode::OK, "{}", answered.json());
 
-  let manifest = answered.json();
-  // A console still on the earlier contract refuses a manifest naming a layer.
-  assert_eq!(manifest.get("layer"), None, "{manifest}");
+  let read = read_manifest(&answered.json(), &vendored_release()).expect("the manifest keeps the contract");
 
-  let read = read_by_contract(&manifest).expect("the manifest keeps the contract");
-
-  assert_eq!(read["role"], "member");
-  assert_eq!(read["ownerKey"], false);
-  assert_eq!(read["apiPrefix"], "/");
-  assert_eq!(read["words"], "/console/words");
+  assert_eq!(read["layer"], release_layer());
+  assert_eq!(
+    (read["name"].clone(), read["serviceName"].clone(), read["title"].clone()),
+    (json!("artifact"), json!("artifact"), json!("artifact.title.screen"))
+  );
   assert_eq!(
     (read["screenPath"].clone(), read["formerScreenPaths"].clone()),
     (json!("/artifact"), json!(["/archive"]))
   );
-  assert_eq!(read["shareReads"], manifest["shareReads"]);
+  assert_eq!((read["role"].clone(), read["ownerKey"].clone()), (json!("member"), json!(false)));
+  assert_eq!(read["apiPrefix"], "/");
+  assert_eq!(read["shareReads"], json!(SHARE_READS));
   assert_eq!(read["shareHead"], "/shares/{token}/head");
-  assert!(
-    read["shareReads"]
-      .as_array()
-      .is_some_and(|reads| reads.contains(&json!("/shares/{token}/document"))),
-    "{read}"
-  );
+  assert_eq!(read["calls"], json!([]));
+}
 
-  let declaration: Value = serde_json::from_str(
-    &std::fs::read_to_string(Path::new(ROOT).join("client/console-bundle.json")).expect("the declaration"),
-  )
-  .expect("the declaration reads");
+// The services the screens call through the console are the deployment's to name (docs/api.md, "The console").
+#[test]
+fn the_manifest_names_the_calls_the_settings_name() {
+  let folder = tempfile::tempdir().expect("a folder");
 
-  for field in [
-    "name",
-    "title",
-    "icon",
-    "screenPath",
-    "formerScreenPaths",
-    "serviceName",
-    "events",
-    "websocket",
-    "pushKinds",
-    "shareHead",
-  ] {
-    assert_eq!(manifest[field], declaration[field], "{field}");
+  for (name, bytes) in built_bundle() {
+    std::fs::write(folder.path().join(name), bytes).expect("a file");
   }
 
-  let bundle = manifest["bundle"].as_str().expect("the module's path");
-  let stylesheet = manifest["stylesheet"].as_str().expect("the stylesheet's path");
-  // A reader with no sign-in loads them to open a share page, so they are answered with no role.
-  let module = service.call_by(Some(CONSOLE_TOKEN), Method::GET, bundle, None, &[]).await;
-  let sheet = service.call_by(Some(CONSOLE_TOKEN), Method::GET, stylesheet, None, &[]).await;
-  let words = service.call_by(Some(CONSOLE_TOKEN), Method::GET, "/console/words", None, &[]).await;
+  let face = console::face(&Console {
+    token: CONSOLE_TOKEN.to_owned(),
+    bundle: folder.path().to_path_buf(),
+    calls: vec!["gate".to_owned()],
+  })
+  .expect("the face stands")
+  .expect("a face");
 
-  assert_eq!((module.status, module.bytes.as_slice()), (StatusCode::OK, MODULE));
-  assert!(module.header("content-type").starts_with("text/javascript"));
-  assert!(module.header("cache-control").contains("immutable"));
-  assert_eq!((sheet.status, sheet.bytes.as_slice()), (StatusCode::OK, STYLESHEET));
-  assert!(sheet.header("content-type").starts_with("text/css"));
-  assert_eq!(
-    (words.status, words.json()),
-    (StatusCode::OK, serde_json::from_slice::<Value>(WORDS).expect("words"))
-  );
+  assert_eq!(face.manifest()["calls"], json!(["gate"]));
 }
 
 #[test]
-fn a_manifest_out_of_the_contract_is_refused_by_its_reading() {
-  let fault = read_by_contract(&json!({ "name": "artifact" })).expect_err("a manifest lacking its fields");
+fn no_face_stands_without_a_console_token_or_over_a_bundle_naming_no_layer() {
+  let folder = tempfile::tempdir().expect("a folder");
 
-  assert!(fault.contains("role"), "{fault}");
-}
-
-#[test]
-fn the_module_path_follows_its_bytes() {
-  let one = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
-  let same = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
-  let other = ConsoleBundle::read(
-    folder_with(&[("bundle.js", b"export default { routes: [1] };\n"), ("words.json", WORDS)]).path(),
-  );
-  let path = |bundle: &ConsoleBundle| bundle.manifest(&[]).expect("a manifest").bundle;
-
-  assert_eq!(path(&one), path(&same));
-  assert_ne!(path(&one), path(&other));
-  assert!(
-    path(&one).starts_with("/console/bundle.") && path(&one).ends_with(".js"),
-    "{}",
-    path(&one)
-  );
-  assert_eq!(one.manifest(&[]).expect("a manifest").stylesheet, None);
-}
-
-// The services the screens call through the console are the deployment's to name (docs/api.md, "The console"),
-// and the contract's own reading takes them under `calls`.
-#[test]
-fn the_manifest_names_the_calls_the_settings_name_and_none_of_its_own() {
-  let bundle = ConsoleBundle::read(folder_with(&[("bundle.js", MODULE), ("words.json", WORDS)]).path());
-  let named = bundle.manifest(&["gate".to_owned()]).expect("a manifest");
-  let read =
-    read_by_contract(&serde_json::to_value(&named).expect("the manifest as JSON")).expect("the contract");
-
-  assert_eq!(read["calls"], json!(["gate"]));
-  assert_eq!(bundle.manifest(&[]).expect("a manifest").calls, Vec::<String>::new());
-}
-
-#[test]
-fn a_folder_with_no_module_or_no_words_holds_no_bundle() {
-  assert_eq!(ConsoleBundle::read(folder_with(&[("words.json", WORDS)]).path()).manifest(&[]), None);
-  assert_eq!(ConsoleBundle::read(folder_with(&[("bundle.js", MODULE)]).path()).manifest(&[]), None);
-}
-
-#[tokio::test]
-async fn an_unbuilt_bundle_leaves_the_manifest_and_the_words_not_found() {
-  let service = Service::new().await;
-
-  for path in ["/console-manifest", "/console/words"] {
-    let answered = service.call_by(Some(CONSOLE_TOKEN), Method::GET, path, None, &[]).await;
-
-    assert_eq!(
-      (answered.status, answered.json()["code"].clone()),
-      (StatusCode::NOT_FOUND, json!("not-found")),
-      "{path}"
-    );
+  for (name, bytes) in [("bundle.js", MODULE), ("bundle.css", STYLESHEET), ("words.json", WORDS)] {
+    std::fs::write(folder.path().join(name), bytes).expect("a file");
   }
+
+  let console = |token: &str| Console {
+    token: token.to_owned(),
+    bundle: folder.path().to_path_buf(),
+    calls: Vec::new(),
+  };
+
+  assert!(matches!(console::face(&console("")), Ok(None)));
+  assert!(console::face(&console(CONSOLE_TOKEN)).is_err());
 }
 
+// Where no face stands the console is left with nothing, so it leaves the service out.
 #[tokio::test]
-async fn a_call_without_a_token_is_refused_401() {
-  let service = built().await;
-  let bundle = service.call(Method::GET, "/console-manifest", None).await.json()["bundle"]
-    .as_str()
-    .expect("a path")
-    .to_owned();
+async fn where_no_face_stands_the_console_token_reaches_nothing() {
+  let service = Service::with_console(&[("bundle.js", MODULE), ("words.json", WORDS)]).await;
 
-  for path in ["/console-manifest", "/console/words", bundle.as_str(), "/documents"] {
-    let answered = service.call_by(None, Method::GET, path, None, &[("owner-role", "member")]).await;
-
-    assert_eq!(answered.status, StatusCode::UNAUTHORIZED, "{path}");
-    assert_eq!(answered.json()["code"], "unauthorized", "{path}");
-
-    let wrong = service
-      .call_by(Some("wrong"), Method::GET, path, None, &[("owner-role", "member")])
+  for path in ["/console-manifest", "/documents", "/shares/unknown"] {
+    let refused = service
+      .call_by(Some(CONSOLE_TOKEN), Method::GET, path, None, &[("owner-role", "member")])
       .await;
 
-    assert_eq!(wrong.status, StatusCode::UNAUTHORIZED, "{path}");
+    assert_eq!(refused.status, StatusCode::UNAUTHORIZED, "{path}");
   }
+
+  let answered = service.call_by(Some(TOKEN), Method::GET, "/documents", None, &[]).await;
+
+  assert_eq!(answered.status, StatusCode::OK);
 }
 
 #[tokio::test]
 async fn the_console_reaches_the_screens_routes_only_under_a_role_allowing_member() {
-  let service = built().await;
+  let service = Service::new().await;
 
   for path in ["/documents", "/document-kinds", "/label-values?key=category", "/shares"] {
     for headers in [&[][..], &[("owner-role", "guest")][..], &[("owner-role", "")][..]] {
@@ -246,12 +119,16 @@ async fn the_console_reaches_the_screens_routes_only_under_a_role_allowing_membe
 
       assert_eq!(answered.status, StatusCode::OK, "{path} {role}");
     }
+
+    let answered = service.call_by(Some(TOKEN), Method::GET, path, None, &[]).await;
+
+    assert_eq!(answered.status, StatusCode::OK, "{path} with the service's token");
   }
 }
 
 #[tokio::test]
 async fn the_console_reaches_no_route_the_screens_do_not_use() {
-  let service = built().await;
+  let service = Service::new().await;
   let member = [("owner-role", "administrator"), ("owner-key", "7")];
   let filed = service
     .call_by(
@@ -277,30 +154,17 @@ async fn the_console_reaches_no_route_the_screens_do_not_use() {
   }
 }
 
-#[tokio::test]
-async fn the_service_token_reaches_every_route_with_no_role() {
-  let service = built().await;
-  let bundle = service.call(Method::GET, "/console-manifest", None).await.json()["bundle"]
-    .as_str()
-    .expect("a path")
-    .to_owned();
+#[test]
+fn the_probe_reaches_the_loopback_address_where_the_service_listens_on_every_one() {
+  let environment = HashMap::from([
+    ("BMO_ARTIFACT_SERVER__LISTEN".to_owned(), "0.0.0.0:3230".to_owned()),
+    ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), TOKEN.to_owned()),
+    ("BMO_ARTIFACT_CONSOLE__TOKEN".to_owned(), CONSOLE_TOKEN.to_owned()),
+  ]);
+  let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
 
-  for path in [bundle.as_str(), "/documents", "/console/words"] {
-    let answered = service.call_by(Some(TOKEN), Method::GET, path, None, &[]).await;
-
-    assert_eq!(answered.status, StatusCode::OK, "{path}");
-  }
-}
-
-#[tokio::test]
-async fn a_file_the_manifest_does_not_name_is_not_found() {
-  let service = built().await;
-
-  for path in ["/console/bundle.js", "/console/bundle.0000000000000000.js", "/console/words.json"] {
-    let answered = service
-      .call_by(Some(CONSOLE_TOKEN), Method::GET, path, None, &[("owner-role", "member")])
-      .await;
-
-    assert_eq!(answered.status, StatusCode::NOT_FOUND, "{path}");
-  }
+  assert_eq!(
+    console::reach(&settings),
+    json!({ "address": "http://127.0.0.1:3230", "consoleToken": CONSOLE_TOKEN, "token": TOKEN })
+  );
 }

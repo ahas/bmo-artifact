@@ -1,8 +1,8 @@
 import { fileURLToPath } from "node:url";
 
-// The document screens as a console bundle: a layer on bmo-ui with its pages, its components, its
-// stylesheet and the modules they stand on, attached by its declaration, `console-bundle.json`
-// (bmo-ui's `docs/console-bundles.md`; `docs/layout.md`, "The console bundle").
+// The Nuxt app the bundle's sources are prepared and type-checked in: bmo-ui extended with the bundle's pages,
+// components and stylesheets, as a console runs them (`docs/layout.md`, "The console bundle"). The browser
+// module a console loads is built by `module.config.ts`, not by Nuxt.
 export default defineNuxtConfig({
   extends: ["bmo-ui"],
   // The layer's stylesheet, named from the layer's own folder: an alias in a layer's configuration

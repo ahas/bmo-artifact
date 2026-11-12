@@ -4,7 +4,7 @@
 [package]
 name = "bmo-artifact"
 description = "Documents kept, searched and shared: records, learning books, imported pages and HTML pages, with their attachments, references and share links."
-version = "0.1.0-rev.14"
+version = "0.1.0-rev.15"
 edition = "2024"
 license = "MIT"
 publish = false
@@ -22,6 +22,8 @@ avif-parse = "2.1.0"
 axum = { version = "0.8.9", features = ["macros", "multipart", "ws"] }
 # A share link's token, and the bytes a tool or an attachment carries.
 base64 = "0.22.1"
+# The console face: the manifest, the bundle's files and their guard, by bmo-ui's console contract.
+bmo-console-face = { path = "../../base/chat/console-face" }
 # The page reader an import and a reference's preview read through: bmo-explorer's published client.
 bmo-explorer = { path = "../explorer", version = "=0.1.0-rev.5" }
 chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }

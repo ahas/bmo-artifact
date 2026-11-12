@@ -1,6 +1,6 @@
 //! The command's words (`docs/api.md`, "The command"), each registered beside its own run: the service, the
-//! schema, the readiness asked, the OpenAPI document, the MCP server, the nouns it declares, a document filed
-//! from a shell, an HTML file read and the version.
+//! schema, the readiness asked, how the console probe reaches the service, the OpenAPI document, the MCP
+//! server, the nouns it declares, a document filed from a shell, an HTML file read and the version.
 
 pub mod archive_doc;
 pub mod html_read;
@@ -144,11 +144,13 @@ impl Verb for Serve {
 
     abandon(&standing).await.map_err(|why| VerbError::Refused(why.error))?;
 
-    if !standing.console.built() {
-      eprintln!(
-        "the console bundle is not built in {}; its manifest answers not-found",
+    match &standing.console {
+      Ok(Some(_)) => {}
+      Ok(None) => eprintln!("no console token is set; the service serves no console face"),
+      Err(why) => eprintln!(
+        "the console face over {} is refused, so the service serves none: {why}",
         shell.settings.console.bundle.display()
-      );
+      ),
     }
 
     let stopping = standing.clone();
@@ -197,6 +199,23 @@ impl Verb for Health {
 }
 
 crate::verb!(Health);
+
+/// `console-reach`.
+pub struct ConsoleProbeReach;
+
+impl Verb for ConsoleProbeReach {
+  const NAME: &'static str = "console-reach";
+  const ABOUT: &'static str =
+    "Prints how the testbed's console probe reaches the service the settings name, as one JSON object.";
+
+  type Args = Nothing;
+
+  async fn run(&self, _: Nothing, shell: &Shell) -> Result<Answer, VerbError> {
+    Ok(vec![crate::console::reach(&shell.settings).to_string()].into())
+  }
+}
+
+crate::verb!(ConsoleProbeReach);
 
 /// `openapi`.
 pub struct OpenApi;

@@ -8,9 +8,8 @@ use axum::http::{Method, StatusCode};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
-use support::service::{CONSOLE_TOKEN, SHARE_ADDRESS, Service};
+use support::service::{CONSOLE_TOKEN, MODULE, SHARE_ADDRESS, STYLESHEET, Service, layer_file};
 
-const MODULE: &[u8] = b"export default { routes: [] };\n";
 const WORDS: &[u8] = br#"{
   "en": { "artifact": {
     "kind": { "search": "Research", "page": "Page" },
@@ -23,7 +22,13 @@ const WORDS: &[u8] = br#"{
 }"#;
 
 async fn built() -> Service {
-  Service::with_console(&[("bundle.js", MODULE), ("words.json", WORDS)]).await
+  Service::with_console(&[
+    ("bundle.js", MODULE),
+    ("bundle.css", STYLESHEET),
+    ("words.json", WORDS),
+    layer_file(),
+  ])
+  .await
 }
 
 fn png() -> Vec<u8> {
@@ -153,15 +158,16 @@ async fn a_token_that_opens_nothing_has_no_head() {
 }
 
 #[tokio::test]
-async fn a_live_link_has_no_head_where_no_bundle_was_built() {
-  let service = Service::new().await;
+async fn a_live_link_has_no_head_where_no_console_face_stands() {
+  let service = Service::with_console(&[]).await;
   let id = filed(
     &service,
     json!({ "kind": "record", "title": "Unbuilt", "body": "Words.", "actorName": "tester", "labels": {} }),
   )
   .await;
   let token = shared(&service, id).await;
-  let (status, said) = head(&service, &format!("/shares/{token}/head")).await;
+  // With no face the console's token reaches nothing, so the service's asks.
+  let said = service.call(Method::GET, &format!("/shares/{token}/head"), None).await;
 
-  assert_eq!((status, said["code"].clone()), (StatusCode::NOT_FOUND, json!("not-found")));
+  assert_eq!((said.status, said.json()["code"].clone()), (StatusCode::NOT_FOUND, json!("not-found")));
 }

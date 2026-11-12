@@ -7,10 +7,14 @@
 listen = "127.0.0.1:3230"
 
 # The console's token is `token` here; a deployment sets it, and an empty one lets no console in. The console
-# bundle's module, stylesheet and words are read from `bundle`, client/dist until it names another folder. The
-# other services the screens call through the console, the console's translator among them, are `calls` here; a
-# deployment names them, and none is named until it does.
+# bundle is read from `bundle`, client/dist until it names another folder. The other services the screens call
+# through the console, the console's translator among them, are `calls` here; a deployment names them, and none
+# is named until it does.
 [console]
+
+# bmo-ui's audio player script and its words, which a hosted page loads, are read from `folder`, client/player
+# until it names another.
+[player]
 
 [database]
 url = "postgres://localhost/bmo_artifact"

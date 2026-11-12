@@ -2,7 +2,6 @@
 //! (`docs/api.md`), and the way a kept file goes out on the wire.
 
 pub mod attachments;
-pub mod console;
 pub mod document_kinds;
 pub mod documents;
 pub mod events;
