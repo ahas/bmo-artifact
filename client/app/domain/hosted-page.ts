@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { schemeOf } from "./document-view";
+import { saveFile } from "./save-file";
 
 import type { BarAction } from "bmo-ui/app/domain/tabs";
 import type { ComputedRef } from "vue";
@@ -31,16 +32,8 @@ export function usePageActions(page: () => PageServed): ComputedRef<BarAction[]>
     window.open(framed.value, "_blank", "noopener,noreferrer");
   }
 
-  function download(): void {
-    const link = document.createElement("a");
-
-    link.href = page()({ download: true });
-    link.download = "";
-    link.click();
-  }
-
   return computed(() => [
     { id: "open", label: t("artifact.action.open_new_tab"), icon: "i-material-symbols-open-in-new", onSelect: openPage },
-    { id: "download", label: t("artifact.action.download"), icon: "i-material-symbols-download", onSelect: download }
+    { id: "download", label: t("artifact.action.download"), icon: "i-material-symbols-download", onSelect: () => saveFile(page()({ download: true })) }
   ]);
 }

@@ -554,7 +554,7 @@ The console bundle makes one call of its own, through the console rather than th
 
 | Unit | Through | For |
 |---|---|---|
-| the console's translator, the gate | bmo-ui's `translation` module, relayed by the console | a document's tab in the reader's language (`docs/artifact.md`, 「Where a person reads it」) |
+| the console's translator, the gate | bmo-ui's `translation` module, relayed by the console | a document's reading in the reader's language (`docs/artifact.md`, 「Where a person reads it」) |
 
 - **The translator is the console's to name.** The console names the service and its translating route in its
   runtime configuration (bmo-ui's `docs/console-bundles.md`, 「Translation」), the gate's `POST /translations`

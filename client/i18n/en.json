@@ -34,8 +34,7 @@
       "span_30d": "30 days",
       "span_6h": "6 hours",
       "span_7d": "7 days",
-      "span_forever": "No end",
-      "reading": "Language"
+      "span_forever": "No end"
     },
     "kind": {
       "import": "Original",
@@ -82,6 +81,7 @@
       "original": "Original",
       "refresh": "Refresh",
       "share": "Share",
+      "translate": "Translation",
       "view_picture": "View {name}",
       "ask_again": "Ask again"
     },
