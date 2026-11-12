@@ -32,9 +32,26 @@ fn folder_with(files: &[(&str, &[u8])]) -> tempfile::TempDir {
   folder
 }
 
+// The layer of the bmo-ui release the bundle's own install holds, as the release's own layer file names it.
+fn installed_layer() -> Value {
+  let path = Path::new(ROOT).join("client/node_modules/bmo-ui/shared/layer.json");
+  let file: Value = serde_json::from_str(&std::fs::read_to_string(path).expect("the release's layer file"))
+    .expect("it reads");
+
+  file["layer"].clone()
+}
+
 // The manifest read by bmo-ui's `consoleManifest`, run by Bun in the bundle's own install: the manifest
-// read, or the reading's fault.
+// read, or the reading's fault. The service answers no layer while the console reads the earlier contract
+// (docs/layout.md, 「The console bundle」), and the installed release's reading asks for one, so a manifest
+// naming none is handed the installed release's.
 fn read_by_contract(manifest: &Value) -> Result<Value, String> {
+  let mut manifest = manifest.clone();
+
+  if let Some(fields) = manifest.as_object_mut() {
+    fields.entry("layer").or_insert_with(installed_layer);
+  }
+
   let mut reading = Command::new("bun")
     .args(["tests/read-manifest.ts"])
     .current_dir(Path::new(ROOT).join("client"))
@@ -68,6 +85,9 @@ async fn the_manifest_keeps_the_contract_and_agrees_with_the_declaration() {
   assert_eq!(answered.status, StatusCode::OK, "{}", answered.json());
 
   let manifest = answered.json();
+  // A console still on the earlier contract refuses a manifest naming a layer.
+  assert_eq!(manifest.get("layer"), None, "{manifest}");
+
   let read = read_by_contract(&manifest).expect("the manifest keeps the contract");
 
   assert_eq!(read["role"], "member");

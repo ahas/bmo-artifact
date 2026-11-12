@@ -142,8 +142,13 @@ The plumbing is what every command and every route stands on, and it knows none 
 - **bmo-ui is a peer.** The manifest names bmo-ui as a peer at the one version the bundle is built
   against, marked optional so no install looks for it in a registry. For the bundle's own install, a
   packed copy kept under `client/vendor/`, named by version, is a development dependency taken from that
-  file; moving to another bmo-ui version replaces the copy and both manifest lines together. bmo-ui's
-  patches under `client/patches/` apply in this install.
+  file; moving to another bmo-ui version replaces the copy and both manifest lines together. The version is
+  the release bmo-chat's shared versions pin. bmo-ui's patches under `client/patches/` apply in this install.
+- **The manifest names no layer while the console reads the earlier contract.** The console still runs a
+  bmo-ui whose reading of a manifest refuses the `layer` field the pinned release's reading asks for, so the
+  service answers its manifest without one. The module keeps every bmo-ui import an import, so it runs on the
+  console's own copy of bmo-ui whichever release the bundle's install holds. The tests that read the manifest
+  through the pinned release's own reading hand that reading the release's layer first.
 - **Under the console's title bar.** The list's and one document's routes ask for the console's bar in their meta,
   so a console that offers its bar (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the title bar) draws
   it over them under the manifest's title and icon, and they draw no bar of their own. Found without that offer each
