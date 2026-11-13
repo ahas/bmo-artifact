@@ -4,6 +4,7 @@
 
 use sea_orm::{ConnectionTrait, QueryResult, Value};
 
+use super::member_shares::{permission_column, permission_of, shared_with};
 use super::{all, now_ms, one, run};
 use crate::kinds;
 use crate::plumbing::refusal::Refusal;
@@ -87,6 +88,7 @@ fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
       has_picture: row.try_get("", "has_picture")?,
       created_at: row.try_get("", "created_at")?,
       changed_at: row.try_get("", "changed_at")?,
+      permission: None,
     },
     file: row.try_get::<Option<String>>("", "document")?.filter(|file| !file.is_empty()),
   })
@@ -106,17 +108,28 @@ pub async fn read<C: ConnectionTrait>(db: &C, id: i64) -> Result<Option<Row>, Re
 }
 
 /// One page of documents, newest first, filtered in the reading itself; and whether more stand past it.
-/// A row that left no document is never listed.
+/// A row that left no document is never listed. Read for a `member`, it holds the documents shared with that
+/// account alone, each with the permission it is read under.
 pub async fn list<C: ConnectionTrait>(
   db: &C,
   query: &DocumentsQuery,
   limit: i64,
+  member: Option<&str>,
 ) -> Result<(Vec<Document>, bool), Refusal> {
   let mut values: Vec<Value> = Vec::new();
   let mut filters = vec![LEFT_A_DOCUMENT.to_owned()];
   let bind = |value: Value, values: &mut Vec<Value>| {
     values.push(value);
     format!("${}", values.len())
+  };
+  let permission = match member {
+    Some(member) => {
+      let at = bind(member.into(), &mut values);
+
+      filters.push(shared_with(&at));
+      permission_column(&at)
+    }
+    None => "NULL::text".to_owned(),
   };
 
   if let Some(kind) = query.kind.as_deref().filter(|kind| !kind.is_empty()) {
@@ -179,7 +192,8 @@ pub async fn list<C: ConnectionTrait>(
   let rows = all(
     db,
     &format!(
-      r#"SELECT {COLUMNS} FROM "searches" d WHERE {} ORDER BY d."id" DESC LIMIT {take}"#,
+      r#"SELECT {COLUMNS}, {permission} AS "permission" FROM "searches" d WHERE {} ORDER BY d."id" DESC
+          LIMIT {take}"#,
       filters.join(" AND ")
     ),
     values,
@@ -187,7 +201,12 @@ pub async fn list<C: ConnectionTrait>(
   .await?;
   let mut documents = rows
     .iter()
-    .map(|row| row_of(row).map(|row| row.document))
+    .map(|row| -> Result<Document, Refusal> {
+      Ok(Document {
+        permission: permission_of(row.try_get("", "permission")?),
+        ..row_of(row)?.document
+      })
+    })
     .collect::<Result<Vec<_>, _>>()?;
   let more = documents.len() as i64 > limit;
 
@@ -208,20 +227,30 @@ pub fn number_of(phrase: &str) -> Option<i64> {
 }
 
 /// The distinct values the label `key` holds across the listed documents, the most carried first and, among
-/// equals, in the values' order; at most `limit`, and whether more stand past them.
+/// equals, in the values' order; at most `limit`, and whether more stand past them. Read for a `member`, it
+/// counts the documents shared with that account alone.
 pub async fn label_values<C: ConnectionTrait>(
   db: &C,
   key: &str,
   limit: i64,
+  member: Option<&str>,
 ) -> Result<(Vec<LabelValue>, bool), Refusal> {
+  let shared = match member {
+    Some(_) => format!(" AND {}", shared_with("$3")),
+    None => String::new(),
+  };
+  let mut values: Vec<Value> = vec![key.into(), (limit + 1).into()];
+
+  values.extend(member.map(Value::from));
+
   let rows = all(
     db,
     &format!(
       r#"SELECT d."labels" ->> $1 AS "value", COUNT(*) AS "count" FROM "searches" d
-          WHERE {LEFT_A_DOCUMENT} AND d."labels" ->> $1 IS NOT NULL
+          WHERE {LEFT_A_DOCUMENT} AND d."labels" ->> $1 IS NOT NULL{shared}
           GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT $2"#
     ),
-    vec![key.into(), (limit + 1).into()],
+    values,
   )
   .await?;
   let mut items = rows
@@ -341,7 +370,7 @@ pub async fn set_body<C: ConnectionTrait>(db: &C, id: i64, text: &str) -> Result
 }
 
 /// The files a document keeps under the file root, and its rows, let go of: its references, its body, its
-/// attachments, its share links and itself, its link leaving a note of what it opened. The share tokens it
+/// attachments, its member shares, its share links and itself, its link leaving a note of what it opened. The share tokens it
 /// held.
 pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, Refusal> {
   // Its link leaves a note of what it opened behind it, written while the document's own row still stands.
@@ -362,6 +391,7 @@ pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, 
     "search_findings",
     "search_images",
     "archive_attachments",
+    "artifact_member_shares",
     "web_search_shares",
   ] {
     run(db, &format!(r#"DELETE FROM "{table}" WHERE "search_id" = $1"#), vec![id.into()]).await?;

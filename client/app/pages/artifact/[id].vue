@@ -79,7 +79,7 @@
 
       <ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />
 
-      <ShareDialog v-model:open="shareOpen" :road="road" :spans="spans" :subject="held?.document.title" />
+      <ShareDialog v-model:open="shareOpen" :road="road" :members="members" :spans="spans" :subject="held?.document.title" />
     </template>
   </UDashboardPanel>
 </template>
@@ -111,6 +111,7 @@ import {
 import { documentReading, scriptOf } from "../../domain/document-reading";
 import { contentsOf, instructionOf, kindOf, labelsBesideInstruction, numberText } from "../../domain/document-view";
 import { usePageActions } from "../../domain/hosted-page";
+import { memberRoad, usePeopleDirectory } from "../../domain/members";
 import { useTranslationToggle, useWrittenActions } from "../../domain/written-document";
 
 import type { SplitterItem } from "@nuxt/ui";
@@ -246,15 +247,20 @@ const writtenActions = useWrittenActions({
 // Each kind of document offers what it holds of its own.
 const ownActions = computed(() => (hosted.value ? pageActions.value : writtenActions.value));
 
+// A document read under a permission is one shared with the reader, who reads it and shares nothing of it
+// (`docs/artifact.md`, "Member shares").
+const shareable = computed(() => held.value !== null && (held.value.document.permission ?? null) === null);
+
 // All the actions on the document the screen's row offers, so none stands anywhere else on it: its instruction where
-// it carries one, what its kind offers of its own, and its sharing; its properties close the group.
+// it carries one, what its kind offers of its own, and its sharing where the reader may share it; its properties
+// close the group.
 const actions = computed<BarAction[]>(() =>
   held.value === null
     ? []
     : [
         ...(instruction.value === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: openInstruction }]),
         ...ownActions.value,
-        { id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }
+        ...(shareable.value ? [{ id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }] : [])
       ]
 );
 
@@ -287,6 +293,10 @@ async function goTo(slug: string): Promise<void> {
 }
 
 const road = computed(() => shareRoad(documentId.value));
+// The members a document is shared with go by the console's people directory; where it provides none, the dialog
+// shares by link alone.
+const people = usePeopleDirectory();
+const members = computed(() => (people === null ? undefined : memberRoad(documentId.value, people)));
 const spans = computed(() => SHARE_SPANS.map((span) => ({ value: span.value, label: t(span.label) })));
 
 useHead({ title: computed(() => (held.value === null ? t("artifact.title.screen") : held.value.document.title.slice(0, 60))) });

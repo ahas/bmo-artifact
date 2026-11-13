@@ -38,6 +38,16 @@ impl Refusal {
     Self::new(StatusCode::CONFLICT, detail)
   }
 
+  /// The caller may not do this here.
+  pub fn forbidden(detail: impl Into<String>) -> Self {
+    Self::new(StatusCode::FORBIDDEN, detail)
+  }
+
+  /// The member is read and never written: asked to give more than reading, it gives nothing.
+  pub fn read_only(detail: impl Into<String>) -> Self {
+    Self::new(StatusCode::UNPROCESSABLE_ENTITY, detail)
+  }
+
   /// The member stood once and stands no more: what it was is said in the sentence.
   pub fn gone(detail: impl Into<String>) -> Self {
     Self::new(StatusCode::GONE, detail)
@@ -68,6 +78,7 @@ impl Refusal {
       StatusCode::CONFLICT => "conflict",
       StatusCode::GONE => "gone",
       StatusCode::PAYLOAD_TOO_LARGE => "too-large",
+      StatusCode::UNPROCESSABLE_ENTITY => "read-only",
       StatusCode::BAD_GATEWAY => "upstream-failed",
       StatusCode::SERVICE_UNAVAILABLE => "not-ready",
       _ => "failed",

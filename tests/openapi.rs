@@ -51,6 +51,10 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "GET /documents/{documentId}/references",
     "GET /documents/{documentId}/references/{referenceId}",
     "GET /documents/{documentId}/references/{referenceId}/image",
+    "GET /documents/{documentId}/members",
+    "POST /documents/{documentId}/members",
+    "PATCH /documents/{documentId}/members/{user}",
+    "DELETE /documents/{documentId}/members/{user}",
     "GET /document-kinds",
     "GET /label-values",
     "GET /shares",
@@ -86,6 +90,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   assert_eq!(reach("/shares/{token}", "get"), "open");
   assert_eq!(reach("/shares/{token}/head", "get"), "open");
   assert_eq!(reach("/shares/{token}", "delete"), "screen");
+  assert_eq!(reach("/documents/{documentId}/members", "post"), "screen");
 
   for read in bmo_artifact::http::share_reads::SHARE_READS {
     assert_eq!(reach(read, "get"), "open", "{read}");

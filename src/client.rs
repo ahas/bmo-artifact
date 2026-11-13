@@ -11,8 +11,9 @@ use crate::settings::Settings;
 use crate::wire::{
   Attachment, AttachmentInput, AttachmentPage, ContentQuery, Document, DocumentChange, DocumentInput,
   DocumentKindPage, DocumentPage, DocumentsQuery, DryRunQuery, EventPage, EventsQuery, Health, Import,
-  ImportInput, LabelValuePage, LabelValuesQuery, PageQuery, Publication, Reference, ReferencePage,
-  ScopeHolding, Share, ShareInput, SharePage, SharesQuery, WireError,
+  ImportInput, LabelValuePage, LabelValuesQuery, MemberShare, MemberShareChange, MemberShareInput,
+  MemberSharePage, PageQuery, Publication, Reference, ReferencePage, ScopeHolding, Share, ShareInput,
+  SharePage, SharesQuery, WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -256,6 +257,46 @@ impl ArtifactClient {
       self.request(Method::GET, &format!("/documents/{document_id}/references/{reference_id}/image")),
     )
     .await
+  }
+
+  /// `GET /documents/{documentId}/members`.
+  pub async fn members(
+    &self,
+    document_id: i64,
+    query: &PageQuery,
+  ) -> Result<MemberSharePage, ClientFailure> {
+    Self::json(self.get(&format!("/documents/{document_id}/members"), query)).await
+  }
+
+  /// `POST /documents/{documentId}/members`.
+  pub async fn share_with_members(
+    &self,
+    document_id: i64,
+    input: &MemberShareInput,
+  ) -> Result<MemberSharePage, ClientFailure> {
+    Self::json(self.request(Method::POST, &format!("/documents/{document_id}/members")).json(input)).await
+  }
+
+  /// `PATCH /documents/{documentId}/members/{user}`.
+  pub async fn change_member(
+    &self,
+    document_id: i64,
+    user: &str,
+    change: &MemberShareChange,
+  ) -> Result<MemberShare, ClientFailure> {
+    Self::json(
+      self
+        .request(Method::PATCH, &format!("/documents/{document_id}/members/{}", segment(user)))
+        .json(change),
+    )
+    .await
+  }
+
+  /// `DELETE /documents/{documentId}/members/{user}`.
+  pub async fn remove_member(&self, document_id: i64, user: &str) -> Result<(), ClientFailure> {
+    Self::sent(self.request(Method::DELETE, &format!("/documents/{document_id}/members/{}", segment(user))))
+      .await
+      .map(drop)
   }
 
   /// `GET /document-kinds`.

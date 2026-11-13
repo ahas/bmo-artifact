@@ -12,6 +12,7 @@ repository.
   played where the document is read.
 - **The pages each document refers to,** with what each page says of itself for a preview.
 - **Share links,** each opening one document for whoever holds it.
+- **Member shares,** each opening one document to read to one member of the reader's company.
 - **Nothing it did not keep.** It runs no research and speaks no narration: a research run is a client's
   own work that files its result here, and a narration is a sound a client attaches with the role `head`.
   It knows no caller: a document's `scope`, `actorName` and `labels` are the caller's own strings.
@@ -22,6 +23,7 @@ flowchart TD
   C -->|attaches| A[Its files]
   D -->|its links| R[Its references]
   C -->|shares| S[A share link]
+  C -->|shares with| M[A member share]
   C -->|imports an address| I[An import]
   I -->|reads through bmo-explorer| D
 ```
@@ -72,6 +74,7 @@ address and the file root are settings; no other unit reads or writes either.
 | `search_images` | picture kept before the attachments held pictures | read once into the attachments, never written |
 | `web_search_shares` | share link | its token, its document, when it was made and when it ends |
 | `web_search_share_notes` | link that has ended | its token, what it opened, that document's title, when it ended and why |
+| `artifact_member_shares` | document shared with one member | its document, the member's account key, the permission and when it was shared |
 | `imports` | import | the address asked, the title, scope and actor asked, its state, its document or why it failed |
 | `events` | event | its kind, when it was kept, the scope of its member and the member |
 
@@ -178,6 +181,28 @@ address and the file root are settings; no other unit reads or writes either.
 - **A link's address** is the share address the settings name, a `/` and the token. What answers that
   address is whoever serves the service to a browser: it reads the link, then the document, its content, its
   files and its references through the share reads, each carrying the token (docs/api.md, 「Share links」).
+
+## Member shares
+
+- **A document is shared with members of the reader's company** as well as by link, from the one share dialog
+  (「Where a person reads it」). A member is an account of the console's people directory, every account under
+  the top-level organization the reader's own unit belongs to; the service keeps each member by the account key
+  alone and asks nothing of the directory.
+- **Who sees what.** The console tells the service who reads (docs/api.md, 「Readers」):
+  - the administrator, and every caller holding the service's token, read every document, as before any
+    document was shared;
+  - any other signed-in reader reads the documents shared with their own account and no other. The list holds
+    those alone, and every other document reads to them as one that does not stand, so a reader learns nothing
+    of a document they were not handed.
+- **A member reads and does nothing else.** The permission is `read`, the one a member is given; the screens write
+  nothing to a document, so no share gives more, and `edit` is refused. A member reader neither makes nor ends
+  a link, nor shares the document on.
+- **Each change stands as it is made.** Sharing, changing and taking a member off are each stored on their own;
+  a member taken off reads nothing of the document from the next call on.
+- **A member share goes with its document,** when the document or the scope holding it is let go of, and leaves
+  no note: unlike a link, a member share was never handed to anyone outside to open.
+- **A link stands beside the member shares,** each on its own terms: a share link opens the document to whoever
+  holds its token whatever members it is shared with, and ending a link touches no member share.
 
 ## A page imported whole
 
@@ -445,6 +470,16 @@ its name stands among them too, so it can be saved.
     other document; a page fills the window. With no row of the screen's over it, a markdown document's masthead
     holds on a row under its title the one action a holder of the link has, opening its referred pages where they
     do not stand beside it.
+- **Sharing a document** opens bmo-ui's one share dialog (bmo-ui's `docs/components.md`, 「Sharing」) from the
+  document's row, titled by the document: its link part first, a link made for one of the spans offered, shown,
+  copied and ended there (「Share links」); and under it its member part, where the console provides its people
+  directory (docs/api.md, 「What this service calls」). The member part finds people by the directory's search,
+  shares with those picked, each given `read`, and stands each member on a row by the name, organization and job
+  title the directory gives the account, the account key where it gives none (「Member shares」). Where the
+  console provides no directory, the dialog shares by link alone.
+- **A member reader's screens are the same screens over less:** the list holds the documents shared with them,
+  and a document read under a permission (docs/api.md, 「Documents」, `permission`) offers no sharing among the
+  actions on it.
 - **The screens' former path, `/archive`, still reaches them.** The manifest names it among its former screen paths,
   so a console answers every address under it — the list, a document, a share link handed out under it — with a
   308 to the same address under `/artifact` (bmo-ui's `docs/console-bundles.md`, 「A screen that moved」).
@@ -535,4 +570,5 @@ its name stands among them too, so it can be saved.
   what it makes here through the MCP server.
 - **Talk and translations** of a document belong to whoever keeps the talk and the translations. The service
   keeps no translation: a reader's reading is asked through the console from the gate, which keeps them.
-- **Visibility per caller.** Every caller holding the token reaches every document.
+- **Ownership of a document.** A document belongs to no account: the administrator reads every one, and a
+  member reads what is shared with them (「Member shares」).

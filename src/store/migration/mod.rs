@@ -12,6 +12,7 @@ pub mod m20261019_000002_drop_news_briefs;
 pub mod m20261020_000001_redesign;
 pub mod m20261020_000002_drop_research_profiles;
 pub mod m20261028_000001_share_notes;
+pub mod m20261113_000001_member_shares;
 
 pub struct Migrator;
 
@@ -26,6 +27,7 @@ impl MigratorTrait for Migrator {
       Box::new(m20261020_000001_redesign::Migration),
       Box::new(m20261020_000002_drop_research_profiles::Migration),
       Box::new(m20261028_000001_share_notes::Migration),
+      Box::new(m20261113_000001_member_shares::Migration),
     ]
   }
 }

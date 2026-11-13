@@ -5,6 +5,7 @@ use axum::http::{Method, StatusCode};
 use axum::response::Response;
 use schemars::generate::SchemaGenerator;
 
+use super::readers::Reader;
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
 use crate::plumbing::openapi::{Operation, json_answer, query};
 use crate::store::{documents, page_limit};
@@ -26,7 +27,9 @@ impl Route for ListLabelValues {
       return Err(Refused::bad("key names the label whose values are asked"));
     }
 
-    let (items, more) = documents::label_values(call.standing().db().await?, key, limit).await?;
+    let reader = Reader::of(&call);
+    let (items, more) =
+      documents::label_values(call.standing().db().await?, key, limit, reader.member()).await?;
 
     Ok(answer(StatusCode::OK, &LabelValuePage { items, more }))
   }

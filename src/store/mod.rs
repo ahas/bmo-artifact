@@ -5,6 +5,7 @@ pub mod attachments;
 pub mod documents;
 pub mod events;
 pub mod imports;
+pub mod member_shares;
 pub mod migration;
 pub mod references;
 pub mod scopes;

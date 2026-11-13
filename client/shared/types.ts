@@ -15,5 +15,7 @@ export type ArtifactReference = Schemas["Reference"];
 export type ArtifactReferencePage = Schemas["ReferencePage"];
 export type ArtifactShare = Schemas["Share"];
 export type ArtifactSharePage = Schemas["SharePage"];
+export type ArtifactMemberShare = Schemas["MemberShare"];
+export type ArtifactMemberSharePage = Schemas["MemberSharePage"];
 export type ArtifactLabelValue = Schemas["LabelValue"];
 export type ArtifactLabelValuePage = Schemas["LabelValuePage"];

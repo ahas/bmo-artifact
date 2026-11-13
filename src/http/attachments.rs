@@ -8,6 +8,7 @@ use schemars::generate::SchemaGenerator;
 
 use super::documents::document;
 use super::files::{Asking, KeptFile, Opened, PRIVATE_DAY, Reach, inside_root, send};
+use super::readers::reached;
 use crate::Refusal;
 use crate::documents::keeper::{Handed, keep};
 use crate::events::EventKind;
@@ -69,7 +70,7 @@ impl Route for ListAttachments {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = reached(&mut call).await?;
     let asked: PageQuery = call.query()?;
 
     attachment_page(call.standing(), id, &asked).await
@@ -150,7 +151,7 @@ impl Route for ReadAttachment {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = reached(&mut call).await?;
     let attachment = call.path_id("attachmentId").await?;
     let asking = Asking::of(&call)?;
 

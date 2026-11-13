@@ -93,6 +93,73 @@ pub struct Document {
   pub created_at: i64,
   /// Epoch milliseconds.
   pub changed_at: i64,
+  /// For a member reader, the permission it reads the document under; absent for a reader of every document
+  /// and in every event (`docs/api.md`, "Readers").
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub permission: Option<Permission>,
+}
+
+/// What a member a document is shared with may do with it (`docs/api.md`, "Member shares"): `read` is given,
+/// and `edit` is named so that asking for it is refused rather than misread.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum Permission {
+  Read,
+  Edit,
+}
+
+impl Permission {
+  /// The word it is written and kept as.
+  pub fn word(self) -> &'static str {
+    match self {
+      Self::Read => "read",
+      Self::Edit => "edit",
+    }
+  }
+
+  /// The permission a kept word names, none for a word no permission is written as.
+  pub fn of_word(word: &str) -> Option<Self> {
+    [Self::Read, Self::Edit].into_iter().find(|permission| permission.word() == word)
+  }
+}
+
+/// One member a document is shared with.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MemberShare {
+  pub id: i64,
+  pub document_id: i64,
+  /// The member's account key, as the console writes `Owner-Key`.
+  pub user: String,
+  pub permission: Permission,
+  /// Epoch milliseconds.
+  pub shared_at: i64,
+}
+
+/// A page of member shares, in the order they were shared.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MemberSharePage {
+  pub items: Vec<MemberShare>,
+  pub more: bool,
+}
+
+/// The members to share a document with, and what they may do with it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MemberShareInput {
+  /// The members' account keys: 1 to 200, each of 1 to 200 characters.
+  pub users: Vec<String>,
+  /// `read`; `edit` is refused.
+  pub permission: Permission,
+}
+
+/// A member share's permission set anew.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MemberShareChange {
+  /// `read`; `edit` is refused.
+  pub permission: Permission,
 }
 
 /// A page of documents, newest first.

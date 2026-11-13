@@ -110,6 +110,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documents/{documentId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The members a document is shared with, in the order they were shared. */
+        get: operations["listDocumentsMembersByDocumentId"];
+        put?: never;
+        /** Share a document with members to read; a member already sharing it keeps its share. */
+        post: operations["createDocumentsMembersByDocumentId"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{documentId}/members/{user}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take a member off a document; their reading stops at once. */
+        delete: operations["deleteDocumentsMembersByDocumentIdUser"];
+        options?: never;
+        head?: never;
+        /** Set the permission one member reads a document under. */
+        patch: operations["changeDocumentsMembersByDocumentIdUser"];
+        trace?: never;
+    };
     "/documents/{documentId}/picture": {
         parameters: {
             query?: never;
@@ -620,6 +656,11 @@ export interface components {
             labels: {
                 [key: string]: string;
             };
+            /**
+             * @description For a member reader, the permission it reads the document under; absent for a reader of every document
+             *     and in every event (`docs/api.md`, "Readers").
+             */
+            permission?: components["schemas"]["Permission"] | null;
             /** @description What it is held under; null where none was given. */
             scope: string | null;
             title: string;
@@ -752,8 +793,46 @@ export interface components {
             items: components["schemas"]["LabelValue"][];
             more: boolean;
         };
+        /** @description One member a document is shared with. */
+        MemberShare: {
+            /** Format: int64 */
+            documentId: number;
+            /** Format: int64 */
+            id: number;
+            permission: components["schemas"]["Permission"];
+            /**
+             * Format: int64
+             * @description Epoch milliseconds.
+             */
+            sharedAt: number;
+            /** @description The member's account key, as the console writes `Owner-Key`. */
+            user: string;
+        };
+        /** @description A member share's permission set anew. */
+        MemberShareChange: {
+            /** @description `read`; `edit` is refused. */
+            permission: components["schemas"]["Permission"];
+        };
+        /** @description The members to share a document with, and what they may do with it. */
+        MemberShareInput: {
+            /** @description `read`; `edit` is refused. */
+            permission: components["schemas"]["Permission"];
+            /** @description The members' account keys: 1 to 200, each of 1 to 200 characters. */
+            users: string[];
+        };
+        /** @description A page of member shares, in the order they were shared. */
+        MemberSharePage: {
+            items: components["schemas"]["MemberShare"][];
+            more: boolean;
+        };
         /** @description Nothing: the route answered 204. */
         Nothing: Record<string, never>;
+        /**
+         * @description What a member a document is shared with may do with it (`docs/api.md`, "Member shares"): `read` is given,
+         *     and `edit` is named so that asking for it is refused rather than misread.
+         * @enum {string}
+         */
+        Permission: "read" | "edit";
         /** @description A document filed and a link to it opened in one call: what a document is handed to somebody as. */
         Publication: {
             document: components["schemas"]["Document"];
@@ -1168,6 +1247,113 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listDocumentsMembersByDocumentId: {
+        parameters: {
+            query?: {
+                /** @description Only the members after this one, by its id. */
+                after?: number | null;
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The members a document is shared with, in the order they were shared. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberSharePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createDocumentsMembersByDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberShareInput"];
+            };
+        };
+        responses: {
+            /** @description Share a document with members to read; a member already sharing it keeps its share. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberSharePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteDocumentsMembersByDocumentIdUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+                /** @description The member's account key. */
+                user: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Take a member off a document; their reading stops at once. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    changeDocumentsMembersByDocumentIdUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+                /** @description The member's account key. */
+                user: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberShareChange"];
+            };
+        };
+        responses: {
+            /** @description Set the permission one member reads a document under. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberShare"];
                 };
             };
             default: components["responses"]["Error"];

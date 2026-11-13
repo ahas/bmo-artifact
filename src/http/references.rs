@@ -8,6 +8,7 @@ use schemars::generate::SchemaGenerator;
 
 use super::documents::document;
 use super::files::PRIVATE_DAY;
+use super::readers::reached;
 use crate::Refusal;
 use crate::documents::preview::PreviewCache;
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
@@ -37,7 +38,7 @@ pub async fn cited_in(standing: &Standing, id: i64, reference: i64) -> Result<Ci
 }
 
 async fn cited(call: &mut Call) -> Result<Cited, Refused> {
-  let id = call.path_id("documentId").await?;
+  let id = reached(call).await?;
   let reference = call.path_id("referenceId").await?;
 
   cited_in(call.standing(), id, reference).await
@@ -104,7 +105,7 @@ impl Route for ListReferences {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = reached(&mut call).await?;
     let asked: PageQuery = call.query()?;
 
     reference_page(call.standing(), id, &asked).await

@@ -1,7 +1,8 @@
 # bmo-artifact
 
 Documents kept, searched and shared, as one service with its own API: records, learning books,
-imported web pages and HTML pages, each with its files, the pages it refers to and its share link. A
+imported web pages and HTML pages, each with its files, the pages it refers to, its share link and the
+members of the reader's company it is shared with to read. A
 harness reaches it through its MCP server, `bmo-artifact mcp`, and the `bmo-artifact` skill; any other
 caller through its HTTP API and its Rust client. It reads web pages through bmo-explorer's client and
 calls no other unit.

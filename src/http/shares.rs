@@ -8,6 +8,7 @@ use sea_orm::DatabaseConnection;
 use serde_json::json;
 
 use super::documents::document;
+use super::readers::Reader;
 use crate::Refusal;
 use crate::events::EventKind;
 use crate::now_ms;
@@ -103,7 +104,9 @@ impl Route for ListShares {
 
     // A cursor in milliseconds: the links made in the second it names were on the page it came from.
     let after = asked.after.map(|after| after.div_euclid(1000));
-    let (links, more) = shares::list(standing.db().await?, asked.document_id, after, limit).await?;
+    let reader = Reader::of(&call);
+    let (links, more) =
+      shares::list(standing.db().await?, asked.document_id, after, limit, reader.member()).await?;
     let address = &standing.settings.share.address;
 
     Ok(answer(
@@ -138,6 +141,8 @@ impl Route for MakeShare {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    Reader::of(&call).shares()?;
+
     let asked: ShareInput = call.json().await?;
     let standing = call.standing();
     let now = now_ms();
@@ -225,6 +230,8 @@ impl Route for EndShare {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    Reader::of(&call).shares()?;
+
     let token = call.path_text("token").await?;
     let standing = call.standing();
     let db = standing.db().await?;

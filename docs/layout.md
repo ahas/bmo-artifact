@@ -50,6 +50,7 @@ src/
     ground.rs              a picture laid on white where its transparency would be lost, and a link's card picture
   http/                    one module a resource, each route registered beside its answer
     files.rs               a kept file sent as kept or as a hosted page, under its isolation
+    readers.rs             who a call reads for, and which documents that reader reaches
     hosted_page.rs         the sandboxed HTML page, its prelude and its bridges
   mcp/                     the MCP server and its tools, each registered beside its call
   helpers/                 the answer ceiling, a line's marks filled in, and a picture read and kept as AVIF
@@ -188,7 +189,8 @@ flowchart TD
 - **Schema.** The migrations run in order: the document tables in the shape the earlier archive declares
   them; the research profiles' table, then the pair that makes and takes away two tables no longer this
   repository's; the redesign, which adds a document's scope, actor, labels, description and change time,
-  an attachment's role, and the imports and events; and the research profiles' table taken away. A
+  an attachment's role, and the imports and events; the research profiles' table taken away; the notes ended
+  share links leave; and the member shares. A
   migration a database may already have run is never rewritten or removed, since the migrator refuses a
   database whose record names a migration it does not know. `bmo-artifact migrate` brings the database
   the settings name up to date.

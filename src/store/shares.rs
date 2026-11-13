@@ -11,8 +11,9 @@
 
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use sea_orm::{ConnectionTrait, QueryResult};
+use sea_orm::{ConnectionTrait, QueryResult, Value};
 
+use super::member_shares::shared_with;
 use super::{all, one, run};
 use crate::plumbing::refusal::Refusal;
 use crate::wire::Share;
@@ -179,21 +180,35 @@ pub async fn sweep(db: &impl ConnectionTrait, now: i64) -> Result<Vec<String>, R
 }
 
 /// The live links, oldest first, of one document where it is named, made after `after` seconds where that
-/// is given, at most `limit`; and whether more stand past them. Swept first by the caller.
+/// is given, at most `limit`; and whether more stand past them. Read for a `member`, they are the links of the
+/// documents shared with that account alone. Swept first by the caller.
 pub async fn list(
   db: &impl ConnectionTrait,
   document_id: Option<i64>,
   after: Option<i64>,
   limit: i64,
+  member: Option<&str>,
 ) -> Result<(Vec<Link>, bool), Refusal> {
+  let shared = match member {
+    Some(_) => format!(
+      r#" AND EXISTS (SELECT 1 FROM "searches" d WHERE d."id" = "web_search_shares"."search_id" AND {})"#,
+      shared_with("$4")
+    ),
+    None => String::new(),
+  };
+  let mut values: Vec<Value> =
+    vec![document_id.into(), after.unwrap_or(i64::MIN).into(), (limit + 1).into()];
+
+  values.extend(member.map(Value::from));
+
   let rows = all(
     db,
     &format!(
       r#"SELECT {COLUMNS} FROM "web_search_shares"
-          WHERE ($1::bigint IS NULL OR "search_id" = $1) AND "created_at" > $2
+          WHERE ($1::bigint IS NULL OR "search_id" = $1) AND "created_at" > $2{shared}
           ORDER BY "created_at", "share_token" LIMIT $3"#
     ),
-    vec![document_id.into(), after.unwrap_or(i64::MIN).into(), (limit + 1).into()],
+    values,
   )
   .await?;
   let mut links = rows.iter().map(link_of).collect::<Result<Vec<_>, _>>()?;

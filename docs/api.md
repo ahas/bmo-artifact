@@ -1,6 +1,6 @@
 # The boundary: bmo-artifact
 
-bmo-artifact keeps documents, finds them again and shares them by link: records, learning books, imported
+bmo-artifact keeps documents, finds them again and shares them by link and with members: records, learning books, imported
 pages and HTML pages, each with its body, its attachments, the pages it refers to and its cover picture. It
 is an upstream (bmo-chat's `docs/conventions.md`, 「Upstream and downstream」): a harness takes it as its
 first entry point through its MCP server, with no console and no other unit running beside it but the page
@@ -37,6 +37,7 @@ flowchart TD
   The console's token reaches only the console face and what its screens use, under the guard 「The console」
   states.
 - **The paths carry no prefix.** Whatever serves the service to a browser mounts it under its own path.
+- **What a caller reads depends on who it reads for** (「Readers」).
 - **A caller's strings are opaque:** `scope` is what a document or an import is held under, `actorName`
   who filed it, and `labels` the caller's own metadata, an object of strings. The service stores and
   matches them and never reads meaning into them.
@@ -53,12 +54,13 @@ flowchart TD
 |---|---|---|
 | 400 | `bad-request` | the body, the query or a path key is not the shape the route takes; the sentence names what |
 | 401 | `unauthorized` | the token is missing or wrong, or is the service's on the console face |
-| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs |
+| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs; a member reader on a route that changes how a document is shared (「Readers」) |
 | 404 | `no-route` | no route answers this method and path |
 | 404 | `not-found` | nothing stands at the key the path names |
 | 409 | `conflict` | the member does not take the change: a body for a page, HTML for any other kind |
 | 410 | `gone` | a share link that has ended, and what it opened; an event stream resumed from before the window the service keeps |
 | 413 | `too-large` | the body or an attachment is over its ceiling |
+| 422 | `read-only` | a member share asked with a permission other than `read` (「Member shares」) |
 | 500 | `failed` | the service failed: its store or its file root; the sentence is the failure |
 
 
@@ -68,6 +70,25 @@ flowchart TD
   given and 200 at most; a `limit` that is not a whole number from 1 is refused `bad-request`.
 - **`before` and `after` are ids:** `before` asks for the members older than the one named, `after` for the
   ones newer. A page answers `more` where something stands past its last item.
+
+### Readers
+
+A call reads for one of two readers, and the reader decides which documents it reaches.
+
+- **A reader of every document** is a caller holding the service's token, and the console relaying for a reader
+  whose `Owner-Role` is `administrator`. It reaches every document as each route below states.
+- **A member reader** is the console relaying for any other reader, the account its `Owner-Key` names. It reads
+  the documents shared with that account (「Member shares」), and reads them only:
+  - `GET /documents` lists those documents alone, and `GET /label-values` counts those alone;
+  - `GET /documents/{documentId}` and every read under it answer a document not shared with the reader 404
+    `not-found`, in the sentence of a document that does not stand;
+  - `GET /shares` lists the live links of those documents alone;
+  - `POST /shares`, `DELETE /shares/{token}` and every route of 「Member shares」 are refused 403 `forbidden`;
+  - a reader with no `Owner-Key` has nothing shared with it.
+- **The headers are the console's word** (bmo-ui's `docs/console-bundles.md`, 「Roles and the owner key」): they
+  are read only on a call carrying the console's token. A call with the service's token reads every document,
+  whatever headers it carries.
+- **The share reads, the share head and the readings** are held to their token alone, whoever reads.
 
 ## Documents
 
@@ -86,6 +107,7 @@ lives」).
 | `attachmentCount` | how many files it keeps |
 | `hasPicture` | whether it keeps a picture, so `GET /documents/{documentId}/picture` has a cover to send |
 | `createdAt`, `changedAt` | when it was filed and last rewritten |
+| `permission` | for a member reader, the permission it reads the document under, `read` (「Member shares」); absent for a reader of every document and in every event |
 
 ### Kinds
 
@@ -141,8 +163,8 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   references are read again from a new body. A body for a page or HTML for any other kind is refused
   409 `conflict`.
 - **`DELETE /documents/{documentId}` lets go of the document** as letting go of its scope lets go of each it
-  holds (「Scopes」): its row, its labels, its files, attachments and references, and its share link, which
-  leaves its note behind. A reading issued for it opens nothing after. An import that filed it keeps its own
+  holds (「Scopes」): its row, its labels, its files, attachments and references, its member shares, and its
+  share link, which leaves its note behind. A reading issued for it opens nothing after. An import that filed it keeps its own
   record. It is a `document.deleted`, and its link a `share.deleted`.
 - **`GET /documents/{documentId}/content`** sends the file: `text/markdown` for a markdown kind, never
   cached. A page goes out as a hosted page (docs/artifact.md, 「An HTML page」): its prelude ahead of its
@@ -300,6 +322,41 @@ console relays them with no session, as a sandboxed page asks for them with none
 - **The player's words** are the bundle's pack's `artifact.player` words of each locale, which the build writes
   beside the script in the player folder the settings name, where the console face does not answer them.
 
+## Member shares
+
+A member share opens one document to read to one member of the reader's company: the account the console's
+people directory names by its key (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the people
+directory). A document is shared with each account at most once.
+
+| Field | Holds |
+|---|---|
+| `id`, `documentId` | the member share and its document |
+| `user` | the member's account key, as the console writes `Owner-Key` |
+| `permission` | `read` |
+| `sharedAt` | when it was shared, in epoch milliseconds |
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /documents/{documentId}/members` | query `after?`, `limit?` | 200, a page of member shares, in the order they were shared |
+| `POST /documents/{documentId}/members` | `users`, `permission` | 200, a page of the member shares of those users, made now or already standing |
+| `PATCH /documents/{documentId}/members/{user}` | `permission` | 200, the member share |
+| `DELETE /documents/{documentId}/members/{user}` | | 204 |
+
+- **Only a reader of every document shares** (「Readers」): a member reader is refused 403 `forbidden` on each
+  route here.
+- **A document that does not stand is `not-found`** on every route here.
+- **`GET /documents/{documentId}/members`** pages by `after`, the `id` of the last member read, and `limit`, 30
+  where none is given and 200 at most.
+- **`POST /documents/{documentId}/members`** shares the document with every key in `users`, 1 to 200 keys of 1
+  to 200 characters each, refused `bad-request` otherwise. A key already a member keeps its share as it stands.
+- **`permission` is `read`.** The document screens write nothing, so a share opens reading alone: `edit` is
+  refused 422 `read-only` before anything is stored, on `POST` and `PATCH` alike.
+- **`PATCH /documents/{documentId}/members/{user}`** sets the permission; a key that is no member is
+  `not-found`.
+- **`DELETE /documents/{documentId}/members/{user}`** takes the member off, and their reading stops at once; a
+  key that is no member is `not-found`.
+- **A member share goes with its document,** and with the scope that held it. No event is raised for one.
+
 ## Publications
 
 A publication files a document and opens a link with no end to it in one call: what a document is handed to
@@ -360,8 +417,8 @@ whole」).
 - **The answer** is `scope`, `counts` (`documents`, `attachments`, `shares` and `imports` held under it)
   and `state`: null for a read, `released` once let go of, `preview` for a dry run. A scope holding
   nothing is `not-found`.
-- **Letting go** removes every document held under the scope with its files, attachments, references and
-  share links, each as `DELETE /documents/{documentId}` lets go of one, and every import asked under it.
+- **Letting go** removes every document held under the scope with its files, attachments, references, member
+  shares and share links, each as `DELETE /documents/{documentId}` lets go of one, and every import asked under it.
   Each document removed is a `document.deleted` and each link a `share.deleted`.
 
 ## Events
@@ -533,8 +590,9 @@ flowchart TD
   is refused 401 `unauthorized` on every route, and the face's routes are `no-route` to the service's token,
   so a console leaves the service out.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
-  references, kinds and label values, and the reading, making and ending of share links; the share reads and
-  the share head are reached as well. The face's guard holds the console's calls to them; the service's token
+  references, kinds and label values, the reading, making and ending of share links, and the reading, granting,
+  changing and taking back of member shares; the share reads and the share head are reached as well. Past the
+  face's guard, each route reads for the reader 「Readers」 states. The face's guard holds the console's calls to them; the service's token
   reaches them too. Every other route refuses the console's token 403 `forbidden`.
 
 ## What this service calls
@@ -549,11 +607,17 @@ flowchart TD
 - **An import** reads the page's markup with `fetch_page` and each of its pictures with `fetch_raster`.
 - **A reference's preview** is `link_preview`, and its picture `fetch_raster`.
 
-The console bundle makes one call of its own, through the console rather than through this service:
+The console bundle makes two calls of its own, through the console rather than through this service:
 
 | Unit | Through | For |
 |---|---|---|
 | the console's translator, the gate | bmo-ui's `translation` module, relayed by the console | a document's reading in the reader's language (`docs/artifact.md`, 「Where a person reads it」) |
+| the console's people directory | the object the console provides under `bmo-console-people` (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」) | the people a document may be shared with, and the name, organization and job title each member stands by (`docs/artifact.md`, 「Member shares」) |
+
+- **The people are the console's to find.** The directory answers the accounts under the top-level organization
+  the reader's own unit belongs to; the bundle keeps none of them and the service reads none of them, keeping
+  each member by the account key alone. Where the console provides no directory, the share dialog shares by link
+  alone.
 
 - **The translator is the console's to name.** The console names the service and its translating route in its
   runtime configuration (bmo-ui's `docs/console-bundles.md`, 「Translation」), the gate's `POST /translations`

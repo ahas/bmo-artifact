@@ -175,6 +175,17 @@
             "description": "The caller's own metadata.",
             "type": "object"
           },
+          "permission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Permission"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For a member reader, the permission it reads the document under; absent for a reader of every document\nand in every event (`docs/api.md`, \"Readers\")."
+          },
           "scope": {
             "description": "What it is held under; null where none was given.",
             "type": [
@@ -564,9 +575,103 @@
         ],
         "type": "object"
       },
+      "MemberShare": {
+        "description": "One member a document is shared with.",
+        "properties": {
+          "documentId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "permission": {
+            "$ref": "#/components/schemas/Permission"
+          },
+          "sharedAt": {
+            "description": "Epoch milliseconds.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "user": {
+            "description": "The member's account key, as the console writes `Owner-Key`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "documentId",
+          "user",
+          "permission",
+          "sharedAt"
+        ],
+        "type": "object"
+      },
+      "MemberShareChange": {
+        "description": "A member share's permission set anew.",
+        "properties": {
+          "permission": {
+            "$ref": "#/components/schemas/Permission",
+            "description": "`read`; `edit` is refused."
+          }
+        },
+        "required": [
+          "permission"
+        ],
+        "type": "object"
+      },
+      "MemberShareInput": {
+        "description": "The members to share a document with, and what they may do with it.",
+        "properties": {
+          "permission": {
+            "$ref": "#/components/schemas/Permission",
+            "description": "`read`; `edit` is refused."
+          },
+          "users": {
+            "description": "The members' account keys: 1 to 200, each of 1 to 200 characters.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "users",
+          "permission"
+        ],
+        "type": "object"
+      },
+      "MemberSharePage": {
+        "description": "A page of member shares, in the order they were shared.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemberShare"
+            },
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "more"
+        ],
+        "type": "object"
+      },
       "Nothing": {
         "description": "Nothing: the route answered 204.",
         "type": "object"
+      },
+      "Permission": {
+        "description": "What a member a document is shared with may do with it (`docs/api.md`, \"Member shares\"): `read` is given,\nand `edit` is named so that asking for it is refused rather than misread.",
+        "enum": [
+          "read",
+          "edit"
+        ],
+        "type": "string"
       },
       "Publication": {
         "description": "A document filed and a link to it opened in one call: what a document is handed to somebody as.",
@@ -1500,6 +1605,231 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/documents/{documentId}/members": {
+      "get": {
+        "operationId": "listDocumentsMembersByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Only the members after this one, by its id.",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "description": "Only the members after this one, by its id.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSharePage"
+                }
+              }
+            },
+            "description": "The members a document is shared with, in the order they were shared."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The members a document is shared with, in the order they were shared.",
+        "tags": [
+          "members"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      },
+      "post": {
+        "operationId": "createDocumentsMembersByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberShareInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberSharePage"
+                }
+              }
+            },
+            "description": "Share a document with members to read; a member already sharing it keeps its share."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Share a document with members to read; a member already sharing it keeps its share.",
+        "tags": [
+          "members"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "read-only",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/documents/{documentId}/members/{user}": {
+      "delete": {
+        "operationId": "deleteDocumentsMembersByDocumentIdUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The member's account key.",
+            "in": "path",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Take a member off a document; their reading stops at once."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Take a member off a document; their reading stops at once.",
+        "tags": [
+          "members"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      },
+      "patch": {
+        "operationId": "changeDocumentsMembersByDocumentIdUser",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The member's account key.",
+            "in": "path",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberShareChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberShare"
+                }
+              }
+            },
+            "description": "Set the permission one member reads a document under."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Set the permission one member reads a document under.",
+        "tags": [
+          "members"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "read-only",
           "forbidden"
         ],
         "x-console": "screen"
@@ -3114,6 +3444,9 @@
     },
     {
       "name": "imports"
+    },
+    {
+      "name": "members"
     },
     {
       "name": "publications"

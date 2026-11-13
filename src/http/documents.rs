@@ -8,6 +8,7 @@ use schemars::generate::SchemaGenerator;
 use serde_json::json;
 
 use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, inside_root, send};
+use super::readers::{Reader, reached};
 use crate::Refusal;
 use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
@@ -19,11 +20,14 @@ use crate::plumbing::openapi::{Operation, bytes_answer, id_parameter, json_answe
 use crate::store::{attachments, documents, page_limit};
 use crate::wire::{ContentQuery, Document, DocumentChange, DocumentInput, DocumentPage, DocumentsQuery};
 
+/// What a document that does not stand answers.
+pub fn absent(id: i64) -> Refused {
+  Refusal::absent(format!("there is no document {id}")).into()
+}
+
 /// One document as the API answers it, refused where it does not stand.
 pub async fn document(standing: &Standing, id: i64) -> Result<documents::Row, Refused> {
-  documents::read(standing.db().await?, id)
-    .await?
-    .ok_or_else(|| Refusal::absent(format!("there is no document {id}")).into())
+  documents::read(standing.db().await?, id).await?.ok_or_else(|| absent(id))
 }
 
 pub struct ListDocuments;
@@ -36,7 +40,9 @@ impl Route for ListDocuments {
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let asked: DocumentsQuery = call.query()?;
     let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
-    let (items, more) = documents::list(call.standing().db().await?, &asked, limit).await?;
+    let reader = Reader::of(&call);
+    let (items, more) =
+      documents::list(call.standing().db().await?, &asked, limit, reader.member()).await?;
 
     Ok(answer(StatusCode::OK, &DocumentPage { items, more }))
   }
@@ -101,8 +107,9 @@ impl Route for ReadDocument {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("documentId").await?;
+    let read = Reader::of(&call).document(call.standing(), id).await?;
 
-    Ok(answer(StatusCode::OK, &document(call.standing(), id).await?.document))
+    Ok(answer(StatusCode::OK, &read.document))
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
@@ -298,7 +305,7 @@ impl Route for ReadContent {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = reached(&mut call).await?;
     let asking = Asking::of(&call)?;
 
     content(call.standing(), &asking, id, &Reach::new(Opened::Console, Self::PATH)).await
@@ -327,7 +334,7 @@ impl Route for ReadPicture {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = reached(&mut call).await?;
 
     picture(call.standing(), id).await
   }

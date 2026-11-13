@@ -15,6 +15,7 @@ mod import;
 mod imports;
 mod layout;
 mod mcp;
+mod members;
 mod nouns;
 mod openapi;
 mod page_reading;
