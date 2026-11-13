@@ -79,7 +79,7 @@
 
       <ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />
 
-      <ShareDialog v-model:open="shareOpen" :road="road" :members="members" :spans="spans" :subject="held?.document.title" />
+      <ShareDialog v-model:open="shareOpen" :road="road" :members="members" :explain="explainShare" :spans="spans" :subject="held?.document.title" />
     </template>
   </UDashboardPanel>
 </template>
@@ -111,7 +111,7 @@ import {
 import { documentReading, scriptOf } from "../../domain/document-reading";
 import { contentsOf, instructionOf, kindOf, labelsBesideInstruction, numberText } from "../../domain/document-view";
 import { usePageActions } from "../../domain/hosted-page";
-import { memberRoad, usePeopleDirectory } from "../../domain/members";
+import { memberRoad, shareFailure, usePeopleDirectory } from "../../domain/members";
 import { useTranslationToggle, useWrittenActions } from "../../domain/written-document";
 
 import type { SplitterItem } from "@nuxt/ui";
@@ -297,6 +297,7 @@ const road = computed(() => shareRoad(documentId.value));
 // shares by link alone.
 const people = usePeopleDirectory();
 const members = computed(() => (people === null ? undefined : memberRoad(documentId.value, people)));
+const explainShare = shareFailure(t);
 const spans = computed(() => SHARE_SPANS.map((span) => ({ value: span.value, label: t(span.label) })));
 
 useHead({ title: computed(() => (held.value === null ? t("artifact.title.screen") : held.value.document.title.slice(0, 60))) });

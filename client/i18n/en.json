@@ -113,6 +113,7 @@
       "bad_id": "The document number is not right.",
       "link_ended": "This share link has ended.",
       "list_failed": "The list could not be read.",
+      "member_read_only": "A document is shared to read only.",
       "open_failed": "The document could not be opened.",
       "read_failed": "The document could not be read.",
       "translate_failed": "The document could not be translated."

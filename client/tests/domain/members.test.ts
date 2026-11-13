@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { memberRoad } from "../../app/domain/members";
+import { memberRoad, shareFailure } from "../../app/domain/members";
 
 import type { PeopleDirectory } from "../../app/domain/members";
 import type { ArtifactMemberSharePage } from "../../shared/types";
@@ -84,5 +84,18 @@ describe("a document's members", () => {
       { address: "/relay/artifact/documents/3/members/7", method: "PATCH", query: undefined, body: { permission: "read" } },
       { address: "/relay/artifact/documents/3/members/a%2Fb", method: "DELETE", query: undefined, body: undefined }
     ]);
+  });
+});
+
+describe("a refused share", () => {
+  const t = (key: string) => `[${key}]`;
+
+  test("of a permission other than read says in the reader's words that a document is shared to read only", () => {
+    expect(shareFailure(t)({ data: { code: "read-only", error: "the permission is read" } }, "fallback")).toBe("[artifact.error.member_read_only]");
+  });
+
+  test("of any other kind reads as bmo-ui reads it", () => {
+    expect(shareFailure(t)({ data: { code: "forbidden", message: "not yours" } }, "fallback")).toBe("not yours");
+    expect(shareFailure(t)(new Error("down"), "fallback")).toBe("fallback");
   });
 });

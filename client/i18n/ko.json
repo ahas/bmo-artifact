@@ -113,6 +113,7 @@
       "bad_id": "문서 번호가 올바르지 않습니다.",
       "link_ended": "이 공유 링크는 끝났습니다.",
       "list_failed": "목록을 읽지 못했습니다.",
+      "member_read_only": "문서는 읽기 권한으로만 공유할 수 있습니다.",
       "open_failed": "문서를 열지 못했습니다.",
       "read_failed": "문서를 읽지 못했습니다.",
       "translate_failed": "문서를 번역하지 못했습니다."

@@ -1,7 +1,10 @@
 import { inject } from "vue";
 
+import { failureText } from "bmo-ui/app/domain/errors";
+
 import { artifactAddress } from "./artifact";
 
+import type { Translate } from "bmo-ui/shared/wording";
 import type { ShareMember, ShareMemberRoad, SharePermission, SharePerson } from "bmo-ui/app/domain/share-members";
 import type { ArtifactMemberSharePage } from "../../shared/types";
 
@@ -67,4 +70,14 @@ export function memberRoad(documentId: number, people: PeopleDirectory): ShareMe
       await $fetch(memberAddress(documentId, user), { method: "DELETE" });
     }
   };
+}
+
+// The service's code for a member share asked with a permission other than `read` (`docs/api.md`, "Member shares").
+const READ_ONLY = "read-only";
+
+/** The share dialog's reading of a failure: a permission refused because a document is shared to read alone, in the
+ * reader's own words, and any other failure as bmo-ui reads it. */
+export function shareFailure(t: Translate): (error: unknown, fallback: string) => string {
+  return (error, fallback) =>
+    (error as { data?: { code?: unknown } } | null)?.data?.code === READ_ONLY ? t("artifact.error.member_read_only") : failureText(error, fallback);
 }
