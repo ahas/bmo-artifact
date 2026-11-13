@@ -41,12 +41,15 @@ function packs(): Record<string, { artifact: { player: unknown } }> {
   );
 }
 
+// The bundle's language pack, read once: the bundle build holds the screens to it and the console face answers it.
+const WORDS = packs();
+
 // The bundle's words as the console face answers them: each locale's pack under the locale's code.
 function words(): Plugin {
   return {
     name: "artifact-words",
     generateBundle() {
-      this.emitFile({ type: "asset", fileName: "words.json", source: `${JSON.stringify(packs())}\n` });
+      this.emitFile({ type: "asset", fileName: "words.json", source: `${JSON.stringify(WORDS)}\n` });
     }
   };
 }
@@ -63,7 +66,7 @@ function player(): Plugin {
       folder = resolve(config.root, config.build.outDir, "..", "player");
     },
     closeBundle() {
-      const spoken = Object.fromEntries(Object.entries(packs()).map(([locale, pack]) => [locale, pack.artifact.player]));
+      const spoken = Object.fromEntries(Object.entries(WORDS).map(([locale, pack]) => [locale, pack.artifact.player]));
 
       rmSync(folder, { recursive: true, force: true });
       mkdirSync(folder, { recursive: true });
@@ -77,7 +80,7 @@ export default defineConfig({
   // The module runs in the browser alone: what Nuxt states of the side a file runs on is stated here.
   define: { "import.meta.client": "true", "import.meta.server": "false" },
   plugins: [
-    consoleBundle(),
+    consoleBundle({ name: "artifact", words: WORDS }),
     vue(),
     tailwindcss(),
     AutoImport({

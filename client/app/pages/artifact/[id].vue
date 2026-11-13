@@ -79,7 +79,7 @@
 
       <ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />
 
-      <ShareLinkDialog v-model:open="shareOpen" :road="road" :spans="spans" :subject="held?.document.title" />
+      <ShareDialog v-model:open="shareOpen" :road="road" :spans="spans" :subject="held?.document.title" />
     </template>
   </UDashboardPanel>
 </template>
@@ -287,7 +287,7 @@ async function goTo(slug: string): Promise<void> {
 }
 
 const road = computed(() => shareRoad(documentId.value));
-const spans = computed(() => SHARE_SPANS.map((span) => ({ value: span.value, label: t(`artifact.label.span_${span.value}`) })));
+const spans = computed(() => SHARE_SPANS.map((span) => ({ value: span.value, label: t(span.label) })));
 
 useHead({ title: computed(() => (held.value === null ? t("artifact.title.screen") : held.value.document.title.slice(0, 60))) });
 
