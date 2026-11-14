@@ -39,9 +39,10 @@ function memberAddress(documentId: number, user?: string): string {
   return artifactAddress(user === undefined ? members : `${members}/${encodeURIComponent(user)}`);
 }
 
-/** The road one document's members are found, read, shared with, changed and taken off by. */
+/** The road one document's members are found, read, shared with, changed and taken off by, granting `read` alone. */
 export function memberRoad(documentId: number, people: PeopleDirectory): ShareMemberRoad {
   return {
+    permissions: ["read"],
     search: (words) => people.search(words),
     read: async () => {
       const members: ShareMember[] = [];

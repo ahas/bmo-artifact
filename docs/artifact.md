@@ -475,10 +475,11 @@ its name stands among them too, so it can be saved.
   copied and ended there (「Share links」); and under it its member part, where the console provides its people
   directory (docs/api.md, 「What this service calls」). The member part finds people by the directory's search,
   shares with those picked, each given `read`, and stands each member on a row by the name, organization and job
-  title the directory gives the account, the account key where it gives none (「Member shares」). The dialog
-  offers `edit` beside `read` on each row; choosing it is refused, and the member part says in the reader's own
-  language that a document is shared to read alone, the member keeping `read`. Where the console provides no
-  directory, the dialog shares by link alone.
+  title the directory gives the account, the account key where it gives none (「Member shares」). The service
+  grants the dialog `read` alone, so each row says `read` in words where a choice of permissions would stand; a
+  member who holds `edit` keeps it on the row beside `read`. Asking for `edit` is refused all the same, and the
+  member part says in the reader's own language that a document is shared to read alone, the member keeping
+  `read`. Where the console provides no directory, the dialog shares by link alone.
 - **A member reader's screens are the same screens over less:** the list holds the documents shared with them,
   and a document read under a permission (docs/api.md, 「Documents」, `permission`) offers no sharing among the
   actions on it.

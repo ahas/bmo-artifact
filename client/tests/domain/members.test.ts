@@ -85,6 +85,10 @@ describe("a document's members", () => {
       { address: "/relay/artifact/documents/3/members/a%2Fb", method: "DELETE", query: undefined, body: undefined }
     ]);
   });
+
+  test("are granted read alone, the one permission the service keeps", () => {
+    expect(memberRoad(3, directory).permissions).toEqual(["read"]);
+  });
 });
 
 describe("a refused share", () => {
