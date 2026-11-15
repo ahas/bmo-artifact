@@ -181,9 +181,10 @@ address and the file root are settings; no other unit reads or writes either.
   it; no other account but the administrator reads it until it is shared, not even the head of the owner's unit.
   Lists, searches, label counts and the share links listed hold only what a reader reads, and a document a reader
   does not read answers as one that does not stand, so its number tells them nothing.
-- **The administrator reads every document,** as the platform's superadmin reaches every company: of every
-  company, owned or not, shared or not, in lists, searches, label counts and the share links listed as in each
-  document's own reads.
+- **The administrator reads every document,** as the platform's superadmin reaches everything and changes nothing
+  of another's (`STRUCTURE.md`, 「Accounts, companies and units」): of every company, owned or not, shared or not, in
+  lists, searches, label counts and the share links listed as in each document's own reads. The administrator's read
+  of another's document leaves nothing its owner can see.
   - **A document with no owner is the administrator's wholly,** read, shared and changed by the administrator alone
     among the accounts.
   - **A document another account owns the administrator reads alone,** under `read` as a share's reader does:
