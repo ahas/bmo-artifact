@@ -11,7 +11,8 @@ repository.
 - **The files beside each document.** Pictures, sound, video, text files and any other file, shown or
   played where the document is read.
 - **The pages each document refers to,** with what each page says of itself for a preview.
-- **Each document's owner,** the account that filed it, which alone reads it until it shares it (「Owners」).
+- **Each document's owner,** the account that filed it, which alone reads it until it shares it, but for the
+  administrator, who reads every document (「Owners」).
 - **Share links,** each opening one document for whoever holds it.
 - **Member shares,** each opening one document to read to one member of the owner's company.
 - **Unit shares,** each opening one document to read to everyone standing in or under one organisation unit of
@@ -177,22 +178,28 @@ address and the file root are settings; no other unit reads or writes either.
   - **A caller naming no account files a document with no owner:** a research run, a supervisor of no account and
     any other service. A row that keeps no owner reads as such a document.
 - **A new document is its owner's alone.** Its owner reads it, rewrites it, attaches to it, lets go of it and shares
-  it; nobody else reads it until it is shared, not the head of the owner's unit nor the administrator. Lists,
-  searches, label counts and the share links listed hold only what a reader reads, and a document a reader does
-  not read answers as one that does not stand, so its number tells them nothing.
-- **A document with no owner is the administrator's,** read, shared and changed by the administrator alone among
-  the accounts.
+  it; no other account but the administrator reads it until it is shared, not even the head of the owner's unit.
+  Lists, searches, label counts and the share links listed hold only what a reader reads, and a document a reader
+  does not read answers as one that does not stand, so its number tells them nothing.
+- **The administrator reads every document,** as the platform's superadmin reaches every company: of every
+  company, owned or not, shared or not, in lists, searches, label counts and the share links listed as in each
+  document's own reads.
+  - **A document with no owner is the administrator's wholly,** read, shared and changed by the administrator alone
+    among the accounts.
+  - **A document another account owns the administrator reads alone,** under `read` as a share's reader does:
+    rewriting it, attaching to it, letting go of it and sharing it stay its owner's.
 - **A caller holding the service's token and naming no account reaches every document,** owned or not: the
   services that file, settle and let go of documents.
 - **A document is shared three ways, each by its owner** (the administrator for a document with no owner): a share
   link, a member share and a unit share, each standing on its own terms and none ending another.
-  - Whoever reads a document through a member share or a unit share reads it alone: never rewrites, attaches,
-    lets go of or shares it on.
+  - Whoever reads a document through a member share or a unit share, and the administrator reading one another
+    account owns, reads it alone: never rewrites, attaches, lets go of or shares it on.
   - **Everything shared stays within the owner's company:** a member share and a unit share name an account or a
     unit of the company the owner stands in, as the account service answers it when the share is made, and one of
     another company is refused. A share link opens the document to whoever holds its token, wherever they stand.
 - **An owner who leaves** keeps their documents: what was shared stays read through its shares, and what was never
-  shared is sealed, since the departed account signs in no more and nobody else reads it.
+  shared is sealed, since the departed account signs in no more and no other account but the administrator reads
+  it.
 
 ## Share links
 
@@ -249,6 +256,8 @@ address and the file root are settings; no other unit reads or writes either.
   - a person moved to another unit reads by the unit they stand in now, from their next call on;
   - a unit share taken away stops every reader who read only through it at once, while one who reads through
     another share, or owns the document, keeps reading.
+- **The owner picks the unit from its company's tree,** which the service reads from the account service for the
+  share screen each time it is asked and keeps none of (docs/api.md, 「Unit shares」).
 - **A document with no owner is shared with no unit,** since it belongs to no company.
 - **A unit reads and does nothing else,** as a member does: its readers read the document under `read`.
 - **A unit share goes with its document,** as a member share does, and leaves no note.
@@ -534,8 +543,9 @@ its name stands among them too, so it can be saved.
   `read`. Where the console provides no directory, the dialog shares by link alone. The dialog has no unit part:
   a unit share is made and taken away through its routes alone (docs/api.md, 「Unit shares」).
 - **Every reader's screens are the same screens over what they read** (「Owners」): the list holds the documents
-  the reader owns and those shared with them, and a document read under a permission (docs/api.md, 「Documents」,
-  `permission`), one read through a share, offers no sharing among the actions on it.
+  the reader owns and those shared with them, the administrator's every document, and a document read under a
+  permission (docs/api.md, 「Documents」, `permission`), one read through a share or the administrator's reading of
+  one another account owns, offers no sharing among the actions on it.
 - **The screens' former path, `/archive`, still reaches them.** The manifest names it among its former screen paths,
   so a console answers every address under it — the list, a document, a share link handed out under it — with a
   308 to the same address under `/artifact` (bmo-ui's `docs/console-bundles.md`, 「A screen that moved」).

@@ -1,6 +1,6 @@
 //! The organisation units a document is shared with (`docs/api.md`, "Unit shares"): listed, shared with and taken
 //! off by whoever keeps the document, each unit of its owner's company, opening the document to read to everyone
-//! standing in it or under it.
+//! standing in it or under it; and that company's tree, which they are picked from.
 
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -13,17 +13,22 @@ use crate::now_ms;
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, id_parameter, json_answer, json_body, query};
 use crate::store::{page_limit, unit_shares};
-use crate::wire::{PageQuery, UnitShareInput, UnitSharePage};
+use crate::wire::{CompanyUnits, PageQuery, UnitShareInput, UnitSharePage};
 
 /// The most units one call shares a document with.
 const MOST_UNITS: usize = 200;
 
+// The company the document's owner stands in; a document with no owner belongs to none and shares with no unit.
+async fn sharing_company(standing: &Standing, id: i64) -> Result<i64, Refused> {
+  owners_company(standing, id).await?.ok_or_else(|| {
+    Refusal::conflict(format!("document {id} has no owner, so it belongs to no company")).into()
+  })
+}
+
 // Every unit asked standing in the company the document's owner stands in; any other is refused before anything is
-// stored, and a document with no owner shares with no unit.
+// stored.
 async fn of_owners_company(standing: &Standing, id: i64, units: &[i64]) -> Result<(), Refused> {
-  let company = owners_company(standing, id)
-    .await?
-    .ok_or_else(|| Refusal::conflict(format!("document {id} has no owner, so it belongs to no company")))?;
+  let company = sharing_company(standing, id).await?;
 
   for unit in units {
     match standing.accounts.company_of_unit(*unit).await? {
@@ -39,6 +44,37 @@ async fn of_owners_company(standing: &Standing, id: i64, units: &[i64]) -> Resul
 
   Ok(())
 }
+
+pub struct ListCompanyUnits;
+
+impl Route for ListCompanyUnits {
+  const METHOD: Method = Method::GET;
+  const PATH: &'static str = "/documents/{documentId}/company-units";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
+
+  async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    let id = kept(&mut call).await?;
+    let company = sharing_company(call.standing(), id).await?;
+    let units = call.standing().accounts.tree_of(company).await?;
+
+    Ok(answer(StatusCode::OK, &CompanyUnits { company, units }))
+  }
+
+  fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
+    Operation {
+      id: "listDocumentsCompanyUnitsByDocumentId",
+      tag: "units",
+      summary: "The organisation units of the company a document's owner stands in, which it may be shared with: \
+                the company first and each unit after its parent.",
+      parameters: vec![id_parameter("documentId")],
+      body: None,
+      answers: vec![(200, json_answer::<CompanyUnits>(generator))],
+      codes: &["unauthorized", "bad-request", "not-found", "conflict", "upstream-failed"],
+    }
+  }
+}
+
+crate::route!(ListCompanyUnits);
 
 pub struct ListUnits;
 

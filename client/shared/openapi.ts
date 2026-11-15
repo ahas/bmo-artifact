@@ -93,6 +93,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documents/{documentId}/company-units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The organisation units of the company a document's owner stands in, which it may be shared with: the company first and each unit after its parent. */
+        get: operations["listDocumentsCompanyUnitsByDocumentId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents/{documentId}/content": {
         parameters: {
             query?: never;
@@ -654,6 +671,33 @@ export interface components {
             items: components["schemas"]["Attachment"][];
             more: boolean;
         };
+        /** @description One unit of a company's tree, as the account service names it. */
+        CompanyUnit: {
+            /**
+             * Format: int64
+             * @description The unit's number, as the account service numbers it.
+             */
+            id: number;
+            name: string;
+            /**
+             * Format: int64
+             * @description The unit it stands directly under; null for the company.
+             */
+            parent: number | null;
+        };
+        /** @description The units of a document owner's company, which the document may be shared with. */
+        CompanyUnits: {
+            /**
+             * Format: int64
+             * @description The company's number, the unit at the top of its tree.
+             */
+            company: number;
+            /**
+             * @description Every unit of the company: the company first, each unit after its parent, siblings in the account service's
+             *     order.
+             */
+            units: components["schemas"]["CompanyUnit"][];
+        };
         /** @description A document's file, in base64. */
         ContentOutput: {
             /** @description The file's bytes in base64. */
@@ -697,8 +741,9 @@ export interface components {
              */
             owner: string | null;
             /**
-             * @description For an account reader that reads the document only through a share, the permission it reads it under;
-             *     absent where the reader reaches it wholly, and in every event (`docs/api.md`, "Readers").
+             * @description For an account reader that reads the document alone, through a share or as the administrator reading one
+             *     another account owns, the permission it reads it under; absent where the reader reaches it wholly, and in
+             *     every event (`docs/api.md`, "Readers").
              */
             permission?: components["schemas"]["Permission"] | null;
             /** @description What it is held under; null where none was given. */
@@ -1278,6 +1323,29 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": string;
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listDocumentsCompanyUnitsByDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The organisation units of the company a document's owner stands in, which it may be shared with: the company first and each unit after its parent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyUnits"];
                 };
             };
             default: components["responses"]["Error"];

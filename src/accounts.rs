@@ -1,11 +1,12 @@
 //! The account service, reached through bmo-web's published client (`docs/api.md`, "What this service calls"):
-//! the units a reader stands in or under, and the company a user or a unit belongs to. Nothing it answers is
-//! kept, so a move or a new unit counts from the next call on.
+//! the units a reader stands in or under, the company a user or a unit belongs to, and a company's tree. Nothing it
+//! answers is kept, so a move or a new unit counts from the next call on.
 
 use bmo_web_client::{AccountClient, ClientFailure};
 
 use crate::Refusal;
 use crate::settings;
+use crate::wire::CompanyUnit;
 
 /// The account service the settings name: none where they name no address, or why the address does not read.
 #[derive(Clone, Debug)]
@@ -79,5 +80,33 @@ impl Accounts {
       }) => Ok(None),
       Err(why) => Err(failed(why)),
     }
+  }
+
+  /// Every unit of `company`, itself first and each unit after its parent, walked down one read a unit; none where
+  /// the account service knows no such unit. Refused where no account service is named.
+  pub async fn tree_of(&self, company: i64) -> Result<Vec<CompanyUnit>, Refusal> {
+    let client = self.client()?;
+    let mut units = Vec::new();
+    // The units still to read, the next on top, so each unit's children follow it in their own order.
+    let mut waiting = vec![company];
+
+    while let Some(id) = waiting.pop() {
+      let unit = match client.unit(id).await {
+        Ok(unit) => unit,
+        Err(ClientFailure::Answered {
+          status: NOT_FOUND, ..
+        }) => continue,
+        Err(why) => return Err(failed(why)),
+      };
+
+      waiting.extend(unit.children.iter().rev().map(|child| child.id));
+      units.push(CompanyUnit {
+        id: unit.id,
+        name: unit.name,
+        parent: unit.parent,
+      });
+    }
+
+    Ok(units)
   }
 }

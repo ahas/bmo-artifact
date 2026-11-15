@@ -1,7 +1,7 @@
 //! Who a call reads for, and which documents that reader reaches (`docs/api.md`, "Readers"; `docs/artifact.md`,
 //! "Owners"): a reader of every document, or an account reader, which reaches wholly the documents it owns, and
 //! the administrator those with no owner, and reads alone the documents shared with its account or with a unit
-//! it stands in or under.
+//! it stands in or under, and the administrator every document another account owns.
 
 use bmo_console_face::{OWNER_KEY_HEADER, OWNER_ROLE_HEADER};
 
@@ -12,7 +12,7 @@ use crate::store::documents as rows;
 use crate::store::reach::{self, Account, Holding};
 use crate::wire::Permission;
 
-/// The role marking the platform administrator, who keeps the documents with no owner.
+/// The role marking the platform administrator, who keeps the documents with no owner and reads every other.
 const ADMINISTRATOR: &str = "administrator";
 
 /// Who a call reads for.
@@ -39,7 +39,8 @@ pub struct AccountReader {
 pub enum Reach {
   /// Wholly: it reads, changes and shares it.
   Whole,
-  /// Through a share, under its permission, to read alone.
+  /// To read alone, under a permission: through a share, or as the administrator reading a document another account
+  /// owns.
   Shared(Permission),
 }
 
@@ -107,12 +108,16 @@ impl Reader {
   }
 
   /// What a list is read for: none for a reader of every document, and for an account the units the account
-  /// service answers it stands in or under.
+  /// service answers it stands in or under; the administrator, who reads every document, is asked none.
   pub async fn listing(&self, standing: &Standing) -> Result<Option<Listing>, Refused> {
     let Self::Account(account) = self else {
       return Ok(None);
     };
-    let units = standing.accounts.units_of(&account.key).await?;
+    let units = if account.administrator {
+      Vec::new()
+    } else {
+      standing.accounts.units_of(&account.key).await?
+    };
 
     Ok(Some(Listing {
       key: account.key.clone(),
@@ -122,7 +127,8 @@ impl Reader {
   }
 
   /// How far this reader reaches one document; a document it does not read is refused as one that does not
-  /// stand. The account service is asked the reader's units only where a unit share could decide it.
+  /// stand. The account service is asked the reader's units only where a unit share could decide it, never for
+  /// the administrator, who reads every document.
   pub async fn reach(&self, standing: &Standing, id: i64) -> Result<Reach, Refused> {
     let key = match self {
       Self::Every => "",
@@ -149,6 +155,10 @@ impl Reader {
       return Ok(Reach::Shared(permission));
     }
 
+    if account.administrator {
+      return Ok(Reach::Shared(Permission::Read));
+    }
+
     if !units.is_empty() {
       let standing_in = standing.accounts.units_of(key).await?;
 
@@ -160,22 +170,22 @@ impl Reader {
     Err(documents::absent(id))
   }
 
-  /// Refused where this reader does not reach one document wholly: one it reads through a share is forbidden,
-  /// one it does not read refused as one that does not stand.
+  /// Refused where this reader does not reach one document wholly: one it reads alone is forbidden, one it does
+  /// not read refused as one that does not stand.
   pub async fn keeps(&self, standing: &Standing, id: i64) -> Result<(), Refused> {
     match self.reach(standing, id).await? {
       Reach::Whole => Ok(()),
       Reach::Shared(_) => Err(
         Refusal::forbidden(format!(
-          "document {id} is shared with this reader to read; only its owner changes or shares it"
+          "this reader reads document {id} alone; only its owner changes or shares it"
         ))
         .into(),
       ),
     }
   }
 
-  /// The document as this reader reads it, with the permission it reads it under where it reads it through a
-  /// share; a document it does not read reads to it as one that does not stand.
+  /// The document as this reader reads it, with the permission it reads it under where it reads it alone; a
+  /// document it does not read reads to it as one that does not stand.
   pub async fn document(&self, standing: &Standing, id: i64) -> Result<rows::Row, Refused> {
     let reach = self.reach(standing, id).await?;
     let mut row = document(standing, id).await?;

@@ -96,8 +96,9 @@ pub struct Document {
   pub created_at: i64,
   /// Epoch milliseconds.
   pub changed_at: i64,
-  /// For an account reader that reads the document only through a share, the permission it reads it under;
-  /// absent where the reader reaches it wholly, and in every event (`docs/api.md`, "Readers").
+  /// For an account reader that reads the document alone, through a share or as the administrator reading one
+  /// another account owns, the permission it reads it under; absent where the reader reaches it wholly, and in
+  /// every event (`docs/api.md`, "Readers").
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub permission: Option<Permission>,
 }
@@ -183,6 +184,28 @@ pub struct UnitShare {
 pub struct UnitSharePage {
   pub items: Vec<UnitShare>,
   pub more: bool,
+}
+
+/// One unit of a company's tree, as the account service names it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanyUnit {
+  /// The unit's number, as the account service numbers it.
+  pub id: i64,
+  pub name: String,
+  /// The unit it stands directly under; null for the company.
+  pub parent: Option<i64>,
+}
+
+/// The units of a document owner's company, which the document may be shared with.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanyUnits {
+  /// The company's number, the unit at the top of its tree.
+  pub company: i64,
+  /// Every unit of the company: the company first, each unit after its parent, siblings in the account service's
+  /// order.
+  pub units: Vec<CompanyUnit>,
 }
 
 /// The organisation units to share a document with, each to read it.

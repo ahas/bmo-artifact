@@ -55,6 +55,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "POST /documents/{documentId}/members",
     "PATCH /documents/{documentId}/members/{user}",
     "DELETE /documents/{documentId}/members/{user}",
+    "GET /documents/{documentId}/company-units",
     "GET /documents/{documentId}/units",
     "POST /documents/{documentId}/units",
     "DELETE /documents/{documentId}/units/{unit}",

@@ -32,7 +32,7 @@ src/
   client.rs                the service's own Rust client, one method a route
   events.rs                the event kinds and the publisher every change goes through
   reader.rs                the page reader, over bmo-explorer's client
-  accounts.rs              the account service, over bmo-web's client: the units a reader stands under, and a company
+  accounts.rs              the account service, over bmo-web's client: the units a reader stands under, a company and its tree
   wording.rs               the document wording file and its English default
   design.rs                the document design read from client/design/document.json, and a page's sheet
   console.rs               the declaration and bundle folder the console face is built from, and how a deployment reaches it

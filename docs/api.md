@@ -55,7 +55,7 @@ flowchart TD
 |---|---|---|
 | 400 | `bad-request` | the body, the query or a path key is not the shape the route takes; the sentence names what |
 | 401 | `unauthorized` | the token is missing or wrong, or is the service's on the console face |
-| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs; an account reader on a route that changes a document or how it is shared, where it reads the document only through a share, or on a route only a reader of every document reaches (「Readers」) |
+| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs; an account reader on a route that changes a document or how it is shared, where it reads the document alone, or on a route only a reader of every document reaches (「Readers」) |
 | 404 | `no-route` | no route answers this method and path |
 | 404 | `not-found` | nothing stands at the key the path names |
 | 409 | `conflict` | the member does not take the change: a body for a page, HTML for any other kind; a member or unit share of a document whose owner stands in no company, or a unit share of one with no owner |
@@ -87,8 +87,10 @@ A call reads for one of two readers, and the reader decides which documents it r
   - **wholly,** the documents it owns, and, for the administrator, the documents with no owner: it reads them, and
     rewrites, attaches to, lets go of and shares them on the routes it reaches;
   - **to read alone,** the documents shared with its account (「Member shares」) or with a unit it stands in or under
-    (「Unit shares」), each answered with `permission` `read`;
-  - and no other document.
+    (「Unit shares」), and, for the administrator, every document another account owns, shared or not, each
+    answered with `permission` `read`;
+  - and no other document: the administrator therefore reads every document of every company, in lists, searches
+    and label counts as in each document's own reads.
 - **What an account reader does not reach is not there for it:**
   - `GET /documents` lists what it reaches alone, `GET /label-values` counts those alone, and `GET /shares` lists
     their live links alone;
@@ -96,7 +98,7 @@ A call reads for one of two readers, and the reader decides which documents it r
     the sentence of a document that does not stand, and so does every route that changes one;
   - a route that changes a document or how it is shared — `PATCH` and `DELETE /documents/{documentId}`, `POST
     /documents/{documentId}/attachments`, `POST /shares`, `DELETE /shares/{token}`, and every route of 「Member
-    shares」 and 「Unit shares」 — is refused 403 `forbidden` on a document it reads only through a share;
+    shares」 and 「Unit shares」 — is refused 403 `forbidden` on a document it reads alone;
   - `GET /imports/{importId}` answers the imports it asked for alone, any other 404 `not-found`;
   - `GET /events` and the routes of 「Scopes」, which reach every document, are refused 403 `forbidden`;
   - a call on the console's token with no `Owner-Key` owns nothing and has nothing shared with it.
@@ -104,7 +106,7 @@ A call reads for one of two readers, and the reader decides which documents it r
   calls」): a unit share opens a document to a reader whose unit is that unit or one under it, read through `GET
   /users/{user}/unit` whenever a unit share decides a read. A user the account service does not know stands in no
   unit; where it fails, the read is refused 502 `upstream-failed`; where the settings name no account service, no
-  reader stands in any unit.
+  reader stands in any unit. The administrator's reads ask it nothing, since no unit decides them.
 - **The headers are trusted as the caller's credential vouches for them.** The console's are its word for its
   signed-in reader (bmo-ui's `docs/console-bundles.md`, 「Roles and the owner key」); a holder of the service's token
   names the account it acts for. No body field names a reader or an owner.
@@ -128,7 +130,7 @@ lives」).
 | `attachmentCount` | how many files it keeps |
 | `hasPicture` | whether it keeps a picture, so `GET /documents/{documentId}/picture` has a cover to send |
 | `createdAt`, `changedAt` | when it was filed and last rewritten |
-| `permission` | for an account reader that reads the document only through a share, the permission it reads it under, `read` (「Member shares」, 「Unit shares」); absent where the reader reaches it wholly, and in every event |
+| `permission` | for an account reader that reads the document alone, through a share or as the administrator reading one another account owns, the permission it reads it under, `read` (「Readers」); absent where the reader reaches it wholly, and in every event |
 
 ### Kinds
 
@@ -365,8 +367,8 @@ directory). A document is shared with each account at most once.
 | `DELETE /documents/{documentId}/members/{user}` | | 204 |
 
 - **The document's owner shares it,** the administrator a document with no owner, and a reader of every document
-  any (「Readers」): an account reader that reads it only through a share is refused 403 `forbidden` on each route
-  here, and one that does not read it at all is answered `not-found`.
+  any (「Readers」): an account reader that reads it alone is refused 403 `forbidden` on each route here, and one
+  that does not read it at all is answered `not-found`.
 - **A document that does not stand is `not-found`** on every route here.
 - **`GET /documents/{documentId}/members`** pages by `after`, the `id` of the last member read, and `limit`, 30
   where none is given and 200 at most.
@@ -397,15 +399,28 @@ tree. A document is shared with each unit at most once.
 | `unit` | the unit's number |
 | `sharedAt` | when it was shared, in epoch milliseconds |
 
+The units a document may be shared with are its owner's company's tree, read from the account service when asked:
+
+| Field | Holds |
+|---|---|
+| `company` | the company's number, the unit at the top of the tree |
+| `units` | every unit of the company, the company first and each unit after its parent, its siblings in the account service's order: each `id`, `name`, and `parent`, null for the company |
+
 | Route | Takes | Answers |
 |---|---|---|
+| `GET /documents/{documentId}/company-units` | | 200, the units of the owner's company |
 | `GET /documents/{documentId}/units` | query `after?`, `limit?` | 200, a page of unit shares, in the order they were shared |
 | `POST /documents/{documentId}/units` | `units` | 200, a page of the unit shares of those units, made now or already standing |
 | `DELETE /documents/{documentId}/units/{unit}` | | 204 |
 
-- **Who shares** is as for member shares (「Member shares」): the document's owner, the administrator for a
-  document with no owner, a reader of every document any; 403 `forbidden` for an account reader that reads it
-  only through a share, `not-found` for one that does not read it, and for a document that does not stand.
+- **Who shares, and reads the units to share with,** is as for member shares (「Member shares」): the document's
+  owner, the administrator for a document with no owner, a reader of every document any; 403 `forbidden` for an
+  account reader that reads it alone, `not-found` for one that does not read it, and for a document that does not
+  stand.
+- **`GET /documents/{documentId}/company-units`** reads the owner's company through `GET /users/{user}/unit`, then
+  the company and each unit under it through `GET /units/{unit}`, one read a unit, and keeps none of it: a unit made
+  or moved counts from the next ask. A document with no owner, or whose owner the account service knows in no
+  company, is refused 409 `conflict`, and the account service failing, or none named, 502 `upstream-failed`.
 - **`GET /documents/{documentId}/units`** pages by `after`, the `id` of the last unit share read, and `limit`, 30
   where none is given and 200 at most.
 - **`POST /documents/{documentId}/units`** shares the document with every unit in `units`, 1 to 200 numbers,
@@ -667,7 +682,8 @@ flowchart TD
   so a console leaves the service out.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
   references, kinds and label values, the reading, making and ending of share links, the reading, granting,
-  changing and taking back of member shares, and the reading, granting and taking back of unit shares; the share reads and the share head are reached as well. Past the
+  changing and taking back of member shares, and the reading of the owner's company's units and the reading, granting
+  and taking back of unit shares; the share reads and the share head are reached as well. Past the
   face's guard, each route reads for the reader 「Readers」 states. The face's guard holds the console's calls to them; the service's token
   reaches them too. Every other route refuses the console's token 403 `forbidden`.
 
@@ -676,7 +692,7 @@ flowchart TD
 | Unit | Through | For |
 |---|---|---|
 | bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.5 | an import's page and figures; a reference's preview and picture |
-| the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in |
+| the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
   (bmo-explorer's `docs/api.md`, 「The client」). It checks every address before it connects and paces each
@@ -688,7 +704,9 @@ flowchart TD
   - `GET /users/{user}/unit`, the user's unit, its company and the path from the company down to it: which units a
     reader stands in or under, for a unit share (「Readers」), and the company of a member and of a document's
     owner, for a member or unit share made;
-  - `GET /units/{unit}`, a unit with its company, for a unit share made.
+  - `GET /units/{unit}`, a unit with its company, its name and the units directly under it: the company of a unit,
+    for a unit share made, and the tree of an owner's company, walked down from the company for the units a
+    document may be shared with (「Unit shares」).
   - A 404 is a user or a unit that does not stand; any other failure is refused 502 `upstream-failed`. Nothing it
     answers is kept: each read asks again, so a move or a new unit counts from the next call on.
 

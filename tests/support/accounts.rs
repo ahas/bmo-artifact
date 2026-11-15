@@ -56,6 +56,22 @@ impl Directory {
     Some(path)
   }
 
+  // The units standing directly under `unit`, by number.
+  fn children(&self, unit: i64) -> Vec<UnitRef> {
+    let units = self.units.lock().expect("the units");
+    let mut children: Vec<UnitRef> = units
+      .iter()
+      .filter(|(_, (_, parent))| *parent == Some(unit))
+      .map(|(id, (name, _))| UnitRef {
+        id: *id,
+        name: name.clone(),
+      })
+      .collect();
+
+    children.sort_by_key(|child| child.id);
+    children
+  }
+
   /// The stand-in listening on a port of its own until the test ends; its address.
   pub async fn listening(self: &Arc<Self>) -> String {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("a port");
@@ -122,7 +138,7 @@ async fn unit(
     parent,
     company: path.first().cloned().expect("a company"),
     path,
-    children: Vec::new(),
+    children: directory.children(unit),
     heads: Vec::new(),
     members: Vec::new(),
   })

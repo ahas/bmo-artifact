@@ -1,6 +1,7 @@
 //! Which documents an account reads, as conditions on a document's row and as what one document holds for it
 //! (`docs/artifact.md`, "Owners"; `docs/api.md`, "Readers"): the documents it owns, those with no owner for the
-//! administrator, and those shared with its account or with a unit it stands in or under.
+//! administrator, and those shared with its account or with a unit it stands in or under; the administrator reads
+//! every document.
 
 use sea_orm::ConnectionTrait;
 
@@ -15,7 +16,7 @@ use crate::wire::Permission;
 pub struct Account<'a> {
   /// Its account key, empty where the call names none.
   pub key: &'a str,
-  /// Whether it is the platform administrator, who keeps the documents with no owner.
+  /// Whether it is the platform administrator, who keeps the documents with no owner and reads every other.
   pub administrator: bool,
   /// The units it stands in or under, as the account service answered them for this call.
   pub units: &'a [i64],
@@ -44,20 +45,30 @@ impl Account<'_> {
     )
   }
 
-  /// The condition a document's row, `d`, meets where this account reads it.
+  /// The condition a document's row, `d`, meets where this account reads it: every row for the administrator.
   pub fn reads(&self, at: &str) -> String {
+    if self.administrator {
+      return "TRUE".to_owned();
+    }
+
     format!("({} OR {} OR {})", self.whole(at), shared_with(at), self.through_unit())
   }
 
   /// The permission this account reads a document's row, `d`, under, as a column read beside it: null where it
-  /// reaches the document wholly, `read` where it reads it through a unit alone.
+  /// reaches the document wholly, `read` where it reads it through a unit alone or as the administrator.
   pub fn permission(&self, at: &str) -> String {
+    let otherwise = if self.administrator { "'read'".to_owned() } else { self.unit_permission() };
+
     format!(
-      "CASE WHEN {} THEN NULL ELSE COALESCE({}, CASE WHEN {} THEN 'read' END) END",
+      "CASE WHEN {} THEN NULL ELSE COALESCE({}, {otherwise}) END",
       self.whole(at),
-      permission_column(at),
-      self.through_unit()
+      permission_column(at)
     )
+  }
+
+  // `read` where a document's row, `d`, is shared with a unit this account stands in or under, else null.
+  fn unit_permission(&self) -> String {
+    format!("CASE WHEN {} THEN 'read' END", self.through_unit())
   }
 }
 

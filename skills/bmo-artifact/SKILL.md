@@ -23,8 +23,8 @@ another service; the token is still the settings' (`BMO_ARTIFACT_SERVER__TOKEN` 
 environment).
 
 Where the environment it starts in holds `BMO_OWNER_ACCOUNT`, as a supervisor of an account's program does,
-the server acts for that account: every document it files is that account's own, read by nobody else until the
-account shares it, and the documents it lists, searches and reads are only those the account reads. With no
+the server acts for that account: every document it files is that account's own, read by nobody else but the
+administrator until the account shares it, and the documents it lists, searches and reads are only those the account reads. With no
 such variable it files documents with no owner and reaches every document.
 
 ## Filing

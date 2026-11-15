@@ -1,7 +1,8 @@
 //! Owners and unit shares (`docs/artifact.md`, "Owners" and "Unit shares"; `docs/api.md`, "Readers" and "Unit
 //! shares"): a document filed for an account read by that account alone, shared with a unit and read by everyone
 //! under it, a share kept inside the owner's company, a move and a withdrawal counted from the next call, a
-//! document with no owner kept the administrator's, and the units asked of a stand-in account service.
+//! document with no owner kept the administrator's, every document read by the administrator, the owner's company's
+//! tree, and the units asked of a stand-in account service.
 
 use crate::support;
 
@@ -98,6 +99,16 @@ async fn as_reader(
   (answered.status, json)
 }
 
+// A call the console relays for the platform administrator.
+async fn administers(
+  service: &Service,
+  method: Method,
+  path: &str,
+  body: Option<Value>,
+) -> (StatusCode, Value) {
+  as_reader(service, "administrator", ADMINISTRATOR, method, path, body).await
+}
+
 async fn reads(service: &Service, user: &str, path: &str) -> (StatusCode, Value) {
   as_reader(service, "member", user, Method::GET, path, None).await
 }
@@ -126,7 +137,7 @@ async fn a_new_document_is_read_by_its_owner_alone() {
   assert_eq!(status, StatusCode::OK);
   assert!(read.get("permission").is_none(), "the owner reads it wholly: {read}");
 
-  // Nobody else reads it before it is shared: not a colleague, not the head above, not the administrator.
+  // No other account but the administrator reads it before it is shared: not a colleague, not the head above.
   for user in [COLLEAGUE, ABOVE, ASIDE] {
     let (status, absent) = reads(&service, user, &path).await;
 
@@ -136,9 +147,10 @@ async fn a_new_document_is_read_by_its_owner_alone() {
     assert!(!ids(&reads(&service, user, &format!("/documents?q=%23{id}")).await.1).contains(&id));
   }
 
-  let (status, _) = as_reader(&service, "administrator", ADMINISTRATOR, Method::GET, &path, None).await;
+  let (status, read) = as_reader(&service, "administrator", ADMINISTRATOR, Method::GET, &path, None).await;
 
-  assert_eq!(status, StatusCode::NOT_FOUND);
+  assert_eq!(status, StatusCode::OK, "{read}");
+  assert_eq!(read["permission"], "read", "the administrator reads it alone");
 
   // A supervisor acting for another account reads no more than that account; the service's own token reads it.
   let other = service.call_with(Method::GET, &path, None, &[("owner-key", COLLEAGUE)]).await;
@@ -335,6 +347,112 @@ async fn a_document_with_no_owner_stays_the_administrators() {
 }
 
 #[tokio::test]
+async fn the_administrator_reads_every_document_of_every_company_and_changes_none_it_does_not_own() {
+  let (_directory, accounts) = organisation().await;
+  let service = Service::with_accounts(&accounts).await;
+  let id = id_of(&filed(&service, "Elsewhere alone", Some(OUTSIDER)).await);
+  let path = format!("/documents/{id}");
+
+  // Owned by a person of another company and shared with nobody, it is in the administrator's list, search and
+  // reads, under `read`.
+  let (status, listed) = administers(&service, Method::GET, "/documents", None).await;
+
+  assert_eq!(status, StatusCode::OK);
+  assert_eq!(ids(&listed), [id]);
+  assert_eq!(listed["items"][0]["permission"], "read");
+
+  let (_, found) = administers(&service, Method::GET, "/documents?q=Elsewhere", None).await;
+
+  assert_eq!(ids(&found), [id]);
+
+  let (status, read) = administers(&service, Method::GET, &path, None).await;
+
+  assert_eq!(status, StatusCode::OK, "{read}");
+  assert_eq!(read["owner"], OUTSIDER);
+  assert_eq!(read["permission"], "read");
+  assert_eq!(
+    administers(&service, Method::GET, &format!("{path}/content"), None).await.0,
+    StatusCode::OK
+  );
+
+  // Sharing, rewriting and letting go of it stay its owner's.
+  for (method, at, body) in [
+    (
+      Method::POST,
+      format!("{path}/members"),
+      Some(json!({ "users": [ADMINISTRATOR], "permission": "read" })),
+    ),
+    (Method::GET, format!("{path}/units"), None),
+    (Method::GET, format!("{path}/company-units"), None),
+    (Method::POST, "/shares".to_owned(), Some(json!({ "documentId": id }))),
+    (Method::PATCH, path.clone(), Some(json!({ "title": "Taken", "labels": {} }))),
+    (Method::DELETE, path.clone(), None),
+  ] {
+    let (status, refused) = administers(&service, method.clone(), &at, body).await;
+
+    assert_eq!(status, StatusCode::FORBIDDEN, "{method} {at}: {refused}");
+  }
+
+  assert_eq!(reads(&service, OUTSIDER, &path).await.1["title"], "Elsewhere alone");
+}
+
+#[tokio::test]
+async fn the_owner_picks_units_from_its_companys_tree() {
+  let (directory, accounts) = organisation().await;
+  let service = Service::with_accounts(&accounts).await;
+  let id = id_of(&filed(&service, "To share", Some(OWNER)).await);
+  let tree = format!("/documents/{id}/company-units");
+  let (status, offered) = as_reader(&service, "member", OWNER, Method::GET, &tree, None).await;
+
+  assert_eq!(status, StatusCode::OK, "{offered}");
+  assert_eq!(offered["company"], COMPANY);
+  assert_eq!(
+    offered["units"],
+    json!([
+      { "id": COMPANY, "name": "Company", "parent": null },
+      { "id": TEAM, "name": "Team", "parent": COMPANY },
+      { "id": PART, "name": "Part", "parent": TEAM },
+      { "id": BESIDE, "name": "Beside", "parent": COMPANY },
+    ])
+  );
+
+  // A unit made after counts from the next ask, since no tree is kept.
+  directory.unit(5, "New", Some(BESIDE));
+
+  let (_, again) = as_reader(&service, "member", OWNER, Method::GET, &tree, None).await;
+
+  assert_eq!(again["units"][4], json!({ "id": 5, "name": "New", "parent": BESIDE }));
+
+  // Nobody else reads the tree through the document: one it is shared with is refused, one it is not finds nothing.
+  as_reader(
+    &service,
+    "member",
+    OWNER,
+    Method::POST,
+    &format!("/documents/{id}/units"),
+    Some(json!({ "units": [PART] })),
+  )
+  .await;
+
+  assert_eq!(reads(&service, COLLEAGUE, &tree).await.0, StatusCode::FORBIDDEN);
+  assert_eq!(reads(&service, ASIDE, &tree).await.0, StatusCode::NOT_FOUND);
+
+  // A document with no owner belongs to no company.
+  let earlier = id_of(&filed(&service, "Earlier", None).await);
+  let (status, refused) = as_reader(
+    &service,
+    "administrator",
+    ADMINISTRATOR,
+    Method::GET,
+    &format!("/documents/{earlier}/company-units"),
+    None,
+  )
+  .await;
+
+  assert_eq!(status, StatusCode::CONFLICT, "{refused}");
+}
+
+#[tokio::test]
 async fn only_the_owner_changes_a_document_and_an_account_reaches_no_whole_store() {
   let (_directory, accounts) = organisation().await;
   let service = Service::with_accounts(&accounts).await;
@@ -406,6 +524,12 @@ async fn a_unit_read_the_account_service_does_not_answer_is_refused() {
   unit_shares::add(db, theirs, &[COMPANY], 0).await.expect("the unit share is kept");
 
   assert_eq!(reads(&service, OWNER, &format!("/documents/{mine}")).await.0, StatusCode::OK);
+
+  // The administrator reads every document, so no unit is asked for it.
+  let (status, read) = administers(&service, Method::GET, &format!("/documents/{theirs}"), None).await;
+
+  assert_eq!(status, StatusCode::OK, "{read}");
+  assert_eq!(ids(&administers(&service, Method::GET, "/documents", None).await.1).len(), 2);
 
   let (status, failed) = reads(&service, OWNER, &format!("/documents/{theirs}")).await;
 

@@ -111,6 +111,55 @@
         ],
         "type": "object"
       },
+      "CompanyUnit": {
+        "description": "One unit of a company's tree, as the account service names it.",
+        "properties": {
+          "id": {
+            "description": "The unit's number, as the account service numbers it.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent": {
+            "description": "The unit it stands directly under; null for the company.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parent"
+        ],
+        "type": "object"
+      },
+      "CompanyUnits": {
+        "description": "The units of a document owner's company, which the document may be shared with.",
+        "properties": {
+          "company": {
+            "description": "The company's number, the unit at the top of its tree.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "units": {
+            "description": "Every unit of the company: the company first, each unit after its parent, siblings in the account service's\norder.",
+            "items": {
+              "$ref": "#/components/schemas/CompanyUnit"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "company",
+          "units"
+        ],
+        "type": "object"
+      },
       "ContentOutput": {
         "description": "A document's file, in base64.",
         "properties": {
@@ -191,7 +240,7 @@
                 "type": "null"
               }
             ],
-            "description": "For an account reader that reads the document only through a share, the permission it reads it under;\nabsent where the reader reaches it wholly, and in every event (`docs/api.md`, \"Readers\")."
+            "description": "For an account reader that reads the document alone, through a share or as the administrator reading one\nanother account owns, the permission it reads it under; absent where the reader reaches it wholly, and in\nevery event (`docs/api.md`, \"Readers\")."
           },
           "scope": {
             "description": "What it is held under; null where none was given.",
@@ -1603,6 +1652,50 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/documents/{documentId}/company-units": {
+      "get": {
+        "operationId": "listDocumentsCompanyUnitsByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyUnits"
+                }
+              }
+            },
+            "description": "The organisation units of the company a document's owner stands in, which it may be shared with: the company first and each unit after its parent."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The organisation units of the company a document's owner stands in, which it may be shared with: the company first and each unit after its parent.",
+        "tags": [
+          "units"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "conflict",
           "upstream-failed",
           "forbidden"
         ],
