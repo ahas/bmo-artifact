@@ -6,6 +6,7 @@ use axum::response::Response;
 use schemars::generate::SchemaGenerator;
 
 use super::documents::let_go;
+use super::readers::Reader;
 use crate::Refusal;
 use crate::plumbing::http::{Call, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, json_answer, query, text_parameter};
@@ -34,6 +35,8 @@ impl Route for ReadScope {
   const PATH: &'static str = "/scopes/{scope}";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    Reader::of(&call).every()?;
+
     let scope = call.path_text("scope").await?;
     let counts = held(call.standing(), &scope).await?;
 
@@ -69,6 +72,8 @@ impl Route for ReleaseScope {
   const PATH: &'static str = "/scopes/{scope}";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    Reader::of(&call).every()?;
+
     let scope = call.path_text("scope").await?;
     let asked: DryRunQuery = call.query()?;
     let standing = call.standing();

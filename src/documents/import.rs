@@ -31,6 +31,8 @@ pub struct Asked<'a> {
   pub title: Option<&'a str>,
   pub scope: Option<&'a str>,
   pub actor_name: &'a str,
+  /// The account the document is filed for, none for a document with no owner.
+  pub owner: Option<&'a str>,
 }
 
 /// A page imported: its document's number and the files it keeps.
@@ -291,7 +293,9 @@ pub async fn import_page(
     labels: Labels::new(),
     description: None,
   };
-  let document_id = file_markdown(db, root, &input, references).await.map_err(|why: Refusal| why.detail)?;
+  let document_id = file_markdown(db, root, &input, asked.owner, references)
+    .await
+    .map_err(|why: Refusal| why.detail)?;
   let mut attachments = Vec::new();
 
   for (name, picture, address) in pictures {

@@ -17,12 +17,15 @@ const BASE_LIBRARIES: [&str; 4] = ["bmo-chat", "bmo-chat-client", "bmo-console-f
 
 /// The units this service calls, each reached through its published client crate taken from its checkout
 /// beside this one (`docs/api.md`, "What this service calls").
-const CALLED_UNITS: [&str; 1] = ["bmo-explorer"];
+const CALLED_UNITS: [&str; 2] = ["bmo-explorer", "bmo-web-client"];
 
 /// The packages taken from their checkouts beside this repository's, each by the path it is taken from: the
 /// called units' clients and bmo-chat's console face.
-const FROM_CHECKOUTS: [(&str, &str); 2] =
-  [("bmo-explorer", "../explorer"), ("bmo-console-face", "../../base/chat/console-face")];
+const FROM_CHECKOUTS: [(&str, &str); 3] = [
+  ("bmo-explorer", "../explorer"),
+  ("bmo-web-client", "../web/server/client"),
+  ("bmo-console-face", "../../base/chat/console-face"),
+];
 
 /// Where a package is taken from where it is taken from its checkout.
 fn checkout_path(name: &str) -> Option<&'static str> {

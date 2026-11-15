@@ -21,6 +21,7 @@ use serde::de::DeserializeOwned;
 use serde_json::json;
 use tokio::sync::{OnceCell, watch};
 
+use crate::accounts::Accounts;
 use crate::console;
 use crate::documents::preview::PreviewCache;
 use crate::events::Publisher;
@@ -197,6 +198,8 @@ pub struct Standing {
   pub wording: Wording,
   /// Where the web is read: bmo-explorer's client; a test hands a reader of its own.
   pub reader: Arc<dyn PageReader>,
+  /// The account service the settings name, where a reader's units and a share's company are asked.
+  pub accounts: Accounts,
   /// The previews of the pages a document refers to, read through the reader and kept under the file root.
   pub previews: Arc<PreviewCache>,
   /// Where events are published.
@@ -239,12 +242,14 @@ impl Standing {
     let console = console::face(&settings.console).map_err(|why| why.to_string());
     let player = Arc::new(Player::read(&settings.player.folder));
     let readings = ReadingKey::of(&settings.server.token);
+    let accounts = Accounts::of(&settings.accounts);
 
     Ok(Self {
       settings,
       archive,
       wording,
       reader,
+      accounts,
       previews,
       events: Publisher::default(),
       console,

@@ -11,21 +11,29 @@ repository.
 - **The files beside each document.** Pictures, sound, video, text files and any other file, shown or
   played where the document is read.
 - **The pages each document refers to,** with what each page says of itself for a preview.
+- **Each document's owner,** the account that filed it, which alone reads it until it shares it (「Owners」).
 - **Share links,** each opening one document for whoever holds it.
-- **Member shares,** each opening one document to read to one member of the reader's company.
+- **Member shares,** each opening one document to read to one member of the owner's company.
+- **Unit shares,** each opening one document to read to everyone standing in or under one organisation unit of
+  the owner's company.
 - **Nothing it did not keep.** It runs no research and speaks no narration: a research run is a client's
   own work that files its result here, and a narration is a sound a client attaches with the role `head`.
-  It knows no caller: a document's `scope`, `actorName` and `labels` are the caller's own strings.
+  It knows no caller: a document's `scope`, `actorName` and `labels` are the caller's own strings. It keeps no
+  organisation: which unit a person stands in, and which company a unit belongs to, is asked of the account
+  service each time it is needed.
 
 ```mermaid
 flowchart TD
   C[A caller] -->|files, rewrites| D[A document]
+  O[Its owner] -->|owns| D
   C -->|attaches| A[Its files]
   D -->|its links| R[Its references]
-  C -->|shares| S[A share link]
-  C -->|shares with| M[A member share]
+  O -->|shares| S[A share link]
+  O -->|shares with| M[A member share]
+  O -->|shares with| U[A unit share]
   C -->|imports an address| I[An import]
   I -->|reads through bmo-explorer| D
+  U -.->|who stands under the unit| W[The account service]
 ```
 
 ## Kinds
@@ -67,7 +75,7 @@ address and the file root are settings; no other unit reads or writes either.
 
 | Table | One row per | What it holds |
 |---|---|---|
-| `searches` | document | its kind, title, scope, actor, labels, description, its file's path, and its times |
+| `searches` | document | its kind, title, scope, actor, owner, labels, description, its file's path, and its times |
 | `search_findings` | piece of a document's body | the body's words the search reads; a document filed here keeps its body as one piece |
 | `search_sources` | reference | the page's address and title, and the piece of the body that refers to it |
 | `archive_attachments` | kept file | what it is read as, its type, size, name, role, path and when it was kept |
@@ -75,7 +83,8 @@ address and the file root are settings; no other unit reads or writes either.
 | `web_search_shares` | share link | its token, its document, when it was made and when it ends |
 | `web_search_share_notes` | link that has ended | its token, what it opened, that document's title, when it ended and why |
 | `artifact_member_shares` | document shared with one member | its document, the member's account key, the permission and when it was shared |
-| `imports` | import | the address asked, the title, scope and actor asked, its state, its document or why it failed |
+| `artifact_unit_shares` | document shared with one organisation unit | its document, the unit's number as the account service keeps it, and when it was shared |
+| `imports` | import | the address asked, the title, scope, actor and owner asked, its state, its document or why it failed |
 | `events` | event | its kind, when it was kept, the scope of its member and the member |
 
 - **The tables keep their names and their old columns,** since the documents a deployment brings in from
@@ -157,6 +166,34 @@ address and the file root are settings; no other unit reads or writes either.
 - **The list answers what is kept,** so listing never reaches the web; reading one reference reads its
   preview where none is kept fresh.
 
+## Owners
+
+- **A document's owner is the account that filed it.** The account is the one the filing call names in
+  `Owner-Key` on the service's token (docs/api.md, 「Readers」), never a field of the body: a caller's body is its
+  own word, and the header is set by whoever holds the service's credential.
+  - **A supervisor files for its user as that user.** Agency holds the account a supervisor of an account works for in
+    its program's `BMO_OWNER_ACCOUNT`; the MCP server and the archive verb, started in that program, name that
+    account on every call, so what the supervisor files is its user's and what it reads is what its user reads.
+  - **A caller naming no account files a document with no owner:** a research run, a supervisor of no account and
+    any other service. A row that keeps no owner reads as such a document.
+- **A new document is its owner's alone.** Its owner reads it, rewrites it, attaches to it, lets go of it and shares
+  it; nobody else reads it until it is shared, not the head of the owner's unit nor the administrator. Lists,
+  searches, label counts and the share links listed hold only what a reader reads, and a document a reader does
+  not read answers as one that does not stand, so its number tells them nothing.
+- **A document with no owner is the administrator's,** read, shared and changed by the administrator alone among
+  the accounts.
+- **A caller holding the service's token and naming no account reaches every document,** owned or not: the
+  services that file, settle and let go of documents.
+- **A document is shared three ways, each by its owner** (the administrator for a document with no owner): a share
+  link, a member share and a unit share, each standing on its own terms and none ending another.
+  - Whoever reads a document through a member share or a unit share reads it alone: never rewrites, attaches,
+    lets go of or shares it on.
+  - **Everything shared stays within the owner's company:** a member share and a unit share name an account or a
+    unit of the company the owner stands in, as the account service answers it when the share is made, and one of
+    another company is refused. A share link opens the document to whoever holds its token, wherever they stand.
+- **An owner who leaves** keeps their documents: what was shared stays read through its shares, and what was never
+  shared is sealed, since the departed account signs in no more and nobody else reads it.
+
 ## Share links
 
 - **A link is a row rather than a signature:** a link is read back long after it was made, and ended
@@ -184,16 +221,13 @@ address and the file root are settings; no other unit reads or writes either.
 
 ## Member shares
 
-- **A document is shared with members of the reader's company** as well as by link, from the one share dialog
+- **A document is shared with members of the owner's company** as well as by link, from the one share dialog
   (「Where a person reads it」). A member is an account of the console's people directory, every account under
-  the top-level organization the reader's own unit belongs to; the service keeps each member by the account key
-  alone and asks nothing of the directory.
-- **Who sees what.** The console tells the service who reads (docs/api.md, 「Readers」):
-  - the administrator, and every caller holding the service's token, read every document, whomever it is
-    shared with;
-  - any other signed-in reader reads the documents shared with their own account and no other. The list holds
-    those alone, and every other document reads to them as one that does not stand, so a reader learns nothing
-    of a document they were not handed.
+  the company the reader's own unit belongs to; the service keeps each member by the account key alone.
+- **Sharing an owned document asks the account service each member's company** (docs/api.md, 「What this service
+  calls」), and a member whose company is not the owner's, or whom the account service does not know, is refused
+  before anything is stored. A document with no owner is shared by the administrator as the console's directory
+  offers, with no company asked.
 - **A member reads and does nothing else.** The permission is `read`, the one a member is given; the screens write
   nothing to a document, so no share gives more, and `edit` is refused. A member reader neither makes nor ends
   a link, nor shares the document on.
@@ -203,6 +237,21 @@ address and the file root are settings; no other unit reads or writes either.
   no note: unlike a link, a member share was never handed to anyone outside to open.
 - **A link stands beside the member shares,** each on its own terms: a share link opens the document to whoever
   holds its token whatever members it is shared with, and ending a link touches no member share.
+
+## Unit shares
+
+- **A document is shared with an organisation unit of its owner's company,** and everyone standing in that unit
+  or in any unit under it reads it. Sharing with the company itself, the unit at the top of its tree, opens it to
+  the whole company. A unit of another company is refused, and so is a unit the account service does not know.
+- **The service keeps the unit by its number alone.** Which unit a reader stands in, and the units above it up to
+  their company, are asked of the account service as the reader reads (docs/api.md, 「What this service calls」),
+  so the tree is never copied here:
+  - a person moved to another unit reads by the unit they stand in now, from their next call on;
+  - a unit share taken away stops every reader who read only through it at once, while one who reads through
+    another share, or owns the document, keeps reading.
+- **A document with no owner is shared with no unit,** since it belongs to no company.
+- **A unit reads and does nothing else,** as a member does: its readers read the document under `read`.
+- **A unit share goes with its document,** as a member share does, and leaves no note.
 
 ## A page imported whole
 
@@ -482,10 +531,11 @@ its name stands among them too, so it can be saved.
   grants the dialog `read` alone, so each row says `read` in words where a choice of permissions would stand; a
   member who holds `edit` keeps it on the row beside `read`. Asking for `edit` is refused all the same, and the
   member part says in the reader's own language that a document is shared to read alone, the member keeping
-  `read`. Where the console provides no directory, the dialog shares by link alone.
-- **A member reader's screens are the same screens over less:** the list holds the documents shared with them,
-  and a document read under a permission (docs/api.md, 「Documents」, `permission`) offers no sharing among the
-  actions on it.
+  `read`. Where the console provides no directory, the dialog shares by link alone. The dialog has no unit part:
+  a unit share is made and taken away through its routes alone (docs/api.md, 「Unit shares」).
+- **Every reader's screens are the same screens over what they read** (「Owners」): the list holds the documents
+  the reader owns and those shared with them, and a document read under a permission (docs/api.md, 「Documents」,
+  `permission`), one read through a share, offers no sharing among the actions on it.
 - **The screens' former path, `/archive`, still reaches them.** The manifest names it among its former screen paths,
   so a console answers every address under it — the list, a document, a share link handed out under it — with a
   308 to the same address under `/artifact` (bmo-ui's `docs/console-bundles.md`, 「A screen that moved」).
@@ -576,5 +626,5 @@ its name stands among them too, so it can be saved.
   what it makes here through the MCP server.
 - **Talk and translations** of a document belong to whoever keeps the talk and the translations. The service
   keeps no translation: a reader's reading is asked through the console from the gate, which keeps them.
-- **Ownership of a document.** A document belongs to no account: the administrator reads every one, and a
-  member reads what is shared with them (「Member shares」).
+- **The organisation.** Companies, units, who stands where and who heads what are the account service's; this
+  service asks them and keeps none.

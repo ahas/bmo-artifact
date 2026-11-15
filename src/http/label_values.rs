@@ -27,9 +27,10 @@ impl Route for ListLabelValues {
       return Err(Refused::bad("key names the label whose values are asked"));
     }
 
-    let reader = Reader::of(&call);
+    let listing = Reader::of(&call).listing(call.standing()).await?;
+    let account = listing.as_ref().map(|listing| listing.account());
     let (items, more) =
-      documents::label_values(call.standing().db().await?, key, limit, reader.member()).await?;
+      documents::label_values(call.standing().db().await?, key, limit, account.as_ref()).await?;
 
     Ok(answer(StatusCode::OK, &LabelValuePage { items, more }))
   }
@@ -42,7 +43,7 @@ impl Route for ListLabelValues {
       parameters: query::<LabelValuesQuery>(generator),
       body: None,
       answers: vec![(200, json_answer::<LabelValuePage>(generator))],
-      codes: &["unauthorized", "bad-request"],
+      codes: &["unauthorized", "bad-request", "upstream-failed"],
     }
   }
 }

@@ -119,7 +119,7 @@ impl Route for ListReferences {
       parameters: [vec![id_parameter("documentId")], query::<PageQuery>(generator)].concat(),
       body: None,
       answers: vec![(200, json_answer::<ReferencePage>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }
@@ -147,7 +147,7 @@ impl Route for ReadReference {
       parameters: vec![id_parameter("documentId"), id_parameter("referenceId")],
       body: None,
       answers: vec![(200, json_answer::<Reference>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }
@@ -175,7 +175,7 @@ impl Route for ReadReferenceImage {
       parameters: vec![id_parameter("documentId"), id_parameter("referenceId")],
       body: None,
       answers: vec![(200, bytes_answer())],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }

@@ -26,6 +26,10 @@ root = "data"
 [explorer]
 data_root = "data"
 
+# The account service a reader's unit and a share's company are asked of is `address` here, called with its
+# server's `token`; a deployment sets both, and none is named until it does.
+[accounts]
+
 # The address a share link's url stands under is `address` here; a deployment sets it.
 [share]
 

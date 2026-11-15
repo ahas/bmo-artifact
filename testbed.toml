@@ -15,9 +15,10 @@ migrate = "BMO_ARTIFACT_DATABASE__URL=\"$BMO_TEST_TEMPLATE_URL\" cargo run --qui
 
 [check]
 quick = ["layout", "dependencies", "cargo-profile", "shared-versions"]
-# The base libraries, bmo-chat's console face among them, and bmo-explorer, whose published client crate the
-# imports read pages through.
-base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-explorer"]
+# The base libraries, bmo-chat's console face among them, bmo-explorer, whose published client crate the
+# imports read pages through, and bmo-web-client, bmo-web's published client crate the readers' units are
+# asked through.
+base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-explorer", "bmo-web-client"]
 
 # The repository whose root holds the shared versions the manifests and the lock hold to.
 [check.shared_versions]

@@ -63,7 +63,7 @@ impl Verb for ArchiveDoc {
   type Args = ArchiveDocArgs;
 
   async fn run(&self, args: ArchiveDocArgs, shell: &Shell) -> Result<Answer, VerbError> {
-    archive_doc(&ArtifactClient::of_settings(&shell.settings, None), &args)
+    archive_doc(&ArtifactClient::of_settings(&shell.settings, None).for_environment_account(), &args)
       .await
       .map(Answer::from)
   }

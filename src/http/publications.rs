@@ -6,6 +6,7 @@ use axum::response::Response;
 use schemars::generate::SchemaGenerator;
 
 use super::documents::document;
+use super::readers::Reader;
 use super::shares::sweep;
 use crate::Refusal;
 use crate::documents::filing;
@@ -23,10 +24,11 @@ impl Route for PublishDocument {
   const PATH: &'static str = "/publications";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    let reader = Reader::of(&call);
     let input: DocumentInput = call.json().await?;
     let standing = call.standing();
     let db = standing.db().await?;
-    let id = filing::file(db, &standing.settings.files.root, &input).await?;
+    let id = filing::file(db, &standing.settings.files.root, &input, reader.owner()).await?;
     let filed = document(standing, id).await?.document;
 
     standing

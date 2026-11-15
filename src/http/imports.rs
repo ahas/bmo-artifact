@@ -7,6 +7,7 @@ use axum::http::{Method, StatusCode};
 use axum::response::Response;
 use schemars::generate::SchemaGenerator;
 
+use super::readers::Reader;
 use crate::Refusal;
 use crate::documents::import::{Asked, import_page};
 use crate::events::EventKind;
@@ -43,6 +44,7 @@ async fn run(standing: Arc<Standing>, asked: imports::Asked) -> Result<(), Refus
       title: asked.title.as_deref(),
       scope,
       actor_name: &asked.actor_name,
+      owner: asked.owner.as_deref(),
     },
   )
   .await;
@@ -86,9 +88,10 @@ impl Route for MakeImport {
       return Err(Refused::bad("an import needs an actorName"));
     }
 
+    let reader = Reader::of(&call);
     let standing = call.shared();
     let db = standing.db().await?;
-    let asked = imports::insert(db, &input).await?;
+    let asked = imports::insert(db, &input, reader.owner()).await?;
     let made = asked.import.clone();
 
     standing
@@ -134,8 +137,11 @@ impl Route for ReadImport {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = call.path_id("importId").await?;
+    let reader = Reader::of(&call);
+    // An account reads the imports it asked for alone; any other reads to it as one that does not stand.
     let asked = imports::read(call.standing().db().await?, id)
       .await?
+      .filter(|asked| matches!(reader, Reader::Every) || asked.owner.as_deref() == reader.owner())
       .ok_or_else(|| Refusal::absent(format!("there is no import {id}")))?;
 
     Ok(answer(StatusCode::OK, &asked.import))

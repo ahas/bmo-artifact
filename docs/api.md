@@ -1,6 +1,6 @@
 # The boundary: bmo-artifact
 
-bmo-artifact keeps documents, finds them again and shares them by link and with members: records, learning books, imported
+bmo-artifact keeps documents, finds them again and shares them by link, with members and with organisation units: records, learning books, imported
 pages and HTML pages, each with its body, its attachments, the pages it refers to and its cover picture. It
 is an upstream (bmo-chat's `docs/conventions.md`, 「Upstream and downstream」): a harness takes it as its
 first entry point through its MCP server, with no console and no other unit running beside it but the page
@@ -16,6 +16,7 @@ flowchart TD
   S --> D[(The document tables)]
   S --> F[The file root]
   S -->|bmo-explorer's client| E[Page reading]
+  S -->|bmo-web's client| W[The account service]
 ```
 
 ## Versioning
@@ -54,14 +55,16 @@ flowchart TD
 |---|---|---|
 | 400 | `bad-request` | the body, the query or a path key is not the shape the route takes; the sentence names what |
 | 401 | `unauthorized` | the token is missing or wrong, or is the service's on the console face |
-| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs; a member reader on a route that changes how a document is shared (「Readers」) |
+| 403 | `forbidden` | the console's token on a route its screens do not use, or without the role or owner key the screen needs; an account reader on a route that changes a document or how it is shared, where it reads the document only through a share, or on a route only a reader of every document reaches (「Readers」) |
 | 404 | `no-route` | no route answers this method and path |
 | 404 | `not-found` | nothing stands at the key the path names |
-| 409 | `conflict` | the member does not take the change: a body for a page, HTML for any other kind |
+| 409 | `conflict` | the member does not take the change: a body for a page, HTML for any other kind; a member or unit share of a document whose owner stands in no company, or a unit share of one with no owner |
 | 410 | `gone` | a share link that has ended, and what it opened; an event stream resumed from before the window the service keeps |
 | 413 | `too-large` | the body or an attachment is over its ceiling |
 | 422 | `read-only` | a member share asked with a permission other than `read` (「Member shares」) |
+| 422 | `other-company` | a member or a unit outside the company the document's owner stands in (「Member shares」, 「Unit shares」) |
 | 500 | `failed` | the service failed: its store or its file root; the sentence is the failure |
+| 502 | `upstream-failed` | the account service failed, or the settings name none, where a call needs it (「What this service calls」) |
 
 
 ### Lists
@@ -73,21 +76,38 @@ flowchart TD
 
 ### Readers
 
-A call reads for one of two readers, and the reader decides which documents it reaches.
+A call reads for one of two readers, and the reader decides which documents it reaches (docs/artifact.md,
+「Owners」).
 
-- **A reader of every document** is a caller holding the service's token, and the console relaying for a reader
-  whose `Owner-Role` is `administrator`. It reaches every document as each route below states.
-- **A member reader** is the console relaying for any other reader, the account its `Owner-Key` names. It reads
-  the documents shared with that account (「Member shares」), and reads them only:
-  - `GET /documents` lists those documents alone, and `GET /label-values` counts those alone;
-  - `GET /documents/{documentId}` and every read under it answer a document not shared with the reader 404
-    `not-found`, in the sentence of a document that does not stand;
-  - `GET /shares` lists the live links of those documents alone;
-  - `POST /shares`, `DELETE /shares/{token}` and every route of 「Member shares」 are refused 403 `forbidden`;
-  - a reader with no `Owner-Key` has nothing shared with it.
-- **The headers are the console's word** (bmo-ui's `docs/console-bundles.md`, 「Roles and the owner key」): they
-  are read only on a call carrying the console's token. A call with the service's token reads every document,
-  whatever headers it carries.
+- **A reader of every document** is a caller holding the service's token that names no account. It reaches every
+  document as each route below states.
+- **An account reader** is the account a call names in `Owner-Key`: the console relaying for any signed-in reader,
+  and a caller holding the service's token that names an account, as a supervisor's MCP server and archive verb do
+  for the user they work for. `Owner-Role` `administrator` marks the platform administrator. It reaches:
+  - **wholly,** the documents it owns, and, for the administrator, the documents with no owner: it reads them, and
+    rewrites, attaches to, lets go of and shares them on the routes it reaches;
+  - **to read alone,** the documents shared with its account (「Member shares」) or with a unit it stands in or under
+    (「Unit shares」), each answered with `permission` `read`;
+  - and no other document.
+- **What an account reader does not reach is not there for it:**
+  - `GET /documents` lists what it reaches alone, `GET /label-values` counts those alone, and `GET /shares` lists
+    their live links alone;
+  - `GET /documents/{documentId}` and every route under it answer a document it does not reach 404 `not-found`, in
+    the sentence of a document that does not stand, and so does every route that changes one;
+  - a route that changes a document or how it is shared — `PATCH` and `DELETE /documents/{documentId}`, `POST
+    /documents/{documentId}/attachments`, `POST /shares`, `DELETE /shares/{token}`, and every route of 「Member
+    shares」 and 「Unit shares」 — is refused 403 `forbidden` on a document it reads only through a share;
+  - `GET /imports/{importId}` answers the imports it asked for alone, any other 404 `not-found`;
+  - `GET /events` and the routes of 「Scopes」, which reach every document, are refused 403 `forbidden`;
+  - a call on the console's token with no `Owner-Key` owns nothing and has nothing shared with it.
+- **The unit a reader stands in is the account service's answer at the time of the call** (「What this service
+  calls」): a unit share opens a document to a reader whose unit is that unit or one under it, read through `GET
+  /users/{user}/unit` whenever a unit share decides a read. A user the account service does not know stands in no
+  unit; where it fails, the read is refused 502 `upstream-failed`; where the settings name no account service, no
+  reader stands in any unit.
+- **The headers are trusted as the caller's credential vouches for them.** The console's are its word for its
+  signed-in reader (bmo-ui's `docs/console-bundles.md`, 「Roles and the owner key」); a holder of the service's token
+  names the account it acts for. No body field names a reader or an owner.
 - **The share reads, the share head and the readings** are held to their token alone, whoever reads.
 
 ## Documents
@@ -102,12 +122,13 @@ lives」).
 | `title` | its title |
 | `scope` | what it is held under, null where none was given |
 | `actorName` | who filed it |
+| `owner` | the account key of the account that owns it, as `Owner-Key` named it when it was filed; null for a document with no owner (docs/artifact.md, 「Owners」) |
 | `labels` | the caller's metadata |
 | `description` | what it reads as before it is opened: the one the filer gave, else a page's declared description, else the opening prose of its body as plain words; cut at 160 characters; null where it has none |
 | `attachmentCount` | how many files it keeps |
 | `hasPicture` | whether it keeps a picture, so `GET /documents/{documentId}/picture` has a cover to send |
 | `createdAt`, `changedAt` | when it was filed and last rewritten |
-| `permission` | for a member reader, the permission it reads the document under, `read` (「Member shares」); absent for a reader of every document and in every event |
+| `permission` | for an account reader that reads the document only through a share, the permission it reads it under, `read` (「Member shares」, 「Unit shares」); absent where the reader reaches it wholly, and in every event |
 
 ### Kinds
 
@@ -152,7 +173,8 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   number with or without a leading `#`, to the document of that number as well. A blank `q` is no search.
 - **`POST /documents` files a document.** `page` takes `html` and nothing in `body`; every other kind takes
   `body` and no `html`. The title is required, except for a page whose own `title` element gives one.
-  Each distinct http or https link the body makes becomes one of the document's references. Refused
+  Each distinct http or https link the body makes becomes one of the document's references. Its owner is the
+  account the call names in `Owner-Key`, none where it names none (「Readers」). Refused
   `bad-request` for a kind no module answers, an empty title or body, or a body and HTML given the wrong
   way round.
 - **A number that stands for no document answers 404 `not-found`** on `GET /documents/{documentId}` and
@@ -163,7 +185,7 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   references are read again from a new body. A body for a page or HTML for any other kind is refused
   409 `conflict`.
 - **`DELETE /documents/{documentId}` lets go of the document** as letting go of its scope lets go of each it
-  holds (「Scopes」): its row, its labels, its files, attachments and references, its member shares, and its
+  holds (「Scopes」): its row, its labels, its files, attachments and references, its member and unit shares, and its
   share link, which leaves its note behind. A reading issued for it opens nothing after. An import that filed it keeps its own
   record. It is a `document.deleted`, and its link a `share.deleted`.
 - **`GET /documents/{documentId}/content`** sends the file: `text/markdown` for a markdown kind, never
@@ -324,7 +346,7 @@ console relays them with no session, as a sandboxed page asks for them with none
 
 ## Member shares
 
-A member share opens one document to read to one member of the reader's company: the account the console's
+A member share opens one document to read to one member of the owner's company: the account the console's
 people directory names by its key (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」, the people
 directory). A document is shared with each account at most once.
 
@@ -342,13 +364,18 @@ directory). A document is shared with each account at most once.
 | `PATCH /documents/{documentId}/members/{user}` | `permission` | 200, the member share |
 | `DELETE /documents/{documentId}/members/{user}` | | 204 |
 
-- **Only a reader of every document shares** (「Readers」): a member reader is refused 403 `forbidden` on each
-  route here.
+- **The document's owner shares it,** the administrator a document with no owner, and a reader of every document
+  any (「Readers」): an account reader that reads it only through a share is refused 403 `forbidden` on each route
+  here, and one that does not read it at all is answered `not-found`.
 - **A document that does not stand is `not-found`** on every route here.
 - **`GET /documents/{documentId}/members`** pages by `after`, the `id` of the last member read, and `limit`, 30
   where none is given and 200 at most.
 - **`POST /documents/{documentId}/members`** shares the document with every key in `users`, 1 to 200 keys of 1
   to 200 characters each, refused `bad-request` otherwise. A key already a member keeps its share as it stands.
+  For a document with an owner, each key is asked of the account service (`GET /users/{user}/unit`) before
+  anything is stored: a user whose company is not the owner's, or whom the account service does not know, is
+  refused 422 `other-company`; an owner the account service knows in no company 409 `conflict`; and the account
+  service failing, or none named, 502 `upstream-failed`.
 - **`permission` is `read`.** The document screens write nothing, so a share opens reading alone: `edit` is
   refused 422 `read-only` before anything is stored, on `POST` and `PATCH` alike.
 - **`PATCH /documents/{documentId}/members/{user}`** sets the permission; a key that is no member is
@@ -356,6 +383,40 @@ directory). A document is shared with each account at most once.
 - **`DELETE /documents/{documentId}/members/{user}`** takes the member off, and their reading stops at once; a
   key that is no member is `not-found`.
 - **A member share goes with its document,** and with the scope that held it. No event is raised for one.
+
+## Unit shares
+
+A unit share opens one document to read to everyone standing in one organisation unit of the owner's company or in
+any unit under it (docs/artifact.md, 「Unit shares」). The unit is named by its number, as the account service
+numbers its units (bmo-web's `docs/boundary.md`, 「Organisation units」); a company is the unit at the top of its
+tree. A document is shared with each unit at most once.
+
+| Field | Holds |
+|---|---|
+| `id`, `documentId` | the unit share and its document |
+| `unit` | the unit's number |
+| `sharedAt` | when it was shared, in epoch milliseconds |
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /documents/{documentId}/units` | query `after?`, `limit?` | 200, a page of unit shares, in the order they were shared |
+| `POST /documents/{documentId}/units` | `units` | 200, a page of the unit shares of those units, made now or already standing |
+| `DELETE /documents/{documentId}/units/{unit}` | | 204 |
+
+- **Who shares** is as for member shares (「Member shares」): the document's owner, the administrator for a
+  document with no owner, a reader of every document any; 403 `forbidden` for an account reader that reads it
+  only through a share, `not-found` for one that does not read it, and for a document that does not stand.
+- **`GET /documents/{documentId}/units`** pages by `after`, the `id` of the last unit share read, and `limit`, 30
+  where none is given and 200 at most.
+- **`POST /documents/{documentId}/units`** shares the document with every unit in `units`, 1 to 200 numbers,
+  refused `bad-request` otherwise. Before anything is stored, the owner's company is read through `GET
+  /users/{user}/unit` and each unit through `GET /units/{unit}`: a unit that does not stand is `not-found`, a unit
+  of another company 422 `other-company`, and the account service failing, or none named, 502 `upstream-failed`.
+  A document with no owner, or whose owner the account service knows in no company, is refused 409 `conflict`,
+  since it belongs to no company. A unit already sharing it keeps its share as it stands.
+- **`DELETE /documents/{documentId}/units/{unit}`** takes the unit off, and every reader who read the document only
+  through it stops reading at once; a unit it is not shared with is `not-found`.
+- **A unit share goes with its document,** and with the scope that held it. No event is raised for one.
 
 ## Publications
 
@@ -371,7 +432,8 @@ somebody as, the address they keep rather than a copy they were sent.
 |---|---|---|
 | `POST /publications` | `kind`, `title`, `body?`, `html?`, `scope?`, `actorName`, `labels`, `description?` | 201, the document and its link |
 
-- **The document is filed as `POST /documents` files one,** taking the same body and refusing the same ways.
+- **The document is filed as `POST /documents` files one,** taking the same body, its owner the account the call
+  names in `Owner-Key`, and refusing the same ways.
 - **The link has no end** and names the document rather than a body: a rewrite of that document keeps the
   link, and the link serves the newest body whenever it is opened (docs/artifact.md, 「Share links」).
 - **The link is a share link like any other** once made: `GET /shares`, the share reads and `DELETE
@@ -400,8 +462,9 @@ whole」).
 | `GET /imports/{importId}` | | 200, the import |
 
 - **The page is read after the answer,** and the import moves to `filed` or `failed` once it is, each an
-  `import.changed`. The document it files carries the import's `scope` and `actorName`, and the `title`
-  given, else the page's own.
+  `import.changed`. The document it files carries the import's `scope` and `actorName`, the `title`
+  given, else the page's own, and as its owner the account the asking call named in `Owner-Key`, none where it
+  named none.
 - **`POST /imports`** refuses an address that is not http or https `bad-request`. A page that cannot be read
   is no refusal of the route: the import is `failed`, its error the page reader's sentence.
 - **An import still `fetching` when the service stops** is `failed` when it starts again, its error saying
@@ -414,11 +477,12 @@ whole」).
 | `GET /scopes/{scope}` | | 200, what the service holds under the scope |
 | `DELETE /scopes/{scope}` | query `dryRun?` | 200, what was let go of, or with `dryRun=true` what would be |
 
+- **Only a reader of every document** reaches a scope: an account reader is refused 403 `forbidden`.
 - **The answer** is `scope`, `counts` (`documents`, `attachments`, `shares` and `imports` held under it)
   and `state`: null for a read, `released` once let go of, `preview` for a dry run. A scope holding
   nothing is `not-found`.
 - **Letting go** removes every document held under the scope with its files, attachments, references, member
-  shares and share links, each as `DELETE /documents/{documentId}` lets go of one, and every import asked under it.
+  and unit shares and share links, each as `DELETE /documents/{documentId}` lets go of one, and every import asked under it.
   Each document removed is a `document.deleted` and each link a `share.deleted`.
 
 ## Events
@@ -434,6 +498,8 @@ whole」).
 | `import.created` | an import asked for | the import |
 | `import.changed` | an import filed or failed | the import |
 
+- **Only a reader of every document** reads the events, which carry every document filed or changed: an account
+  reader is refused 403 `forbidden`.
 - **`GET /events`** is the stream, as server-sent events, each `event` its kind, `id` its number and `data`
   `{"id", "kind", "at", "data"}`; asked with `Accept: application/json` it answers a page of the same
   events, oldest first.
@@ -495,6 +561,11 @@ then a line for each file it attached, naming the attachment's number and its na
 | `--chat <room>` | The room it is held under as its `scope`; it is the owner's own where left out |
 | `--by <name>` | Who files it: `BMO_TURN_AGENT` where left out, then `USER` |
 
+- **It acts for the account `BMO_OWNER_ACCOUNT` holds,** naming it in `Owner-Key` on every call, so a document a
+  supervisor of an account files is its user's, and a rewrite reaches only what that user owns (「Readers」). Where
+  the variable is unset or empty it names no account, and files a document with no owner. No option names the
+  account.
+
 - **A new document goes through `POST /publications`,** a rewrite through `PATCH /documents/{documentId}` and
   `POST /shares`, which answers the live link that stands.
 - **Each file is attached through `POST /documents/{documentId}/attachments`** once the document is filed
@@ -528,6 +599,11 @@ Each tool is one call of the client, answered as structured content; a refusal i
 `isError` whose text is the route's status, `code` and `error`. A harness publishes what it wrote with
 `artifact_publish`, which hands it back the document's number and the link to hand to a reader; finds earlier
 documents with `artifact_search`; and opens a link on a document already filed with `artifact_share`.
+
+**The server acts for the account `BMO_OWNER_ACCOUNT` holds in the environment it is started in,** naming it in
+`Owner-Key` on every call as the archive verb does (「The archive verb」): a supervisor of an account files its
+user's documents and finds and reads only what its user reads. Where the variable is unset or empty it names none,
+and reaches every document with the settings' token. No tool's input names the account.
 
 **`artifact_attach` refuses a picture the document's body does not draw,** as the archive verb does (「The
 archive verb」): before it attaches a picture to a markdown document it reads the body as filed, and a picture
@@ -590,8 +666,8 @@ flowchart TD
   is refused 401 `unauthorized` on every route, and the face's routes are `no-route` to the service's token,
   so a console leaves the service out.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
-  references, kinds and label values, the reading, making and ending of share links, and the reading, granting,
-  changing and taking back of member shares; the share reads and the share head are reached as well. Past the
+  references, kinds and label values, the reading, making and ending of share links, the reading, granting,
+  changing and taking back of member shares, and the reading, granting and taking back of unit shares; the share reads and the share head are reached as well. Past the
   face's guard, each route reads for the reader 「Readers」 states. The face's guard holds the console's calls to them; the service's token
   reaches them too. Every other route refuses the console's token 403 `forbidden`.
 
@@ -600,12 +676,21 @@ flowchart TD
 | Unit | Through | For |
 |---|---|---|
 | bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.5 | an import's page and figures; a reference's preview and picture |
+| the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
   (bmo-explorer's `docs/api.md`, 「The client」). It checks every address before it connects and paces each
   host.
 - **An import** reads the page's markup with `fetch_page` and each of its pictures with `fetch_raster`.
 - **A reference's preview** is `link_preview`, and its picture `fetch_raster`.
+- **The account service is reached at the settings' `accounts.address` with `accounts.token`,** its server's
+  token (bmo-web's `docs/boundary.md`, 「Wire conventions」), through two reads and nothing else:
+  - `GET /users/{user}/unit`, the user's unit, its company and the path from the company down to it: which units a
+    reader stands in or under, for a unit share (「Readers」), and the company of a member and of a document's
+    owner, for a member or unit share made;
+  - `GET /units/{unit}`, a unit with its company, for a unit share made.
+  - A 404 is a user or a unit that does not stand; any other failure is refused 502 `upstream-failed`. Nothing it
+    answers is kept: each read asks again, so a move or a new unit counts from the next call on.
 
 The console bundle makes two calls of its own, through the console rather than through this service:
 
@@ -615,8 +700,8 @@ The console bundle makes two calls of its own, through the console rather than t
 | the console's people directory | the object the console provides under `bmo-console-people` (bmo-ui's `docs/console-bundles.md`, 「How a bundle mounts」) | the people a document may be shared with, and the name, organization and job title each member stands by (`docs/artifact.md`, 「Member shares」) |
 
 - **The people are the console's to find.** The directory answers the accounts under the top-level organization
-  the reader's own unit belongs to; the bundle keeps none of them and the service reads none of them, keeping
-  each member by the account key alone. Where the console provides no directory, the share dialog shares by link
+  the reader's own unit belongs to; the bundle keeps none of them and the service keeps each member by the account
+  key alone, asking the account service only the company of a member it is asked to share an owned document with. Where the console provides no directory, the share dialog shares by link
   alone.
 
 - **The translator is the console's to name.** The console names the service and its translating route in its
@@ -649,6 +734,8 @@ wherever the process was started.
 | `database` | `url` | the PostgreSQL database the document tables stand in |
 | `files` | `root` | the folder each document's folder stands under |
 | `explorer` | `data_root` | the data root bmo-explorer's client is opened over |
+| `accounts` | `address` | the account service's base address (「What this service calls」); none where none is named, and then no reader stands in any unit, and a unit share and a member share of an owned document are refused |
+| `accounts` | `token` | the account service's server token, presented as its bearer |
 | `share` | `address` | the address a link's `url` stands under |
 | `wording` | `file` | the document wording file; the English default in `lang/` where none is named |
 
@@ -671,3 +758,10 @@ worker:
   narrations, the holding read by a chat id and the filing verbs are gone. A research run or a narration
   is a client's own work that files through this service's MCP server, and what a caller files is held
   under the scope it writes.
+- **The deployment's settings** name the account service's address and its server token under `accounts`, or no
+  reader reads through a unit share and no owned document is shared with a member or a unit.
+- **Agency's chat line** starts `bmo-artifact mcp` in the supervisor's program, whose environment carries
+  `BMO_OWNER_ACCOUNT`; whatever wraps the start keeps that variable, or the supervisor's documents are filed
+  with no owner.
+- **bmo-ui's share dialog** has a link part and a member part and no unit part, so a unit share is made through
+  its routes alone until the dialog offers one.

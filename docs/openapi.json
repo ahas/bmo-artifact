@@ -175,6 +175,13 @@
             "description": "The caller's own metadata.",
             "type": "object"
           },
+          "owner": {
+            "description": "The account key of the account that owns it, as `Owner-Key` named it when it was filed; null for a document\nwith no owner (`docs/artifact.md`, \"Owners\").",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "permission": {
             "anyOf": [
               {
@@ -184,7 +191,7 @@
                 "type": "null"
               }
             ],
-            "description": "For a member reader, the permission it reads the document under; absent for a reader of every document\nand in every event (`docs/api.md`, \"Readers\")."
+            "description": "For an account reader that reads the document only through a share, the permission it reads it under;\nabsent where the reader reaches it wholly, and in every event (`docs/api.md`, \"Readers\")."
           },
           "scope": {
             "description": "What it is held under; null where none was given.",
@@ -203,6 +210,7 @@
           "title",
           "scope",
           "actorName",
+          "owner",
           "labels",
           "description",
           "attachmentCount",
@@ -929,6 +937,72 @@
           "more"
         ],
         "type": "object"
+      },
+      "UnitShare": {
+        "description": "One organisation unit a document is shared with.",
+        "properties": {
+          "documentId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "sharedAt": {
+            "description": "Epoch milliseconds.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "unit": {
+            "description": "The unit's number, as the account service numbers it.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "documentId",
+          "unit",
+          "sharedAt"
+        ],
+        "type": "object"
+      },
+      "UnitShareInput": {
+        "description": "The organisation units to share a document with, each to read it.",
+        "properties": {
+          "units": {
+            "description": "The units' numbers: 1 to 200 of them.",
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "units"
+        ],
+        "type": "object"
+      },
+      "UnitSharePage": {
+        "description": "A page of unit shares, in the order they were shared.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UnitShare"
+            },
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "more"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -1127,6 +1201,7 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1199,8 +1274,9 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
+          "forbidden",
           "not-found",
-          "forbidden"
+          "upstream-failed"
         ],
         "x-console": "closed"
       },
@@ -1240,6 +1316,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1289,9 +1366,10 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
+          "forbidden",
           "not-found",
           "conflict",
-          "forbidden"
+          "upstream-failed"
         ],
         "x-console": "closed"
       }
@@ -1361,6 +1439,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1412,6 +1491,7 @@
           "bad-request",
           "not-found",
           "too-large",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "closed"
@@ -1523,6 +1603,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1605,6 +1686,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1675,6 +1757,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1725,7 +1808,10 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "conflict",
           "read-only",
+          "other-company",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1770,6 +1856,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1830,6 +1917,7 @@
           "bad-request",
           "not-found",
           "read-only",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1873,6 +1961,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1943,6 +2032,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -1994,6 +2084,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -2046,6 +2137,176 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/documents/{documentId}/units": {
+      "get": {
+        "operationId": "listDocumentsUnitsByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Only the members after this one, by its id.",
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "description": "Only the members after this one, by its id.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitSharePage"
+                }
+              }
+            },
+            "description": "The organisation units a document is shared with, in the order they were shared."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The organisation units a document is shared with, in the order they were shared.",
+        "tags": [
+          "units"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      },
+      "post": {
+        "operationId": "createDocumentsUnitsByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitShareInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitSharePage"
+                }
+              }
+            },
+            "description": "Share a document with organisation units of its owner's company, to be read by everyone standing in or under each; a unit already sharing it keeps its share."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Share a document with organisation units of its owner's company, to be read by everyone standing in or under each; a unit already sharing it keeps its share.",
+        "tags": [
+          "units"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "conflict",
+          "other-company",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/documents/{documentId}/units/{unit}": {
+      "delete": {
+        "operationId": "deleteDocumentsUnitsByDocumentIdUnit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "unit",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Take a unit off a document; whoever read it only through that unit stops reading at once."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Take a unit off a document; whoever read it only through that unit stops reading at once.",
+        "tags": [
+          "units"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -2314,6 +2575,7 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -2672,6 +2934,7 @@
         "x-codes": [
           "unauthorized",
           "bad-request",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -2721,6 +2984,7 @@
           "unauthorized",
           "bad-request",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -2755,6 +3019,7 @@
         "x-codes": [
           "unauthorized",
           "not-found",
+          "upstream-failed",
           "forbidden"
         ],
         "x-console": "screen"
@@ -3459,10 +3724,14 @@
     },
     {
       "name": "shares"
+    },
+    {
+      "name": "units"
     }
   ],
   "x-calls": [
-    "explorer"
+    "explorer",
+    "web"
   ],
   "x-events": [
     "document.created",

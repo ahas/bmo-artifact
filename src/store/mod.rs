@@ -7,9 +7,11 @@ pub mod events;
 pub mod imports;
 pub mod member_shares;
 pub mod migration;
+pub mod reach;
 pub mod references;
 pub mod scopes;
 pub mod shares;
+pub mod unit_shares;
 
 use sea_orm::{ConnectionTrait, QueryResult, Value};
 

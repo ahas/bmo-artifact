@@ -81,6 +81,9 @@ pub struct Document {
   pub scope: Option<String>,
   /// Who filed it.
   pub actor_name: String,
+  /// The account key of the account that owns it, as `Owner-Key` named it when it was filed; null for a document
+  /// with no owner (`docs/artifact.md`, "Owners").
+  pub owner: Option<String>,
   /// The caller's own metadata.
   pub labels: Labels,
   /// What it reads as before it is opened: a page's declared description, else the opening prose of its
@@ -93,8 +96,8 @@ pub struct Document {
   pub created_at: i64,
   /// Epoch milliseconds.
   pub changed_at: i64,
-  /// For a member reader, the permission it reads the document under; absent for a reader of every document
-  /// and in every event (`docs/api.md`, "Readers").
+  /// For an account reader that reads the document only through a share, the permission it reads it under;
+  /// absent where the reader reaches it wholly, and in every event (`docs/api.md`, "Readers").
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub permission: Option<Permission>,
 }
@@ -160,6 +163,34 @@ pub struct MemberShareInput {
 pub struct MemberShareChange {
   /// `read`; `edit` is refused.
   pub permission: Permission,
+}
+
+/// One organisation unit a document is shared with.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UnitShare {
+  pub id: i64,
+  pub document_id: i64,
+  /// The unit's number, as the account service numbers it.
+  pub unit: i64,
+  /// Epoch milliseconds.
+  pub shared_at: i64,
+}
+
+/// A page of unit shares, in the order they were shared.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UnitSharePage {
+  pub items: Vec<UnitShare>,
+  pub more: bool,
+}
+
+/// The organisation units to share a document with, each to read it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct UnitShareInput {
+  /// The units' numbers: 1 to 200 of them.
+  pub units: Vec<i64>,
 }
 
 /// A page of documents, newest first.

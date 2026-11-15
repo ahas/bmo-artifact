@@ -505,6 +505,7 @@ dependencies = [
  "base64 0.22.1",
  "bmo-console-face",
  "bmo-explorer",
+ "bmo-web-client",
  "chrono",
  "clap",
  "config",
@@ -603,6 +604,17 @@ dependencies = [
  "toml 0.8.23",
  "url",
  "yuv",
+]
+
+[[package]]
+name = "bmo-web-client"
+version = "0.1.0-rev.1"
+dependencies = [
+ "reqwest",
+ "schemars",
+ "serde",
+ "serde_json",
+ "url",
 ]
 
 [[package]]

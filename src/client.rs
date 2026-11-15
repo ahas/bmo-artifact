@@ -2,6 +2,7 @@
 //! the types of `wire`. The command and the MCP server reach the service through it, and so may any other
 //! Rust caller.
 
+use bmo_console_face::OWNER_KEY_HEADER;
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use reqwest::{Method, RequestBuilder, Response, header};
 use serde::Serialize;
@@ -13,7 +14,7 @@ use crate::wire::{
   DocumentKindPage, DocumentPage, DocumentsQuery, DryRunQuery, EventPage, EventsQuery, Health, Import,
   ImportInput, LabelValuePage, LabelValuesQuery, MemberShare, MemberShareChange, MemberShareInput,
   MemberSharePage, PageQuery, Publication, Reference, ReferencePage, ScopeHolding, Share, ShareInput,
-  SharePage, SharesQuery, WireError,
+  SharePage, SharesQuery, UnitShareInput, UnitSharePage, WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -63,11 +64,16 @@ pub struct Content {
   pub bytes: Vec<u8>,
 }
 
-/// The client of one service, at its address, presenting its token.
+/// The environment variable a supervisor's program holds the account it works for in, which the MCP server and the
+/// archive verb act for (`docs/api.md`, "The harness plugin").
+pub const OWNER_ACCOUNT_VARIABLE: &str = "BMO_OWNER_ACCOUNT";
+
+/// The client of one service, at its address, presenting its token, acting for an account where it names one.
 #[derive(Clone, Debug)]
 pub struct ArtifactClient {
   address: String,
   token: String,
+  account: Option<String>,
   http: reqwest::Client,
 }
 
@@ -77,8 +83,22 @@ impl ArtifactClient {
     Self {
       address: address.trim_end_matches('/').to_owned(),
       token: token.to_owned(),
+      account: None,
       http: reqwest::Client::new(),
     }
+  }
+
+  /// The same client acting for `account` on every call, named in `Owner-Key`; none, or an empty one, acts for
+  /// no account and reaches every document.
+  pub fn for_account(mut self, account: Option<String>) -> Self {
+    self.account = account.filter(|account| !account.is_empty());
+    self
+  }
+
+  /// The same client acting for the account the process's environment holds in `BMO_OWNER_ACCOUNT`, none where it
+  /// is unset or empty.
+  pub fn for_environment_account(self) -> Self {
+    self.for_account(std::env::var(OWNER_ACCOUNT_VARIABLE).ok())
   }
 
   /// The client of the service the settings name: at `address` where one is given, else at the settings'
@@ -90,7 +110,12 @@ impl ArtifactClient {
   }
 
   fn request(&self, method: Method, path: &str) -> RequestBuilder {
-    self.http.request(method, format!("{}{path}", self.address)).bearer_auth(&self.token)
+    let request = self.http.request(method, format!("{}{path}", self.address)).bearer_auth(&self.token);
+
+    match &self.account {
+      Some(account) => request.header(OWNER_KEY_HEADER, account),
+      None => request,
+    }
   }
 
   async fn sent(request: RequestBuilder) -> Result<Response, ClientFailure> {
@@ -295,6 +320,27 @@ impl ArtifactClient {
   /// `DELETE /documents/{documentId}/members/{user}`.
   pub async fn remove_member(&self, document_id: i64, user: &str) -> Result<(), ClientFailure> {
     Self::sent(self.request(Method::DELETE, &format!("/documents/{document_id}/members/{}", segment(user))))
+      .await
+      .map(drop)
+  }
+
+  /// `GET /documents/{documentId}/units`.
+  pub async fn units(&self, document_id: i64, query: &PageQuery) -> Result<UnitSharePage, ClientFailure> {
+    Self::json(self.get(&format!("/documents/{document_id}/units"), query)).await
+  }
+
+  /// `POST /documents/{documentId}/units`.
+  pub async fn share_with_units(
+    &self,
+    document_id: i64,
+    input: &UnitShareInput,
+  ) -> Result<UnitSharePage, ClientFailure> {
+    Self::json(self.request(Method::POST, &format!("/documents/{document_id}/units")).json(input)).await
+  }
+
+  /// `DELETE /documents/{documentId}/units/{unit}`.
+  pub async fn remove_unit(&self, document_id: i64, unit: i64) -> Result<(), ClientFailure> {
+    Self::sent(self.request(Method::DELETE, &format!("/documents/{document_id}/units/{unit}")))
       .await
       .map(drop)
   }

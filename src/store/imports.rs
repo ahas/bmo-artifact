@@ -8,7 +8,7 @@ use crate::plumbing::refusal::Refusal;
 use crate::wire::{Import, ImportInput, ImportState};
 
 const COLUMNS: &str =
-  r#""id", "url", "title", "scope", "actor_name", "state", "document_id", "error", "created_at""#;
+  r#""id", "url", "title", "scope", "actor_name", "owner", "state", "document_id", "error", "created_at""#;
 
 /// One import's row: the import as the API answers it, and what it was asked to file under.
 pub struct Asked {
@@ -16,6 +16,8 @@ pub struct Asked {
   pub title: Option<String>,
   pub scope: Option<String>,
   pub actor_name: String,
+  /// The account the document is filed for, none for a document with no owner.
+  pub owner: Option<String>,
 }
 
 fn asked_of(row: &QueryResult) -> Result<Asked, Refusal> {
@@ -33,16 +35,21 @@ fn asked_of(row: &QueryResult) -> Result<Asked, Refusal> {
     title: row.try_get("", "title")?,
     scope: row.try_get("", "scope")?,
     actor_name: row.try_get("", "actor_name")?,
+    owner: row.try_get("", "owner")?,
   })
 }
 
-/// An import written as asked for, `fetching`.
-pub async fn insert<C: ConnectionTrait>(db: &C, asked: &ImportInput) -> Result<Asked, Refusal> {
+/// An import written as asked for `owner`, none for a document with no owner, `fetching`.
+pub async fn insert<C: ConnectionTrait>(
+  db: &C,
+  asked: &ImportInput,
+  owner: Option<&str>,
+) -> Result<Asked, Refusal> {
   let row = one(
     db,
     &format!(
-      r#"INSERT INTO "imports" ("url", "title", "scope", "actor_name", "state", "created_at")
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING {COLUMNS}"#
+      r#"INSERT INTO "imports" ("url", "title", "scope", "actor_name", "state", "created_at", "owner")
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING {COLUMNS}"#
     ),
     vec![
       asked.url.trim().into(),
@@ -51,6 +58,7 @@ pub async fn insert<C: ConnectionTrait>(db: &C, asked: &ImportInput) -> Result<A
       asked.actor_name.clone().into(),
       ImportState::Fetching.word().into(),
       now_ms().into(),
+      owner.map(str::to_owned).into(),
     ],
   )
   .await?

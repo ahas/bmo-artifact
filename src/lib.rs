@@ -2,6 +2,7 @@
 //! attachments, references and share links, served over HTTP, reached through the service's own client and
 //! offered to a harness by its MCP server (`docs/api.md`, `docs/artifact.md`).
 
+pub mod accounts;
 pub mod client;
 pub mod commands;
 pub mod console;

@@ -28,6 +28,9 @@ pub struct Settings {
   pub database: Database,
   pub files: Files,
   pub explorer: Explorer,
+  /// Nothing set here names no account service: no reader stands in any unit.
+  #[serde(default)]
+  pub accounts: Accounts,
   #[serde(default)]
   pub share: Share,
   /// Nothing set here reads the English default.
@@ -122,6 +125,18 @@ pub struct Files {
 pub struct Explorer {
   /// The data root the client is opened over, where bmo-explorer keeps its own folder.
   pub data_root: PathBuf,
+}
+
+/// The account service a reader's unit and a share's company are asked of (`docs/api.md`, "What this service
+/// calls").
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Accounts {
+  /// Its base address; an empty one names none.
+  #[serde(default)]
+  pub address: String,
+  /// Its server's token, presented as the bearer.
+  #[serde(default)]
+  pub token: String,
 }
 
 /// The share links.

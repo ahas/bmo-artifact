@@ -19,6 +19,10 @@ root = "/srv/bmo-artifact/files"
 [explorer]
 data_root = "/srv/bmo-artifact/data"
 
+[accounts]
+address = "http://127.0.0.1:3200"
+token = "account-service-token"
+
 [share]
 address = "https://documents.example.com/share"
 

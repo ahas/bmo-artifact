@@ -8,7 +8,7 @@ use schemars::generate::SchemaGenerator;
 use serde_json::json;
 
 use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, inside_root, send};
-use super::readers::{Reader, reached};
+use super::readers::{Reader, kept, reached};
 use crate::Refusal;
 use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
@@ -40,9 +40,10 @@ impl Route for ListDocuments {
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
     let asked: DocumentsQuery = call.query()?;
     let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
-    let reader = Reader::of(&call);
+    let listing = Reader::of(&call).listing(call.standing()).await?;
+    let account = listing.as_ref().map(|listing| listing.account());
     let (items, more) =
-      documents::list(call.standing().db().await?, &asked, limit, reader.member()).await?;
+      documents::list(call.standing().db().await?, &asked, limit, account.as_ref()).await?;
 
     Ok(answer(StatusCode::OK, &DocumentPage { items, more }))
   }
@@ -55,7 +56,7 @@ impl Route for ListDocuments {
       parameters: query::<DocumentsQuery>(generator),
       body: None,
       answers: vec![(200, json_answer::<DocumentPage>(generator))],
-      codes: &["unauthorized", "bad-request"],
+      codes: &["unauthorized", "bad-request", "upstream-failed"],
     }
   }
 }
@@ -69,10 +70,11 @@ impl Route for FileDocument {
   const PATH: &'static str = "/documents";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
+    let reader = Reader::of(&call);
     let input: DocumentInput = call.json().await?;
     let standing = call.standing();
     let db = standing.db().await?;
-    let id = filing::file(db, &standing.settings.files.root, &input).await?;
+    let id = filing::file(db, &standing.settings.files.root, &input, reader.owner()).await?;
     let filed = document(standing, id).await?.document;
 
     standing
@@ -120,7 +122,7 @@ impl Route for ReadDocument {
       parameters: vec![id_parameter("documentId")],
       body: None,
       answers: vec![(200, json_answer::<Document>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }
@@ -134,7 +136,7 @@ impl Route for ChangeDocument {
   const PATH: &'static str = "/documents/{documentId}";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = kept(&mut call).await?;
     let change: DocumentChange = call.json().await?;
     let standing = call.standing();
     let db = standing.db().await?;
@@ -159,7 +161,7 @@ impl Route for ChangeDocument {
       parameters: vec![id_parameter("documentId")],
       body: json_body::<DocumentChange>(generator),
       answers: vec![(200, json_answer::<Document>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found", "conflict"],
+      codes: &["unauthorized", "bad-request", "forbidden", "not-found", "conflict", "upstream-failed"],
     }
   }
 }
@@ -195,7 +197,7 @@ impl Route for ReleaseDocument {
   const PATH: &'static str = "/documents/{documentId}";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = kept(&mut call).await?;
     let standing = call.standing();
     let held = document(standing, id).await?.document;
 
@@ -212,7 +214,7 @@ impl Route for ReleaseDocument {
       parameters: vec![id_parameter("documentId")],
       body: None,
       answers: vec![(204, None)],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "forbidden", "not-found", "upstream-failed"],
     }
   }
 }
@@ -319,7 +321,7 @@ impl Route for ReadContent {
       parameters: [vec![id_parameter("documentId")], query::<ContentQuery>(generator)].concat(),
       body: None,
       answers: vec![(200, bytes_answer())],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }
@@ -347,7 +349,7 @@ impl Route for ReadPicture {
       parameters: vec![id_parameter("documentId")],
       body: None,
       answers: vec![(200, bytes_answer())],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }

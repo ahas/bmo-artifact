@@ -55,6 +55,9 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "POST /documents/{documentId}/members",
     "PATCH /documents/{documentId}/members/{user}",
     "DELETE /documents/{documentId}/members/{user}",
+    "GET /documents/{documentId}/units",
+    "POST /documents/{documentId}/units",
+    "DELETE /documents/{documentId}/units/{unit}",
     "GET /document-kinds",
     "GET /label-values",
     "GET /shares",
@@ -91,6 +94,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   assert_eq!(reach("/shares/{token}/head", "get"), "open");
   assert_eq!(reach("/shares/{token}", "delete"), "screen");
   assert_eq!(reach("/documents/{documentId}/members", "post"), "screen");
+  assert_eq!(reach("/documents/{documentId}/units", "post"), "screen");
 
   for read in bmo_artifact::http::share_reads::SHARE_READS {
     assert_eq!(reach(read, "get"), "open", "{read}");
@@ -99,7 +103,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   assert_eq!(reach("/documents", "post"), "closed");
   assert_eq!(reach("/publications", "post"), "closed");
   assert_eq!(document["info"]["version"], bmo_artifact::VERSION);
-  assert_eq!(document["x-calls"], serde_json::json!(["explorer"]));
+  assert_eq!(document["x-calls"], serde_json::json!(["explorer", "web"]));
   assert_eq!(document["x-harness"]["plugin"], "bmo-artifact");
   assert_eq!(document["x-events"].as_array().map(Vec::len), Some(8));
 

@@ -139,22 +139,3 @@ pub async fn remove(db: &impl ConnectionTrait, document_id: i64, user: &str) -> 
       > 0,
   )
 }
-
-/// The permission one member holds on a document, none where it is not shared with them.
-pub async fn permission(
-  db: &impl ConnectionTrait,
-  document_id: i64,
-  user: &str,
-) -> Result<Option<Permission>, Refusal> {
-  let row = one(
-    db,
-    r#"SELECT "permission" FROM "artifact_member_shares" WHERE "search_id" = $1 AND "user_key" = $2"#,
-    vec![document_id.into(), user.into()],
-  )
-  .await?;
-
-  Ok(match row {
-    Some(row) => permission_of(row.try_get("", "permission")?),
-    None => None,
-  })
-}

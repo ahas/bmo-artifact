@@ -251,7 +251,8 @@ impl Verb for Mcp {
   type Args = McpArgs;
 
   async fn run(&self, args: McpArgs, shell: &Shell) -> Result<Answer, VerbError> {
-    let client = ArtifactClient::of_settings(&shell.settings, args.address.as_deref());
+    let client =
+      ArtifactClient::of_settings(&shell.settings, args.address.as_deref()).for_environment_account();
 
     crate::mcp::serve(client).await.map_err(VerbError::Refused)?;
 

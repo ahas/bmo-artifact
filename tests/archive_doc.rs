@@ -18,11 +18,19 @@ fn file(root: &tempfile::TempDir, name: &str, words: &str) -> String {
 }
 
 async fn run(address: &str, args: &[&str]) -> Ran {
-  let env = [
+  run_for(address, None, args).await
+}
+
+// The verb run in a supervisor's program, which holds the account it works for where one is given.
+async fn run_for(address: &str, account: Option<&str>, args: &[&str]) -> Ran {
+  let mut env = vec![
     ("BMO_ARTIFACT_SERVER__LISTEN", address.trim_start_matches("http://").to_owned()),
     ("BMO_ARTIFACT_SERVER__TOKEN", TOKEN.to_owned()),
     ("USER", "tester".to_owned()),
   ];
+
+  env.extend(account.map(|account| ("BMO_OWNER_ACCOUNT", account.to_owned())));
+
   let args: Vec<String> = ["archive", "doc"]
     .iter()
     .map(|word| (*word).to_owned())
@@ -81,6 +89,44 @@ async fn a_document_is_filed_its_link_printed_and_a_rewrite_keeps_the_link() {
     Some(link.as_str()),
     "the same link serves the newest words"
   );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn a_supervisor_of_an_account_files_as_its_user_and_rewrites_only_what_it_owns() {
+  let service = Service::new().await;
+  let address = service.listening().await;
+  let root = tempfile::tempdir().expect("a folder");
+  let body = file(&root, "note.md", "# Words\n\nThe first words.\n");
+  let filed = run_for(&address, Some("31"), &["--title", "Mine", "--body", &body]).await;
+
+  assert!(filed.ok, "{}", filed.err);
+
+  let id = number(&filed).to_string();
+  let document: Value = service.call(Method::GET, &format!("/documents/{id}"), None).await.json();
+
+  assert_eq!(document["owner"], "31");
+
+  let again = file(&root, "again.md", "# Words\n\nOther words.\n");
+  let other = run_for(&address, Some("32"), &["--replace", &id, "--body", &again]).await;
+
+  assert_eq!(
+    other.code,
+    Some(1),
+    "another account's supervisor reaches no such document: {}",
+    other.out
+  );
+
+  let own = run_for(&address, Some("31"), &["--replace", &id, "--body", &again]).await;
+
+  assert!(own.ok, "{}", own.err);
+
+  let unowned = run(&address, &["--title", "Nobody's", "--body", &body]).await;
+  let document: Value = service
+    .call(Method::GET, &format!("/documents/{}", number(&unowned)), None)
+    .await
+    .json();
+
+  assert_eq!(document["owner"], Value::Null);
 }
 
 #[tokio::test(flavor = "multi_thread")]

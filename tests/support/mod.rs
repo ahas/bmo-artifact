@@ -1,5 +1,6 @@
 //! What the repository checks share: the root, and the walk over the files they read.
 
+pub mod accounts;
 pub mod cli;
 pub mod scratch;
 pub mod service;

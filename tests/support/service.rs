@@ -17,6 +17,7 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 use super::ROOT;
+use super::accounts::ACCOUNTS_TOKEN;
 use super::scratch::Scratch;
 
 /// The token every call of the tests presents.
@@ -80,9 +81,15 @@ pub fn built_bundle() -> [(&'static str, &'static [u8]); 4] {
 }
 
 // The settings a service of a test stands on: its database, its file root, its console folder and its player
-// folder, and the tokens and share address every test names.
-fn environment(database: String, files: &Path, console: &Path, player: &Path) -> HashMap<String, String> {
-  HashMap::from([
+// folder, the account service where the test stands one up, and the tokens and share address every test names.
+fn environment(
+  database: String,
+  files: &Path,
+  console: &Path,
+  player: &Path,
+  accounts: Option<&str>,
+) -> HashMap<String, String> {
+  let mut environment = HashMap::from([
     ("BMO_ARTIFACT_DATABASE__URL".to_owned(), database),
     ("BMO_ARTIFACT_FILES__ROOT".to_owned(), files.display().to_string()),
     ("BMO_ARTIFACT_SERVER__TOKEN".to_owned(), TOKEN.to_owned()),
@@ -90,7 +97,14 @@ fn environment(database: String, files: &Path, console: &Path, player: &Path) ->
     ("BMO_ARTIFACT_CONSOLE__BUNDLE".to_owned(), console.display().to_string()),
     ("BMO_ARTIFACT_PLAYER__FOLDER".to_owned(), player.display().to_string()),
     ("BMO_ARTIFACT_SHARE__ADDRESS".to_owned(), SHARE_ADDRESS.to_owned()),
-  ])
+  ]);
+
+  if let Some(address) = accounts {
+    environment.insert("BMO_ARTIFACT_ACCOUNTS__ADDRESS".to_owned(), address.to_owned());
+    environment.insert("BMO_ARTIFACT_ACCOUNTS__TOKEN".to_owned(), ACCOUNTS_TOKEN.to_owned());
+  }
+
+  environment
 }
 
 // A folder of the test's own holding these files, by name.
@@ -180,31 +194,42 @@ pub struct Service {
   pub player: tempfile::TempDir,
   pub web: Arc<Web>,
   pub standing: Arc<Standing>,
+  /// The account service the settings name, where the test stands one up.
+  accounts: Option<String>,
   router: Router,
 }
 
 impl Service {
   /// The service over a built bundle and an empty player folder.
   pub async fn new() -> Self {
-    Self::with_folders(&built_bundle(), &[]).await
+    Self::with_folders(&built_bundle(), &[], None).await
+  }
+
+  /// The service over a built bundle, asking the account service at `accounts` the readers' units.
+  pub async fn with_accounts(accounts: &str) -> Self {
+    Self::with_folders(&built_bundle(), &[], Some(accounts)).await
   }
 
   /// The service over a console bundle folder holding these files, by name, and an empty player folder.
   pub async fn with_console(bundle: &[(&str, &[u8])]) -> Self {
-    Self::with_folders(bundle, &[]).await
+    Self::with_folders(bundle, &[], None).await
   }
 
   /// The service over a built bundle and a player folder holding these files, by name.
   pub async fn with_player(player: &[(&str, &[u8])]) -> Self {
-    Self::with_folders(&built_bundle(), player).await
+    Self::with_folders(&built_bundle(), player, None).await
   }
 
-  async fn with_folders(bundle: &[(&str, &[u8])], player: &[(&str, &[u8])]) -> Self {
+  async fn with_folders(
+    bundle: &[(&str, &[u8])],
+    player: &[(&str, &[u8])],
+    accounts: Option<&str>,
+  ) -> Self {
     let scratch = Scratch::new().await;
     let files = tempfile::tempdir().expect("a file root");
     let console = folder_of(bundle);
     let player = folder_of(player);
-    let environment = environment(scratch.address(), files.path(), console.path(), player.path());
+    let environment = environment(scratch.address(), files.path(), console.path(), player.path(), accounts);
     let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
     let web = Arc::new(Web::default());
     let standing =
@@ -218,6 +243,7 @@ impl Service {
       player,
       web,
       standing: Arc::new(standing),
+      accounts: accounts.map(str::to_owned),
       router,
     }
   }
@@ -232,6 +258,7 @@ impl Service {
         self.files.path(),
         self.console.path(),
         self.player.path(),
+        self.accounts.as_deref(),
       )),
     )
     .expect("the settings read");

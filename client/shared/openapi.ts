@@ -214,6 +214,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documents/{documentId}/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The organisation units a document is shared with, in the order they were shared. */
+        get: operations["listDocumentsUnitsByDocumentId"];
+        put?: never;
+        /** Share a document with organisation units of its owner's company, to be read by everyone standing in or under each; a unit already sharing it keeps its share. */
+        post: operations["createDocumentsUnitsByDocumentId"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{documentId}/units/{unit}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take a unit off a document; whoever read it only through that unit stops reading at once. */
+        delete: operations["deleteDocumentsUnitsByDocumentIdUnit"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events": {
         parameters: {
             query?: never;
@@ -657,8 +692,13 @@ export interface components {
                 [key: string]: string;
             };
             /**
-             * @description For a member reader, the permission it reads the document under; absent for a reader of every document
-             *     and in every event (`docs/api.md`, "Readers").
+             * @description The account key of the account that owns it, as `Owner-Key` named it when it was filed; null for a document
+             *     with no owner (`docs/artifact.md`, "Owners").
+             */
+            owner: string | null;
+            /**
+             * @description For an account reader that reads the document only through a share, the permission it reads it under;
+             *     absent where the reader reaches it wholly, and in every event (`docs/api.md`, "Readers").
              */
             permission?: components["schemas"]["Permission"] | null;
             /** @description What it is held under; null where none was given. */
@@ -933,6 +973,33 @@ export interface components {
         /** @description A page of live links, oldest first. */
         SharePage: {
             items: components["schemas"]["Share"][];
+            more: boolean;
+        };
+        /** @description One organisation unit a document is shared with. */
+        UnitShare: {
+            /** Format: int64 */
+            documentId: number;
+            /** Format: int64 */
+            id: number;
+            /**
+             * Format: int64
+             * @description Epoch milliseconds.
+             */
+            sharedAt: number;
+            /**
+             * Format: int64
+             * @description The unit's number, as the account service numbers it.
+             */
+            unit: number;
+        };
+        /** @description The organisation units to share a document with, each to read it. */
+        UnitShareInput: {
+            /** @description The units' numbers: 1 to 200 of them. */
+            units: number[];
+        };
+        /** @description A page of unit shares, in the order they were shared. */
+        UnitSharePage: {
+            items: components["schemas"]["UnitShare"][];
             more: boolean;
         };
     };
@@ -1454,6 +1521,83 @@ export interface operations {
                 content: {
                     "application/octet-stream": string;
                 };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listDocumentsUnitsByDocumentId: {
+        parameters: {
+            query?: {
+                /** @description Only the members after this one, by its id. */
+                after?: number | null;
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The organisation units a document is shared with, in the order they were shared. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitSharePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createDocumentsUnitsByDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnitShareInput"];
+            };
+        };
+        responses: {
+            /** @description Share a document with organisation units of its owner's company, to be read by everyone standing in or under each; a unit already sharing it keeps its share. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitSharePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteDocumentsUnitsByDocumentIdUnit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+                unit: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Take a unit off a document; whoever read it only through that unit stops reading at once. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Error"];
         };

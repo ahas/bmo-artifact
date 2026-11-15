@@ -18,6 +18,7 @@ mod mcp;
 mod members;
 mod nouns;
 mod openapi;
+mod owners;
 mod page_reading;
 mod personal_data;
 mod picture_ground;

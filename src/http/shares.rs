@@ -104,9 +104,10 @@ impl Route for ListShares {
 
     // A cursor in milliseconds: the links made in the second it names were on the page it came from.
     let after = asked.after.map(|after| after.div_euclid(1000));
-    let reader = Reader::of(&call);
+    let listing = Reader::of(&call).listing(standing).await?;
+    let account = listing.as_ref().map(|listing| listing.account());
     let (links, more) =
-      shares::list(standing.db().await?, asked.document_id, after, limit, reader.member()).await?;
+      shares::list(standing.db().await?, asked.document_id, after, limit, account.as_ref()).await?;
     let address = &standing.settings.share.address;
 
     Ok(answer(
@@ -126,7 +127,7 @@ impl Route for ListShares {
       parameters: query::<SharesQuery>(generator),
       body: None,
       answers: vec![(200, json_answer::<SharePage>(generator))],
-      codes: &["unauthorized", "bad-request"],
+      codes: &["unauthorized", "bad-request", "upstream-failed"],
     }
   }
 }
@@ -141,8 +142,7 @@ impl Route for MakeShare {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    Reader::of(&call).shares()?;
-
+    let reader = Reader::of(&call);
     let asked: ShareInput = call.json().await?;
     let standing = call.standing();
     let now = now_ms();
@@ -150,6 +150,8 @@ impl Route for MakeShare {
     if asked.expires_at.is_some_and(|at| at <= now) {
       return Err(Refused::bad("expiresAt is a time still to come"));
     }
+
+    reader.keeps(standing, asked.document_id).await?;
 
     let scope = document(standing, asked.document_id).await?.document.scope;
 
@@ -186,7 +188,7 @@ impl Route for MakeShare {
       parameters: Vec::new(),
       body: json_body::<ShareInput>(generator),
       answers: vec![(201, json_answer::<Share>(generator)), (200, json_answer::<Share>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }
@@ -230,14 +232,15 @@ impl Route for EndShare {
   const CONSOLE: ConsoleReach = ConsoleReach::Screen;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    Reader::of(&call).shares()?;
-
+    let reader = Reader::of(&call);
     let token = call.path_text("token").await?;
     let standing = call.standing();
     let db = standing.db().await?;
     let link = shares::by_token(db, &token)
       .await?
       .ok_or_else(|| Refusal::absent("no share link has this token"))?;
+
+    reader.keeps(standing, link.document_id).await?;
 
     // What the link opened is kept where it ends, so the token answers it long after it stops opening.
     shares::note_of_document(db, link.document_id, now_ms() / 1000, shares::ENDED).await?;
@@ -262,7 +265,7 @@ impl Route for EndShare {
       parameters: vec![token_parameter()],
       body: None,
       answers: vec![(204, None)],
-      codes: &["unauthorized", "not-found"],
+      codes: &["unauthorized", "not-found", "upstream-failed"],
     }
   }
 }

@@ -8,7 +8,7 @@ use schemars::generate::SchemaGenerator;
 
 use super::documents::document;
 use super::files::{Asking, KeptFile, Opened, PRIVATE_DAY, Reach, inside_root, send};
-use super::readers::reached;
+use super::readers::{kept, reached};
 use crate::Refusal;
 use crate::documents::keeper::{Handed, keep};
 use crate::events::EventKind;
@@ -84,7 +84,7 @@ impl Route for ListAttachments {
       parameters: [vec![id_parameter("documentId")], query::<PageQuery>(generator)].concat(),
       body: None,
       answers: vec![(200, json_answer::<AttachmentPage>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }
@@ -98,7 +98,7 @@ impl Route for Attach {
   const PATH: &'static str = "/documents/{documentId}/attachments";
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = call.path_id("documentId").await?;
+    let id = kept(&mut call).await?;
     let input: AttachmentInput = call.json().await?;
     let standing = call.standing();
     let owner = document(standing, id).await?.document;
@@ -136,7 +136,7 @@ impl Route for Attach {
       parameters: vec![id_parameter("documentId")],
       body: json_body::<AttachmentInput>(generator),
       answers: vec![(201, json_answer::<Attachment>(generator))],
-      codes: &["unauthorized", "bad-request", "not-found", "too-large"],
+      codes: &["unauthorized", "bad-request", "not-found", "too-large", "upstream-failed"],
     }
   }
 }
@@ -172,7 +172,7 @@ impl Route for ReadAttachment {
       .concat(),
       body: None,
       answers: vec![(200, bytes_answer()), (206, bytes_answer())],
-      codes: &["unauthorized", "bad-request", "not-found"],
+      codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],
     }
   }
 }

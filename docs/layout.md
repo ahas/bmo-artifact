@@ -32,6 +32,7 @@ src/
   client.rs                the service's own Rust client, one method a route
   events.rs                the event kinds and the publisher every change goes through
   reader.rs                the page reader, over bmo-explorer's client
+  accounts.rs              the account service, over bmo-web's client: the units a reader stands under, and a company
   wording.rs               the document wording file and its English default
   design.rs                the document design read from client/design/document.json, and a page's sheet
   console.rs               the declaration and bundle folder the console face is built from, and how a deployment reaches it
@@ -50,7 +51,7 @@ src/
     ground.rs              a picture laid on white where its transparency would be lost, and a link's card picture
   http/                    one module a resource, each route registered beside its answer
     files.rs               a kept file sent as kept or as a hosted page, under its isolation
-    readers.rs             who a call reads for, and which documents that reader reaches
+    readers.rs             who a call reads for, and which documents that reader reaches and keeps
     hosted_page.rs         the sandboxed HTML page, its prelude and its bridges
   mcp/                     the MCP server and its tools, each registered beside its call
   helpers/                 the answer ceiling, a line's marks filled in, and a picture read and kept as AVIF
@@ -216,7 +217,7 @@ flowchart TD
   before its check runs;
 - the static check, in order: the compile check, the linter and the formatter;
 - the quick checks for the layout, the dependencies and the shared versions, with the base libraries,
-  bmo-console-face and bmo-explorer allowed, and bmo-chat's shared versions as the ones held to;
+  bmo-console-face, bmo-explorer and bmo-web's client allowed, and bmo-chat's shared versions as the ones held to;
 - the test database: the migration files that name its template, and the `migrate` command that makes it;
 - the one binary a release carries;
 - the steps before the flip: the document tables brought to the schema the release carries, and the console
@@ -248,6 +249,8 @@ belong to the testbed.
   - The scratch database is made on the server `BMO_TEST_POSTGRES` names: the first test of a binary
     migrates a template with this repository's migrator, each test gets a copy of it, dropped when the
     test ends, and the first template a binary makes drops every template and copy whose process is gone.
+  - Where the readers' units count, a stand-in account service listens on a port of the test's own, answering
+    the two reads this service makes from the users and units the test places, and the settings name it.
 - **The MCP server** is started as a harness starts it and held to its twelve tools; one test reaches a
   listening service through it, and one publishes a document from a file.
 - **The console face** is stood up over a bundle folder of the test's own holding a module, a stylesheet,
@@ -268,9 +271,9 @@ belong to the testbed.
 ## Dependency check
 
 - **Allowed.** `Cargo.toml` and `client/package.json` may name `bmo-chat`, `bmo-chat-client`,
-  `bmo-console-face` and `bmo-ui` among internal dependencies, and `bmo-explorer`, the one unit this service
-  calls; `bmo-console-face` and `bmo-explorer` are taken from their checkouts beside this repository's. No
-  other `bmo-*` package.
+  `bmo-console-face` and `bmo-ui` among internal dependencies, and the published clients of the units this
+  service calls, `bmo-explorer` and bmo-web's `bmo-web-client`; `bmo-console-face`, `bmo-explorer` and
+  `bmo-web-client` are taken from their checkouts beside this repository's. No other `bmo-*` package.
 - **Enforced.** A test in `tests/` fails the moment any other internal name appears in any `Cargo.toml` or
   `package.json` of the repository, or as the first segment of a path in a Rust file. A manifest's path
   dependency that reaches outside the repository fails it too, but for those two. The same test holds

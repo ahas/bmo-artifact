@@ -13,7 +13,7 @@ use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use sea_orm::{ConnectionTrait, QueryResult, Value};
 
-use super::member_shares::shared_with;
+use super::reach::Account;
 use super::{all, one, run};
 use crate::plumbing::refusal::Refusal;
 use crate::wire::Share;
@@ -180,26 +180,26 @@ pub async fn sweep(db: &impl ConnectionTrait, now: i64) -> Result<Vec<String>, R
 }
 
 /// The live links, oldest first, of one document where it is named, made after `after` seconds where that
-/// is given, at most `limit`; and whether more stand past them. Read for a `member`, they are the links of the
-/// documents shared with that account alone. Swept first by the caller.
+/// is given, at most `limit`; and whether more stand past them. Read for an `account`, they are the links of the
+/// documents that account reads alone. Swept first by the caller.
 pub async fn list(
   db: &impl ConnectionTrait,
   document_id: Option<i64>,
   after: Option<i64>,
   limit: i64,
-  member: Option<&str>,
+  account: Option<&Account<'_>>,
 ) -> Result<(Vec<Link>, bool), Refusal> {
-  let shared = match member {
-    Some(_) => format!(
+  let shared = match account {
+    Some(account) => format!(
       r#" AND EXISTS (SELECT 1 FROM "searches" d WHERE d."id" = "web_search_shares"."search_id" AND {})"#,
-      shared_with("$4")
+      account.reads("$4")
     ),
     None => String::new(),
   };
   let mut values: Vec<Value> =
     vec![document_id.into(), after.unwrap_or(i64::MIN).into(), (limit + 1).into()];
 
-  values.extend(member.map(Value::from));
+  values.extend(account.map(|account| Value::from(account.key)));
 
   let rows = all(
     db,

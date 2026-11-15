@@ -15,6 +15,7 @@ use schemars::generate::SchemaGenerator;
 use serde_json::json;
 use tokio::sync::watch;
 
+use super::readers::Reader;
 use crate::Refusal;
 use crate::plumbing::http::{Call, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, header as header_parameter, json_answer, query};
@@ -76,6 +77,8 @@ impl Route for ListEvents {
   const PATH: &'static str = "/events";
 
   async fn answer(&self, call: Call) -> Result<Response, Refused> {
+    Reader::of(&call).every()?;
+
     let asked: EventsQuery = call.query()?;
     let standing = call.shared();
     let db = standing.db().await?;

@@ -25,6 +25,7 @@ impl Server {
       .args(["mcp", "--address", address])
       .current_dir(ROOT)
       .env("BMO_ARTIFACT_SERVER__TOKEN", TOKEN)
+      .env_remove("BMO_OWNER_ACCOUNT")
       .stdin(Stdio::piped())
       .stdout(Stdio::piped())
       .stderr(Stdio::null())

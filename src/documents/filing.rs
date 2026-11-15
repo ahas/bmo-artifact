@@ -137,9 +137,14 @@ async fn write_body<C: ConnectionTrait>(db: &C, id: i64, written: &Written) -> R
   Ok(())
 }
 
-/// A document filed: its input read by its kind, its row, body, references and file written together. Its
-/// number.
-pub async fn file(db: &DatabaseConnection, root: &Path, input: &DocumentInput) -> Result<i64, Refusal> {
+/// A document filed for `owner`, none for a document with no owner: its input read by its kind, its row, body,
+/// references and file written together. Its number.
+pub async fn file(
+  db: &DatabaseConnection,
+  root: &Path,
+  input: &DocumentInput,
+  owner: Option<&str>,
+) -> Result<i64, Refusal> {
   let kind = kind_of(&input.kind)?;
   let body = input.body.as_deref().unwrap_or_default();
   let html = input.html.as_deref().unwrap_or_default();
@@ -162,21 +167,22 @@ pub async fn file(db: &DatabaseConnection, root: &Path, input: &DocumentInput) -
     markdown(&input.title, body)?
   };
 
-  file_written(db, root, kind, input, &written).await
+  file_written(db, root, kind, input, owner, &written).await
 }
 
-/// A document filed out of what is already read of it, as an import files the page it read.
+/// A document filed for `owner` out of what is already read of it, as an import files the page it read.
 pub async fn file_markdown(
   db: &DatabaseConnection,
   root: &Path,
   input: &DocumentInput,
+  owner: Option<&str>,
   references: Vec<(String, Option<String>)>,
 ) -> Result<i64, Refusal> {
   let kind = kind_of(&input.kind)?;
   let mut written = markdown(&input.title, input.body.as_deref().unwrap_or_default())?;
 
   written.references = references;
-  file_written(db, root, kind, input, &written).await
+  file_written(db, root, kind, input, owner, &written).await
 }
 
 async fn file_written(
@@ -184,6 +190,7 @@ async fn file_written(
   root: &Path,
   kind: &dyn Kind,
   input: &DocumentInput,
+  owner: Option<&str>,
   written: &Written,
 ) -> Result<i64, Refusal> {
   // The description the filer gives stands over the one read out of the body or the page.
@@ -196,6 +203,7 @@ async fn file_written(
       title: &written.title,
       scope: input.scope.as_deref().filter(|scope| !scope.is_empty()),
       actor_name: input.actor_name.trim(),
+      owner,
       labels: &input.labels,
       description: given.as_deref().or(written.description.as_deref()),
     },

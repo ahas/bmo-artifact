@@ -26,6 +26,8 @@ base64 = "0.22.1"
 bmo-console-face = { path = "../../base/chat/console-face" }
 # The page reader an import and a reference's preview read through: bmo-explorer's published client.
 bmo-explorer = { path = "../explorer", version = "=0.1.0-rev.5" }
+# The account service a reader's unit and a share's company are asked of: bmo-web's published client.
+bmo-web-client = { path = "../web/server/client", version = "=0.1.0-rev.1" }
 chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
 clap = { version = "4.6.7", features = ["derive"] }
 # The settings files and the environment, layered in that order.
