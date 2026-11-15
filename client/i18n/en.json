@@ -4,7 +4,8 @@
       "screen": "Artifact",
       "instruction": "Instruction",
       "references_count": "Referred pages {n}",
-      "source": "Source {mark}"
+      "source": "Source {mark}",
+      "unit_share": "Share with units"
     },
     "label": {
       "actor": "Filed by",
@@ -35,7 +36,10 @@
       "span_30d": "30 days",
       "span_6h": "6 hours",
       "span_7d": "7 days",
-      "span_forever": "No end"
+      "span_forever": "No end",
+      "units": "Units",
+      "company": "Company",
+      "unit_number": "Unit #{n}"
     },
     "kind": {
       "import": "Original",
@@ -84,7 +88,8 @@
       "share": "Share",
       "translate": "Translation",
       "view_picture": "View {name}",
-      "ask_again": "Ask again"
+      "ask_again": "Ask again",
+      "share_units": "Share with units"
     },
     "aria": {
       "category": "Category",
@@ -94,7 +99,9 @@
       "search": "Search the documents"
     },
     "placeholder": {
-      "search": "Search"
+      "search": "Search",
+      "unit": "Choose a unit",
+      "unit_search": "Find by name"
     },
     "status": {
       "attachment_loading": "Loading the attachment…",
@@ -106,7 +113,9 @@
       "no_references": "No referred pages",
       "refreshing": "Refreshing the list…",
       "translating": "Translating…",
-      "partly_original": "Some parts stand in the original."
+      "partly_original": "Some parts stand in the original.",
+      "units_loading": "Loading the units it is shared with…",
+      "no_units": "Shared with no unit"
     },
     "error": {
       "attachment_read_failed": "The attachment could not be read.",
@@ -116,7 +125,10 @@
       "member_read_only": "A document is shared to read only.",
       "open_failed": "The document could not be opened.",
       "read_failed": "The document could not be read.",
-      "translate_failed": "The document could not be translated."
+      "translate_failed": "The document could not be translated.",
+      "units_read_failed": "The units could not be read.",
+      "unit_share_failed": "The document could not be shared with the unit.",
+      "unit_other_company": "A document cannot be shared with a unit of another company."
     },
     "player": {
       "common": {

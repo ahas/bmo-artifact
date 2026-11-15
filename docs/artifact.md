@@ -540,8 +540,17 @@ its name stands among them too, so it can be saved.
   grants the dialog `read` alone, so each row says `read` in words where a choice of permissions would stand; a
   member who holds `edit` keeps it on the row beside `read`. Asking for `edit` is refused all the same, and the
   member part says in the reader's own language that a document is shared to read alone, the member keeping
-  `read`. Where the console provides no directory, the dialog shares by link alone. The dialog has no unit part:
-  a unit share is made and taken away through its routes alone (docs/api.md, 「Unit shares」).
+  `read`. Where the console provides no directory, the dialog shares by link alone.
+- **Sharing a document with units** opens the screen's own unit dialog from the document's row, beside sharing,
+  titled by the document and offered only to the owner of an owned document (「Unit shares」): bmo-ui's share dialog
+  holds a link part and a member part and takes no part a host brings, so the unit part stands in a dialog of its
+  own built on bmo-ui's settings dialog. It reads the units of the owner's company and the units the document is
+  shared with afresh each time it opens, a skeleton standing while it reads; a unit is picked from the company's
+  tree by a search over the units' names, each offered with the units above it and the company as the company,
+  those already shared with left out, and the share action beside the field shares with it. Each unit shared with
+  stands on a row by its name with the units above it under it, and an icon button takes it off, named in its
+  tooltip; a unit the tree no longer holds stands by its number. Each change stands as it is made, the control that made it spinning until
+  it does, and a refused read, share or removal says why inside the dialog.
 - **Every reader's screens are the same screens over what they read** (「Owners」): the list holds the documents
   the reader owns and those shared with them, the administrator's every document, and a document read under a
   permission (docs/api.md, 「Documents」, `permission`), one read through a share or the administrator's reading of

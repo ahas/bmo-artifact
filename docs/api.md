@@ -781,5 +781,5 @@ worker:
 - **Agency's chat line** starts `bmo-artifact mcp` in the supervisor's program, whose environment carries
   `BMO_OWNER_ACCOUNT`; whatever wraps the start keeps that variable, or the supervisor's documents are filed
   with no owner.
-- **bmo-ui's share dialog** has a link part and a member part and no unit part, so a unit share is made through
-  its routes alone until the dialog offers one.
+- **bmo-ui's share dialog** has a link part and a member part and takes no part a host brings, so the document screen
+  offers unit shares in a dialog of its own beside it (docs/artifact.md, 「Where a person reads it」).

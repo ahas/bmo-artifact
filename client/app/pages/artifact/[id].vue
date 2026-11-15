@@ -80,6 +80,8 @@
       <ArtifactInstruction v-if="instruction !== null" v-model:open="instructionOpen" :text="instruction" />
 
       <ShareDialog v-model:open="shareOpen" :road="road" :members="members" :explain="explainShare" :spans="spans" :subject="held?.document.title" />
+
+      <ArtifactUnitShareDialog v-if="unitShareable" v-model:open="unitShareOpen" :document-id="documentId" :subject="held?.document.title" />
     </template>
   </UDashboardPanel>
 </template>
@@ -137,6 +139,7 @@ const narrow = useNarrow("(max-width: 1023px)");
 const phone = useNarrow();
 const sideOpen = ref(false);
 const shareOpen = ref(false);
+const unitShareOpen = ref(false);
 const instructionOpen = ref(false);
 
 const documentId = computed(() => Number(route.params.id));
@@ -222,6 +225,10 @@ function openShare(): void {
   shareOpen.value = true;
 }
 
+function openUnitShare(): void {
+  unitShareOpen.value = true;
+}
+
 // The instruction the document was asked for with, offered behind an action of its own rather than drawn under
 // its title.
 const instruction = computed(() => (held.value === null ? null : instructionOf(held.value.document)));
@@ -247,20 +254,24 @@ const writtenActions = useWrittenActions({
 // Each kind of document offers what it holds of its own.
 const ownActions = computed(() => (hosted.value ? pageActions.value : writtenActions.value));
 
-// A document read under a permission is one shared with the reader, who reads it and shares nothing of it
-// (`docs/artifact.md`, "Member shares").
+// A document read under a permission is one the reader reads alone, through a share or as the administrator reading
+// one another account owns, and shares nothing of (`docs/artifact.md`, "Owners").
 const shareable = computed(() => held.value !== null && (held.value.document.permission ?? null) === null);
+// Only its owner shares a document with units of the owner's company; a document with no owner belongs to none
+// (`docs/artifact.md`, "Unit shares").
+const unitShareable = computed(() => shareable.value && (held.value?.document.owner ?? null) !== null);
 
 // All the actions on the document the screen's row offers, so none stands anywhere else on it: its instruction where
-// it carries one, what its kind offers of its own, and its sharing where the reader may share it; its properties
-// close the group.
+// it carries one, what its kind offers of its own, and its sharing and its sharing with units where the reader may
+// share it; its properties close the group.
 const actions = computed<BarAction[]>(() =>
   held.value === null
     ? []
     : [
         ...(instruction.value === null ? [] : [{ id: "instruction", label: t("artifact.action.instruction"), icon: "i-material-symbols-assignment-outline", onSelect: openInstruction }]),
         ...ownActions.value,
-        ...(shareable.value ? [{ id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }] : [])
+        ...(shareable.value ? [{ id: "share", label: t("artifact.action.share"), icon: "i-material-symbols-share-outline", onSelect: openShare }] : []),
+        ...(unitShareable.value ? [{ id: "share-units", label: t("artifact.action.share_units"), icon: "i-material-symbols-account-tree-outline", onSelect: openUnitShare }] : [])
       ]
 );
 

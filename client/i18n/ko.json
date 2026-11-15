@@ -4,7 +4,8 @@
       "screen": "아티팩트",
       "instruction": "지시문",
       "references_count": "참조 페이지 {n}",
-      "source": "출처 {mark}"
+      "source": "출처 {mark}",
+      "unit_share": "조직에 공유"
     },
     "label": {
       "actor": "올린 사람",
@@ -35,7 +36,10 @@
       "span_30d": "30일",
       "span_6h": "6시간",
       "span_7d": "7일",
-      "span_forever": "무기한"
+      "span_forever": "무기한",
+      "units": "조직",
+      "company": "회사",
+      "unit_number": "조직 #{n}"
     },
     "kind": {
       "import": "원문",
@@ -84,7 +88,8 @@
       "share": "공유",
       "translate": "번역",
       "view_picture": "{name} 크게 보기",
-      "ask_again": "다시 요청"
+      "ask_again": "다시 요청",
+      "share_units": "조직에 공유"
     },
     "aria": {
       "category": "분류",
@@ -94,7 +99,9 @@
       "search": "문서 검색"
     },
     "placeholder": {
-      "search": "검색"
+      "search": "검색",
+      "unit": "조직 선택",
+      "unit_search": "이름으로 찾기"
     },
     "status": {
       "attachment_loading": "첨부 불러오는 중…",
@@ -106,7 +113,9 @@
       "no_references": "참조 페이지 없음",
       "refreshing": "목록 갱신 중…",
       "translating": "번역 중…",
-      "partly_original": "일부는 원문으로 표시됩니다."
+      "partly_original": "일부는 원문으로 표시됩니다.",
+      "units_loading": "공유 대상 조직 불러오는 중…",
+      "no_units": "공유 대상 조직 없음"
     },
     "error": {
       "attachment_read_failed": "첨부를 읽지 못했습니다.",
@@ -116,7 +125,10 @@
       "member_read_only": "문서는 읽기 권한으로만 공유할 수 있습니다.",
       "open_failed": "문서를 열지 못했습니다.",
       "read_failed": "문서를 읽지 못했습니다.",
-      "translate_failed": "문서를 번역하지 못했습니다."
+      "translate_failed": "문서를 번역하지 못했습니다.",
+      "units_read_failed": "조직을 불러오지 못했습니다.",
+      "unit_share_failed": "조직에 공유하지 못했습니다.",
+      "unit_other_company": "다른 회사의 조직에는 공유할 수 없습니다."
     },
     "player": {
       "common": {
