@@ -52,6 +52,7 @@
 import { colourCode, forgetCode } from "bmo-ui/app/domain/code-colour";
 import { copyFromPress } from "bmo-ui/app/domain/code-copy";
 import { drawDiagrams } from "bmo-ui/app/domain/diagram";
+import { closeLayer, listenForBack, openLayer } from "bmo-ui/app/domain/layers";
 import { scrollWithin } from "bmo-ui/app/domain/scroll-within";
 import { useDarkScheme } from "bmo-ui/app/domain/scheme";
 import { useI18n } from "vue-i18n";
@@ -245,15 +246,48 @@ function leaveSource(event: PointerEvent): void {
 }
 
 // A tap on a mark opens its source in the dialog, and a key opens it over the mark. A click scrolls the text to the
-// mark's entry and marks it there for a moment, as an entry's mark leads back to the text. None of them follows the
-// mark's link, so the address never changes. A press on an entry's mark scrolls the text back to the mark's first place and marks it there
+// mark's entry and marks it there for a moment, as an entry's mark leads back to the text, each a step the back
+// gesture takes back. None of them follows the mark's link, so the address never changes. A press on an entry's mark scrolls the text back to the mark's first place and marks it there
 // for a moment. Anything else is the copy buttons'.
 const FOUND_MS = 2000;
 
-// The place a mark leads to, scrolled to the middle of the text and marked there for a moment.
-function bringForward(place: HTMLElement | null): void {
+// The box the text scrolls in: the nearest one around it that scrolls, or the page's own.
+function scrollerAround(element: HTMLElement): HTMLElement | null {
+  for (let at = element.parentElement; at !== null; at = at.parentElement) {
+    const { overflowY } = getComputedStyle(at);
+
+    if ((overflowY === "auto" || overflowY === "scroll") && at.scrollHeight > at.clientHeight) return at;
+  }
+
+  return document.scrollingElement as HTMLElement | null;
+}
+
+// Each jump a press on a mark made, as a step the back gesture takes back: the text returns to where it stood
+// before the jump, the address unchanged. A jump not taken back stays in the history as a wiki's does.
+const jumps: number[] = [];
+
+function rememberJump(from: HTMLElement): void {
+  const scroller = scrollerAround(from);
+
+  if (scroller === null) return;
+
+  const top = scroller.scrollTop;
+
+  listenForBack();
+  jumps.push(
+    openLayer(() => {
+      jumps.pop();
+      scroller.scrollTo({ top });
+    })
+  );
+}
+
+// The place a mark leads to, scrolled to the middle of the text and marked there for a moment; the press it came
+// from is remembered so the back gesture returns there.
+function bringForward(place: HTMLElement | null, from: HTMLElement): void {
   if (place === null) return;
 
+  rememberJump(from);
   scrollWithin(place, "center");
   place.dataset["markFound"] = "";
   setTimeout(() => delete place.dataset["markFound"], FOUND_MS);
@@ -275,7 +309,7 @@ function onPress(event: MouseEvent): void {
     }
 
     closeSource();
-    bringForward(root!.querySelector<HTMLElement>(`#${CSS.escape(entryId(mark.dataset["mark"] ?? ""))}`));
+    bringForward(root!.querySelector<HTMLElement>(`#${CSS.escape(entryId(mark.dataset["mark"] ?? ""))}`), mark);
 
     return;
   }
@@ -285,7 +319,7 @@ function onPress(event: MouseEvent): void {
   if (back !== null) {
     event.preventDefault();
 
-    bringForward(root!.querySelector<HTMLElement>(`#${CSS.escape(citeId(back.dataset["markBack"] ?? ""))}`));
+    bringForward(root!.querySelector<HTMLElement>(`#${CSS.escape(citeId(back.dataset["markBack"] ?? ""))}`), back);
 
     return;
   }
@@ -328,6 +362,8 @@ watch(
 
 onBeforeUnmount(() => {
   stopHoverTimer();
+  // A text leaving gives its jumps up; one a navigation left behind is stepped over, not taken back.
+  for (const id of jumps.splice(0)) closeLayer(id);
 
   if (shown.value !== null) {
     forgetCode(shown.value);

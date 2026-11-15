@@ -383,6 +383,9 @@ sheet and the console bundle reads to draw a document.
       room above. It stays while the pointer is on the mark or inside the popover, and goes once the pointer
       has left both. A key pressed on the mark opens the same popover.
     - **A click on the mark** scrolls the text to its entry and marks the entry there for a moment.
+    - **Each jump a click makes,** to an entry or from an entry's mark back to the text, is a step the back
+      gesture takes back: the text returns to where it stood before the jump, and the reader stays on the
+      document, the address unchanged.
     - **A tap on the mark** opens it in a dialog centred on the screen over the dimmed page, with a close
       button under it, and moves nothing: the text does not scroll and the page under the dialog stays
       still while it stands. The close button, a tap outside the dialog, Esc and the back gesture put it
