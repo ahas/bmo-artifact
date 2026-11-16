@@ -246,9 +246,18 @@ belong to the testbed.
   of their own, `tests/plumbing/main.rs`.
 - **Routes.** A route test stands the router up over a scratch PostgreSQL database and a file root of
   its own, with a page reader the test fills, and calls it as a caller would, token and all.
-  - The scratch database is made on the server `BMO_TEST_POSTGRES` names: the first test of a binary
-    migrates a template with this repository's migrator, each test gets a copy of it, dropped when the
-    test ends, and the first template a binary makes drops every template and copy whose process is gone.
+  - The scratch database is made on the server `BMO_TEST_POSTGRES` names, else the local socket's
+    `bmo_test`: the first test of a binary migrates a template with this repository's migrator, and
+    each test gets a copy of it. A template is named `bmo_artifact_test_tmpl_` followed by the binary's
+    process id, a copy `bmo_artifact_test_copy_` followed by the process id and a count.
+  - A copy is dropped when its test ends, and the test fails if the drop does: the drop first ends the
+    suite role's own sessions on the database and then drops it without forcing, since forcing needs
+    the right to end other roles' processes, an autovacuum worker's among them, which the suite's role
+    need not hold, while the plain drop stops an autovacuum worker itself.
+  - Before a binary makes its first database it drops every template and copy whose process no longer
+    runs on this machine and that no session is on, so a binary that ended or was killed leaves nothing
+    behind past the next run. The sweep reads these two names and the two a checkout behind this rule
+    still makes them under, `bmo_rs_tmpl_` and `bmo_rs_copy_`, and no other.
   - Where the readers' units count, a stand-in account service listens on a port of the test's own, answering
     the two reads this service makes from the users and units the test places, and the settings name it.
 - **The MCP server** is started as a harness starts it and held to its twelve tools; one test reaches a
