@@ -215,7 +215,9 @@ flowchart TD
 
 - how the suite runs: the Cargo package's tests, and the install a fresh tree's console bundle needs
   before its check runs;
-- the static check, in order: the compile check, the linter and the formatter;
+- no static step of its own: the testbed's Cargo workspace check formats and lints the crate in the
+  shared build directory wherever a change marks it, and its change check compiles every crate a change
+  marks (bmo-testbed's `docs/checks.md`);
 - the quick checks for the layout, the dependencies and the shared versions, with the base libraries,
   bmo-console-face, bmo-explorer and bmo-web's client allowed, and bmo-chat's shared versions as the ones held to;
 - the test database: the migration files that name its template, and the `migrate` command that makes it;
