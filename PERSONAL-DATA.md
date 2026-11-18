@@ -14,7 +14,8 @@ document, a test fixture or a commit message.
 - **A test's fixtures carry no real person, agent, room or message.** A conversation line a test reads is
   written for the test.
 
-The repository's check holds it: `tests/personal_data.rs` reads every tracked file for a mail address outside
+The testbed's `personal-data` check, which the declaration enables, holds it: it reads every tracked
+file for a mail address outside
 the reserved example domains, a home path, a telephone number, a token and a private network address. A finding
 names the file, the line and the kind, never the value. The check carries the patterns and the neutral example
 forms; no list of the values it forbids is kept in the repository.

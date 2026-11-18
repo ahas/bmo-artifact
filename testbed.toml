@@ -14,7 +14,7 @@ migrations = ["src/store/migration/**"]
 migrate = "BMO_ARTIFACT_DATABASE__URL=\"$BMO_TEST_TEMPLATE_URL\" cargo run --quiet --bin bmo-artifact -- migrate"
 
 [check]
-quick = ["layout", "dependencies", "cargo-profile", "shared-versions"]
+quick = ["layout", "dependencies", "cargo-profile", "shared-versions", "personal-data"]
 # The base libraries, bmo-chat's console face among them, bmo-explorer, whose published client crate the
 # imports read pages through, and bmo-web-client, bmo-web's published client crate the readers' units are
 # asked through.
