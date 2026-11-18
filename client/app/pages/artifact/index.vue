@@ -5,7 +5,7 @@
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
       <!-- The search takes what width the row has, and the filters and the reread keep theirs. A bar short of the
-           room every bar gathers under folds the filters and the in-progress switch into one menu at its end. -->
+           room every bar gathers under folds the filters and the in-progress switch into one popover at its end. -->
       <UDashboardToolbar ref="bar" :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }">
         <template #left>
           <UInput
@@ -32,26 +32,20 @@
           <span v-if="loading && loaded" role="status" class="sr-only">{{ $t("artifact.status.refreshing") }}</span>
 
           <template v-if="!gathered">
-            <USelect
-              :model-value="kindChoice"
-              :items="kindChoices"
+            <ChoiceSelect
+              v-for="filter in filters"
+              :key="filter.key"
+              :model-value="filter.chosen"
+              :items="filter.choices"
+              value-key="value"
               size="sm"
               color="neutral"
               variant="ghost"
-              :aria-label="$t('artifact.aria.kind')"
+              :aria-label="filter.name"
               class="w-auto"
-              @update:model-value="holdToKind"
-            />
-
-            <USelect
-              :model-value="categoryChoice"
-              :items="categoryChoices"
-              size="sm"
-              color="neutral"
-              variant="ghost"
-              :aria-label="$t('artifact.aria.category')"
-              class="w-auto"
-              @update:model-value="holdToCategory"
+              :content="{ align: 'end' }"
+              :data-filter="filter.key"
+              @update:model-value="filter.hold"
             />
 
             <UButton
@@ -70,7 +64,7 @@
             <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-refresh" :loading="loading" :aria-label="$t('artifact.action.refresh')" @click="reread" />
           </UTooltip>
 
-          <UDropdownMenu v-if="gathered" :items="filterItems" :content="{ align: 'end' }">
+          <UPopover v-if="gathered" v-model:open="filtersOpen" :content="{ align: 'end' }">
             <UTooltip :text="$t('artifact.label.filters')">
               <UButton
                 size="sm"
@@ -82,7 +76,36 @@
                 data-filters
               />
             </UTooltip>
-          </UDropdownMenu>
+
+            <template #content>
+              <div class="flex flex-col gap-3 p-3" data-filter-popover>
+                <UFormField v-for="filter in filters" :key="filter.key" :label="filter.name">
+                  <ChoiceSelect
+                    :model-value="filter.chosen"
+                    :items="filter.choices"
+                    value-key="value"
+                    size="sm"
+                    color="neutral"
+                    class="w-full"
+                    :content="{ align: 'end' }"
+                    :data-filter="filter.key"
+                    @update:model-value="(value: string) => fromPopover(() => filter.hold(value))"
+                  />
+                </UFormField>
+
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  :variant="inProgressOnly ? 'soft' : 'ghost'"
+                  icon="i-material-symbols-progress-activity"
+                  :label="$t('artifact.label.in_progress_only')"
+                  :aria-pressed="inProgressOnly"
+                  data-in-progress-only
+                  @click="fromPopover(holdToInProgress)"
+                />
+              </div>
+            </template>
+          </UPopover>
         </template>
       </UDashboardToolbar>
     </template>
@@ -202,7 +225,6 @@ import { copyText } from "../../domain/copy";
 import { CATEGORY_LABEL, PENDING_LABEL, categoryFilter, categoryOf, kindOf, numberText } from "../../domain/document-view";
 
 import type { ArtifactDocument, ArtifactLabelValue, ArtifactShare } from "../../../shared/types";
-import type { DropdownMenuItem } from "@nuxt/ui";
 
 // The documents the service keeps, newest first, narrowed by kind, by category or to those in progress, and
 // found by a phrase; each narrowing is held in the address, so a reload or a shared address shows the same list.
@@ -299,19 +321,14 @@ const kindChoices = computed(() => [
   ...kinds.value.map((kind) => ({ label: kindLabel(kind.name), value: kind.name }))
 ]);
 
-// Whether a filter or the in-progress switch narrows the list, which the gathered menu's button stands pressed for.
+// Whether a filter or the in-progress switch narrows the list, which the filter popover's button stands pressed for.
 const narrowed = computed(() => kindChoice.value !== ALL || categoryChoice.value !== ALL || inProgressOnly.value);
 
-// One filter in the gathered bar's menu: its choices under its name, the standing one checked.
-function choiceGroup(heading: string, choices: readonly { label: string; value: string }[], chosen: string, hold: (value: string) => void): DropdownMenuItem[] {
-  return [{ type: "label", label: heading }, ...choices.map((choice) => ({ type: "checkbox" as const, label: choice.label, checked: chosen === choice.value, onSelect: () => hold(choice.value) }))];
-}
-
-// The gathered bar's one menu: the kind, the category, then the in-progress switch as a checked item.
-const filterItems = computed<DropdownMenuItem[][]>(() => [
-  choiceGroup(t("artifact.aria.kind"), kindChoices.value, kindChoice.value, holdToKind),
-  choiceGroup(t("artifact.aria.category"), categoryChoices.value, categoryChoice.value, holdToCategory),
-  [{ type: "checkbox", label: t("artifact.label.in_progress_only"), icon: "i-material-symbols-progress-activity", checked: inProgressOnly.value, onSelect: holdToInProgress }]
+// The two filters, each a select of its choices named by its name, standing in the bar where it has the room and
+// under their names in the filter popover where it gathers.
+const filters = computed(() => [
+  { key: "kind", name: t("artifact.aria.kind"), choices: kindChoices.value, chosen: kindChoice.value, hold: holdToKind },
+  { key: "category", name: t("artifact.aria.category"), choices: categoryChoices.value, chosen: categoryChoice.value, hold: holdToCategory }
 ]);
 
 const emptyText = computed(() => (searched.value === "" ? t("artifact.status.no_documents") : t("artifact.status.no_match", { phrase: searched.value })));
@@ -412,6 +429,17 @@ function holdToInProgress(): void {
   inProgressOnly.value = !inProgressOnly.value;
   if (inProgressOnly.value) categoryChoice.value = ALL;
   hold();
+}
+
+// Whether the gathered bar's filter popover stands open.
+const filtersOpen = ref(false);
+
+// A choice made in the filter popover puts the popover away before the address takes it: the narrowing must
+// land on the list's own history entry, never on the one the popover's back step stands on, which Back would
+// take away with it.
+function fromPopover(choose: () => void): void {
+  filtersOpen.value = false;
+  choose();
 }
 
 function reread(): void {

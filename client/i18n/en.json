@@ -100,8 +100,7 @@
     },
     "placeholder": {
       "search": "Search",
-      "unit": "Choose a unit",
-      "unit_search": "Find by name"
+      "unit": "Choose a unit"
     },
     "status": {
       "attachment_loading": "Loading the attachment…",

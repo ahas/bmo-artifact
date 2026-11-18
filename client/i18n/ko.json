@@ -100,8 +100,7 @@
     },
     "placeholder": {
       "search": "검색",
-      "unit": "조직 선택",
-      "unit_search": "이름으로 찾기"
+      "unit": "조직 선택"
     },
     "status": {
       "attachment_loading": "첨부 불러오는 중…",

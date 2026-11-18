@@ -495,12 +495,17 @@ its name stands among them too, so it can be saved.
   console bundle」):
   - the list at `/artifact`, narrowed by kind, by category, to the documents in progress and by a phrase, each
     narrowing held in the address. Its bar holds the search, which takes the width the rest leaves it, then the
-    kind and category filters, the in-progress switch and the refresh. A bar short of the room every bar of the
-    console gathers under (bmo-ui's `actionbar`) keeps the search and the refresh standing and folds the two
-    filters and the switch into one filter menu at the row's end: each filter's choices under its name with the
-    one standing checked, and the switch as a checked item. The menu's button is named in its tooltip by the
-    pack's word for filters (`artifact.label.filters`) and stands pressed while any of the three narrows the
-    list, so a phone's search keeps the width to read what is typed in it. Each document stands with its cover
+    kind and category filters, the in-progress switch and the refresh. Each filter is bmo-ui's one select
+    (bmo-ui's `docs/components.md`, 「Choosing a value」), so its list offers a search once it holds more than
+    seven choices and never with seven or fewer. The filters stand at the bar's trailing end, so each list opens
+    against its select's trailing edge and stays on the screen. A bar short of the room every bar of the console
+    gathers under (bmo-ui's `actionbar`) keeps the search and the refresh standing and folds the two filters and
+    the switch into one filter popover at the row's end, against the button's trailing edge: each filter's select
+    under its name, then the switch. A choice made in the popover puts it away before the address takes the
+    narrowing: the narrowing must land on the list's own history entry, never on the one the popover's back step
+    stands on, which Back would take away with it. The popover's button is named in its tooltip by the pack's word for filters
+    (`artifact.label.filters`) and stands pressed while any of the three narrows the list, so a phone's search
+    keeps the width to read what is typed in it. Each document stands with its cover
     picture at the row's leading edge where it keeps one, and alone where it keeps
     none. A row is the document's number as `#<id>`, its title, its description, how many files it keeps and
     the day it was filed, and at most four badges: its kind, its category where it carries one (「A document's
@@ -547,8 +552,9 @@ its name stands among them too, so it can be saved.
   holds a link part and a member part and takes no part a host brings, so the unit part stands in a dialog of its
   own built on bmo-ui's settings dialog. It reads the units of the owner's company and the units the document is
   shared with afresh each time it opens, a skeleton standing while it reads; a unit is picked from the company's
-  tree by a search over the units' names, each offered with the units above it and the company as the company,
-  those already shared with left out, and the share action beside the field shares with it. Each unit shared with
+  tree in bmo-ui's one select, which offers a search over the units' names and the units above them once it holds
+  more than seven, each offered with the units above it and the company as the company, those already shared with
+  left out, and the share action beside the field shares with it. Each unit shared with
   stands on a row by its name with the units above it under it, and an icon button takes it off, named in its
   tooltip; a unit the tree no longer holds stands by its number. Each change stands as it is made, the control that made it spinning until
   it does, and a refused read, share or removal says why inside the dialog.

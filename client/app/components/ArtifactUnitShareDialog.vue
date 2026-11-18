@@ -7,18 +7,16 @@
     <section class="flex min-w-0 flex-col gap-3" data-share-units>
       <UFormField :label="$t('artifact.label.units')">
         <div class="flex items-center gap-2">
-          <USelectMenu
+          <ChoiceSelect
             v-model="chosen"
             :items="offered"
             value-key="value"
             :placeholder="$t('artifact.placeholder.unit')"
-            :search-input="{ placeholder: $t('artifact.placeholder.unit_search') }"
             :loading="loading"
             :disabled="loading || choices === null"
             icon="i-material-symbols-account-tree-outline"
             :aria-label="$t('artifact.label.units')"
             class="min-w-0 flex-1"
-            :content="{ align: 'start' }"
             data-unit-choice
           />
 

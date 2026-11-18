@@ -29,19 +29,32 @@ describe("the list's toolbar", () => {
   test("stands the filters and the in-progress switch only where the bar has the room for them", () => {
     const standing = between(toolbar, '<template v-if="!gathered">', "</template>");
 
-    expect(standing.match(/<USelect\b/g)).toHaveLength(2);
+    expect(standing).toContain('<ChoiceSelect\n              v-for="filter in filters"');
     expect(standing).toContain("data-in-progress-only");
   });
 
-  test("folds them into one filter menu at its end, a small square icon button named in its tooltip, where the bar gathers", () => {
-    const menu = between(toolbar, '<UDropdownMenu v-if="gathered"', "</UDropdownMenu>");
-    const [button] = buttons(menu);
+  test("folds them into one filter popover at its end, opened by a small square icon button named in its tooltip, where the bar gathers", () => {
+    const popover = between(toolbar, '<UPopover v-if="gathered"', "</UPopover>");
+    const [button] = buttons(popover);
+    const content = between(popover, "<template #content>", "</template>");
 
-    expect(toolbar.trimEnd().endsWith("</UDropdownMenu>\n        </template>")).toBe(true);
-    expect(menu).toContain(':items="filterItems"');
-    expect(menu).toContain("<UTooltip :text=\"$t('artifact.label.filters')\">");
+    expect(toolbar.trimEnd().endsWith("</UPopover>\n        </template>")).toBe(true);
+    expect(popover).toContain(":content=\"{ align: 'end' }\"");
+    expect(popover).toContain("<UTooltip :text=\"$t('artifact.label.filters')\">");
     expect(button).toContain("square");
     expect(button).toContain(":aria-label=\"$t('artifact.label.filters')\"");
+    expect(content).toContain('<UFormField v-for="filter in filters" :key="filter.key" :label="filter.name">');
+    expect(content).toContain("data-in-progress-only");
+  });
+
+  test("puts the filter popover away on every choice made in it, before the address takes the choice", () => {
+    const popover = between(toolbar, '<UPopover v-if="gathered"', "</UPopover>");
+    const content = between(popover, "<template #content>", "</template>");
+
+    expect(popover).toContain('v-model:open="filtersOpen"');
+    expect(content).toContain('@update:model-value="(value: string) => fromPopover(() => filter.hold(value))"');
+    expect(content).toContain('@click="fromPopover(holdToInProgress)"');
+    expect(listScript).toContain("filtersOpen.value = false;\n  choose();");
   });
 
   test("decides whether to gather by the bar's own room, as every bar does", () => {
