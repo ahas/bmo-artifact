@@ -19,10 +19,6 @@ quick = ["layout", "dependencies", "cargo-profile", "shared-versions", "personal
 # imports read pages through, and bmo-web-client, bmo-web's published client crate the readers' units are
 # asked through.
 base_libraries = ["bmo-chat", "bmo-chat-client", "bmo-console-face", "bmo-ui", "bmo-explorer", "bmo-web-client"]
-# The vendored bmo-ui release under client/vendor/ is gzip bytes, which the personal-data check reads a line at a
-# time like text; these two runs of those bytes take a mail address's and a telephone number's shape and are
-# neither.
-personal_data_allowed = ["Z@r.jz", "0333333333"]
 
 # The repository whose root holds the shared versions the manifests and the lock hold to.
 [check.shared_versions]
