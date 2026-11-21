@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { categoryFilter, categoryOf, contentsOf, fileAddresses, filesAround, headSounds, hostInitial, hostOf, instructionOf, keptNames, kindOf, labelsBesideInstruction, languageOf, numberText, pendingOf, textPreview } from "../../app/domain/document-view";
+import { categoryFilter, categoryOf, contentsOf, fileAddresses, filesAround, headSounds, hostInitial, hostOf, instructionOf, keptNames, kindOf, labelsBesideInstruction, lacksOf, languageOf, numberText, textPreview } from "../../app/domain/document-view";
 
 import type { ArtifactAttachment } from "../../shared/types";
 
@@ -26,10 +26,10 @@ describe("a document's category, number and progress", () => {
     expect(categoryOf({ labels: { report: "security-audit-2026-11-01" } })).toBeNull();
   });
 
-  test("is in progress while its pending label names what it lacks, and done without one", () => {
-    expect(pendingOf({ labels: { pending: "korean, narration-ko,,review" } })).toEqual(["korean", "narration-ko", "review"]);
-    expect(pendingOf({ labels: { pending: " , " } })).toBeNull();
-    expect(pendingOf({ labels: {} })).toBeNull();
+  test("lacks what its pending label names, and is whole without one", () => {
+    expect(lacksOf({ labels: { pending: "korean, narration-ko,,review" } })).toEqual(["korean", "narration-ko", "review"]);
+    expect(lacksOf({ labels: { pending: " , " } })).toBeNull();
+    expect(lacksOf({ labels: {} })).toBeNull();
   });
 
   // A document's instruction is its `query` label, offered behind an action of its own rather than drawn on

@@ -5,8 +5,8 @@
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
       <!-- The search takes what width the row has, and the filters and the reread keep theirs. A bar short of the
-           room every bar gathers under folds the filters and the in-progress switch into one popover at its end. -->
-      <UDashboardToolbar ref="bar" :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }">
+           room every bar gathers under folds the filters into one popover at its end. -->
+      <UDashboardToolbar ref="bar" :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }" data-list-bar>
         <template #left>
           <UInput
             v-model="typed"
@@ -47,17 +47,6 @@
               :data-filter="filter.key"
               @update:model-value="filter.hold"
             />
-
-            <UButton
-              size="sm"
-              color="neutral"
-              :variant="inProgressOnly ? 'soft' : 'ghost'"
-              icon="i-material-symbols-progress-activity"
-              :label="$t('artifact.label.in_progress_only')"
-              :aria-pressed="inProgressOnly"
-              data-in-progress-only
-              @click="holdToInProgress"
-            />
           </template>
 
           <UTooltip :text="$t('artifact.action.refresh')">
@@ -92,17 +81,6 @@
                     @update:model-value="(value: string) => fromPopover(() => filter.hold(value))"
                   />
                 </UFormField>
-
-                <UButton
-                  size="sm"
-                  color="neutral"
-                  :variant="inProgressOnly ? 'soft' : 'ghost'"
-                  icon="i-material-symbols-progress-activity"
-                  :label="$t('artifact.label.in_progress_only')"
-                  :aria-pressed="inProgressOnly"
-                  data-in-progress-only
-                  @click="fromPopover(holdToInProgress)"
-                />
               </div>
             </template>
           </UPopover>
@@ -143,7 +121,7 @@
                 </NuxtLink>
                 <p v-if="item.description !== null" class="line-clamp-2 text-sm break-words text-muted"><SearchText :text="item.description" :query="searched" /></p>
 
-                <!-- A row carries at most four badges, its kind, its category, its progress and whether it is public; its other
+                <!-- A row carries at most four badges, its kind, its category, what it lacks and whether it is public; its other
                      labels are search metadata and stand in the document's own view (docs/artifact.md, 「Where a person
                      reads it」). -->
                 <span class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -168,7 +146,7 @@
                     :label="categoryLabel(categoryOf(item)!)"
                     data-category
                   />
-                  <ArtifactPendingBadge :document="item" />
+                  <ArtifactLackMark :document="item" />
                   <span v-if="item.attachmentCount > 0" class="text-sm text-muted tabular-nums">
                     {{ $t("artifact.label.files_count", { n: countText(item.attachmentCount) }) }}
                   </span>
@@ -222,12 +200,12 @@ import { useI18n } from "vue-i18n";
 import { DOCUMENTS_PAGE_SIZE, DOCUMENTS_PHRASE_LIMIT } from "../../../shared/config";
 import { pictureAddress, readDocuments, readLabelValues, readLiveShares, useKinds } from "../../domain/artifact";
 import { copyText } from "../../domain/copy";
-import { CATEGORY_LABEL, PENDING_LABEL, categoryFilter, categoryOf, kindOf, numberText } from "../../domain/document-view";
+import { CATEGORY_LABEL, categoryFilter, categoryOf, kindOf, numberText } from "../../domain/document-view";
 
 import type { ArtifactDocument, ArtifactLabelValue, ArtifactShare } from "../../../shared/types";
 
-// The documents the service keeps, newest first, narrowed by kind, by category or to those in progress, and
-// found by a phrase; each narrowing is held in the address, so a reload or a shared address shows the same list.
+// The documents the service keeps, newest first, narrowed by kind and by category, and found by a phrase; each
+// narrowing is held in the address, so a reload or a shared address shows the same list.
 
 const { t } = useI18n();
 // Whether a console offers its title bar, under the key bmo-ui's bundle contract names.
@@ -244,7 +222,6 @@ const typed = ref(typeof route.query.q === "string" ? route.query.q : "");
 const searched = ref(typed.value.trim());
 const kindChoice = ref(typeof route.query.kind === "string" ? route.query.kind : ALL);
 const categoryChoice = ref(typeof route.query.category === "string" ? route.query.category : ALL);
-const inProgressOnly = ref(route.query.pending === "1" && categoryChoice.value === ALL);
 // The categories the documents carry, the most carried first; a list read with none of them offers the
 // filter's one choice of every category rather than failing.
 const categories = ref<ArtifactLabelValue[]>([]);
@@ -321,8 +298,8 @@ const kindChoices = computed(() => [
   ...kinds.value.map((kind) => ({ label: kindLabel(kind.name), value: kind.name }))
 ]);
 
-// Whether a filter or the in-progress switch narrows the list, which the filter popover's button stands pressed for.
-const narrowed = computed(() => kindChoice.value !== ALL || categoryChoice.value !== ALL || inProgressOnly.value);
+// Whether a filter narrows the list, which the filter popover's button stands pressed for.
+const narrowed = computed(() => kindChoice.value !== ALL || categoryChoice.value !== ALL);
 
 // The two filters, each a select of its choices named by its name, standing in the bar where it has the room and
 // under their names in the filter popover where it gathers.
@@ -333,10 +310,8 @@ const filters = computed(() => [
 
 const emptyText = computed(() => (searched.value === "" ? t("artifact.status.no_documents") : t("artifact.status.no_match", { phrase: searched.value })));
 
-// The one label the list is narrowed by: the documents in progress while the switch is on, else the category chosen.
+// The label the list is narrowed by: the category chosen, where one is.
 function listedLabel(): string | undefined {
-  if (inProgressOnly.value) return PENDING_LABEL;
-
   return categoryChoice.value === ALL ? undefined : categoryFilter(categoryChoice.value);
 }
 
@@ -387,8 +362,7 @@ function hold(): void {
     query: {
       ...(searched.value === "" ? {} : { q: searched.value }),
       ...(kindChoice.value === ALL ? {} : { kind: kindChoice.value }),
-      ...(categoryChoice.value === ALL ? {} : { category: categoryChoice.value }),
-      ...(inProgressOnly.value ? { pending: "1" } : {})
+      ...(categoryChoice.value === ALL ? {} : { category: categoryChoice.value })
     }
   });
   void read();
@@ -418,16 +392,8 @@ function holdToKind(value: string): void {
   hold();
 }
 
-// The route takes one label, so the category and the in-progress switch narrow the list one at a time.
 function holdToCategory(value: string): void {
   categoryChoice.value = value;
-  if (value !== ALL) inProgressOnly.value = false;
-  hold();
-}
-
-function holdToInProgress(): void {
-  inProgressOnly.value = !inProgressOnly.value;
-  if (inProgressOnly.value) categoryChoice.value = ALL;
   hold();
 }
 

@@ -1,9 +1,9 @@
 <template>
   <!-- A document that is a page of its own (docs/artifact.md, "An HTML page"): its title on a row
-       of its own, and under it the page filling the rest of the screen; the actions on it stand in the
-       screen's own row above. The page's own scroll is the only one here. The frame names the scheme
-       the console stands in, so the page is drawn in it from its first frame and again when the
-       screen mode changes (docs/artifact.md, "How a document is drawn"), and names the console's
+       of its own with what the page still lacks under it, and under that the page filling the rest of
+       the screen; the actions on it stand in the screen's own row above. The page's own scroll is the
+       only one here. The frame names the scheme the console stands in, so the page is drawn in it from
+       its first frame and again when the screen mode changes (docs/artifact.md, "How a document is drawn"), and names the console's
        language, which the player the page's sounds stand in speaks. A share page has no header: the
        page fills the window. The reader draws no band over a page: its sounds stand where the page
        writes them (docs/artifact.md, "An HTML page"). -->
@@ -12,6 +12,7 @@
       <!-- The title wraps between words onto two lines at most; a longer one is clamped there and the console's
            tooltip for a cut line shows it whole (docs/artifact.md, 「Where a person reads it」). -->
       <h1 class="line-clamp-2 text-lg font-semibold break-keep text-highlighted [overflow-wrap:anywhere] sm:text-xl" data-page-title>{{ props.title }}</h1>
+      <ArtifactLackMark v-if="props.labels !== null" class="mt-2" :document="{ labels: props.labels }" />
     </header>
 
     <ArtifactHostedFrame :src="framed" :title="props.title" />
@@ -27,11 +28,13 @@ import type { PageServed } from "../domain/hosted-page";
 interface Props {
   title: string;
   page: PageServed;
+  // The page's labels, read for what it still lacks; none where it stands for somebody holding its link.
+  labels?: Readonly<Record<string, string>> | null;
   // Whether the page stands under its title, or fills the window alone.
   chrome?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), { chrome: true });
+const props = withDefaults(defineProps<Props>(), { chrome: true, labels: null });
 
 useHead({ style: [{ key: "document-palette", innerHTML: DOCUMENT_PALETTE }] });
 

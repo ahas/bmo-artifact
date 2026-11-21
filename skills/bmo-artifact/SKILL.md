@@ -37,8 +37,9 @@ such variable it files documents with no owner and reaches every document.
 - The label `category` is the document's category in the archive's list: one word naming the work that
   made it, such as `security-audit`, `security-patch` or `completion` for a report, or the research shape
   that wrote it. Set it whenever a document is filed; the list shows it as a badge and filters by it.
-- The label `pending` marks a document still being worked on: what it still lacks, comma-separated words.
-  Set it while the document is unfinished and rewrite the labels without it once it is done.
+- The label `pending` names what a document still lacks, comma-separated words; the archive shows them on
+  that document as missing. Set it only for a part you will still give, and rewrite the labels without it
+  once that part is given or once you will not give it.
 - Every web link the markdown makes becomes one of the document's references.
 - `artifact_rewrite` rewrites a document under its number: `documentId`, `labels` (required, they replace
   the labels whole) and any of `title`, `body`, `html`. Its attachments and share links stay.

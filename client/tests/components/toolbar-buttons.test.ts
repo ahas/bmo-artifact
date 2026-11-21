@@ -26,11 +26,10 @@ describe("the list's toolbar", () => {
     for (const button of buttons(toolbar)) expect(button).toContain('size="sm"');
   });
 
-  test("stands the filters and the in-progress switch only where the bar has the room for them", () => {
+  test("stands the filters only where the bar has the room for them", () => {
     const standing = between(toolbar, '<template v-if="!gathered">', "</template>");
 
     expect(standing).toContain('<ChoiceSelect\n              v-for="filter in filters"');
-    expect(standing).toContain("data-in-progress-only");
   });
 
   test("folds them into one filter popover at its end, opened by a small square icon button named in its tooltip, where the bar gathers", () => {
@@ -44,7 +43,6 @@ describe("the list's toolbar", () => {
     expect(button).toContain("square");
     expect(button).toContain(":aria-label=\"$t('artifact.label.filters')\"");
     expect(content).toContain('<UFormField v-for="filter in filters" :key="filter.key" :label="filter.name">');
-    expect(content).toContain("data-in-progress-only");
   });
 
   test("puts the filter popover away on every choice made in it, before the address takes the choice", () => {
@@ -53,7 +51,6 @@ describe("the list's toolbar", () => {
 
     expect(popover).toContain('v-model:open="filtersOpen"');
     expect(content).toContain('@update:model-value="(value: string) => fromPopover(() => filter.hold(value))"');
-    expect(content).toContain('@click="fromPopover(holdToInProgress)"');
     expect(listScript).toContain("filtersOpen.value = false;\n  choose();");
   });
 

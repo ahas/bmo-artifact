@@ -277,7 +277,10 @@ belong to the testbed.
 - **Client.** The bundle's tests live in `client/tests/`, every one run with happy-dom's document
   registered. The bundle's `check` script runs its typecheck and its tests, and is what the testbed runs
   for it as a project of its own. The files under `client/tests/browser/` drive a real Chromium through
-  playwright-core, and are skipped where the browser it pins is not on the machine.
+  playwright-core, and are skipped where the browser it pins is not on the machine. A test that drives the
+  screens themselves stands them on the host under `client/tests/browser/host/`, the client's layer under a
+  page shell of its own, served by Nuxt's dev server in a process group of its own that the test takes down,
+  and answers the service's routes from a stand-in in front of the page.
 
 ## Dependency check
 

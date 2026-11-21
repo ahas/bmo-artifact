@@ -9,6 +9,8 @@
         <div class="flex flex-col gap-2">
           <p v-if="props.kind !== null" class="artifact-eyebrow">{{ props.kind }}</p>
           <h1 class="artifact-title">{{ props.title }}</h1>
+          <!-- What it still lacks, a still mark under the title (docs/artifact.md, 「A document that lacks a part」). -->
+          <ArtifactLackMark v-if="props.labels !== null" class="self-start" :document="{ labels: props.labels }" />
           <!-- Its labels, the names a filer finds it by, on a secondary line that wraps (docs/artifact.md, 「Where a person
                reads it」). -->
           <p v-if="labelLine !== ''" class="text-sm break-words text-muted" data-document-labels>{{ labelLine }}</p>
@@ -62,7 +64,7 @@ import { useI18n } from "vue-i18n";
 import { DOCUMENT_PALETTE } from "../../shared/document-design";
 import { VIEWER_PICTURES } from "../../shared/document-pictures";
 import { plainPress, pressedPictures } from "../domain/document-pictures";
-import { fileAddresses, filesAround } from "../domain/document-view";
+import { PENDING_LABEL, fileAddresses, filesAround } from "../domain/document-view";
 
 import type { BarAction } from "bmo-ui/app/domain/tabs";
 import type { PictureRun } from "../../shared/document-pictures";
@@ -118,8 +120,10 @@ function askAgain(): void {
   props.reading?.again();
 }
 
+// The labels but what it lacks, which stands in its own mark above them.
 const labelLine = computed(() =>
   Object.entries(props.labels ?? {})
+    .filter(([name]) => name !== PENDING_LABEL)
     .map(([name, value]) => (value === "" ? name : `${name}: ${value}`))
     .join(" · ")
 );
