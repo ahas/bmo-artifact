@@ -45,6 +45,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "DELETE /documents/{documentId}",
     "GET /documents/{documentId}/content",
     "GET /documents/{documentId}/picture",
+    "POST /documents/{documentId}/reads",
     "GET /documents/{documentId}/attachments",
     "POST /documents/{documentId}/attachments",
     "GET /documents/{documentId}/attachments/{attachmentId}",
@@ -60,6 +61,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "POST /documents/{documentId}/units",
     "DELETE /documents/{documentId}/units/{unit}",
     "GET /document-kinds",
+    "GET /document-reads",
     "GET /label-values",
     "GET /shares",
     "POST /shares",
@@ -101,6 +103,8 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     assert_eq!(reach(read, "get"), "open", "{read}");
   }
   assert_eq!(reach("/documents", "get"), "screen");
+  assert_eq!(reach("/documents/{documentId}/reads", "post"), "screen");
+  assert_eq!(reach("/document-reads", "get"), "screen");
   assert_eq!(reach("/documents", "post"), "closed");
   assert_eq!(reach("/publications", "post"), "closed");
   assert_eq!(document["info"]["version"], bmo_artifact::VERSION);

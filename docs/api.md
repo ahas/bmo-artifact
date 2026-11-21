@@ -136,8 +136,9 @@ lives」).
 
 Each kind is a module of its own answering one shape (docs/artifact.md, 「Kinds」); `GET /document-kinds`
 lists them in the catalogue's order, each `name`, `description`, `hosted` (whether the document is opened
-as the page it keeps) and `contentsDepth` (how many levels of its headings its table of contents lists,
-0 for none); its `after` is a kind's place in the catalogue, counted from 1. A row whose kind no module
+as the page it keeps), `contentsDepth` (how many levels of its headings its table of contents lists,
+0 for none) and `icon` (the name of the icon the screens draw the kind by, in the Material Symbols set);
+its `after` is a kind's place in the catalogue, counted from 1. A row whose kind no module
 answers reads as `record`.
 
 | Kind | What it is | Its file |
@@ -158,13 +159,15 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 
 | Route | Takes | Answers |
 |---|---|---|
-| `GET /documents` | query `kind?`, `scope?`, `label?`, `q?`, `before?`, `after?`, `limit?` | 200, a page of documents |
+| `GET /documents` | query `kind?`, `scope?`, `label?`, `q?`, `picture?`, `before?`, `after?`, `limit?` | 200, a page of documents |
 | `POST /documents` | `kind`, `title`, `body?`, `html?`, `scope?`, `actorName`, `labels`, `description?` | 201, the document |
 | `GET /documents/{documentId}` | | 200, the document |
 | `PATCH /documents/{documentId}` | `title?`, `body?`, `html?`, `labels` | 200, the document |
 | `DELETE /documents/{documentId}` | | 204 |
 | `GET /documents/{documentId}/content` | query `scheme?`, `download?` | 200, the file |
 | `GET /documents/{documentId}/picture` | | 200, the cover picture as JPEG |
+| `POST /documents/{documentId}/reads` | | 204 |
+| `GET /document-reads` | query `limit?` | 200, a page of the documents most read |
 | `GET /document-kinds` | query `after?`, `limit?` | 200, a page of kinds |
 | `GET /label-values` | query `key`, `limit?` | 200, a page of the values one label holds |
 
@@ -173,6 +176,7 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   `key` alone for those carrying it; `q`, cut to 200 characters, holds it to documents saying the phrase,
   matched whole and without regard to case in the title, the labels and the body, and, where the phrase is a
   number with or without a leading `#`, to the document of that number as well. A blank `q` is no search.
+  `picture` set to `true` holds it to the documents keeping a picture, those `hasPicture` marks.
 - **`POST /documents` files a document.** `page` takes `html` and nothing in `body`; every other kind takes
   `body` and no `html`. The title is required, except for a page whose own `title` element gives one.
   Each distinct http or https link the body makes becomes one of the document's references. Its owner is the
@@ -200,6 +204,30 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 - **`GET /documents/{documentId}/picture`** sends the picture a link's preview card shows: the first its
   body draws by a kept file's name (docs/artifact.md, 「Attachments」), else the first it keeps, upright,
   fitted inside 1200 pixels, never enlarged, laid on white, as JPEG. 404 `not-found` where it has none.
+
+### Reads
+
+A read is one reader's day on one document (docs/artifact.md, 「Reads」). The service keeps the reads of the
+last seven days, a day being the service clock's day in UTC.
+
+| Field | Holds |
+|---|---|
+| `document` | the document, as `GET /documents` answers it |
+| `reads` | how many reads it has in the last seven days |
+
+- **`POST /documents/{documentId}/reads` keeps a read** of the document for the call's reader: the account its
+  `Owner-Key` names, or, where it names none, one reader standing for every caller without an account. The same
+  reader's second read of the document on the same day keeps nothing more. A document the reader does not reach
+  is `not-found` (「Readers」).
+- **`GET /shares/{token}/document` with `visitor` keeps a read** for that visitor, the token a browser keeps for
+  itself and a share page sends, 8 to 64 letters, digits, `-` and `_`; a `visitor` of any other shape is refused
+  `bad-request`, and without one nothing is kept (「Share links」).
+- **Keeping a read lets go of every read older than the seven days.**
+- **`GET /document-reads` answers the documents most read** in the last seven days, the most first and, among
+  equals, the newest first; at most `limit`, `more` where documents stand past it, and no cursor. A document with
+  no read in the seven days is not among them. For an account reader it holds the documents that account reads
+  alone, each with its permission where it reads it through a share (「Readers」).
+- **A read raises no event,** and goes with its document when the document is let go of.
 
 ## Attachments
 
@@ -275,7 +303,7 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 
 | Route | Takes | Answers |
 |---|---|---|
-| `GET /shares/{token}/document` | | 200, the document |
+| `GET /shares/{token}/document` | query `visitor?` | 200, the document; with `visitor`, a read kept (「Reads」) |
 | `GET /shares/{token}/kind` | | 200, the document's kind, as `GET /document-kinds` lists it |
 | `GET /shares/{token}/content` | query `scheme?`, `language?`, `download?` | 200, the file |
 | `GET /shares/{token}/picture` | | 200, the cover picture as JPEG |
@@ -681,7 +709,7 @@ flowchart TD
   is refused 401 `unauthorized` on every route, and the face's routes are `no-route` to the service's token,
   so a console leaves the service out.
 - **The routes the screens use** are the reads of documents, their content, pictures, attachments,
-  references, kinds and label values, the reading, making and ending of share links, the reading, granting,
+  references, kinds and label values, the keeping of a read and the documents most read, the reading, making and ending of share links, the reading, granting,
   changing and taking back of member shares, and the reading of the owner's company's units and the reading, granting
   and taking back of unit shares; the share reads and the share head are reached as well. Past the
   face's guard, each route reads for the reader 「Readers」 states. The face's guard holds the console's calls to them; the service's token

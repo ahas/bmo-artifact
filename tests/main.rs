@@ -23,6 +23,7 @@ mod page_reading;
 mod picture_ground;
 mod publications;
 mod readings;
+mod reads;
 mod settings;
 mod share_head;
 mod shares;

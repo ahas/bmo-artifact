@@ -12,7 +12,7 @@ function attachment(id: number, name: string, kind: string, role: string | null 
 
 describe("a document's kind", () => {
   test("is the catalogue's entry its word names, and none for a word the catalogue does not hold", () => {
-    const kinds = [{ name: "record", description: "", hosted: false, contentsDepth: 2 }];
+    const kinds = [{ name: "record", description: "", hosted: false, contentsDepth: 2, icon: "description-outline" }];
 
     expect(kindOf(kinds, "record")?.contentsDepth).toBe(2);
     expect(kindOf(kinds, "search")).toBeNull();

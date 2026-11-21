@@ -73,7 +73,7 @@
       "review-fixes": "Review fixes"
     },
     "action": {
-      "back_to_list": "Back to the list",
+      "back": "Back",
       "clear_search": "Clear the search",
       "copy_number": "Copy the number",
       "document_original": "Document file",
@@ -156,6 +156,14 @@
     },
     "reading": {
       "script": "Latin"
+    },
+    "front": {
+      "newest": "Newest",
+      "most_read": "Most read",
+      "most_read_span": "Last 7 days",
+      "kinds": "Kinds",
+      "all_kinds": "All",
+      "no_reads": "No document read in the last 7 days"
     }
   }
 }

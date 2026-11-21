@@ -15,6 +15,10 @@ impl Kind for SearchKind {
     "What a research found: the core answer, the summary, the findings and what stayed unconfirmed, as a markdown body."
   }
 
+  fn icon(&self) -> &'static str {
+    "travel-explore"
+  }
+
   fn contents_depth(&self) -> u8 {
     2
   }

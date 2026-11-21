@@ -26,14 +26,14 @@ describe("the list's toolbar", () => {
     for (const button of buttons(toolbar)) expect(button).toContain('size="sm"');
   });
 
-  test("stands the filters only where the bar has the room for them", () => {
-    const standing = between(toolbar, '<template v-if="!gathered">', "</template>");
+  test("stands the filters only in the list and where the bar has the room for them", () => {
+    const standing = between(toolbar, '<template v-if="!front && !gathered">', "</template>");
 
     expect(standing).toContain('<ChoiceSelect\n              v-for="filter in filters"');
   });
 
   test("folds them into one filter popover at its end, opened by a small square icon button named in its tooltip, where the bar gathers", () => {
-    const popover = between(toolbar, '<UPopover v-if="gathered"', "</UPopover>");
+    const popover = between(toolbar, '<UPopover v-if="!front && gathered"', "</UPopover>");
     const [button] = buttons(popover);
     const content = between(popover, "<template #content>", "</template>");
 
@@ -46,7 +46,7 @@ describe("the list's toolbar", () => {
   });
 
   test("puts the filter popover away on every choice made in it, before the address takes the choice", () => {
-    const popover = between(toolbar, '<UPopover v-if="gathered"', "</UPopover>");
+    const popover = between(toolbar, '<UPopover v-if="!front && gathered"', "</UPopover>");
     const content = between(popover, "<template #content>", "</template>");
 
     expect(popover).toContain('v-model:open="filtersOpen"');

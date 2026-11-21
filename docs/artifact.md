@@ -17,6 +17,8 @@ repository.
 - **Member shares,** each opening one document to read to one member of the owner's company.
 - **Unit shares,** each opening one document to read to everyone standing in or under one organisation unit of
   the owner's company.
+- **The reads of the last seven days,** each one reader's day on one document, by which the screens rank the
+  documents most read (「Reads」).
 - **Nothing it did not keep.** It runs no research and speaks no narration: a research run is a client's
   own work that files its result here, and a narration is a sound a client attaches with the role `head`.
   It knows no caller: a document's `scope`, `actorName` and `labels` are the caller's own strings. It keeps no
@@ -42,7 +44,8 @@ flowchart TD
 Every document has a kind, and the kind decides how it is filed and read.
 
 - **Each kind is its own module.** Each answers one shape: its name, a sentence saying what it is, whether
-  it is the HTML page it keeps, and how many levels of its headings a table of contents lists.
+  it is the HTML page it keeps, how many levels of its headings a table of contents lists, and the icon the
+  screens draw it by, a name of the Material Symbols set.
   - One catalogue lists the modules, in the order `GET /document-kinds` answers them.
   - The routes and the console bundle ask a document's kind, and never branch on a kind's name.
   - Adding a kind is adding its module and its line in the catalogue.
@@ -85,6 +88,7 @@ address and the file root are settings; no other unit reads or writes either.
 | `web_search_share_notes` | link that has ended | its token, what it opened, that document's title, when it ended and why |
 | `artifact_member_shares` | document shared with one member | its document, the member's account key, the permission and when it was shared |
 | `artifact_unit_shares` | document shared with one organisation unit | its document, the unit's number as the account service keeps it, and when it was shared |
+| `artifact_reads` | one reader's day on one document | its document, the reader and the day |
 | `imports` | import | the address asked, the title, scope, actor and owner asked, its state, its document or why it failed |
 | `events` | event | its kind, when it was kept, the scope of its member and the member |
 
@@ -262,6 +266,22 @@ address and the file root are settings; no other unit reads or writes either.
 - **A document with no owner is shared with no unit,** since it belongs to no company.
 - **A unit reads and does nothing else,** as a member does: its readers read the document under `read`.
 - **A unit share goes with its document,** as a member share does, and leaves no note.
+
+## Reads
+
+- **A read is one reader opening one document on one day.** The document's screen keeps one each time it opens a
+  document, for the account the console signs the reader in as; a share page keeps one for the browser it runs
+  in, by a token of its own that browser keeps and sends with the read. A reader who opens the document again the
+  same day keeps no second read, so a reload or a return counts nothing more.
+- **Only the last seven days are kept.** Keeping a read lets go of every read older than that, so the table
+  holds a week of reads whatever the traffic.
+- **The documents most read** are those with the most reads in the seven days, the newest first among equals.
+  A reader is shown only the documents it reads (「Owners」).
+- **A read is no change of the document:** it raises no event and leaves the document's times as they stand. It
+  goes with its document when the document is let go of.
+- **Nothing else counts as a read.** A caller reading a document through the service's token or the MCP server,
+  a chat app drawing a link's card from the share head, and the server rendering a share page before the browser
+  runs keep none.
 
 ## A page imported whole
 
@@ -493,9 +513,12 @@ its name stands among them too, so it can be saved.
 
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
-  - the list at `/artifact`, narrowed by kind, by category and by a phrase, each narrowing
-    held in the address. Its bar holds the search, which takes the width the rest leaves it, then the kind and
-    category filters and the refresh. Each filter is bmo-ui's one select
+  - the front page at `/artifact`, the documents at a glance (「The front page」), standing while the address
+    narrows nothing;
+  - the list at `/artifact` once the address narrows it, by kind, by category or by a phrase, or names the view
+    `list`, each narrowing held in the address. Its bar holds, at its leading end, the way back to the front page, an
+    icon button named 「Back」 (`artifact.action.back`) in its tooltip, then the search, which takes the width the rest
+    leaves it, then the kind and category filters and the refresh. Each filter is bmo-ui's one select
     (bmo-ui's `docs/components.md`, 「Choosing a value」), so its list offers a search once it holds more than
     seven choices and never with seven or fewer. The filters stand at the bar's trailing end, so each list opens
     against its select's trailing edge and stays on the screen. A bar short of the room every bar of the console
@@ -518,7 +541,10 @@ its name stands among them too, so it can be saved.
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
     and the list never scrolls sideways;
   - one document at `/artifact/<id>`: the screen's own row under the bar, one line at every width, holding at its
-    left end the way back to the list, then the document's number as `#<id>` and, for a page, its kind; and at its right end all that acts on the document, so no
+    left end the way back, named 「Back」 (`artifact.action.back`) in its tooltip, to where the reader came from, the
+    front page or the list as it was narrowed, and the front page where the reader came from no screen of these,
+    then the document's number as `#<id>` and, for a page, its kind; and at its right end all that acts on the
+    document, so no
     action on it stands anywhere else on the screen: the translation toggle where a markdown document is written in
     another language than the reader's (「A document written in another language than the reader's」), then the
     actions on the document as one group, opening its instruction where it carries one, then for a markdown
@@ -538,6 +564,43 @@ its name stands among them too, so it can be saved.
     other document; a page fills the window. With no row of the screen's over it, a markdown document's masthead
     holds on a row under its title the one action a holder of the link has, opening its referred pages where they
     do not stand beside it.
+- **The front page** shows what is new and what is read, the way a portal's front page does, laid out by the
+  width the screen is given rather than the window's, so a console's side menu opened or folded lays it out
+  again.
+  - Its bar holds the search and the refresh alone. The search finds across every kind: a phrase typed turns the
+    screen into the list narrowed by it, the field keeping the focus, and the phrase cleared brings the front page
+    back. The refresh reads every part again, spinning while it does.
+  - The newest documents head it, under the title 「Newest」 (`artifact.front.newest`) with the link that opens a row
+    whole (bmo-ui's `common.action.see_all`) to the list narrowed by nothing: one large card and four small ones.
+    The large one is the newest document of the last seven days that keeps a cover picture, and the newest document
+    where none does; the small ones are the next newest. Where the column is wide the large card takes its leading
+    three fifths and the four stand beside it, one under another; narrower, the large card stands over the four.
+  - A section for each kind the catalogue lists follows, in its order, each under the pack's word for the kind
+    with the kind's icon and the same link to the list narrowed by that kind, holding the kind's newest
+    documents as one row of cards: four beside the side column of a wide window, fewer as the column narrows, and
+    three one under another on a phone. A kind no document reaches the reader in has no section.
+  - Where the screen is wide, a side column stands beside the newest and the sections from the top of the page
+    down: first the kinds as a navigation list under 「Kinds」 (`artifact.front.kinds`), 「All」
+    (`artifact.front.all_kinds`) first, each item opening the list narrowed by its kind; then the documents most
+    read in the last seven days (「Reads」), ten at most, each its rank and its title on one line, under the title
+    「Most read」 (`artifact.front.most_read`) and the caption 「Last 7 days」 (`artifact.front.most_read_span`). Each
+    is a titled list with a line under its title and no frame or ground of its own: cards are for the documents. With
+    no read in the seven days the most read say so in one line.
+  - A card is the document's cover picture, its category where it carries one and what it lacks where it lacks
+    something (「A document that lacks a part」), its title on two lines, its
+    description on two, the day it was filed and, where a live link to it stands, that it is public; the newest's
+    cards lead with the kind's word as well, since they mix the kinds. A document keeping no cover picture, or one whose
+    picture does not load, stands with the kind's icon on a muted ground in its place, so a strip with few pictures
+    still reads as a strip. The whole card opens the document. A card carries no number: the list copies and finds
+    numbers.
+  - Where the screen is narrow, as a phone's, everything stands in one column: the kinds first, as a row of chips
+    under the bar, then the newest, the large card over the rest, then the most read, then the sections one under
+    another. Each card but the large one is a row with a small cover at its leading edge and its title on two lines,
+    its description on one and its day beside it.
+  - Each part reads on its own and holds a skeleton of its own shape until it has read; a part that fails says so
+    in place, and the bar's refresh reads every part again.
+  - A reader back from a document finds the front page drawn at once from what the browser tab last read of it, at
+    the place they left it, while every part is read again; the list is found at its place the same way.
 - **Sharing a document** opens bmo-ui's one share dialog (bmo-ui's `docs/components.md`, 「Sharing」) from the
   document's row, titled by the document: its link part first, a link made for one of the spans offered, shown,
   copied and ended there (「Share links」); and under it its member part, where the console provides its people

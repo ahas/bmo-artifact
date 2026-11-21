@@ -105,8 +105,8 @@ describe("a document's screen row", () => {
     const left = row.slice(row.indexOf("#left"), row.indexOf("#right"));
     const right = row.slice(row.indexOf("#right"));
 
-    expect(left.indexOf('to="/artifact"')).toBeGreaterThan(-1);
-    expect(left.indexOf('to="/artifact"')).toBeLessThan(left.indexOf("data-document-number"));
+    expect(left.indexOf('@click="goBack"')).toBeGreaterThan(-1);
+    expect(left.indexOf('@click="goBack"')).toBeLessThan(left.indexOf("data-document-number"));
     expect(right).toContain('<ActionGroup v-if="translation !== null" :actions="[translation]" :narrow-fold="false" />');
     expect(right.indexOf(':actions="[translation]"')).toBeLessThan(right.indexOf(':actions="actions"'));
     expect(right).toContain(':properties="held === null ? null : properties"');

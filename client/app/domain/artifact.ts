@@ -9,6 +9,8 @@ import type {
   ArtifactAttachmentPage,
   ArtifactDocument,
   ArtifactDocumentPage,
+  ArtifactDocumentReads,
+  ArtifactDocumentReadsPage,
   ArtifactKind,
   ArtifactKindPage,
   ArtifactLabelValue,
@@ -34,11 +36,12 @@ export function artifactAddress(path: string): string {
   return relayAddress(SERVICE, path);
 }
 
-/** What the list is narrowed and paged by. */
+/** What the list is narrowed and paged by; `picture` holds it to the documents keeping a picture. */
 export interface DocumentsAsked {
   kind?: string;
   label?: string;
   q?: string;
+  picture?: boolean;
   before?: number;
   limit: number;
 }
@@ -46,6 +49,16 @@ export interface DocumentsAsked {
 /** A page of documents, newest first. */
 export function readDocuments(asked: DocumentsAsked): Promise<ArtifactDocumentPage> {
   return $fetch<ArtifactDocumentPage>(artifactAddress("/documents"), { query: asked });
+}
+
+/** A read of one document kept for the signed-in reader, once a day (`docs/artifact.md`, "Reads"). */
+export async function keepRead(id: number): Promise<void> {
+  await $fetch(artifactAddress(`/documents/${id}/reads`), { method: "POST" });
+}
+
+/** The documents most read in the last seven days, the most first. */
+export async function readMostRead(limit: number): Promise<ArtifactDocumentReads[]> {
+  return (await $fetch<ArtifactDocumentReadsPage>(artifactAddress("/document-reads"), { query: { limit } })).items;
 }
 
 /** One document's head. */

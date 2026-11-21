@@ -10,6 +10,7 @@ use schemars::generate::SchemaGenerator;
 use super::attachments::{attachment_bytes, attachment_page};
 use super::documents::{content, document, picture};
 use super::files::{Asking, Opened, Reach, any_origin};
+use super::reads::{ReadBy, keep_read, visitor_shaped};
 use super::references::{cited_in, reference, reference_image, reference_page};
 use super::shares::{shared_document, token_parameter};
 use crate::kinds;
@@ -17,6 +18,7 @@ use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, answer};
 use crate::plumbing::openapi::{Operation, bytes_answer, header, id_parameter, json_answer, query};
 use crate::wire::{
   AttachmentPage, ContentQuery, Document, DocumentKind, PageQuery, Reference, ReferencePage,
+  SharedDocumentQuery,
 };
 
 /// Every share read's path, as the manifest names them under `shareReads`, `GET /shares/{token}` among them,
@@ -53,17 +55,30 @@ impl Route for ReadSharedDocument {
   const CONSOLE: ConsoleReach = ConsoleReach::Open;
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
-    let id = opened(&mut call).await?;
+    let asked: SharedDocumentQuery = call.query()?;
 
-    Ok(answer(StatusCode::OK, &document(call.standing(), id).await?.document))
+    if let Some(visitor) = asked.visitor.as_deref()
+      && !visitor_shaped(visitor)
+    {
+      return Err(Refused::bad("visitor is 8 to 64 letters, digits, - and _"));
+    }
+
+    let id = opened(&mut call).await?;
+    let read = document(call.standing(), id).await?.document;
+
+    if let Some(visitor) = asked.visitor.as_deref() {
+      keep_read(call.standing(), id, ReadBy::Visitor(visitor)).await?;
+    }
+
+    Ok(answer(StatusCode::OK, &read))
   }
 
   fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
     Operation {
       id: "listSharesDocumentByToken",
       tag: "shares",
-      summary: "The document a live link opens.",
-      parameters: vec![token_parameter()],
+      summary: "The document a live link opens; with a visitor, a read kept for it.",
+      parameters: [vec![token_parameter()], query::<SharedDocumentQuery>(generator)].concat(),
       body: None,
       answers: vec![(200, json_answer::<Document>(generator))],
       codes: CODES,

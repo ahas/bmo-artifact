@@ -295,15 +295,22 @@ async fn an_attachment_is_kept_listed_and_sent_with_its_range_and_its_picture_is
 
     async move {
       let listed = service.call(Method::GET, "/documents?q=Pictured", None).await.json();
+      let only_pictured =
+        service.call(Method::GET, "/documents?q=Pictured&picture=true", None).await.json();
 
       (
         service.call(Method::GET, &format!("/documents/{id}"), None).await.json()["hasPicture"].clone(),
         listed["items"][0]["hasPicture"].clone(),
+        json!(only_pictured["items"].as_array().is_some_and(|items| !items.is_empty())),
       )
     }
   };
 
-  assert_eq!(pictured().await, (json!(false), json!(false)), "a sound is no picture");
+  assert_eq!(
+    pictured().await,
+    (json!(false), json!(false), json!(false)),
+    "a sound is no picture, and the pictured list holds no such document"
+  );
 
   let picture = attach("plan.png", "image/png", png(), None).await.json();
 
@@ -317,8 +324,8 @@ async fn an_attachment_is_kept_listed_and_sent_with_its_range_and_its_picture_is
   assert_eq!(again.status, StatusCode::BAD_REQUEST);
   assert_eq!(
     pictured().await,
-    (json!(true), json!(true)),
-    "the document and the list say it keeps a picture"
+    (json!(true), json!(true), json!(true)),
+    "the document and the list say it keeps a picture, and the pictured list holds it"
   );
 
   let listed = service.call(Method::GET, &format!("/documents/{id}/attachments"), None).await.json();
@@ -535,7 +542,7 @@ async fn a_labels_values_stand_most_carried_first() {
 async fn the_kinds_answer_for_themselves_and_the_service_is_ready() {
   let service = Service::new().await;
   let kinds = service.call(Method::GET, "/document-kinds", None).await.json();
-  let named: Vec<(&str, bool, i64)> = kinds["items"]
+  let named: Vec<(&str, bool, i64, &str)> = kinds["items"]
     .as_array()
     .expect("items")
     .iter()
@@ -544,6 +551,7 @@ async fn the_kinds_answer_for_themselves_and_the_service_is_ready() {
         kind["name"].as_str().unwrap_or_default(),
         kind["hosted"].as_bool().unwrap_or_default(),
         kind["contentsDepth"].as_i64().unwrap_or(-1),
+        kind["icon"].as_str().unwrap_or_default(),
       )
     })
     .collect();
@@ -551,11 +559,11 @@ async fn the_kinds_answer_for_themselves_and_the_service_is_ready() {
   assert_eq!(
     named,
     [
-      ("search", false, 2),
-      ("record", false, 2),
-      ("learning", false, 3),
-      ("import", false, 3),
-      ("page", true, 0)
+      ("search", false, 2, "travel-explore"),
+      ("record", false, 2, "description-outline"),
+      ("learning", false, 3, "menu-book-outline"),
+      ("import", false, 3, "public"),
+      ("page", true, 0, "web")
     ]
   );
   assert_eq!(

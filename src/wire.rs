@@ -224,6 +224,41 @@ pub struct DocumentPage {
   pub more: bool,
 }
 
+/// One of the documents most read, and how many reads it has in the last seven days.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentReads {
+  pub document: Document,
+  /// How many reads it has in the last seven days, one a reader's day.
+  pub reads: i64,
+}
+
+/// A page of the documents most read, the most first.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentReadsPage {
+  pub items: Vec<DocumentReads>,
+  pub more: bool,
+}
+
+/// What `GET /document-reads` is held to.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct DocumentReadsQuery {
+  /// At most this many: 30 where none is given, 200 at most.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub limit: Option<i64>,
+}
+
+/// What a share read of the document is asked with.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct SharedDocumentQuery {
+  /// The token the reading browser keeps for itself, 8 to 64 letters, digits, `-` and `_`: a read is kept for it.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub visitor: Option<String>,
+}
+
 /// What `GET /documents` is filtered and paged by.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -240,6 +275,9 @@ pub struct DocumentsQuery {
   /// A phrase matched whole and without regard to case in the title, the labels and the body.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub q: Option<String>,
+  /// `true` for the documents keeping a picture alone, those `hasPicture` marks.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub picture: Option<bool>,
   /// Only documents older than this one, by its id.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub before: Option<i64>,
@@ -316,6 +354,8 @@ pub struct DocumentKind {
   pub hosted: bool,
   /// How many levels of its headings its table of contents lists, 0 for none.
   pub contents_depth: u8,
+  /// The icon the screens draw the kind by, a name of the Material Symbols set.
+  pub icon: String,
 }
 
 /// A page of kinds, in the catalogue's order.

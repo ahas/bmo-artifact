@@ -14,6 +14,10 @@ impl Kind for ImportKind {
     "A web page brought in whole, as the markdown its import wrote."
   }
 
+  fn icon(&self) -> &'static str {
+    "public"
+  }
+
   fn contents_depth(&self) -> u8 {
     3
   }

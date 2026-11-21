@@ -18,6 +18,10 @@ impl Kind for PageKind {
     true
   }
 
+  fn icon(&self) -> &'static str {
+    "web"
+  }
+
   fn contents_depth(&self) -> u8 {
     0
   }

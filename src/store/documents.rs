@@ -51,14 +51,24 @@ pub async fn settle<C: ConnectionTrait>(
   Ok(())
 }
 
+// Whether the document `d` keeps a picture: what its `hasPicture` says and the list's `picture` holds it to.
+macro_rules! keeps_picture {
+  () => {
+    r#"EXISTS (SELECT 1 FROM "archive_attachments" a WHERE a."search_id" = d."id" AND a."media" = 'image')"#
+  };
+}
+
 // What a document's row is read as, every time and wherever: its times in milliseconds, its title its
 // question where it wrote none, its actor its writer where none was kept.
-const COLUMNS: &str = r#"d."id", d."kind", COALESCE(NULLIF(d."title", ''), d."query") AS "title", d."scope",
+pub(super) const COLUMNS: &str = concat!(
+  r#"d."id", d."kind", COALESCE(NULLIF(d."title", ''), d."query") AS "title", d."scope",
   COALESCE(d."actor_name", d."author", '') AS "actor_name", d."owner", d."labels"::text AS "labels", d."description",
-  (SELECT COUNT(*) FROM "archive_attachments" a WHERE a."search_id" = d."id") AS "attachment_count",
-  EXISTS (SELECT 1 FROM "archive_attachments" a WHERE a."search_id" = d."id" AND a."media" = 'image') AS "has_picture",
+  (SELECT COUNT(*) FROM "archive_attachments" a WHERE a."search_id" = d."id") AS "attachment_count", "#,
+  keeps_picture!(),
+  r#" AS "has_picture",
   d."started_at" * 1000 AS "created_at", COALESCE(d."changed_at", d."started_at" * 1000) AS "changed_at",
-  d."document""#;
+  d."document""#
+);
 
 // A row that left a document: one that names its file and is not marked as having written none. Every
 // other row is no document, never listed and read as absent.
@@ -72,7 +82,7 @@ pub struct Row {
   pub file: Option<String>,
 }
 
-fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
+pub(super) fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
   let stored: Option<String> = row.try_get("", "kind")?;
   let labels: String = row.try_get("", "labels")?;
 
@@ -180,6 +190,10 @@ pub async fn list<C: ConnectionTrait>(
           OR EXISTS (SELECT 1 FROM jsonb_each_text(d."labels") l WHERE strpos(lower(l."value"), {at}) > 0)
           OR EXISTS (SELECT 1 FROM "search_findings" f WHERE f."search_id" = d."id" AND strpos(lower(f."text"), {at}) > 0){numbered})"#
     ));
+  }
+
+  if query.picture == Some(true) {
+    filters.push(keeps_picture!().to_owned());
   }
 
   if let Some(before) = query.before {
@@ -375,7 +389,7 @@ pub async fn set_body<C: ConnectionTrait>(db: &C, id: i64, text: &str) -> Result
 }
 
 /// The files a document keeps under the file root, and its rows, let go of: its references, its body, its
-/// attachments, its member and unit shares, its share links and itself, its link leaving a note of what it opened. The share tokens it
+/// attachments, its member and unit shares, its reads, its share links and itself, its link leaving a note of what it opened. The share tokens it
 /// held.
 pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, Refusal> {
   // Its link leaves a note of what it opened behind it, written while the document's own row still stands.
@@ -398,6 +412,7 @@ pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, 
     "archive_attachments",
     "artifact_member_shares",
     "artifact_unit_shares",
+    "artifact_reads",
     "web_search_shares",
   ] {
     run(db, &format!(r#"DELETE FROM "{table}" WHERE "search_id" = $1"#), vec![id.into()]).await?;

@@ -7,6 +7,8 @@ type Schemas = components["schemas"];
 
 export type ArtifactDocument = Schemas["Document"];
 export type ArtifactDocumentPage = Schemas["DocumentPage"];
+export type ArtifactDocumentReads = Schemas["DocumentReads"];
+export type ArtifactDocumentReadsPage = Schemas["DocumentReadsPage"];
 export type ArtifactKind = Schemas["DocumentKind"];
 export type ArtifactKindPage = Schemas["DocumentKindPage"];
 export type ArtifactAttachment = Schemas["Attachment"];

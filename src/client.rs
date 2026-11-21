@@ -11,10 +11,10 @@ use serde::de::DeserializeOwned;
 use crate::settings::Settings;
 use crate::wire::{
   Attachment, AttachmentInput, AttachmentPage, ContentQuery, Document, DocumentChange, DocumentInput,
-  DocumentKindPage, DocumentPage, DocumentsQuery, DryRunQuery, EventPage, EventsQuery, Health, Import,
-  ImportInput, LabelValuePage, LabelValuesQuery, MemberShare, MemberShareChange, MemberShareInput,
-  MemberSharePage, PageQuery, Publication, Reference, ReferencePage, ScopeHolding, Share, ShareInput,
-  SharePage, SharesQuery, UnitShareInput, UnitSharePage, WireError,
+  DocumentKindPage, DocumentPage, DocumentReadsPage, DocumentReadsQuery, DocumentsQuery, DryRunQuery,
+  EventPage, EventsQuery, Health, Import, ImportInput, LabelValuePage, LabelValuesQuery, MemberShare,
+  MemberShareChange, MemberShareInput, MemberSharePage, PageQuery, Publication, Reference, ReferencePage,
+  ScopeHolding, Share, ShareInput, SharePage, SharesQuery, UnitShareInput, UnitSharePage, WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -343,6 +343,18 @@ impl ArtifactClient {
     Self::sent(self.request(Method::DELETE, &format!("/documents/{document_id}/units/{unit}")))
       .await
       .map(drop)
+  }
+
+  /// `POST /documents/{documentId}/reads`.
+  pub async fn keep_read(&self, document_id: i64) -> Result<(), ClientFailure> {
+    Self::sent(self.request(Method::POST, &format!("/documents/{document_id}/reads")))
+      .await
+      .map(drop)
+  }
+
+  /// `GET /document-reads`.
+  pub async fn most_read(&self, query: &DocumentReadsQuery) -> Result<DocumentReadsPage, ClientFailure> {
+    Self::json(self.get("/document-reads", query)).await
   }
 
   /// `GET /document-kinds`.

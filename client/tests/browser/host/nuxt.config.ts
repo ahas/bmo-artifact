@@ -19,7 +19,20 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: false },
   telemetry: false,
-  // The icons the screens name, and the one the layer names in its settings that no scan reads, bundled into the
-  // page, so a test asks the network for none.
-  icon: { clientBundle: { scan: true, icons: ["material-symbols:menu"] }, fallbackToApi: false }
+  // The icons the screens name, the one the layer names in its settings and the kinds' own, which the service answers
+  // as data, none of which a scan reads, bundled into the page, so a test asks the network for none.
+  icon: {
+    clientBundle: {
+      scan: true,
+      icons: [
+        "material-symbols:menu",
+        "material-symbols:travel-explore",
+        "material-symbols:description-outline",
+        "material-symbols:menu-book-outline",
+        "material-symbols:public",
+        "material-symbols:web"
+      ]
+    },
+    fallbackToApi: false
+  }
 });

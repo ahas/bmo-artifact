@@ -14,6 +14,10 @@ impl Kind for LearningKind {
     "Study material laid out as a book of parts, chapters and sections, as a markdown body."
   }
 
+  fn icon(&self) -> &'static str {
+    "menu-book-outline"
+  }
+
   fn contents_depth(&self) -> u8 {
     3
   }

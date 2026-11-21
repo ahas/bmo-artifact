@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/document-reads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The documents most read in the last seven days, the most first. */
+        get: operations["listDocumentReads"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents": {
         parameters: {
             query?: never;
@@ -174,6 +191,23 @@ export interface paths {
         get: operations["listDocumentsPictureByDocumentId"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/{documentId}/reads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Keep a read of the document for the call's reader, once a day. */
+        post: operations["createDocumentsReadsByDocumentId"];
         delete?: never;
         options?: never;
         head?: never;
@@ -514,7 +548,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The document a live link opens. */
+        /** The document a live link opens; with a visitor, a read kept for it. */
         get: operations["listSharesDocumentByToken"];
         put?: never;
         post?: never;
@@ -791,6 +825,8 @@ export interface components {
             description: string;
             /** @description Whether a document of this kind is the HTML page it keeps, filed as `html` and opened as that page. */
             hosted: boolean;
+            /** @description The icon the screens draw the kind by, a name of the Material Symbols set. */
+            icon: string;
             name: string;
         };
         /** @description A page of kinds, in the catalogue's order. */
@@ -801,6 +837,20 @@ export interface components {
         /** @description A page of documents, newest first. */
         DocumentPage: {
             items: components["schemas"]["Document"][];
+            more: boolean;
+        };
+        /** @description One of the documents most read, and how many reads it has in the last seven days. */
+        DocumentReads: {
+            document: components["schemas"]["Document"];
+            /**
+             * Format: int64
+             * @description How many reads it has in the last seven days, one a reader's day.
+             */
+            reads: number;
+        };
+        /** @description A page of the documents most read, the most first. */
+        DocumentReadsPage: {
+            items: components["schemas"]["DocumentReads"][];
             more: boolean;
         };
         /** @description A failure: its kebab-case code and its English sentence. */
@@ -1092,6 +1142,30 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    listDocumentReads: {
+        parameters: {
+            query?: {
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The documents most read in the last seven days, the most first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentReadsPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     listDocuments: {
         parameters: {
             query?: {
@@ -1105,6 +1179,8 @@ export interface operations {
                 label?: string | null;
                 /** @description At most this many: 30 where none is given, 200 at most. */
                 limit?: number | null;
+                /** @description `true` for the documents keeping a picture alone, those `hasPicture` marks. */
+                picture?: boolean | null;
                 /** @description A phrase matched whole and without regard to case in the title, the labels and the body. */
                 q?: string | null;
                 /** @description One scope. */
@@ -1513,6 +1589,27 @@ export interface operations {
                 content: {
                     "application/octet-stream": string;
                 };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    createDocumentsReadsByDocumentId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                documentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Keep a read of the document for the call's reader, once a day. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Error"];
         };
@@ -2175,7 +2272,10 @@ export interface operations {
     };
     listSharesDocumentByToken: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description The token the reading browser keeps for itself, 8 to 64 letters, digits, `-` and `_`: a read is kept for it. */
+                visitor?: string | null;
+            };
             header?: never;
             path: {
                 /** @description The share link's token. */
@@ -2185,7 +2285,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The document a live link opens. */
+            /** @description The document a live link opens; with a visitor, a read kept for it. */
             200: {
                 headers: {
                     [name: string]: unknown;

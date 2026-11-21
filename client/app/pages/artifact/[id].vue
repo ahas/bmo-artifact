@@ -5,15 +5,15 @@
   <UDashboardPanel id="artifact-document" :ui="{ body: 'p-0 sm:p-0 gap-0 overflow-hidden [&>*]:max-w-none' }">
     <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own, holding its
          name and mark alone. Under either stands the screen's own row (docs/artifact.md, 「Where a person reads it」):
-         the way back to the list at its left end, then the document's number and a page's kind; at its right end
-         all that acts on the document: the translation toggle, then the actions on it as one group. -->
+         the way back to where the reader came from at its left end, then the document's number and a page's kind; at its
+         right end all that acts on the document: the translation toggle, then the actions on it as one group. -->
     <template #header>
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
       <UDashboardToolbar :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }" data-document-row>
         <template #left>
-          <HintTip class="flex" :text="$t('artifact.action.back_to_list')" press>
-            <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
+          <HintTip class="flex" :text="$t('artifact.action.back')" press>
+            <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back')" data-back @click="goBack" />
           </HintTip>
           <span class="shrink-0 text-sm tabular-nums text-muted" data-document-number>{{ numberText(documentId) }}</span>
           <UBadge v-if="hosted" color="neutral" variant="outline" size="sm" class="max-w-full" :label="kindText" />
@@ -99,6 +99,7 @@ import { SHARE_SPANS } from "../../../shared/config";
 import {
   attachmentAddress,
   contentAddress,
+  keepRead,
   readAttachments,
   readContent,
   readDocument,
@@ -132,6 +133,7 @@ const SIDES: SplitterItem[] = [
 ];
 
 const route = useRoute();
+const router = useRouter();
 const narrow = useNarrow("(max-width: 1023px)");
 const sideOpen = ref(false);
 const shareOpen = ref(false);
@@ -331,10 +333,23 @@ async function load(): Promise<void> {
       readReferences(id)
     ]);
 
-    if (mine === generation) held.value = { document, kind, markdown, attachments, references };
+    if (mine === generation) {
+      held.value = { document, kind, markdown, attachments, references };
+      // The reader's read of it, kept once a day; a read that is not kept takes nothing from the reading.
+      void keepRead(id).catch(() => undefined);
+    }
   } catch (error) {
     if (mine === generation) failed.value = failureText(error, t("artifact.error.read_failed"));
   }
+}
+
+// Back to where the reader came from: the front page or the list as it was narrowed, by the browser's own step back so
+// the list keeps its place; and to the front page where the reader came from no screen of these.
+function goBack(): void {
+  const before = window.history.state?.back;
+
+  if (typeof before === "string" && before.startsWith("/artifact") && !before.startsWith("/artifact/")) router.back();
+  else void router.push("/artifact");
 }
 
 watch(documentId, () => {

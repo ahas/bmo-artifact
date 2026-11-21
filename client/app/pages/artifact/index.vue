@@ -1,5 +1,6 @@
 <template>
-  <UDashboardPanel id="artifact-documents">
+  <!-- The front page fills the panel's width, as a dashboard does; the list keeps the reading column. -->
+  <UDashboardPanel id="artifact-documents" :ui="front ? { body: '[&>*]:max-w-none' } : undefined">
     <template #header>
       <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own. -->
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
@@ -8,6 +9,9 @@
            room every bar gathers under folds the filters into one popover at its end. -->
       <UDashboardToolbar ref="bar" :ui="{ left: 'min-w-0 flex-1', right: 'shrink-0' }" data-list-bar>
         <template #left>
+          <HintTip v-if="!front" class="flex" :text="$t('artifact.action.back')" press>
+            <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back')" data-to-front />
+          </HintTip>
           <UInput
             v-model="typed"
             size="sm"
@@ -31,7 +35,7 @@
         <template #right>
           <span v-if="loading && loaded" role="status" class="sr-only">{{ $t("artifact.status.refreshing") }}</span>
 
-          <template v-if="!gathered">
+          <template v-if="!front && !gathered">
             <ChoiceSelect
               v-for="filter in filters"
               :key="filter.key"
@@ -50,10 +54,10 @@
           </template>
 
           <UTooltip :text="$t('artifact.action.refresh')">
-            <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-refresh" :loading="loading" :aria-label="$t('artifact.action.refresh')" @click="reread" />
+            <UButton size="sm" color="neutral" variant="ghost" icon="i-material-symbols-refresh" :loading="front ? frontLoading : loading" :aria-label="$t('artifact.action.refresh')" @click="reread" />
           </UTooltip>
 
-          <UPopover v-if="gathered" v-model:open="filtersOpen" :content="{ align: 'end' }">
+          <UPopover v-if="!front && gathered" v-model:open="filtersOpen" :content="{ align: 'end' }">
             <UTooltip :text="$t('artifact.label.filters')">
               <UButton
                 size="sm"
@@ -89,7 +93,9 @@
     </template>
 
     <template #body>
-      <div class="flex flex-col gap-3">
+      <ArtifactFront v-if="front" ref="frontPage" />
+
+      <div v-else class="flex flex-col gap-3" data-documents-list>
         <div v-if="failed !== ''" role="alert" class="flex flex-wrap items-center gap-2">
           <p class="text-sm text-error">{{ failed }}</p>
           <UButton class="ms-auto" size="sm" color="neutral" variant="subtle" icon="i-material-symbols-refresh" :label="$t('artifact.action.refresh')" :loading="loading" @click="reread" />
@@ -192,6 +198,7 @@
 <script setup lang="ts">
 import { useBarGathers } from "bmo-ui/app/domain/actionbar";
 import { failureText } from "bmo-ui/app/domain/errors";
+import { useListPlace } from "bmo-ui/app/domain/list-place";
 import { countText } from "bmo-ui/app/domain/numbers";
 import { formatShortDay, formatStamp } from "bmo-ui/app/domain/time";
 import { inject } from "vue";
@@ -200,12 +207,15 @@ import { useI18n } from "vue-i18n";
 import { DOCUMENTS_PAGE_SIZE, DOCUMENTS_PHRASE_LIMIT } from "../../../shared/config";
 import { pictureAddress, readDocuments, readLabelValues, readLiveShares, useKinds } from "../../domain/artifact";
 import { copyText } from "../../domain/copy";
-import { CATEGORY_LABEL, categoryFilter, categoryOf, kindOf, numberText } from "../../domain/document-view";
+import { CATEGORY_LABEL, categoryFilter, categoryOf, numberText } from "../../domain/document-view";
+import { useDocumentWords } from "../../domain/document-words";
 
 import type { ArtifactDocument, ArtifactLabelValue, ArtifactShare } from "../../../shared/types";
 
-// The documents the service keeps, newest first, narrowed by kind and by category, and found by a phrase; each
-// narrowing is held in the address, so a reload or a shared address shows the same list.
+// The front page while the address narrows nothing (docs/artifact.md, 「The front page」), and otherwise the documents
+// the service keeps, newest first, narrowed by kind and by category, and found by a phrase; each narrowing is held in
+// the address, so a reload or a shared address shows the same list. The bar stands over both, so a phrase typed on
+// the front page turns it into the list with the field keeping the focus.
 
 const { t } = useI18n();
 // Whether a console offers its title bar, under the key bmo-ui's bundle contract names.
@@ -218,10 +228,14 @@ const bar = useTemplateRef<{ $el: HTMLElement }>("bar");
 const gathered = useBarGathers(() => bar.value?.$el);
 
 const ALL = "all";
-const typed = ref(typeof route.query.q === "string" ? route.query.q : "");
-const searched = ref(typed.value.trim());
-const kindChoice = ref(typeof route.query.kind === "string" ? route.query.kind : ALL);
-const categoryChoice = ref(typeof route.query.category === "string" ? route.query.category : ALL);
+// The address's word for the list narrowed by nothing.
+const LIST_VIEW = "list";
+const typed = ref("");
+const searched = ref("");
+const kindChoice = ref(ALL);
+const categoryChoice = ref(ALL);
+// Whether the address names the list though it narrows nothing.
+const listView = ref(false);
 // The categories the documents carry, the most carried first; a list read with none of them offers the
 // filter's one choice of every category rather than failing.
 const categories = ref<ArtifactLabelValue[]>([]);
@@ -257,21 +271,7 @@ onScopeDispose(() => {
   if (copiedFor !== null) clearTimeout(copiedFor);
 });
 
-// A kind as the list names it: in its own words where the pack has them, and as its name where not.
-function kindLabel(name: string): string {
-  const key = `artifact.kind.${name}`;
-  const said = t(key);
-
-  return said === key ? (kindOf(kinds.value, name)?.name ?? name) : said;
-}
-
-// A category as the list names it: in the pack's word where it has one, and as the filer wrote it where not.
-function categoryLabel(word: string): string {
-  const key = `artifact.category.${word}`;
-  const said = t(key);
-
-  return said === key ? word : said;
-}
+const { kindLabel, categoryLabel } = useDocumentWords(kinds);
 
 // The categories offered, the one held in the address among them though no document carries it now.
 const categoryChoices = computed(() => {
@@ -300,6 +300,14 @@ const kindChoices = computed(() => [
 
 // Whether a filter narrows the list, which the filter popover's button stands pressed for.
 const narrowed = computed(() => kindChoice.value !== ALL || categoryChoice.value !== ALL);
+// Whether the front page stands: the address narrows nothing and names no list.
+const front = computed(() => !narrowed.value && searched.value === "" && !listView.value);
+const frontPage = useTemplateRef<{ read: () => Promise<void>; loading: boolean }>("frontPage");
+const frontLoading = computed(() => frontPage.value?.loading ?? false);
+
+// A reader back from a document finds the front page or the list at the place they left it: the panel's body is what
+// scrolls, read by what it holds, since the panel stands as more than one element.
+useListPlace("artifact-documents", () => document.querySelector<HTMLElement>('[data-slot="body"]:has(> [data-front], > [data-documents-list])'));
 
 // The two filters, each a select of its choices named by its name, standing in the bar where it has the room and
 // under their names in the filter popover where it gathers.
@@ -357,16 +365,51 @@ async function read(before?: number): Promise<void> {
   }
 }
 
+// The narrowing held in the address; the list is read again once the address takes it (fromAddress).
 function hold(): void {
-  void router.replace({
-    query: {
-      ...(searched.value === "" ? {} : { q: searched.value }),
-      ...(kindChoice.value === ALL ? {} : { kind: kindChoice.value }),
-      ...(categoryChoice.value === ALL ? {} : { category: categoryChoice.value })
-    }
-  });
-  void read();
+  const narrowing = {
+    ...(searched.value === "" ? {} : { q: searched.value }),
+    ...(kindChoice.value === ALL ? {} : { kind: kindChoice.value }),
+    ...(categoryChoice.value === ALL ? {} : { category: categoryChoice.value })
+  };
+
+  void router.replace({ query: { ...narrowing, ...(listView.value ? { view: LIST_VIEW } : {}) } });
 }
+
+// The narrowing the address holds, taken in: as the screen opens, and whenever the address moves, by the screen's
+// own hold or by a link pressed, such as a section's link to its kind. A phrase still being typed is left in the field
+// while the address holds the one it settled on.
+function fromAddress(): void {
+  const query = route.query;
+  const phrase = typeof query.q === "string" ? query.q : "";
+
+  if (phrase.trim() !== searched.value) {
+    typed.value = phrase;
+    searched.value = phrase.trim();
+  }
+
+  kindChoice.value = typeof query.kind === "string" ? query.kind : ALL;
+  categoryChoice.value = typeof query.category === "string" ? query.category : ALL;
+  listView.value = query.view === LIST_VIEW;
+}
+
+// The list read afresh from its first page whenever the address narrows it.
+function showAddressed(): void {
+  if (!front.value) void read();
+}
+
+// A list entered from the front page stands as a skeleton until it has read, never as the list it last showed: it is
+// emptied the moment the front page gives way, before anything is drawn.
+watch(
+  front,
+  (isFront, wasFront) => {
+    if (!isFront && wasFront !== false) {
+      items.value = [];
+      loaded.value = false;
+    }
+  },
+  { flush: "sync" }
+);
 
 // The list is asked again once typing has paused, so a phrase is not searched a letter at a time.
 let settling: ReturnType<typeof setTimeout> | null = null;
@@ -382,6 +425,8 @@ function settleSearch(): void {
 }
 
 function clearSearch(): void {
+  if (settling !== null) clearTimeout(settling);
+  settling = null;
   typed.value = "";
   searched.value = "";
   hold();
@@ -409,7 +454,8 @@ function fromPopover(choose: () => void): void {
 }
 
 function reread(): void {
-  void read();
+  if (front.value) void frontPage.value?.read();
+  else void read();
 }
 
 function readMore(): void {
@@ -418,5 +464,22 @@ function readMore(): void {
 
 useHead({ title: computed(() => t("artifact.title.screen")) });
 
-onMounted(() => void read());
+watch(
+  () => route.query,
+  () => {
+    // The address of the screen this one gives way to is none of its own.
+    if (route.name !== "artifact") return;
+
+    fromAddress();
+    showAddressed();
+  }
+);
+
+fromAddress();
+
+onMounted(showAddressed);
+
+onScopeDispose(() => {
+  if (settling !== null) clearTimeout(settling);
+});
 </script>

@@ -27,8 +27,8 @@ const WIDTHS = [
 type Width = (typeof WIDTHS)[number];
 
 const KINDS: ArtifactKind[] = [
-  { name: "record", description: "A record", hosted: false, contentsDepth: 2 },
-  { name: "page", description: "A page", hosted: true, contentsDepth: 0 }
+  { name: "record", description: "A record", hosted: false, contentsDepth: 2, icon: "description-outline" },
+  { name: "page", description: "A page", hosted: true, contentsDepth: 0, icon: "web" }
 ];
 
 function filed(id: number, kind: string, title: string, labels: Record<string, string>): ArtifactDocument {
@@ -141,7 +141,7 @@ for (const width of WIDTHS) {
       "the list says what a document lacks on its row alone, still, and nothing turns once the list is read",
       async () => {
         await onScreen(width, async (page) => {
-          await page.goto(`${screen.origin}/artifact`);
+          await page.goto(`${screen.origin}/artifact?view=list`);
 
           const rows = page.locator("ul[aria-busy] > li");
 
@@ -178,7 +178,7 @@ for (const width of WIDTHS) {
       "the refresh turns while the list is read again, and stops once it is read",
       async () => {
         await onScreen(width, async (page, stand) => {
-          await page.goto(`${screen.origin}/artifact`);
+          await page.goto(`${screen.origin}/artifact?view=list`);
           await page.locator("ul[aria-busy] > li").nth(DOCUMENTS.length - 1).waitFor();
           await page.waitForLoadState("networkidle");
 

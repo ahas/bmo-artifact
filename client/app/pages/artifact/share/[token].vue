@@ -74,6 +74,7 @@ import {
   sharedPictureAddress,
   sharedReferenceImageAddress
 } from "../../../domain/shared-document";
+import { visitorToken } from "../../../domain/visitor";
 
 import type { SplitterItem } from "@nuxt/ui";
 import type { ArtifactAttachment, ArtifactDocument, ArtifactKind, ArtifactReference } from "../../../../shared/types";
@@ -193,7 +194,8 @@ async function load(): Promise<void> {
   failed.value = "";
 
   try {
-    const [document, kind] = await Promise.all([readSharedDocument(token.value), readSharedKind(token.value)]);
+    // The browser's read of the page is kept as it reads the document, once a day for this browser.
+    const [document, kind] = await Promise.all([readSharedDocument(token.value, visitorToken()), readSharedKind(token.value)]);
     const [markdown, attachments, references] = await Promise.all([
       kind.hosted ? Promise.resolve("") : readSharedContent(token.value),
       readSharedAttachments(token.value),

@@ -23,9 +23,12 @@ export function readSharedLink(token: string): Promise<ArtifactShare> {
   return $fetch<ArtifactShare>(sharedAddress(token));
 }
 
-/** The document the link opens. */
-export function readSharedDocument(token: string): Promise<ArtifactDocument> {
-  return $fetch<ArtifactDocument>(sharedAddress(token, "/document"));
+/**
+ * The document the link opens; with a visitor, the token this browser keeps for itself, a read of it kept for this
+ * browser (`docs/artifact.md`, "Reads").
+ */
+export function readSharedDocument(token: string, visitor?: string): Promise<ArtifactDocument> {
+  return $fetch<ArtifactDocument>(sharedAddress(token, "/document"), { query: visitor === undefined ? {} : { visitor } });
 }
 
 /** The kind of the document the link opens. */

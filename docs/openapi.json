@@ -376,6 +376,10 @@
             "description": "Whether a document of this kind is the HTML page it keeps, filed as `html` and opened as that page.",
             "type": "boolean"
           },
+          "icon": {
+            "description": "The icon the screens draw the kind by, a name of the Material Symbols set.",
+            "type": "string"
+          },
           "name": {
             "type": "string"
           }
@@ -384,7 +388,8 @@
           "name",
           "description",
           "hosted",
-          "contentsDepth"
+          "contentsDepth",
+          "icon"
         ],
         "type": "object"
       },
@@ -413,6 +418,43 @@
           "items": {
             "items": {
               "$ref": "#/components/schemas/Document"
+            },
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "more"
+        ],
+        "type": "object"
+      },
+      "DocumentReads": {
+        "description": "One of the documents most read, and how many reads it has in the last seven days.",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/Document"
+          },
+          "reads": {
+            "description": "How many reads it has in the last seven days, one a reader's day.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document",
+          "reads"
+        ],
+        "type": "object"
+      },
+      "DocumentReadsPage": {
+        "description": "A page of the documents most read, the most first.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentReads"
             },
             "type": "array"
           },
@@ -1129,6 +1171,53 @@
         "x-console": "screen"
       }
     },
+    "/document-reads": {
+      "get": {
+        "operationId": "listDocumentReads",
+        "parameters": [
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentReadsPage"
+                }
+              }
+            },
+            "description": "The documents most read in the last seven days, the most first."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The documents most read in the last seven days, the most first.",
+        "tags": [
+          "documents"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
     "/documents": {
       "get": {
         "operationId": "listDocuments",
@@ -1197,6 +1286,19 @@
               "format": "int64",
               "type": [
                 "integer",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "`true` for the documents keeping a picture alone, those `hasPicture` marks.",
+            "in": "query",
+            "name": "picture",
+            "required": false,
+            "schema": {
+              "description": "`true` for the documents keeping a picture alone, those `hasPicture` marks.",
+              "type": [
+                "boolean",
                 "null"
               ]
             }
@@ -2047,6 +2149,42 @@
           }
         },
         "summary": "The document's cover picture.",
+        "tags": [
+          "documents"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "not-found",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/documents/{documentId}/reads": {
+      "post": {
+        "operationId": "createDocumentsReadsByDocumentId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "documentId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Keep a read of the document for the call's reader, once a day."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Keep a read of the document for the call's reader, once a day.",
         "tags": [
           "documents"
         ],
@@ -3432,6 +3570,19 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "The token the reading browser keeps for itself, 8 to 64 letters, digits, `-` and `_`: a read is kept for it.",
+            "in": "query",
+            "name": "visitor",
+            "required": false,
+            "schema": {
+              "description": "The token the reading browser keeps for itself, 8 to 64 letters, digits, `-` and `_`: a read is kept for it.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3443,13 +3594,13 @@
                 }
               }
             },
-            "description": "The document a live link opens."
+            "description": "The document a live link opens; with a visitor, a read kept for it."
           },
           "default": {
             "$ref": "#/components/responses/Error"
           }
         },
-        "summary": "The document a live link opens.",
+        "summary": "The document a live link opens; with a visitor, a read kept for it.",
         "tags": [
           "shares"
         ],
@@ -3968,6 +4119,13 @@
             "format": "int64",
             "type": [
               "integer",
+              "null"
+            ]
+          },
+          "picture": {
+            "description": "`true` for the documents keeping a picture alone, those `hasPicture` marks.",
+            "type": [
+              "boolean",
               "null"
             ]
           },

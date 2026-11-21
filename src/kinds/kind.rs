@@ -15,6 +15,8 @@ pub trait Kind: Sync {
   }
   /// How many levels of its headings its table of contents lists, 0 for none.
   fn contents_depth(&self) -> u8;
+  /// The icon the screens draw a document of this kind by, a name of the Material Symbols set.
+  fn icon(&self) -> &'static str;
 
   /// The kind as `GET /document-kinds` answers it.
   fn wire(&self) -> DocumentKind {
@@ -23,6 +25,7 @@ pub trait Kind: Sync {
       description: self.description().to_owned(),
       hosted: self.hosted(),
       contents_depth: self.contents_depth(),
+      icon: self.icon().to_owned(),
     }
   }
 }

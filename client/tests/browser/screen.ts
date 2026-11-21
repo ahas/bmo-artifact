@@ -69,6 +69,20 @@ async function ready(origin: string, exited: () => boolean): Promise<void> {
   throw new Error(`The artifact client's dev server did not answer ${origin}/artifact in time.`);
 }
 
+// The screens loaded once in a page of their own before any test drives them: the dev server compiles them on the
+// first page that asks, which on a busy machine takes longer than a test's own waits allow, so no test pays for it.
+// The service's routes are left unanswered here; the screen needs only to stand.
+async function warm(browser: Browser, origin: string): Promise<void> {
+  const page = await browser.newPage();
+
+  try {
+    await page.goto(`${origin}/artifact`, { waitUntil: "load", timeout: READY_MS });
+    await page.locator("[data-front]").waitFor({ timeout: READY_MS });
+  } finally {
+    await page.close();
+  }
+}
+
 export async function standScreen(): Promise<Screen> {
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
@@ -102,6 +116,13 @@ export async function standScreen(): Promise<Screen> {
     await ready(origin, () => exited);
 
     const browser = await chromium.launch();
+
+    try {
+      await warm(browser, origin);
+    } catch (failure) {
+      await browser.close();
+      throw failure;
+    }
 
     return {
       origin,

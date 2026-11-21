@@ -76,8 +76,8 @@ client/                    the console bundle (see "The console bundle")
     hosted-page.json       the sandbox a kept page runs in and the rest of the policy it is sent under
     bridges/               the clipboard, link, picture, scheme and sound scripts written ahead of a kept page
   app/
-    pages/artifact/        the list, one document, and one shared document
-    components/            the document body, its text, attachments, references, pictures and page frame
+    pages/artifact/        the front page and the list, one document, and one shared document
+    components/            the front page's parts, and the document body, its text, attachments, references, pictures and page frame
     domain/                the service's calls through the relay, what a screen reads off a document, the text's reading
     assets/css/            the masthead's and the text's stylesheets
   shared/                  the generated API types, the head a share link previews by, and the design files read
@@ -191,7 +191,7 @@ flowchart TD
   them; the research profiles' table, then the pair that makes and takes away two tables no longer this
   repository's; the redesign, which adds a document's scope, actor, labels, description and change time,
   an attachment's role, and the imports and events; the research profiles' table taken away; the notes ended
-  share links leave; and the member shares. A
+  share links leave; the member shares; the owners and the unit shares; and the reads. A
   migration a database may already have run is never rewritten or removed, since the migrator refuses a
   database whose record names a migration it does not know. `bmo-artifact migrate` brings the database
   the settings name up to date.
@@ -279,8 +279,9 @@ belong to the testbed.
   for it as a project of its own. The files under `client/tests/browser/` drive a real Chromium through
   playwright-core, and are skipped where the browser it pins is not on the machine. A test that drives the
   screens themselves stands them on the host under `client/tests/browser/host/`, the client's layer under a
-  page shell of its own, served by Nuxt's dev server in a process group of its own that the test takes down,
-  and answers the service's routes from a stand-in in front of the page.
+  page shell of its own in a dashboard group, as a console stands a bundle's screens, served by Nuxt's dev server in
+  a process group of its own that the test takes down, loaded once before any test drives them so no test waits on
+  their first compile, and answers the service's routes from a stand-in in front of the page.
 
 ## Dependency check
 

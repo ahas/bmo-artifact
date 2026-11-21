@@ -10,7 +10,7 @@
     "label": {
       "actor": "올린 사람",
       "all_categories": "모든 분류",
-      "all_kinds": "모든 종류",
+      "all_kinds": "모든 카테고리",
       "attachments": "첨부",
       "changed": "수정한 시각",
       "contents": "목차",
@@ -73,7 +73,7 @@
       "review-fixes": "검수 반영"
     },
     "action": {
-      "back_to_list": "목록으로",
+      "back": "뒤로",
       "clear_search": "검색어 삭제",
       "copy_number": "번호 복사",
       "document_original": "문서 원문",
@@ -93,7 +93,7 @@
     "aria": {
       "category": "분류",
       "document_menu": "문서 메뉴",
-      "kind": "종류",
+      "kind": "카테고리",
       "opens_new_tab": "(새 탭에서 열림)",
       "search": "문서 검색"
     },
@@ -156,6 +156,14 @@
     },
     "reading": {
       "script": "Hangul"
+    },
+    "front": {
+      "newest": "최신 문서",
+      "most_read": "많이 본 문서",
+      "most_read_span": "최근 7일",
+      "kinds": "카테고리",
+      "all_kinds": "전체",
+      "no_reads": "최근 7일 동안 읽은 문서 없음"
     }
   }
 }

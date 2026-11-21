@@ -13,6 +13,10 @@ impl Kind for RecordKind {
     "Data put in order and kept, as a markdown body."
   }
 
+  fn icon(&self) -> &'static str {
+    "description-outline"
+  }
+
   fn contents_depth(&self) -> u8 {
     2
   }
