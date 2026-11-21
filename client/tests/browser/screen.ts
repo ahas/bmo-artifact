@@ -29,6 +29,9 @@ export function browserReady(): boolean {
 // How long the dev server may take to answer, which it builds the host for on the first ask.
 const READY_MS = 180_000;
 
+/** What a hook taking a screen or a browser down may take at most, a bound and never a wait: a loaded machine closes slowly. */
+export const CLOSING_MS = 60_000;
+
 function freePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const probe = createServer();

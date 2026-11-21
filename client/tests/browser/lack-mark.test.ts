@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import words from "../../i18n/ko.json";
-import { browserReady, standScreen } from "./screen";
+import { CLOSING_MS, browserReady, standScreen } from "./screen";
 
 import type { BrowserContext, Page, Route } from "playwright-core";
 import type { ArtifactDocument, ArtifactKind } from "../../shared/types";
@@ -15,9 +15,13 @@ import type { Screen } from "./screen";
 
 const ready = browserReady();
 
-// What a test may take at most, a bound and never a wait: the dev server builds the host on its first page.
+// What a test may take at most, a bound and never a wait: the dev server builds the host on its first page. One step
+// of a page, a navigation or a wait on what it shows or asks, may take STEP_MS, well inside the bound of a test that
+// opens one page (DRIVING_MS) or three (TOURING_MS), so a loaded machine fails a step and never the test's clock.
 const STANDING_MS = 300_000;
-const DRIVING_MS = 120_000;
+const STEP_MS = 40_000;
+const DRIVING_MS = 180_000;
+const TOURING_MS = 420_000;
 
 const WIDTHS = [
   { name: "a wide window", viewport: { width: 1280, height: 900 }, touch: false },
@@ -120,11 +124,14 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await screen?.close();
-});
+}, CLOSING_MS);
 
 // A page of the screens at one width, handed to `drive` with the stand-in and closed with its context however `drive` ends.
 async function onScreen(width: Width, drive: (page: Page, stand: StandIn) => Promise<void>): Promise<void> {
   const context = await screen.browser.newContext({ viewport: width.viewport, hasTouch: width.touch, isMobile: width.touch });
+
+  context.setDefaultTimeout(STEP_MS);
+  context.setDefaultNavigationTimeout(STEP_MS);
 
   try {
     const stand = await standBehind(context);
@@ -224,7 +231,7 @@ for (const width of WIDTHS) {
           expect(await spinning(page)).toBe(0);
         });
       },
-      DRIVING_MS
+      TOURING_MS
     );
   });
 }

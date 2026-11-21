@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import words from "../../i18n/ko.json";
-import { browserReady, standScreen } from "./screen";
+import { CLOSING_MS, browserReady, standScreen } from "./screen";
 
 import type { Browser, Page, Route } from "playwright-core";
 import type { Screen } from "./screen";
@@ -242,7 +242,7 @@ describe.skipIf(!ready)("the front page in a browser", () => {
 
   afterAll(async () => {
     await screen?.close();
-  });
+  }, CLOSING_MS);
 
   describe("at a wide window", () => {
     beforeAll(async () => {

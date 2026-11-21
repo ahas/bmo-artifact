@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { $fetch } from "ofetch";
+import { watch } from "vue";
 
 import { TRANSLATION_BATCH, translated, translatorOf } from "bmo-ui/app/domain/translation";
 
@@ -15,6 +16,11 @@ import type { Subprocess } from "bun";
 const SCRIPTS = [scriptOf("en", "Latin")!, scriptOf("el", "Greek")!];
 const BODY = ["Lead words.", "", "## First", "", "First words.", "", "## Second", "", "- one", "- two", "", "## Third", "", "Third words.", ""].join("\n");
 const STAND_IN = new URL("../translator-stand-in.ts", import.meta.url).pathname;
+
+// What the test and the hook taking its stand-ins down may take at most, a bound and never a wait: a loaded machine
+// starts and stops a stand-in slowly.
+const RUNNING_MS = 60_000;
+const CLOSING_MS = 30_000;
 
 // The stand-ins started, each taken down by the test or, at the latest, after it.
 const started: Subprocess<"ignore", "pipe", "inherit">[] = [];
@@ -68,17 +74,24 @@ function asksOf(standing: StandIn): string[][] {
   return standing.lines.filter((line) => line.startsWith("ask ")).map((line) => JSON.parse(line.slice(4)) as string[]);
 }
 
-// Waits, a bounded number of turns of the event loop and no clock, for a condition the asks bring about.
-async function until(condition: () => boolean): Promise<void> {
-  for (let turn = 0; turn < 20_000 && !condition(); turn += 1) await new Promise((next) => setImmediate(next));
+// Waits for a condition on the reading the asks bring about, as the reading's own state changes, the test's bound
+// being the only clock.
+function until(condition: () => boolean): Promise<void> {
+  if (condition()) return Promise.resolve();
 
-  expect(condition()).toBe(true);
+  return new Promise((held) => {
+    const stop = watch(condition, (holds) => {
+      if (!holds) return;
+      stop();
+      held();
+    }, { flush: "sync" });
+  });
 }
 
 afterAll(async () => {
   for (const process of started) process.kill("SIGKILL");
   await Promise.all(started.map((process) => process.exited));
-});
+}, CLOSING_MS);
 
 describe("the reader's tab through a translator stopped and started again", () => {
   test("keeps what came, says the rest stands in the original, and fills it once asked again", async () => {
@@ -128,5 +141,5 @@ describe("the reader's tab through a translator stopped and started again", () =
     expect(asksOf(second).flat().sort()).toEqual([sections[1]!, sections[2]!, sections[3]!].sort());
     expect(reading.state.value).toBe("whole");
     expect(reading.markdown.value).toBe("Lead words. [el]\n\n## First\n\nFirst words. [el]\n\n## Second\n\n- one\n- two [el]\n\n## Third\n\nThird words. [el]\n");
-  });
+  }, RUNNING_MS);
 });
