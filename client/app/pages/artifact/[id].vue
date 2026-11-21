@@ -5,9 +5,8 @@
   <UDashboardPanel id="artifact-document" :ui="{ body: 'p-0 sm:p-0 gap-0 overflow-hidden [&>*]:max-w-none' }">
     <!-- Under a console that offers its title bar the console draws it; alone, the screen draws its own, holding its
          name and mark alone. Under either stands the screen's own row (docs/artifact.md, 「Where a person reads it」):
-         the way back to the list at its left end, then the document's number, its being in progress and a page's
-         kind; at its right end all that acts on the document: the translation toggle, then the actions on it as one
-         group. -->
+         the way back to the list at its left end, then the document's number and a page's kind; at its right end
+         all that acts on the document: the translation toggle, then the actions on it as one group. -->
     <template #header>
       <UDashboardNavbar v-if="!barOffered" :title="$t('artifact.title.screen')" icon="i-material-symbols-archive-outline" />
 
@@ -17,7 +16,6 @@
             <UButton to="/artifact" size="sm" color="neutral" variant="ghost" icon="i-material-symbols-arrow-back" :aria-label="$t('artifact.action.back_to_list')" />
           </HintTip>
           <span class="shrink-0 text-sm tabular-nums text-muted" data-document-number>{{ numberText(documentId) }}</span>
-          <ArtifactPendingBadge v-if="held !== null" :document="held.document" :compact="phone" />
           <UBadge v-if="hosted" color="neutral" variant="outline" size="sm" class="max-w-full" :label="kindText" />
         </template>
 
@@ -47,7 +45,7 @@
         <SkeletonText :lines="8" size="base" lastWidth="w-2/5" />
       </ContentSkeleton>
 
-      <ArtifactPageFrame v-else-if="hosted" :title="held.document.title" :page="page" />
+      <ArtifactPageFrame v-else-if="hosted" :title="held.document.title" :labels="held.document.labels" :page="page" />
 
       <div v-else-if="narrow" class="flex min-h-0 flex-1 flex-col">
         <div class="artifact-paper min-h-0 flex-1 overflow-y-auto">
@@ -135,8 +133,6 @@ const SIDES: SplitterItem[] = [
 
 const route = useRoute();
 const narrow = useNarrow("(max-width: 1023px)");
-// On a phone the in-progress badge stands as its mark alone, so the screen's row keeps to one line.
-const phone = useNarrow();
 const sideOpen = ref(false);
 const shareOpen = ref(false);
 const unitShareOpen = ref(false);

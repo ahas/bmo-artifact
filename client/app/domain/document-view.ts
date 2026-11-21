@@ -27,11 +27,11 @@ export function categoryFilter(word: string): string {
   return `${CATEGORY_LABEL}:${word}`;
 }
 
-/** The label a document in progress carries, naming what its filer still has to give it (`docs/artifact.md`, "Where a person reads it"). */
+/** The label naming what a document still lacks, the parts its filer has not yet given it (`docs/artifact.md`, "A document that lacks a part"). */
 export const PENDING_LABEL = "pending";
 
-/** What a document in progress still lacks, in its filer's words; null for a document done. */
-export function pendingOf(document: Pick<ArtifactDocument, "labels">): string[] | null {
+/** What a document still lacks, in its filer's words; null for a document whole. */
+export function lacksOf(document: Pick<ArtifactDocument, "labels">): string[] | null {
   const words = (document.labels[PENDING_LABEL] ?? "")
     .split(",")
     .map((word) => word.trim())

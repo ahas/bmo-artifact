@@ -25,7 +25,7 @@ describe("a page's sounds", () => {
     expect(framing).toContain('page()({ scheme: schemeOf(dark.value ? "dark" : "light"), language: locale.value })');
     expect(frame).toContain("useFramedPage(() => props.page)");
     expect(screen).toContain("const page: PageServed = (asked) => contentAddress(documentId.value, asked);");
-    expect(templateOf(screen)).toContain('<ArtifactPageFrame v-else-if="hosted" :title="held.document.title" :page="page" />');
+    expect(templateOf(screen)).toContain('<ArtifactPageFrame v-else-if="hosted" :title="held.document.title" :labels="held.document.labels" :page="page" />');
     expect(templateOf(shared)).toContain(':page="(asked) => sharedContentAddress(token, asked)"');
   });
 });
@@ -83,19 +83,6 @@ describe("a document's title", () => {
 
     expect([size("h1"), size("h2"), size("h3"), size("h4,h5,h6")]).toEqual(["24px", "20px", "18px", "16px"]);
     expect(design.narrow_element_rules.filter(([selector]) => /^h\d/.test(selector))).toEqual([]);
-  });
-});
-
-// A document in progress keeps the screen's row to one line on a phone (`docs/artifact.md`, "Where a person reads it").
-describe("a document's in-progress badge", () => {
-  test("stands as its mark alone with its words in its tooltip in a phone's row", async () => {
-    const badge = templateOf(await read("../../app/components/ArtifactPendingBadge.vue"));
-
-    expect(badge).toContain('<HintTip v-if="lacks !== null && props.compact" class="flex" :text="said">');
-    expect(badge).toContain(':aria-label="said" data-pending />');
-    // Its mark marks work going on, so it spins in both shapes.
-    expect(badge.match(/:ui="\{ leadingIcon: 'animate-spin' \}"/g)).toHaveLength(2);
-    expect(templateOf(screen).match(/<ArtifactPendingBadge [^>]*:compact="phone" \/>/g)).toHaveLength(1);
   });
 });
 

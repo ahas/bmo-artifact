@@ -493,23 +493,23 @@ its name stands among them too, so it can be saved.
 
 - **The console bundle in `client/`** draws the documents under the name Artifact (`docs/layout.md`, 「The
   console bundle」):
-  - the list at `/artifact`, narrowed by kind, by category, to the documents in progress and by a phrase, each
-    narrowing held in the address. Its bar holds the search, which takes the width the rest leaves it, then the
-    kind and category filters, the in-progress switch and the refresh. Each filter is bmo-ui's one select
+  - the list at `/artifact`, narrowed by kind, by category and by a phrase, each narrowing
+    held in the address. Its bar holds the search, which takes the width the rest leaves it, then the kind and
+    category filters and the refresh. Each filter is bmo-ui's one select
     (bmo-ui's `docs/components.md`, 「Choosing a value」), so its list offers a search once it holds more than
     seven choices and never with seven or fewer. The filters stand at the bar's trailing end, so each list opens
     against its select's trailing edge and stays on the screen. A bar short of the room every bar of the console
-    gathers under (bmo-ui's `actionbar`) keeps the search and the refresh standing and folds the two filters and
-    the switch into one filter popover at the row's end, against the button's trailing edge: each filter's select
-    under its name, then the switch. A choice made in the popover puts it away before the address takes the
+    gathers under (bmo-ui's `actionbar`) keeps the search and the refresh standing and folds the two filters into
+    one filter popover at the row's end, against the button's trailing edge: each filter's select under its
+    name. A choice made in the popover puts it away before the address takes the
     narrowing: the narrowing must land on the list's own history entry, never on the one the popover's back step
     stands on, which Back would take away with it. The popover's button is named in its tooltip by the pack's word for filters
-    (`artifact.label.filters`) and stands pressed while any of the three narrows the list, so a phone's search
+    (`artifact.label.filters`) and stands pressed while either narrows the list, so a phone's search
     keeps the width to read what is typed in it. Each document stands with its cover
     picture at the row's leading edge where it keeps one, and alone where it keeps
     none. A row is the document's number as `#<id>`, its title, its description, how many files it keeps and
     the day it was filed, and at most four badges: its kind, its category where it carries one (「A document's
-    category」), its being in progress with what it still lacks where it is (「A document in progress」), and,
+    category」), what it still lacks where it lacks something (「A document that lacks a part」), and,
     at the row's trailing edge right of the day, whether it is public: public while a link to it stands,
     naming the day the link ends where it has one, and private where none stands. The number
     is copied by pressing it, which opens nothing, and a phrase that is a number, with or without its `#`, finds
@@ -518,21 +518,22 @@ its name stands among them too, so it can be saved.
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
     and the list never scrolls sideways;
   - one document at `/artifact/<id>`: the screen's own row under the bar, one line at every width, holding at its
-    left end the way back to the list, then the document's number as `#<id>`, the in-progress badge while the
-    document is in progress and, for a page, its kind; and at its right end all that acts on the document, so no
+    left end the way back to the list, then the document's number as `#<id>` and, for a page, its kind; and at its right end all that acts on the document, so no
     action on it stands anywhere else on the screen: the translation toggle where a markdown document is written in
     another language than the reader's (「A document written in another language than the reader's」), then the
     actions on the document as one group, opening its instruction where it carries one, then for a markdown
     document its referred pages where they do not stand beside it, saving its file, sharing it and its
     properties, and for a page opening it in a tab of its own, saving it, sharing it and its properties; a group
     of four or more folds into one menu, and three or fewer stand as icon buttons named in their tooltips. Then a
-    markdown document's masthead — its kind, its title, its labels but its instruction on a secondary line under
-    the title, each name and value, that wraps, and no action and no line under the title but what its
-    translation says of itself — its file drawn as markdown with
+    markdown document's masthead — its kind, its title, what it still lacks where it lacks something (「A document
+    that lacks a part」), its labels but its instruction and what it lacks on a secondary line under the title,
+    each name and value, that wraps, and no action and no line under the title but these and what its translation
+    says of itself — its file drawn as markdown with
     a table of contents of its kind's depth, its files after it (「The files after the body」), its references beside it, each with the picture its preview declares; a page fills the screen in
     its frame, under the screen's row and a row holding its title bold, 18px on a phone and 20px wider, wrapping between words onto at
     most two lines; a title longer than that is cut at the end of the second line and shows whole in the
-    console's tooltip for a cut line, and one shown whole carries no tooltip;
+    console's tooltip for a cut line, and one shown whole carries no tooltip; under the title, what the page still
+    lacks where it lacks something (「A document that lacks a part」);
   - one shared document at `/artifact/share/<token>`, alone: nothing of its state or the screens around it, and no
     other document; a page fills the window. With no row of the screen's over it, a markdown document's masthead
     holds on a row under its title the one action a holder of the link has, opening its referred pages where they
@@ -575,16 +576,19 @@ its name stands among them too, so it can be saved.
     `category:<word>`, so a narrowed page is a full one.
   - A document without the label stands with no category badge, and is listed only while no category narrows
     the list.
-- **A document in progress** is one carrying the label `pending`: what its filer still has to give it, its
-  words separated by commas, such as the research unit's `korean`, `narration-ko`, `narration-en`, `review`
-  and `review-fixes` for a page it is still finishing. The filer sets the label while it works on the
-  document and takes it away once it is done, so a document done carries none.
-  - The list and the document's row stand it as a badge whose mark spins, saying it is in progress, followed by what it lacks in
-    the pack's words for each (`artifact.pending.<word>`), a word the pack has none for as written. On a phone
-    the document's row stands the badge as its mark alone, its words in its tooltip, so the row keeps to one line.
-  - The list's in-progress switch narrows it with `GET /documents`'s `label` as `pending`, so a narrowed page
-    is a full one. The route takes one label, so the switch and the category filter narrow the list one at a
-    time: turning the switch on lets the chosen category go, and choosing a category turns the switch off.
+- **A document that lacks a part** is one carrying the label `pending`: what its filer has not yet given it,
+  its words separated by commas, such as the research unit's `korean`, `narration-ko`, `narration-en`, `review`
+  and `review-fixes` for a page it has not finished. The filer sets the label and takes it away once the part is
+  given, so a document whole carries none. The label says what is missing and nothing of whether anybody is still
+  at work on it, so the screens never show it as work going on.
+  - It stands as one still mark, the pack's words for each part it lacks (`artifact.pending.<word>`), a word the
+    pack has none for as written, said as missing (`artifact.label.lacks`). It never turns and carries no mark of
+    work in progress: a spinning mark on these screens stands only for a request running now, which ends on its
+    own.
+  - It stands on that document alone: as a quiet badge on the document's row in the list, and on the document's
+    own screen under its title, in a markdown document's masthead and in a page's title row. The bar of either
+    screen carries none, and the list offers no narrowing by it; a phrase still finds a document by the label's
+    words, as by any label.
 - **A document's instruction** is its label `query`: the words the document was asked for with, as the
   question a research was given. The filer sets it; the service keeps it as any label.
   - The document's screen draws it under no title. The masthead's labels line and a page's properties leave
