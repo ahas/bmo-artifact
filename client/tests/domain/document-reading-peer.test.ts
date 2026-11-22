@@ -29,14 +29,15 @@ const started: Subprocess<"ignore", "pipe", "inherit">[] = [];
 interface StandIn {
   process: Subprocess<"ignore", "pipe", "inherit">;
   lines: string[];
-  // Waits for the first line said that holds `words`, and answers it.
-  said: (words: string) => Promise<string>;
+  // Waits for the `atLeast`th line said that holds `words`, and answers it.
+  said: (words: string, atLeast?: number) => Promise<string>;
 }
 
 function standIn(port: number, hold: number): StandIn {
   const process = Bun.spawn(["bun", STAND_IN, String(port), String(hold)], { stdout: "pipe", stderr: "inherit" });
   const lines: string[] = [];
-  const waiting: { words: string; found: (line: string) => void }[] = [];
+  // What someone waits to see said: the words and how many lines must hold them.
+  const waiting: { atLeast: number; found: (line: string) => void; words: string }[] = [];
 
   started.push(process);
 
@@ -52,18 +53,23 @@ function standIn(port: number, hold: number): StandIn {
       for (const line of parts) {
         lines.push(line);
 
-        for (const one of waiting.filter((wait) => line.includes(wait.words))) {
+        for (const one of waiting.filter((wait) => saidLine(wait.words, wait.atLeast) !== undefined)) {
           waiting.splice(waiting.indexOf(one), 1);
-          one.found(line);
+          one.found(saidLine(one.words, one.atLeast)!);
         }
       }
     }
   })();
 
-  const said = (words: string) => {
-    const line = lines.find((one) => one.includes(words));
+  // The `atLeast`th line said so far that holds `words`, where it has been said.
+  function saidLine(words: string, atLeast: number): string | undefined {
+    return lines.filter((line) => line.includes(words))[atLeast - 1];
+  }
 
-    return line !== undefined ? Promise.resolve(line) : new Promise<string>((found) => waiting.push({ words, found }));
+  const said = (words: string, atLeast = 1) => {
+    const line = saidLine(words, atLeast);
+
+    return line !== undefined ? Promise.resolve(line) : new Promise<string>((found) => waiting.push({ atLeast, found, words }));
   };
 
   return { process, lines, said };
@@ -107,11 +113,13 @@ describe("the reader's tab through a translator stopped and started again", () =
       $fetch
     });
 
+    // How many originals one ask carries: what the parts waiting to be asked go out in.
+    const batch = translatorOf()?.batch ?? TRANSLATION_BATCH;
     const reading = documentReading(() => ({ title: "Plain title", markdown: BODY }), {
       reader: "el",
       scripts: SCRIPTS,
       translate: translated,
-      batch: translatorOf()?.batch ?? TRANSLATION_BATCH
+      batch
     });
     const sections = sectionsOf(BODY);
 
@@ -121,7 +129,7 @@ describe("the reader's tab through a translator stopped and started again", () =
     await first.said("held");
     first.process.kill("SIGKILL");
     await first.process.exited;
-    await until(() => reading.state.value !== "asking");
+    await until(() => reading.state.value === "partial");
 
     expect(asksOf(first)).toEqual([
       ["Plain title", sections[0]!],
@@ -133,12 +141,18 @@ describe("the reader's tab through a translator stopped and started again", () =
 
     // Started again on the same address, it is asked for the parts that did not come and nothing else.
     const second = standIn(port, 0);
+    // What stood in the original and goes out again.
+    const pending = [sections[1]!, sections[2]!, sections[3]!];
 
     await second.said("listening ");
     reading.again();
-    await until(() => reading.state.value !== "asking");
 
-    expect(asksOf(second).flat().sort()).toEqual([sections[1]!, sections[2]!, sections[3]!].sort());
+    // Its answer can reach the reading before the line the stand-in wrote of that ask has been read out of its
+    // output, so the asks are read once the stand-in has said them all, one line each batch of `batch`.
+    await second.said("ask ", Math.ceil(pending.length / batch));
+    await until(() => reading.state.value === "whole");
+
+    expect(asksOf(second).flat().sort()).toEqual([...pending].sort());
     expect(reading.state.value).toBe("whole");
     expect(reading.markdown.value).toBe("Lead words. [el]\n\n## First\n\nFirst words. [el]\n\n## Second\n\n- one\n- two [el]\n\n## Third\n\nThird words. [el]\n");
   }, RUNNING_MS);
