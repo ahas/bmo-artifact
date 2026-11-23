@@ -41,6 +41,6 @@ data_root = "data"
 [documents]
 
 # A SharePoint place reaches Microsoft Graph at `graph`, its own address until another is named, with a token
-# borrowed through bmo-ms-teams's page token road at `tokens`, presenting this service's own caller `token`; a
+# borrowed through the Teams page service's page token road at `tokens`, presenting this service's own caller `token`; a
 # deployment sets both, and none is named until it does.
 [sharepoint]

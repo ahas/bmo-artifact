@@ -17,7 +17,7 @@ flowchart TD
   S --> F[A document's place: the file root, or a SharePoint library]
   S -->|bmo-explorer's client| E[Page reading]
   S -->|bmo-web's client| W[The account service]
-  S -->|its page token road| T[bmo-ms-teams]
+  S -->|its page token road| T[Teams page service]
   S -->|Microsoft Graph| F
 ```
 
@@ -775,7 +775,7 @@ flowchart TD
 |---|---|---|
 | bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.5 | an import's page and figures; a reference's preview and picture |
 | the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company; the setting `artifact.storage`, declared, resolved for a document's owner and written for a link; an owner's login |
-| bmo-ms-teams | its page token road, `POST /page-tokens` | the Graph token a person's own Teams page holds, for the SharePoint place |
+| the Teams page service | its page token road, `POST /page-tokens` | the Graph token a person's own Teams page holds, for the SharePoint place |
 | Microsoft Graph | HTTPS, with that token | a SharePoint place's files written, read, asked after and let go of |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
@@ -803,11 +803,10 @@ flowchart TD
   - `PUT /chain/kinds/artifact.storage/links/{link}/value` with `Owner-Key` and `Declared-By` `artifact`, for
     `PUT /storage/{link}`;
   - `GET /users/{user}`, the owner's login, as a SharePoint document's folder is laid out.
-- **bmo-ms-teams's page token road** is reached at the settings' `sharepoint.tokens` with `sharepoint.token`, the
-  caller token of this service's own the deployment gives it there (bmo-ms-teams's `docs/api.md`, 「The page
-  token road」), its body `account` and `scopes` `Files.ReadWrite.All` and `Sites.ReadWrite.All`, its answer
-  `token` and `expiresAt` read and nothing else. bmo-ms-teams is a private unit, so no client crate of it is a
-  dependency this repository can name: the route is called as its own documents fix it. A refusal is said back as
+- **The Teams page service's page token road** is reached at the settings' `sharepoint.tokens` with `sharepoint.token`, the
+  caller token of this service's own the deployment gives it there, its body `account` and `scopes` `Files.ReadWrite.All` and `Sites.ReadWrite.All`, its answer
+  `token` and `expiresAt` read and nothing else. The Teams page service is no unit of this set, so no client crate of it is a
+  dependency this repository can name: the route is called as this document fixes it. A refusal is said back as
   502 `upstream-failed` with its sentence.
 - **Microsoft Graph** is reached at the settings' `sharepoint.graph`, under `/sites/{site}/drives/{drive}/root:/
   {path}`: `PUT …:/content` and `POST …:/createUploadSession` to write, `GET …:/content` with `Range` to read,
@@ -858,7 +857,7 @@ wherever the process was started.
 | `accounts` | `address` | the account service's base address (「What this service calls」); none where none is named, and then no reader stands in any unit, and a unit share and a member share of an owned document are refused |
 | `accounts` | `token` | the account service's server token, presented as its bearer |
 | `sharepoint` | `graph` | Microsoft Graph's base address; `https://graph.microsoft.com/v1.0` where none is named |
-| `sharepoint` | `tokens` | bmo-ms-teams's base address, where the page token road answers; none where none is named, and then a SharePoint place is refused 502 `upstream-failed` |
+| `sharepoint` | `tokens` | the Teams page service's base address, where the page token road answers; none where none is named, and then a SharePoint place is refused 502 `upstream-failed` |
 | `sharepoint` | `token` | this service's own caller token on the page token road |
 | `share` | `address` | the address a link's `url` stands under |
 | `wording` | `file` | the document wording file; the English default in `lang/` where none is named |
@@ -886,7 +885,7 @@ worker:
   reader reads through a unit share and no owned document is shared with a member or a unit.
 - **bmo-web's client crate** carries `PUT /chain/kinds/{key}/links/{link}/value` with `Owner-Key` and
   `Declared-By`, which `PUT /storage/{link}` writes through; this service is built against a bmo-web that has it.
-- **bmo-ms-teams's configuration** names this service among the page token road's callers
+- **The Teams page service's configuration** names this service among the page token road's callers
   (`BMO_TEAMS_PAGE_TOKEN_CALLERS`), with the token the deployment's `sharepoint.token` holds, before a document is
   filed at a SharePoint place.
 - **Agency's chat line** starts `bmo-artifact mcp` in the supervisor's program, whose environment carries

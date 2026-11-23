@@ -182,7 +182,7 @@ settings; no other unit reads or writes the database, and no other unit writes a
   what stands at its location; the library makes the folders on the way. A read is the library's content read,
   a range asked passed on, the bytes taken from the address the library sends it to; whether a file stands, its
   size and its version are its item's. Letting a folder go lets go of everything under it.
-- **The token is borrowed from a person's own Teams page** through bmo-ms-teams's page token road (docs/api.md,
+- **The token is borrowed from a person's own Teams page** through the Teams page service's page token road (docs/api.md,
   「What this service calls」), for the account the settings name, else the owner, with `Files.ReadWrite.All` or
   `Sites.ReadWrite.All`. It reaches the library as that person, so the person must reach the library and their
   node must be up with Teams signed in; otherwise the call is refused as a failed upstream, saying why. The token

@@ -1,6 +1,6 @@
 //! The SharePoint place (`docs/artifact.md`, "The SharePoint place"): a document's files in a SharePoint document
 //! library, reached through Microsoft Graph with the Graph token a person's own Teams page holds, borrowed through
-//! bmo-ms-teams's page token road. A location is `<site>/<drive>/<path in the library>`.
+//! The Teams page service's page token road. A location is `<site>/<drive>/<path in the library>`.
 
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, Mutex};
