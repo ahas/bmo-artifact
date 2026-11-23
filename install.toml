@@ -47,7 +47,7 @@ token = "{{token.artifact.console}}"
 calls = ["gate"]
 
 [database]
-url = "postgres://localhost/bmo_artifact"
+url = "postgres:///bmo_artifact?host={{postgres.host}}&port={{postgres.port}}"
 
 [files]
 root = "{{data_root}}/artifact/files"
