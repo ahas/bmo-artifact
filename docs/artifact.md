@@ -166,13 +166,13 @@ settings; no other unit reads or writes the database, and no other unit writes a
 
 ### The SharePoint place
 
-- **The kind `sharepoint` keeps a document's files in a SharePoint document library,** as a Teams team's files
-  are kept, through Microsoft Graph. Its settings:
+- **The kind `sharepoint` keeps a document's files in a SharePoint document library,**
+  through Microsoft Graph. Its settings:
   - `site`, the Graph id of the site, and `drive`, the Graph id of its document library;
   - `folder`, where a document's folder stands in the library: a path whose `{login}` is the owner's login and
     whose `{document}` is the document's number, which it names at least once, as `04. BMO_ARTIFACT/{login}/
     {document}`;
-  - `account`, the account whose Teams page lends the token, where it names one; the document's owner where it
+  - `account`, the account the token is lent for, where it names one; the document's owner where it
     does not.
   - A value with another field, a site or drive holding a `/`, or a folder that climbs out of the library or
     names no `{document}`, is refused.
@@ -182,11 +182,11 @@ settings; no other unit reads or writes the database, and no other unit writes a
   what stands at its location; the library makes the folders on the way. A read is the library's content read,
   a range asked passed on, the bytes taken from the address the library sends it to; whether a file stands, its
   size and its version are its item's. Letting a folder go lets go of everything under it.
-- **The token is borrowed from a person's own Teams page** through the Teams page service's page token road (docs/api.md,
+- **The token is borrowed for a person** through an optional page-token service's page token road (docs/api.md,
   「What this service calls」), for the account the settings name, else the owner, with `Files.ReadWrite.All` or
-  `Sites.ReadWrite.All`. It reaches the library as that person, so the person must reach the library and their
-  node must be up with Teams signed in; otherwise the call is refused as a failed upstream, saying why. The token
-  is kept in memory until a minute before it ends and written nowhere.
+  `Sites.ReadWrite.All`. It reaches the library as that person, so the person must reach the library and the
+  page-token service must be able to lend their token; otherwise the call is refused as a failed upstream, saying
+  why. The token is kept in memory until a minute before it ends and written nowhere.
 
 ## Filing a document
 

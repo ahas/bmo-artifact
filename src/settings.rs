@@ -169,7 +169,7 @@ pub struct Documents {
 pub const GRAPH: &str = "https://graph.microsoft.com/v1.0";
 
 /// What the SharePoint place reaches (`docs/artifact.md`, "The SharePoint place"): Microsoft Graph, and
-/// The Teams page service's page token road a person's Graph token is borrowed through.
+/// The optional page-token service's page token road a person's Graph token is borrowed through.
 #[derive(Clone, Debug, Deserialize)]
 pub struct SharePoint {
   /// Graph's base address.

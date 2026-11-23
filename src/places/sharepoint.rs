@@ -1,6 +1,6 @@
 //! The SharePoint place (`docs/artifact.md`, "The SharePoint place"): a document's files in a SharePoint document
-//! library, reached through Microsoft Graph with the Graph token a person's own Teams page holds, borrowed through
-//! The Teams page service's page token road. A location is `<site>/<drive>/<path in the library>`.
+//! library, reached through Microsoft Graph with a person's Graph token, borrowed through
+//! an optional page-token service's page token road. A location is `<site>/<drive>/<path in the library>`.
 
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock, Mutex};
@@ -73,8 +73,8 @@ impl PlaceKind for SharePoint {
   }
 
   fn description(&self) -> &'static str {
-    "The files are kept in a SharePoint document library, as a Teams team's files are, through Microsoft Graph \
-     with a person's own Teams token."
+    "The files are kept in a SharePoint document library through Microsoft Graph, with a person's \
+     token lent by a page-token service."
   }
 
   fn fields(&self) -> Vec<StorageField> {
@@ -138,7 +138,7 @@ pub struct Library {
   site: String,
   drive: String,
   folder: String,
-  /// The account whose Teams page lends the token, none where nobody does.
+  /// The account the token is lent for, none where nobody's is.
   account: Option<i64>,
   grounds: Grounds,
 }
@@ -255,9 +255,9 @@ impl Library {
   // A live token for the account the place borrows from, borrowed afresh a minute before the kept one ends.
   async fn token(&self) -> Result<String, Refusal> {
     let road = self.sharepoint();
-    let account = self.account.ok_or_else(|| {
-      Refusal::upstream("the SharePoint place names no account whose Teams page lends a token")
-    })?;
+    let account = self
+      .account
+      .ok_or_else(|| Refusal::upstream("the SharePoint place names no account a token is lent for"))?;
 
     if road.tokens.trim().is_empty() {
       return Err(Refusal::upstream("this service names no page token road for a SharePoint place"));
