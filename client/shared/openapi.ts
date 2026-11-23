@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/document-reads/recent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The documents the call's reader read last in the last seven days, the one opened last first. */
+        get: operations["listDocumentReadsRecent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documents": {
         parameters: {
             query?: never;
@@ -977,6 +994,20 @@ export interface components {
              */
             share: components["schemas"]["Share"];
         };
+        /** @description A document the reader read last, and when. */
+        RecentRead: {
+            document: components["schemas"]["Document"];
+            /**
+             * Format: int64
+             * @description When the reader last opened it, in milliseconds since the epoch.
+             */
+            readAt: number;
+        };
+        /** @description A page of the documents the reader read last, the one opened last first. */
+        RecentReadsPage: {
+            items: components["schemas"]["RecentRead"][];
+            more: boolean;
+        };
         /** @description A page a document refers to. */
         Reference: {
             /** Format: int64 */
@@ -1161,6 +1192,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentReadsPage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    listDocumentReadsRecent: {
+        parameters: {
+            query?: {
+                /** @description At most this many: 30 where none is given, 200 at most. */
+                limit?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The documents the call's reader read last in the last seven days, the one opened last first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentReadsPage"];
                 };
             };
             default: components["responses"]["Error"];

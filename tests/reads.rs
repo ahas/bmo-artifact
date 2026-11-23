@@ -1,6 +1,7 @@
 //! The reads (`docs/artifact.md`, "Reads"; `docs/api.md`, "Reads"): a read kept once a day for each reader, an
 //! account through the console and a browser through a share link, the documents most read ranked by them and held
-//! to what a reader reaches, the week kept and no more, and the reads going with their document.
+//! to what a reader reaches, the documents one reader read last held to that reader's own reads, the week kept and
+//! no more, and the reads going with their document.
 
 use crate::support;
 
@@ -94,6 +95,95 @@ async fn a_read_is_kept_once_a_day_for_each_reader_and_ranks_the_documents_most_
   assert_eq!(read_by(&service, 999, "21").await, StatusCode::NOT_FOUND);
 }
 
+// The documents read last as the account named reads them through the console: each title.
+async fn recent(service: &Service, account: &str) -> Vec<String> {
+  let page: Value = service
+    .call_by(
+      Some(CONSOLE_TOKEN),
+      Method::GET,
+      "/document-reads/recent",
+      None,
+      &[("owner-role", "member"), ("owner-key", account)],
+    )
+    .await
+    .json();
+
+  page["items"]
+    .as_array()
+    .expect("items")
+    .iter()
+    .map(|item| item["document"]["title"].as_str().unwrap_or_default().to_owned())
+    .collect()
+}
+
+#[tokio::test]
+async fn the_documents_read_last_are_the_readers_own_the_one_opened_last_first() {
+  let service = Service::new().await;
+  let scratch: &Scratch = &service.scratch;
+  let first = filed(&service, "First", Some("41")).await;
+  let second = filed(&service, "Second", Some("41")).await;
+  filed(&service, "Third", Some("41")).await;
+  let elsewhere = filed(&service, "Elsewhere", Some("42")).await;
+  let now = chrono::Utc::now().timestamp_millis();
+  let today = now.div_euclid(86_400_000);
+
+  assert_eq!(recent(&service, "41").await, Vec::<String>::new(), "nothing is read yet");
+
+  // Two earlier openings today, the second the later; the first is opened again just now through the route.
+  for (id, at) in [(first, now - 2_000), (second, now - 1_000)] {
+    scratch
+      .run(
+        r#"INSERT INTO "artifact_reads" ("search_id", "reader", "day", "read_at") VALUES ($1, 'account:41', $2, $3)"#,
+        vec![id.into(), today.into(), at.into()],
+      )
+      .await;
+  }
+  assert_eq!(recent(&service, "41").await, ["Second", "First"]);
+
+  assert_eq!(read_by(&service, first, "41").await, StatusCode::NO_CONTENT);
+  assert_eq!(
+    recent(&service, "41").await,
+    ["First", "Second"],
+    "the same day's opening moves the read to now"
+  );
+  assert_eq!(
+    scratch
+      .count(r#"SELECT COUNT(*) FROM "artifact_reads" WHERE "reader" = 'account:41'"#, Vec::new())
+      .await,
+    2,
+    "and keeps no second read"
+  );
+
+  // Another reader's reads, of a document both reach and of one only it reaches, never show.
+  assert_eq!(read_by(&service, elsewhere, "42").await, StatusCode::NO_CONTENT);
+  assert_eq!(recent(&service, "42").await, ["Elsewhere"]);
+  assert_eq!(
+    recent(&service, "41").await,
+    ["First", "Second"],
+    "nor does a document unread, the third"
+  );
+
+  let limited: Value = service
+    .call_by(
+      Some(CONSOLE_TOKEN),
+      Method::GET,
+      "/document-reads/recent?limit=1",
+      None,
+      &[("owner-role", "member"), ("owner-key", "41")],
+    )
+    .await
+    .json();
+
+  assert_eq!(
+    (limited["items"].as_array().map(Vec::len), limited["more"].clone()),
+    (Some(1), json!(true))
+  );
+  assert_eq!(
+    service.call(Method::GET, "/document-reads/recent?limit=0", None).await.status,
+    StatusCode::BAD_REQUEST
+  );
+}
+
 #[tokio::test]
 async fn an_account_keeps_reads_of_what_it_reaches_and_is_shown_the_most_read_it_reads_alone() {
   let service = Service::new().await;
@@ -152,8 +242,8 @@ async fn only_the_last_seven_days_are_kept_and_the_reads_go_with_their_document(
   for (reader, day) in [("account:old", today - 7), ("account:week", today - 6)] {
     scratch
       .run(
-        r#"INSERT INTO "artifact_reads" ("search_id", "reader", "day") VALUES ($1, $2, $3)"#,
-        vec![id.into(), reader.into(), day.into()],
+        r#"INSERT INTO "artifact_reads" ("search_id", "reader", "day", "read_at") VALUES ($1, $2, $3, $4)"#,
+        vec![id.into(), reader.into(), day.into(), (day * 86_400_000).into()],
       )
       .await;
   }

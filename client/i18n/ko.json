@@ -159,11 +159,13 @@
     },
     "front": {
       "newest": "최신 문서",
+      "recent_read": "최근 본 문서",
       "most_read": "많이 본 문서",
       "most_read_span": "최근 7일",
       "kinds": "카테고리",
       "all_kinds": "전체",
-      "no_reads": "최근 7일 동안 읽은 문서 없음"
+      "no_reads": "최근 7일 동안 읽은 문서 없음",
+      "no_recent_reads": "최근 7일 동안 본 문서 없음"
     }
   }
 }

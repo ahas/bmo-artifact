@@ -168,6 +168,7 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 | `GET /documents/{documentId}/picture` | | 200, the cover picture as JPEG |
 | `POST /documents/{documentId}/reads` | | 204 |
 | `GET /document-reads` | query `limit?` | 200, a page of the documents most read |
+| `GET /document-reads/recent` | query `limit?` | 200, a page of the documents the reader read last |
 | `GET /document-kinds` | query `after?`, `limit?` | 200, a page of kinds |
 | `GET /label-values` | query `key`, `limit?` | 200, a page of the values one label holds |
 
@@ -208,17 +209,27 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 ### Reads
 
 A read is one reader's day on one document (docs/artifact.md, 「Reads」). The service keeps the reads of the
-last seven days, a day being the service clock's day in UTC.
+last seven days, a day being the service clock's day in UTC, each with the moment the reader last opened the
+document that day.
+
+A document most read:
 
 | Field | Holds |
 |---|---|
 | `document` | the document, as `GET /documents` answers it |
 | `reads` | how many reads it has in the last seven days |
 
+A document the reader read last:
+
+| Field | Holds |
+|---|---|
+| `document` | the document, as `GET /documents` answers it |
+| `readAt` | when the reader last opened it, in milliseconds since the epoch |
+
 - **`POST /documents/{documentId}/reads` keeps a read** of the document for the call's reader: the account its
   `Owner-Key` names, or, where it names none, one reader standing for every caller without an account. The same
-  reader's second read of the document on the same day keeps nothing more. A document the reader does not reach
-  is `not-found` (「Readers」).
+  reader's second read of the document on the same day keeps no second read and moves the first to that moment.
+  A document the reader does not reach is `not-found` (「Readers」).
 - **`GET /shares/{token}/document` with `visitor` keeps a read** for that visitor, the token a browser keeps for
   itself and a share page sends, 8 to 64 letters, digits, `-` and `_`; a `visitor` of any other shape is refused
   `bad-request`, and without one nothing is kept (「Share links」).
@@ -227,6 +238,12 @@ last seven days, a day being the service clock's day in UTC.
   equals, the newest first; at most `limit`, `more` where documents stand past it, and no cursor. A document with
   no read in the seven days is not among them. For an account reader it holds the documents that account reads
   alone, each with its permission where it reads it through a share (「Readers」).
+- **`GET /document-reads/recent` answers the documents the call's reader read last** in the last seven days,
+  the one opened last first and, among equals, the newest first; at most `limit`, `more` where documents stand
+  past it, and no cursor. The reader is the one `POST /documents/{documentId}/reads` keeps reads for, so it holds
+  that reader's reads and never another's; a visitor's reads through a share link are no account's. For an
+  account reader it holds only the documents that account still reads, each with its permission where it reads
+  it through a share (「Readers」).
 - **A read raises no event,** and goes with its document when the document is let go of.
 
 ## Attachments

@@ -1,5 +1,6 @@
 //! The reads of the last seven days, as rows of `artifact_reads` (`docs/artifact.md`, "Reads"): one reader's day on
-//! one document, kept once however often the reader opens it that day, and the documents most read across them.
+//! one document, kept once however often the reader opens it that day and moved to its latest opening, the documents
+//! most read across them, and the documents one reader read last.
 
 use sea_orm::{ConnectionTrait, Value};
 
@@ -8,7 +9,7 @@ use super::member_shares::permission_of;
 use super::reach::Account;
 use super::{all, now_ms, run};
 use crate::plumbing::refusal::Refusal;
-use crate::wire::{Document, DocumentReads};
+use crate::wire::{Document, DocumentReads, RecentRead};
 
 /// How many days of reads are kept and counted, today among them.
 pub const DAYS: i64 = 7;
@@ -25,17 +26,18 @@ fn first_day(today: i64) -> i64 {
   today - (DAYS - 1)
 }
 
-/// A read of one document kept for one reader today, nothing more where the reader already read it today; every
-/// read older than the days kept let go of.
+/// A read of one document kept for one reader today, only moved to now where the reader already read it today;
+/// every read older than the days kept let go of.
 pub async fn keep<C: ConnectionTrait>(db: &C, id: i64, reader: &str) -> Result<(), Refusal> {
-  let today = day_of(now_ms());
+  let now = now_ms();
+  let today = day_of(now);
 
   run(db, r#"DELETE FROM "artifact_reads" WHERE "day" < $1"#, vec![first_day(today).into()]).await?;
   run(
     db,
-    r#"INSERT INTO "artifact_reads" ("search_id", "reader", "day") VALUES ($1, $2, $3)
-       ON CONFLICT ("search_id", "reader", "day") DO NOTHING"#,
-    vec![id.into(), reader.into(), today.into()],
+    r#"INSERT INTO "artifact_reads" ("search_id", "reader", "day", "read_at") VALUES ($1, $2, $3, $4)
+       ON CONFLICT ("search_id", "reader", "day") DO UPDATE SET "read_at" = EXCLUDED."read_at""#,
+    vec![id.into(), reader.into(), today.into(), now.into()],
   )
   .await
   .map(drop)
@@ -81,6 +83,58 @@ pub async fn most_read<C: ConnectionTrait>(
           ..row_of(row)?.document
         },
         reads: row.try_get("", "reads")?,
+      })
+    })
+    .collect::<Result<Vec<_>, _>>()?;
+  let more = items.len() as i64 > limit;
+
+  items.truncate(usize::try_from(limit).unwrap_or(usize::MAX));
+
+  Ok((items, more))
+}
+
+/// The documents one reader opened in the days counted, the one opened last first and the newest first among equals;
+/// at most `limit`, and whether more stand past them. Read for an `account`, it holds only the documents that account
+/// still reads, each with the permission it reads it under where it reads it through a share.
+pub async fn recent<C: ConnectionTrait>(
+  db: &C,
+  reader: &str,
+  limit: i64,
+  account: Option<&Account<'_>>,
+) -> Result<(Vec<RecentRead>, bool), Refusal> {
+  let mut values: Vec<Value> = vec![reader.into(), first_day(day_of(now_ms())).into(), (limit + 1).into()];
+  let (reads, permission) = match account {
+    Some(account) => {
+      values.push(account.key.into());
+
+      (format!(" AND {}", account.reads("$4")), account.permission("$4"))
+    }
+    None => (String::new(), "NULL::text".to_owned()),
+  };
+  let rows = all(
+    db,
+    &format!(
+      r#"SELECT {COLUMNS}, {permission} AS "permission", r."read_at"
+           FROM "searches" d
+           JOIN (SELECT "search_id", MAX("read_at") AS "read_at" FROM "artifact_reads"
+                  WHERE "reader" = $1 AND "day" >= $2 GROUP BY 1) r
+             ON r."search_id" = d."id"
+          WHERE {LEFT_A_DOCUMENT}{reads}
+          ORDER BY r."read_at" DESC, d."id" DESC
+          LIMIT $3"#
+    ),
+    values,
+  )
+  .await?;
+  let mut items = rows
+    .iter()
+    .map(|row| -> Result<RecentRead, Refusal> {
+      Ok(RecentRead {
+        document: Document {
+          permission: permission_of(row.try_get("", "permission")?),
+          ..row_of(row)?.document
+        },
+        read_at: row.try_get("", "read_at")?,
       })
     })
     .collect::<Result<Vec<_>, _>>()?;

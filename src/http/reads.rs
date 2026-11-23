@@ -1,5 +1,5 @@
-//! The reads (`docs/api.md`, "Reads"): a read of one document kept for the call's reader, and the documents most
-//! read in the last seven days.
+//! The reads (`docs/api.md`, "Reads"): a read of one document kept for the call's reader, the documents most read
+//! in the last seven days, and the documents the call's reader read last.
 
 use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
@@ -9,7 +9,7 @@ use super::readers::{Reader, reached};
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, id_parameter, json_answer, query};
 use crate::store::{page_limit, reads};
-use crate::wire::{DocumentReadsPage, DocumentReadsQuery};
+use crate::wire::{DocumentReadsPage, DocumentReadsQuery, RecentReadsPage};
 
 /// Who a read is kept for: an account by its key, or a browser reading through a share link by the token it keeps
 /// for itself. The two never meet, so an account key never counts as a browser's token.
@@ -18,7 +18,13 @@ pub enum ReadBy<'a> {
   Visitor(&'a str),
 }
 
-impl ReadBy<'_> {
+impl<'a> ReadBy<'a> {
+  /// The reader a console call keeps reads for and reads its own back as: its account, or the one reader standing
+  /// for every caller without an account.
+  fn of(reader: &'a Reader) -> Self {
+    Self::Account(reader.owner().unwrap_or_default())
+  }
+
   fn key(&self) -> String {
     match self {
       Self::Account(key) => format!("account:{key}"),
@@ -51,7 +57,7 @@ impl Route for KeepRead {
     let id = reached(&mut call).await?;
     let reader = Reader::of(&call);
 
-    keep_read(call.standing(), id, ReadBy::Account(reader.owner().unwrap_or_default())).await?;
+    keep_read(call.standing(), id, ReadBy::of(&reader)).await?;
 
     Ok(StatusCode::NO_CONTENT.into_response())
   }
@@ -102,3 +108,37 @@ impl Route for ListDocumentReads {
 }
 
 crate::route!(ListDocumentReads);
+
+pub struct ListRecentReads;
+
+impl Route for ListRecentReads {
+  const METHOD: Method = Method::GET;
+  const PATH: &'static str = "/document-reads/recent";
+  const CONSOLE: ConsoleReach = ConsoleReach::Screen;
+
+  async fn answer(&self, call: Call) -> Result<Response, Refused> {
+    let asked: DocumentReadsQuery = call.query()?;
+    let limit = page_limit(asked.limit).ok_or_else(|| Refused::bad("limit is a whole number from 1"))?;
+    let reader = Reader::of(&call);
+    let listing = reader.listing(call.standing()).await?;
+    let account = listing.as_ref().map(|listing| listing.account());
+    let by = ReadBy::of(&reader).key();
+    let (items, more) = reads::recent(call.standing().db().await?, &by, limit, account.as_ref()).await?;
+
+    Ok(answer(StatusCode::OK, &RecentReadsPage { items, more }))
+  }
+
+  fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
+    Operation {
+      id: "listDocumentReadsRecent",
+      tag: "documents",
+      summary: "The documents the call's reader read last in the last seven days, the one opened last first.",
+      parameters: query::<DocumentReadsQuery>(generator),
+      body: None,
+      answers: vec![(200, json_answer::<RecentReadsPage>(generator))],
+      codes: &["unauthorized", "bad-request", "upstream-failed"],
+    }
+  }
+}
+
+crate::route!(ListRecentReads);

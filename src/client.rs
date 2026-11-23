@@ -13,8 +13,9 @@ use crate::wire::{
   Attachment, AttachmentInput, AttachmentPage, ContentQuery, Document, DocumentChange, DocumentInput,
   DocumentKindPage, DocumentPage, DocumentReadsPage, DocumentReadsQuery, DocumentsQuery, DryRunQuery,
   EventPage, EventsQuery, Health, Import, ImportInput, LabelValuePage, LabelValuesQuery, MemberShare,
-  MemberShareChange, MemberShareInput, MemberSharePage, PageQuery, Publication, Reference, ReferencePage,
-  ScopeHolding, Share, ShareInput, SharePage, SharesQuery, UnitShareInput, UnitSharePage, WireError,
+  MemberShareChange, MemberShareInput, MemberSharePage, PageQuery, Publication, RecentReadsPage, Reference,
+  ReferencePage, ScopeHolding, Share, ShareInput, SharePage, SharesQuery, UnitShareInput, UnitSharePage,
+  WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -355,6 +356,11 @@ impl ArtifactClient {
   /// `GET /document-reads`.
   pub async fn most_read(&self, query: &DocumentReadsQuery) -> Result<DocumentReadsPage, ClientFailure> {
     Self::json(self.get("/document-reads", query)).await
+  }
+
+  /// `GET /document-reads/recent`.
+  pub async fn recent_reads(&self, query: &DocumentReadsQuery) -> Result<RecentReadsPage, ClientFailure> {
+    Self::json(self.get("/document-reads/recent", query)).await
   }
 
   /// `GET /document-kinds`.

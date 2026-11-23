@@ -11,6 +11,8 @@ import type {
   ArtifactDocumentPage,
   ArtifactDocumentReads,
   ArtifactDocumentReadsPage,
+  ArtifactRecentRead,
+  ArtifactRecentReadsPage,
   ArtifactKind,
   ArtifactKindPage,
   ArtifactLabelValue,
@@ -59,6 +61,11 @@ export async function keepRead(id: number): Promise<void> {
 /** The documents most read in the last seven days, the most first. */
 export async function readMostRead(limit: number): Promise<ArtifactDocumentReads[]> {
   return (await $fetch<ArtifactDocumentReadsPage>(artifactAddress("/document-reads"), { query: { limit } })).items;
+}
+
+/** The documents the signed-in reader read last in the last seven days, the one opened last first. */
+export async function readRecentRead(limit: number): Promise<ArtifactRecentRead[]> {
+  return (await $fetch<ArtifactRecentReadsPage>(artifactAddress("/document-reads/recent"), { query: { limit } })).items;
 }
 
 /** One document's head. */

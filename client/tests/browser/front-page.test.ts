@@ -8,8 +8,9 @@ import type { Screen } from "./screen";
 
 // The front page and the list (docs/artifact.md, 「The front page」 and 「Where a person reads it」) driven in a real
 // Chromium at a wide window and a phone's: the newest led by a pictured card, a section for each kind holding one row
-// of cards, the kinds and the most read in a column beside them from the top, and on a phone one column of the kinds'
-// chips, the newest, the most read and the sections; the search, a section's link, a kind and a chip turning the
+// of cards, the kinds, the recently read and the most read in a column beside them from the top, held in view as the
+// page scrolls and never taller than what the page shows, its own content scrolling where it is taller, and on a
+// phone one column of the kinds' chips, the newest, the recently and most read and the sections, nothing held; the search, a section's link, a kind and a chip turning the
 // screen into the list and the way back to the front page; a card opening its document, which keeps a read and goes
 // back where it came from, at the place it was left; and a share page keeping its browser's read. The screens stand alone on the host under `host/`, and the service's routes are answered by a stand-in here.
 // Skipped where the browser playwright-core pins is not on the machine.
@@ -21,6 +22,8 @@ const WORDS = words;
 const KIND_WORDS: Record<string, string> = words.artifact.kind;
 
 const WIDE = { width: 1280, height: 900 };
+// A wide window too short for the side column, which then scrolls its own content.
+const SHORT = { width: 1280, height: 420 };
 const PHONE = { width: 360, height: 780 };
 
 // --- The stand-in service ---
@@ -118,6 +121,15 @@ async function answer(route: Route): Promise<void> {
     );
 
     return json(route, { items: found.slice(0, limit).map(documentOf), more: found.length > limit });
+  }
+
+  if (path === "/document-reads/recent") {
+    const opened = [...new Set([...reads].reverse())].slice(0, Number(query.get("limit") ?? 30));
+
+    return json(route, {
+      items: opened.map((id, at) => ({ document: documentOf(FIXTURES.find((fixture) => fixture.id === id)!), readAt: NOW - at })),
+      more: false
+    });
   }
 
   if (path === "/document-reads") {
@@ -218,6 +230,11 @@ async function shownCards(section: string): Promise<Box[]> {
   );
 }
 
+// The panel's body that scrolls the front page.
+function frontScroller() {
+  return page.locator('[data-slot="body"]').filter({ has: page.locator("[data-front]") });
+}
+
 // Whether the page scrolls sideways.
 async function overflowsSideways(): Promise<boolean> {
   return page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -304,6 +321,44 @@ describe.skipIf(!ready)("the front page in a browser", () => {
       expect(await overflowsSideways()).toBe(false);
     }, 60_000);
 
+    test("the side column stays in view while the page scrolls, never taller than the body's visible room", async () => {
+      await openFront();
+
+      const scroller = frontScroller();
+      const room = (await scroller.boundingBox())!;
+      const before = await box("[data-side]");
+
+      await scroller.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+      await until(async () => (await scroller.evaluate((element) => element.scrollTop)) > 0, "the page's scroll");
+
+      const after = await box("[data-side]");
+      const sections = await box("[data-sections]");
+
+      expect(sections.y + sections.height).toBeLessThan(room.y + room.height + 1);
+      expect(after.y).toBeGreaterThanOrEqual(room.y);
+      expect(after.y + after.height).toBeLessThanOrEqual(room.y + room.height);
+      expect(Math.round(after.y)).toBe(Math.round(before.y));
+      expect(await page.locator("[data-kinds]").isVisible()).toBe(true);
+    }, 60_000);
+
+    test("the recently read stand above the most read, the document just opened first", async () => {
+      await openFront();
+      await page.locator('[data-section="learning"] [data-card-title]').click();
+      await page.waitForURL(`${origin}/artifact/16`);
+      await until(() => reads.at(-1) === 16, "the document's read");
+      await page.locator("[data-back]").click();
+      await page.locator("[data-front]").waitFor();
+      await until(async () => (await page.locator("[data-recent-read-item]").first().innerText().catch(() => "")) === "Index basics", "the read listed");
+
+      const kinds = await box("[data-kinds]");
+      const recent = await box("[data-recent-read-part]");
+      const mostRead = await box("[data-most-read-part]");
+
+      expect(recent.y).toBeGreaterThan(kinds.y + kinds.height - 1);
+      expect(mostRead.y).toBeGreaterThan(recent.y + recent.height - 1);
+      expect(await page.locator("[data-recent-read-part] h2").innerText()).toBe(WORDS.artifact.front.recent_read);
+    }, 60_000);
+
     test("a section's link opens the list of its kind, and the way back brings the front page again", async () => {
       await openFront();
       await page.locator('[data-section="record"] [data-see-all]').click();
@@ -379,6 +434,42 @@ describe.skipIf(!ready)("the front page in a browser", () => {
     }, 60_000);
   });
 
+  describe("at a wide window too short for the side column", () => {
+    beforeAll(async () => {
+      await page.setViewportSize(SHORT);
+    });
+
+    afterAll(async () => {
+      await page.setViewportSize(WIDE);
+    });
+
+    test("the side column keeps to the body's visible room and its own content scrolls to its last line", async () => {
+      await openFront();
+
+      const scroller = frontScroller();
+      const room = (await scroller.boundingBox())!;
+      const side = page.locator("[data-side]");
+      const held = await box("[data-side]");
+
+      expect(held.y).toBeGreaterThanOrEqual(room.y);
+      expect(held.y + held.height).toBeLessThanOrEqual(room.y + room.height);
+      expect(await side.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+
+      const last = page.locator("[data-most-read-item]").last();
+      const pageTop = await scroller.evaluate((element) => element.scrollTop);
+
+      await page.mouse.move(held.x + held.width / 2, held.y + held.height / 2);
+      await page.mouse.wheel(0, 2000);
+      await until(async () => (await side.evaluate((element) => element.scrollTop + element.clientHeight >= element.scrollHeight - 1)), "the side column's end");
+
+      const line = (await last.boundingBox())!;
+
+      expect(line.y).toBeGreaterThanOrEqual(held.y);
+      expect(line.y + line.height).toBeLessThanOrEqual(held.y + held.height + 1);
+      expect(await scroller.evaluate((element) => element.scrollTop)).toBe(pageTop);
+    }, 60_000);
+  });
+
   describe("at a phone's width", () => {
     beforeAll(async () => {
       await page.setViewportSize(PHONE);
@@ -390,11 +481,13 @@ describe.skipIf(!ready)("the front page in a browser", () => {
       const chips = await box("[data-kind-chips]");
       const newest = await box("[data-newest]");
       const lead = await box("[data-newest] [data-card]");
+      const recent = await box("[data-recent-read-part]");
       const mostRead = await box("[data-most-read-part]");
       const sections = await box("[data-sections]");
 
       expect(newest.y).toBeGreaterThan(chips.y + chips.height - 1);
-      expect(mostRead.y).toBeGreaterThan(newest.y + newest.height - 1);
+      expect(recent.y).toBeGreaterThan(newest.y + newest.height - 1);
+      expect(mostRead.y).toBeGreaterThan(recent.y + recent.height - 1);
       expect(sections.y).toBeGreaterThan(mostRead.y + mostRead.height - 1);
       expect(Math.round(mostRead.x)).toBe(Math.round(sections.x));
       expect(lead.width).toBeGreaterThan(PHONE.width * 0.8);
@@ -404,6 +497,30 @@ describe.skipIf(!ready)("the front page in a browser", () => {
         ...KINDS.map((kind) => KIND_WORDS[kind.name]!)
       ]);
       expect(await overflowsSideways()).toBe(false);
+    }, 60_000);
+
+    test("nothing is held in place: the side parts scroll away with the page, and every line is reached by scrolling it", async () => {
+      await openFront();
+
+      const scroller = frontScroller();
+      const side = page.locator("[data-side]");
+
+      expect(await side.evaluate((element) => [getComputedStyle(element).position, getComputedStyle(element).overflowY])).toEqual(["static", "visible"]);
+
+      const last = page.locator("[data-most-read-item]").last();
+
+      await last.scrollIntoViewIfNeeded();
+
+      const line = (await last.boundingBox())!;
+      const room = (await scroller.boundingBox())!;
+
+      expect(line.y).toBeGreaterThanOrEqual(room.y);
+      expect(line.y + line.height).toBeLessThanOrEqual(room.y + room.height);
+
+      const before = await box("[data-side]");
+
+      await scroller.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+      await until(async () => (await box("[data-side]")).y < before.y - 1, "the side parts scrolling away");
     }, 60_000);
 
     test("a chip opens the list of its kind", async () => {

@@ -241,7 +241,24 @@ pub struct DocumentReadsPage {
   pub more: bool,
 }
 
-/// What `GET /document-reads` is held to.
+/// A document the reader read last, and when.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentRead {
+  pub document: Document,
+  /// When the reader last opened it, in milliseconds since the epoch.
+  pub read_at: i64,
+}
+
+/// A page of the documents the reader read last, the one opened last first.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct RecentReadsPage {
+  pub items: Vec<RecentRead>,
+  pub more: bool,
+}
+
+/// What `GET /document-reads` and `GET /document-reads/recent` are held to.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct DocumentReadsQuery {

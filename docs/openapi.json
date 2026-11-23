@@ -789,6 +789,43 @@
         ],
         "type": "object"
       },
+      "RecentRead": {
+        "description": "A document the reader read last, and when.",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/Document"
+          },
+          "readAt": {
+            "description": "When the reader last opened it, in milliseconds since the epoch.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "document",
+          "readAt"
+        ],
+        "type": "object"
+      },
+      "RecentReadsPage": {
+        "description": "A page of the documents the reader read last, the one opened last first.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecentRead"
+            },
+            "type": "array"
+          },
+          "more": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "more"
+        ],
+        "type": "object"
+      },
       "Reference": {
         "description": "A page a document refers to.",
         "properties": {
@@ -1206,6 +1243,53 @@
           }
         },
         "summary": "The documents most read in the last seven days, the most first.",
+        "tags": [
+          "documents"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "upstream-failed",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/document-reads/recent": {
+      "get": {
+        "operationId": "listDocumentReadsRecent",
+        "parameters": [
+          {
+            "description": "At most this many: 30 where none is given, 200 at most.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "At most this many: 30 where none is given, 200 at most.",
+              "format": "int64",
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentReadsPage"
+                }
+              }
+            },
+            "description": "The documents the call's reader read last in the last seven days, the one opened last first."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The documents the call's reader read last in the last seven days, the one opened last first.",
         "tags": [
           "documents"
         ],

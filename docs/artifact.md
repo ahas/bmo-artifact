@@ -17,8 +17,9 @@ repository.
 - **Member shares,** each opening one document to read to one member of the owner's company.
 - **Unit shares,** each opening one document to read to everyone standing in or under one organisation unit of
   the owner's company.
-- **The reads of the last seven days,** each one reader's day on one document, by which the screens rank the
-  documents most read (「Reads」).
+- **The reads of the last seven days,** each one reader's day on one document and when that reader last opened it
+  that day, by which the screens rank the documents most read and list the documents a reader read last
+  (「Reads」).
 - **Nothing it did not keep.** It runs no research and speaks no narration: a research run is a client's
   own work that files its result here, and a narration is a sound a client attaches with the role `head`.
   It knows no caller: a document's `scope`, `actorName` and `labels` are the caller's own strings. It keeps no
@@ -88,7 +89,7 @@ address and the file root are settings; no other unit reads or writes either.
 | `web_search_share_notes` | link that has ended | its token, what it opened, that document's title, when it ended and why |
 | `artifact_member_shares` | document shared with one member | its document, the member's account key, the permission and when it was shared |
 | `artifact_unit_shares` | document shared with one organisation unit | its document, the unit's number as the account service keeps it, and when it was shared |
-| `artifact_reads` | one reader's day on one document | its document, the reader and the day |
+| `artifact_reads` | one reader's day on one document | its document, the reader, the day and when the reader last opened it that day |
 | `imports` | import | the address asked, the title, scope, actor and owner asked, its state, its document or why it failed |
 | `events` | event | its kind, when it was kept, the scope of its member and the member |
 
@@ -272,11 +273,15 @@ address and the file root are settings; no other unit reads or writes either.
 - **A read is one reader opening one document on one day.** The document's screen keeps one each time it opens a
   document, for the account the console signs the reader in as; a share page keeps one for the browser it runs
   in, by a token of its own that browser keeps and sends with the read. A reader who opens the document again the
-  same day keeps no second read, so a reload or a return counts nothing more.
+  same day keeps no second read, so a reload or a return counts nothing more; the read only moves to the moment
+  of the latest opening.
 - **Only the last seven days are kept.** Keeping a read lets go of every read older than that, so the table
   holds a week of reads whatever the traffic.
 - **The documents most read** are those with the most reads in the seven days, the newest first among equals.
   A reader is shown only the documents it reads (「Owners」).
+- **The documents read last** are one reader's own: the documents that reader opened in the seven days, the one
+  opened last first. Nobody is shown another reader's, and of its own a reader is shown only the documents it
+  still reads (「Owners」).
 - **A read is no change of the document:** it raises no event and leaves the document's times as they stand. It
   goes with its document when the document is let go of.
 - **Nothing else counts as a read.** A caller reading a document through the service's token or the MCP server,
@@ -581,11 +586,16 @@ its name stands among them too, so it can be saved.
     three one under another on a phone. A kind no document reaches the reader in has no section.
   - Where the screen is wide, a side column stands beside the newest and the sections from the top of the page
     down: first the kinds as a navigation list under 「Kinds」 (`artifact.front.kinds`), 「All」
-    (`artifact.front.all_kinds`) first, each item opening the list narrowed by its kind; then the documents most
-    read in the last seven days (「Reads」), ten at most, each its rank and its title on one line, under the title
-    「Most read」 (`artifact.front.most_read`) and the caption 「Last 7 days」 (`artifact.front.most_read_span`). Each
-    is a titled list with a line under its title and no frame or ground of its own: cards are for the documents. With
-    no read in the seven days the most read say so in one line.
+    (`artifact.front.all_kinds`) first, each item opening the list narrowed by its kind; then the documents the
+    reader read last (「Reads」), ten at most, the last read first, each its title on one line, under the title
+    「Recently read」 (`artifact.front.recent_read`); then the documents most read in the last seven days, ten at
+    most, each its rank and its title on one line, under the title 「Most read」 (`artifact.front.most_read`) and the
+    caption 「Last 7 days」 (`artifact.front.most_read_span`). Each is a titled list with a line under its title and
+    no frame or ground of its own: cards are for the documents. With no read in the seven days, the recently read
+    and the most read each say so in one line.
+  - The side column stays in view while the newest and the sections scroll: it holds to the top of the scrolling
+    body as the body scrolls past it, and is never taller than the body's visible height, so its foot is never
+    out of reach. Where what it holds is taller than that, its own content scrolls inside it.
   - A card is the document's cover picture, its category where it carries one and what it lacks where it lacks
     something (「A document that lacks a part」), its title on two lines, its
     description on two, the day it was filed and, where a live link to it stands, that it is public; the newest's
@@ -594,9 +604,10 @@ its name stands among them too, so it can be saved.
     still reads as a strip. The whole card opens the document. A card carries no number: the list copies and finds
     numbers.
   - Where the screen is narrow, as a phone's, everything stands in one column: the kinds first, as a row of chips
-    under the bar, then the newest, the large card over the rest, then the most read, then the sections one under
-    another. Each card but the large one is a row with a small cover at its leading edge and its title on two lines,
-    its description on one and its day beside it.
+    under the bar, then the newest, the large card over the rest, then the recently read and the most read, then
+    the sections one under another. Nothing holds in place there: the one column scrolls whole. Each card but the
+    large one is a row with a small cover at its leading edge and its title on two lines, its description on one and
+    its day beside it.
   - Each part reads on its own and holds a skeleton of its own shape until it has read; a part that fails says so
     in place, and the bar's refresh reads every part again.
   - A reader back from a document finds the front page drawn at once from what the browser tab last read of it, at

@@ -1,8 +1,10 @@
 <!-- The front page of the documents (docs/artifact.md, 「The front page」): the newest at its head and a section for each
-     kind under it, and beside them from the top a side column of the kinds as a navigation list and the documents most
-     read. It is laid out by the width it is given, never the window's: two columns where the room holds them, and one
-     where it does not, with the kinds as a row of chips first and the most read after the newest. Each part reads on
-     its own and keeps a skeleton of its own shape until it has read. -->
+     kind under it, and beside them from the top a side column of the kinds as a navigation list, the documents the
+     reader read last and the documents most read, held in view as the page scrolls and never taller than what the
+     page shows. It is laid out by the width it is given, never the window's: two columns where the room holds them,
+     and one where it does not, with the kinds as a row of chips first and the recently and most read after the
+     newest, nothing held in place. Each part reads on its own and keeps a skeleton of its own shape until it has
+     read. -->
 <template>
   <div class="@container/front min-w-0" data-front>
     <div class="grid min-w-0 gap-6 @4xl/front:grid-cols-[minmax(0,1fr)_16rem] @4xl/front:grid-rows-[auto_1fr]">
@@ -46,15 +48,31 @@
         </div>
       </section>
 
-      <!-- The side column, from the top of the page beside the newest down: the categories first, then the most read, each
-           a titled list with no frame. Where there is no room for it, the most read stands alone after the newest. -->
-      <aside class="flex min-w-0 flex-col gap-6 @4xl/front:col-start-2 @4xl/front:row-span-2 @4xl/front:row-start-1" data-side>
+      <!-- The side column, from the top of the page beside the newest down: the categories first, then the recently read,
+           then the most read, each a titled list with no frame. It holds to the top of the scrolling body as the page
+           scrolls, never taller than the body's visible room, and its own content scrolls where it is taller. Where
+           there is no room for it, the recently and most read stand after the newest and scroll with the page. -->
+      <aside ref="side" :class="SIDE" data-side>
         <nav class="hidden min-w-0 flex-col gap-2 @4xl/front:flex" :aria-labelledby="`${id}-kinds`" data-kinds>
           <header class="flex h-9 min-w-0 items-center border-b border-default">
             <h2 :id="`${id}-kinds`" class="min-w-0 truncate text-xl font-semibold text-highlighted">{{ $t("artifact.front.kinds") }}</h2>
           </header>
           <UNavigationMenu orientation="vertical" :items="kindItems" class="w-full" />
         </nav>
+
+        <section class="flex min-w-0 flex-col gap-2" :aria-labelledby="`${id}-recent-read`" data-recent-read-part>
+          <header class="flex h-9 min-w-0 items-center gap-2 border-b border-default">
+            <h2 :id="`${id}-recent-read`" class="min-w-0 truncate text-xl font-semibold text-highlighted">{{ $t("artifact.front.recent_read") }}</h2>
+          </header>
+          <p v-if="failed.recentRead" role="alert" class="text-sm text-error">{{ $t("artifact.error.list_failed") }}</p>
+          <SkeletonStatus v-if="recentRead === null && !failed.recentRead" as="div" :label="$t('artifact.status.document_loading')" class="flex flex-col">
+            <div v-for="n in READ_UNREAD" :key="n" class="flex items-center px-2 py-2">
+              <SkeletonLine width="w-3/4" class="flex-1" />
+            </div>
+          </SkeletonStatus>
+          <p v-else-if="recentRead !== null && recentRead.length === 0" class="text-sm text-muted" data-no-recent-reads>{{ $t("artifact.front.no_recent_reads") }}</p>
+          <ArtifactRecentRead v-else-if="recentRead !== null" :items="recentRead" />
+        </section>
 
         <section class="flex min-w-0 flex-col gap-2" :aria-labelledby="`${id}-most-read`" data-most-read-part>
           <header class="flex h-9 min-w-0 items-center gap-2 border-b border-default">
@@ -63,7 +81,7 @@
           </header>
           <p v-if="failed.mostRead" role="alert" class="text-sm text-error">{{ $t("artifact.error.list_failed") }}</p>
           <SkeletonStatus v-if="mostRead === null && !failed.mostRead" as="div" :label="$t('artifact.status.document_loading')" class="flex flex-col">
-            <div v-for="n in MOST_READ_UNREAD" :key="n" class="flex items-center gap-3 px-2 py-2">
+            <div v-for="n in READ_UNREAD" :key="n" class="flex items-center gap-3 px-2 py-2">
               <SkeletonBar class="h-4 w-5 shrink-0" />
               <SkeletonLine width="w-3/4" class="flex-1" />
             </div>
@@ -124,25 +142,30 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 
-import { readDocuments, readKinds, readLiveShares, readMostRead } from "../domain/artifact";
+import { readDocuments, readKinds, readLiveShares, readMostRead, readRecentRead } from "../domain/artifact";
 import { kindOf } from "../domain/document-view";
 import { kindIcon, useDocumentWords } from "../domain/document-words";
 import { lastFront } from "../domain/front-page";
+import { useSideRoom } from "../domain/side-room";
 
 import type { NavigationMenuItem } from "@nuxt/ui";
-import type { ArtifactDocument, ArtifactDocumentReads, ArtifactKind, ArtifactShare } from "../../shared/types";
+import type { ArtifactDocument, ArtifactDocumentReads, ArtifactKind, ArtifactRecentRead, ArtifactShare } from "../../shared/types";
 
 // How many of the newest stand beside the lead card.
 const NEWEST_BESIDE = 4;
 // How many documents a kind's strip asks for: the most one row of it holds.
 const STRIP_LENGTH = 4;
-// How many of the most read stand.
-const MOST_READ_LENGTH = 10;
+// How many of the recently read and of the most read stand.
+const READ_LENGTH = 10;
 // The days a lead card's picture is looked for in.
 const LEAD_DAYS = 7;
-// How many sections and most read lines a skeleton keeps the place of, before the catalogue and the reads say.
+// How many sections and read lines a skeleton keeps the place of, before the catalogue and the reads say.
 const SECTIONS_UNREAD = 2;
-const MOST_READ_UNREAD = 5;
+const READ_UNREAD = 5;
+// The side column: in the page's flow where it stands under the newest, and beside them held to the top of the
+// scrolling body, at most the body's visible room tall, its content scrolling inside it where it is taller.
+const SIDE =
+  "flex min-w-0 flex-col gap-6 @4xl/front:sticky @4xl/front:top-0 @4xl/front:col-start-2 @4xl/front:row-span-2 @4xl/front:row-start-1 @4xl/front:max-h-[var(--side-room,100dvh)] @4xl/front:self-start @4xl/front:overflow-y-auto @4xl/front:overscroll-y-contain @4xl/front:[scrollbar-width:thin]";
 // A strip of cards: one column of rows on a phone, then two, three and four to a row as the width holds them, four
 // beside the side column of a wide window.
 const STRIP = "grid grid-cols-1 gap-4 @md/cards:grid-cols-2 @lg/cards:grid-cols-3 @xl/cards:grid-cols-4 @max-md/cards:gap-2";
@@ -163,10 +186,14 @@ const { kindLabel } = useDocumentWords(kinds);
 const newest = ref<ArtifactDocument[] | null>(lastFront.newest);
 // Each kind's newest documents, by the kind's name; null until every kind's are read.
 const strips = ref<Map<string, ArtifactDocument[]> | null>(lastFront.strips);
+const recentRead = ref<ArtifactRecentRead[] | null>(lastFront.recentRead);
 const mostRead = ref<ArtifactDocumentReads[] | null>(lastFront.mostRead);
 // The live links by the document each opens; until they are read no card says it is public.
 const shares = ref<Map<number, ArtifactShare> | null>(lastFront.shares);
-const failed = reactive({ newest: false, sections: false, mostRead: false });
+const failed = reactive({ newest: false, sections: false, recentRead: false, mostRead: false });
+const side = useTemplateRef<HTMLElement>("side");
+
+useSideRoom(side);
 const loading = ref(false);
 let generation = 0;
 
@@ -252,7 +279,15 @@ async function read(): Promise<void> {
         if (current()) failed.sections = true;
       }
     ),
-    readMostRead(MOST_READ_LENGTH).then(
+    readRecentRead(READ_LENGTH).then(
+      (read) => {
+        if (current()) [recentRead.value, lastFront.recentRead, failed.recentRead] = [read, read, false];
+      },
+      () => {
+        if (current()) failed.recentRead = true;
+      }
+    ),
+    readMostRead(READ_LENGTH).then(
       (read) => {
         if (current()) [mostRead.value, lastFront.mostRead, failed.mostRead] = [read, read, false];
       },

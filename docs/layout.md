@@ -191,7 +191,8 @@ flowchart TD
   them; the research profiles' table, then the pair that makes and takes away two tables no longer this
   repository's; the redesign, which adds a document's scope, actor, labels, description and change time,
   an attachment's role, and the imports and events; the research profiles' table taken away; the notes ended
-  share links leave; the member shares; the owners and the unit shares; and the reads. A
+  share links leave; the member shares; the owners and the unit shares; the reads; and when each read was last
+  opened, a read kept before standing at the start of its day. A
   migration a database may already have run is never rewritten or removed, since the migrator refuses a
   database whose record names a migration it does not know. `bmo-artifact migrate` brings the database
   the settings name up to date.
