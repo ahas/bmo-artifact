@@ -42,7 +42,7 @@ describe("the module built", () => {
 
     expect(readdirSync(player).sort()).toEqual(["bmo-audio-player.js", "words.json"]);
     expect(readFileSync(join(player, "bmo-audio-player.js"))).toEqual(readFileSync(join(ROOT, "node_modules/bmo-ui/dist/bmo-audio-player.js")));
-    expect(Object.keys(words).sort()).toEqual(["en", "ko"]);
+    expect(Object.keys(words).sort()).toEqual(["en", "ja", "ko", "zh-CN"]);
     expect(words.en).toEqual(pack.artifact.player);
   });
 
@@ -64,8 +64,8 @@ describe("the module built", () => {
   test("carries each locale's pack under its code, every key under the bundle's namespace", () => {
     const words = JSON.parse(readFileSync(join(out, "words.json"), "utf8")) as Record<string, Record<string, unknown>>;
 
-    expect(Object.keys(words).sort()).toEqual(["en", "ko"]);
-    expect(Object.values(words).map((pack) => Object.keys(pack))).toEqual([["artifact"], ["artifact"]]);
+    expect(Object.keys(words).sort()).toEqual(["en", "ja", "ko", "zh-CN"]);
+    expect(Object.values(words).map((pack) => Object.keys(pack))).toEqual([["artifact"], ["artifact"], ["artifact"], ["artifact"]]);
   });
 
   test("has a stylesheet with the screens' own classes", () => {

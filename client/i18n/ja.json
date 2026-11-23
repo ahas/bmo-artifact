@@ -1,0 +1,171 @@
+{
+  "artifact": {
+    "title": {
+      "screen": "アーティファクト",
+      "instruction": "指示文",
+      "references_count": "参照ページ {n}",
+      "source": "出典 {mark}",
+      "unit_share": "組織に共有"
+    },
+    "label": {
+      "actor": "投稿者",
+      "all_categories": "すべての分類",
+      "all_kinds": "すべての種類",
+      "attachments": "添付",
+      "changed": "更新日時",
+      "contents": "目次",
+      "created": "投稿日時",
+      "files_count": "添付 {n}",
+      "filters": "フィルター",
+      "lacks": "{lacks}なし",
+      "link_map": "地図",
+      "listen": "聞きながら読む",
+      "picture_address": "アドレス",
+      "picture_caption": "キャプション",
+      "picture_resolution": "解像度",
+      "picture_resolution_value": "{width} × {height}",
+      "references": "参照ページ",
+      "scope": "範囲",
+      "public": "公開",
+      "public_until": "公開・{date}まで",
+      "private": "非公開",
+      "snippet_only": "スニペットのみ確認",
+      "span_1h": "1時間",
+      "span_24h": "24時間",
+      "span_30d": "30日",
+      "span_6h": "6時間",
+      "span_7d": "7日",
+      "span_forever": "無期限",
+      "units": "組織",
+      "company": "会社",
+      "unit_number": "組織 #{n}"
+    },
+    "kind": {
+      "import": "原文",
+      "learning": "学習資料",
+      "page": "ページ",
+      "record": "記録",
+      "search": "リサーチ"
+    },
+    "category": {
+      "advisory": "セキュリティ勧告",
+      "brief": "ブリーフィング",
+      "browse": "ブラウジング",
+      "completion": "完了報告",
+      "design-review": "設計レビュー",
+      "implementation": "実装報告",
+      "investigation": "詳細調査",
+      "manual": "マニュアル",
+      "plan": "計画",
+      "report": "報告",
+      "search": "検索",
+      "search:basic": "基本検索",
+      "search:exhaustive": "網羅検索",
+      "search:thorough": "入念な検索",
+      "security-audit": "セキュリティ監査",
+      "security-patch": "パッチ報告"
+    },
+    "pending": {
+      "korean": "翻訳",
+      "narration-en": "英語音声",
+      "narration-ko": "韓国語音声",
+      "review": "レビュー",
+      "review-fixes": "レビュー反映"
+    },
+    "action": {
+      "back": "戻る",
+      "clear_search": "検索語を消去",
+      "copy_number": "番号をコピー",
+      "document_original": "文書ファイル",
+      "download": "ダウンロード",
+      "instruction": "指示文",
+      "more": "その他",
+      "open_new_tab": "新しいタブで開く",
+      "open_page": "ページを開く",
+      "original": "原本",
+      "refresh": "更新",
+      "share": "共有",
+      "translate": "翻訳",
+      "view_picture": "{name}を拡大表示",
+      "ask_again": "再リクエスト",
+      "share_units": "組織に共有"
+    },
+    "aria": {
+      "category": "分類",
+      "document_menu": "文書メニュー",
+      "kind": "種類",
+      "opens_new_tab": "(新しいタブで開きます)",
+      "search": "文書を検索"
+    },
+    "placeholder": {
+      "search": "検索",
+      "unit": "組織を選択"
+    },
+    "status": {
+      "attachment_loading": "添付を読み込み中…",
+      "document_loading": "文書を読み込み中…",
+      "empty": "内容なし",
+      "map_loading": "地図を読み込み中…",
+      "no_documents": "文書なし",
+      "no_match": "「{phrase}」の検索結果なし",
+      "no_references": "参照ページなし",
+      "refreshing": "一覧を更新中…",
+      "translating": "翻訳中…",
+      "partly_original": "一部は原文のまま表示しています。",
+      "units_loading": "共有先の組織を読み込み中…",
+      "no_units": "共有先の組織なし"
+    },
+    "error": {
+      "attachment_read_failed": "添付を読み込めませんでした。",
+      "bad_id": "文書番号が正しくありません。",
+      "link_ended": "この共有リンクは期限切れです。",
+      "list_failed": "一覧を読み込めませんでした。",
+      "member_read_only": "文書は閲覧権限でのみ共有できます。",
+      "open_failed": "文書を開けませんでした。",
+      "read_failed": "文書を読み込めませんでした。",
+      "translate_failed": "文書を翻訳できませんでした。",
+      "units_read_failed": "組織を読み込めませんでした。",
+      "unit_share_failed": "組織に共有できませんでした。",
+      "unit_other_company": "他社の組織には共有できません。"
+    },
+    "player": {
+      "common": {
+        "action": {
+          "play": "再生",
+          "pause": "一時停止",
+          "mute": "ミュート",
+          "unmute": "ミュート解除"
+        },
+        "label": {
+          "play_position": "再生位置",
+          "unplayable": "再生できません",
+          "volume": "音量"
+        },
+        "aria": {
+          "download_named": "{name}をダウンロード"
+        },
+        "status": {
+          "loading": "読み込み中…"
+        }
+      }
+    },
+    "preview": {
+      "described": "{kind} · {description}",
+      "locale": "ja_JP",
+      "site_name": "BMO"
+    },
+    "reading": {
+      "script": "Hiragana,Katakana"
+    },
+    "front": {
+      "newest": "最新の文書",
+      "recent_read": "最近読んだ文書",
+      "most_read": "よく読まれている文書",
+      "most_read_span": "過去7日間",
+      "kinds": "種類",
+      "all_kinds": "すべて",
+      "no_reads": "過去7日間に読まれた文書はありません",
+      "no_recent_reads": "過去7日間に読んだ文書はありません"
+    }
+  }
+}

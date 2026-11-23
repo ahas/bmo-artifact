@@ -708,9 +708,11 @@ its name stands among them too, so it can be saved.
   console's. A markdown document on the document's screen is read so; a page in its frame and a share page stand
   as filed, and so does every document where the console names no translator.
   - **The language a body is written in** is read from its words, code left out: each locale of the bundle's
-    pack names the script its words are written in (`artifact.reading.script`), and the body is in the locale
-    whose script writes the most of its words. A body none of whose words is in such a script, or most of whose
-    words are in the reader's, has no toggle.
+    pack names the Unicode scripts its words are written in (`artifact.reading.script`, several separated by
+    commas, a run of letters in any of them one word: Japanese by its kana and Chinese by Han, so a Japanese
+    body's kanji do not count for Chinese), and the body is in the locale whose scripts write the most of its
+    words. A body none of whose words is in such a script, or most of whose words are in the reader's, has no
+    toggle.
   - **The reader's reading is filled the first time the toggle is turned on,** through the translator the console
     names, the gate's translating route (docs/api.md, 「What this service calls」). The title is asked, and the
     body as its sections: a heading with what stands under it to the next heading, the text before the first

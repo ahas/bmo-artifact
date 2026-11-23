@@ -53,11 +53,11 @@ describe("the bundle's words", () => {
   const answered = new Set<string>(WORDING_KEYS);
 
   test("stand in a pack for each locale, every pack holding the same keys under the bundle's namespace", () => {
-    expect(packs.sort()).toEqual(["en.json", "ko.json"]);
+    expect(packs.sort()).toEqual(["en.json", "ja.json", "ko.json", "zh-CN.json"]);
 
     const held = packs.map((name) => keysHeld(JSON.parse(readFileSync(join(ROOT, LANGUAGE_PACK, name), "utf8"))).sort());
 
-    expect(held[0]).toEqual(held[1]!);
+    for (const other of held.slice(1)) expect(other).toEqual(held[0]!);
     expect(held[0]!.filter((key) => !key.startsWith(`${NAMESPACE}.`))).toEqual([]);
   });
 

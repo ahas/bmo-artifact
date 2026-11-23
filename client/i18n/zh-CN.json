@@ -1,0 +1,171 @@
+{
+  "artifact": {
+    "title": {
+      "screen": "Artifact",
+      "instruction": "指令",
+      "references_count": "参考页面 {n}",
+      "source": "来源 {mark}",
+      "unit_share": "共享给组织"
+    },
+    "label": {
+      "actor": "上传者",
+      "all_categories": "全部分类",
+      "all_kinds": "全部类型",
+      "attachments": "附件",
+      "changed": "修改时间",
+      "contents": "目录",
+      "created": "上传时间",
+      "files_count": "附件 {n}",
+      "filters": "筛选",
+      "lacks": "缺少{lacks}",
+      "link_map": "地图",
+      "listen": "边听边看",
+      "picture_address": "地址",
+      "picture_caption": "图注",
+      "picture_resolution": "分辨率",
+      "picture_resolution_value": "{width} × {height}",
+      "references": "参考页面",
+      "scope": "范围",
+      "public": "公开",
+      "public_until": "公开 · 至 {date}",
+      "private": "私密",
+      "snippet_only": "仅核对摘要",
+      "span_1h": "1小时",
+      "span_24h": "24小时",
+      "span_30d": "30天",
+      "span_6h": "6小时",
+      "span_7d": "7天",
+      "span_forever": "永久",
+      "units": "组织",
+      "company": "公司",
+      "unit_number": "组织 #{n}"
+    },
+    "kind": {
+      "import": "原文",
+      "learning": "学习资料",
+      "page": "页面",
+      "record": "记录",
+      "search": "调研"
+    },
+    "category": {
+      "advisory": "安全公告",
+      "brief": "简报",
+      "browse": "浏览",
+      "completion": "完成报告",
+      "design-review": "设计评审",
+      "implementation": "实现报告",
+      "investigation": "深度调查",
+      "manual": "手册",
+      "plan": "计划",
+      "report": "报告",
+      "search": "搜索",
+      "search:basic": "基础搜索",
+      "search:exhaustive": "全面搜索",
+      "search:thorough": "细致搜索",
+      "security-audit": "安全审计",
+      "security-patch": "补丁报告"
+    },
+    "pending": {
+      "korean": "翻译",
+      "narration-en": "英语语音",
+      "narration-ko": "韩语语音",
+      "review": "审校",
+      "review-fixes": "审校修改"
+    },
+    "action": {
+      "back": "返回",
+      "clear_search": "清除搜索",
+      "copy_number": "复制编号",
+      "document_original": "文档文件",
+      "download": "下载",
+      "instruction": "指令",
+      "more": "更多",
+      "open_new_tab": "在新标签页中打开",
+      "open_page": "打开页面",
+      "original": "原件",
+      "refresh": "刷新",
+      "share": "分享",
+      "translate": "翻译",
+      "view_picture": "放大查看 {name}",
+      "ask_again": "重新请求",
+      "share_units": "共享给组织"
+    },
+    "aria": {
+      "category": "分类",
+      "document_menu": "文档菜单",
+      "kind": "类型",
+      "opens_new_tab": "（在新标签页中打开）",
+      "search": "搜索文档"
+    },
+    "placeholder": {
+      "search": "搜索",
+      "unit": "选择组织"
+    },
+    "status": {
+      "attachment_loading": "正在加载附件…",
+      "document_loading": "正在加载文档…",
+      "empty": "无内容",
+      "map_loading": "正在加载地图…",
+      "no_documents": "暂无文档",
+      "no_match": "未找到与“{phrase}”相关的结果",
+      "no_references": "无参考页面",
+      "refreshing": "正在刷新列表…",
+      "translating": "正在翻译…",
+      "partly_original": "部分内容以原文显示。",
+      "units_loading": "正在加载共享的组织…",
+      "no_units": "未共享给任何组织"
+    },
+    "error": {
+      "attachment_read_failed": "无法读取附件。",
+      "bad_id": "文档编号不正确。",
+      "link_ended": "此分享链接已失效。",
+      "list_failed": "无法读取列表。",
+      "member_read_only": "文档仅能以只读权限共享。",
+      "open_failed": "无法打开文档。",
+      "read_failed": "无法读取文档。",
+      "translate_failed": "无法翻译文档。",
+      "units_read_failed": "无法读取组织。",
+      "unit_share_failed": "无法共享给该组织。",
+      "unit_other_company": "无法共享给其他公司的组织。"
+    },
+    "player": {
+      "common": {
+        "action": {
+          "play": "播放",
+          "pause": "暂停",
+          "mute": "静音",
+          "unmute": "取消静音"
+        },
+        "label": {
+          "play_position": "播放进度",
+          "unplayable": "无法播放",
+          "volume": "音量"
+        },
+        "aria": {
+          "download_named": "下载 {name}"
+        },
+        "status": {
+          "loading": "加载中…"
+        }
+      }
+    },
+    "preview": {
+      "described": "{kind} · {description}",
+      "locale": "zh_CN",
+      "site_name": "BMO"
+    },
+    "reading": {
+      "script": "Han"
+    },
+    "front": {
+      "newest": "最新文档",
+      "recent_read": "最近阅读",
+      "most_read": "阅读最多",
+      "most_read_span": "最近 7 天",
+      "kinds": "类型",
+      "all_kinds": "全部",
+      "no_reads": "最近 7 天内没有被阅读的文档",
+      "no_recent_reads": "最近 7 天内没有阅读过的文档"
+    }
+  }
+}

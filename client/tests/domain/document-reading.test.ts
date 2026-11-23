@@ -41,8 +41,19 @@ describe("the language a text is written in", () => {
     expect(writtenIn("12 34", SCRIPTS)).toBeNull();
   });
 
+  test("reads a language whose pack names several scripts by a run of letters in any of them", () => {
+    const scripts = [scriptOf("ja", "Hiragana,Katakana")!, scriptOf("zh", "Han")!];
+    // A Japanese sentence of kana and Han letters, and a Chinese one of Han letters alone, as escapes.
+    const japanese = "テストの文書を読みます。";
+    const chinese = "中文文档，阅读文档。";
+
+    expect(writtenIn(japanese, scripts)).toBe("ja");
+    expect(writtenIn(chinese, scripts)).toBe("zh");
+  });
+
   test("leaves out a script no Unicode script goes by", () => {
     expect(scriptOf("xx", "Not a script")).toBeNull();
+    expect(scriptOf("xx", "Han,Not a script")).toBeNull();
   });
 });
 

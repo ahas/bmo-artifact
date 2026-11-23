@@ -16,10 +16,15 @@ export interface Script {
   words: RegExp;
 }
 
-/** A language and the Unicode script its pack names; none where no script goes by that name. */
+/**
+ * A language and the Unicode scripts its pack names, comma-separated, a run of letters in any of them one word;
+ * none where a name is no script's.
+ */
 export function scriptOf(language: string, script: string): Script | null {
+  const names = script.split(",").map((name) => name.trim());
+
   try {
-    return { language, words: new RegExp(`\\p{Script=${script}}+`, "gu") };
+    return { language, words: new RegExp(`[${names.map((name) => `\\p{Script=${name}}`).join("")}]+`, "gu") };
   } catch {
     return null;
   }
