@@ -272,7 +272,8 @@ belong to the testbed.
   face's own guard is the face's tests'.
 - **The OpenAPI document** committed is held to what the code generates.
 - **Repository checks.** Tests in `tests/` also hold the repository to its rules: no Hangul outside the
-  bundle's language pack, no personal data in any tracked file (`PERSONAL-DATA.md`), no folder named after
+  bundle's language pack and the root's READMEs (the English one and its translations, each opening with
+  a line naming every language), no personal data in any tracked file (`PERSONAL-DATA.md`), no folder named after
   its parent, Cargo's manifest as the only manifest at the root, no test module in `src/`, and the dependency
   check below.
 - **Client.** The bundle's tests live in `client/tests/`, every one run with happy-dom's document

@@ -1,6 +1,7 @@
 //! No Hangul in any text file of the repository: code, tests, settings and documents are English. The
 //! console bundle's language pack, the folder the bundle's build reads its words from, holds the words a person
-//! reads in each language, and is the one place another language stands.
+//! reads in each language; besides it, only the root's READMEs hold another language: the translations, and the
+//! language line every README opens with.
 
 use crate::support;
 
@@ -19,12 +20,19 @@ fn is_hangul(c: char) -> bool {
   matches!(c, '\u{AC00}'..='\u{D7A3}' | '\u{1100}'..='\u{11FF}' | '\u{3130}'..='\u{318F}' | '\u{A960}'..='\u{A97F}' | '\u{D7B0}'..='\u{D7FF}')
 }
 
+/// Whether a file is one of the root's READMEs: `README.md` or a translation such as `README.ko.md`.
+fn is_root_readme(path: &Path) -> bool {
+  let at_root = path.parent() == Some(Path::new(ROOT));
+  let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+  at_root && name.starts_with("README.") && name.ends_with(".md")
+}
+
 #[test]
 fn no_text_file_holds_hangul() {
   let mut found = Vec::new();
   let pack = language_pack();
 
-  for path in files_under(Path::new(ROOT)).into_iter().filter(|path| !path.starts_with(&pack)) {
+  for path in files_under(Path::new(ROOT)).into_iter().filter(|path| !path.starts_with(&pack) && !is_root_readme(path)) {
     // A file that is not UTF-8 is not text.
     let Ok(text) = fs::read_to_string(&path) else { continue };
 

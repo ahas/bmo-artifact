@@ -36,7 +36,7 @@ These rules hold every change to this repository.
   and branch names. No Korean in code or tests; the Hangul check in `tests/` holds this.
 - What the service answers is an English sentence for a person, or a status and a kebab-case code for
   a machine. Words a person reads in another language come from the wording file and the console
-  bundle's language pack, the one place another language stands.
+  bundle's language pack, the one place another language stands besides the root's translated READMEs.
 - No personal data: no user names, home directories, machine names, internal addresses, mail addresses or
   names of any agent (`PERSONAL-DATA.md`). Names the service needs at runtime come from its settings, never
   from the code.
