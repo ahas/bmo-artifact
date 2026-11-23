@@ -1,0 +1,74 @@
+# What installing the document service on a fresh machine needs, read by the testbed's install verb
+# (bmo-testbed's docs/install.md, 「The install declaration」). The settings are docs/api.md's 「Settings」.
+
+install = 1
+
+restart = "systemctl --user restart bmo-artifact.service"
+
+[[needs]]
+program = "cargo"
+what = "Builds the service; the Rust toolchain from https://rustup.rs."
+
+[[needs]]
+program = "bun"
+what = "Builds the console bundle at every release; the Bun runtime from https://bun.sh."
+
+[[needs]]
+check = "pg_isready -q"
+what = "The PostgreSQL server the document tables stand in, answering on this machine; the postgresql package."
+
+[[port]]
+name = "artifact.server"
+number = 3230
+
+# The service's token, kept at env/artifact.token, the file research and other callers read it from.
+[[token]]
+name = "artifact.service"
+file = "env/artifact.token"
+
+[[token]]
+name = "artifact.console"
+file = "env/artifact-console.token"
+
+[[database]]
+name = "bmo_artifact"
+
+# The release's settings.local.toml. The account service is bmo-web's server; a share link stands under the
+# console's public address, at the bundle's share page.
+[[settings]]
+file = "env/artifact.toml"
+text = """
+[server]
+listen = "127.0.0.1:{{port.artifact.server}}"
+token = "{{token.artifact.service}}"
+
+[console]
+token = "{{token.artifact.console}}"
+calls = ["gate"]
+
+[database]
+url = "postgres://localhost/bmo_artifact"
+
+[files]
+root = "{{data_root}}/artifact/files"
+
+[explorer]
+data_root = "{{data_root}}"
+
+[accounts]
+address = "{{value.web.address}}"
+token = "{{token.web.server}}"
+
+[share]
+address = "{{input.web.public-address}}artifact/share"
+"""
+
+[[line]]
+file = "env/web-console.env"
+key = "ARTIFACT_ADDRESS"
+value = "http://127.0.0.1:{{port.artifact.server}}"
+
+[[line]]
+file = "env/web-console.env"
+key = "ARTIFACT_TOKEN"
+value = "{{token.artifact.console}}"

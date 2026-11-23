@@ -19,7 +19,7 @@
 | `deploy/` | 중립적인 서비스 유닛 템플릿 |
 | `docs/` | 서비스 동작에 대한 기준 문서 |
 
-루트에는 Cargo 매니페스트, `VERSION`, `build.rs`, `testbed.toml`, `rustfmt.toml`, `CLAUDE.md`,
+루트에는 Cargo 매니페스트, `VERSION`, `build.rs`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `LICENSE`, `settings.toml`, 그리고 배포 시 주는 로컬 설정의 예시인
 `settings.local.toml.example`이 있습니다.
 

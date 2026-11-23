@@ -20,7 +20,7 @@ HTML ページを扱い、各ドキュメントはファイル、参照するペ
 | `deploy/` | 中立的なサービスユニットのテンプレート |
 | `docs/` | サービスの動作を定める正典ドキュメント |
 
-ルートには Cargo マニフェスト、`VERSION`、`build.rs`、`testbed.toml`、`rustfmt.toml`、`CLAUDE.md`、
+ルートには Cargo マニフェスト、`VERSION`、`build.rs`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
 `PERSONAL-DATA.md`、`LICENSE`、`settings.toml`、そしてデプロイ時に与えるローカル設定の例である
 `settings.local.toml.example` があります。
 

@@ -19,7 +19,7 @@
 | `deploy/` | 中性的服务单元模板 |
 | `docs/` | 描述服务行为的规范文档 |
 
-根目录下有 Cargo 清单、`VERSION`、`build.rs`、`testbed.toml`、`rustfmt.toml`、`CLAUDE.md`、
+根目录下有 Cargo 清单、`VERSION`、`build.rs`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
 `PERSONAL-DATA.md`、`LICENSE`、`settings.toml`，以及部署时提供的本地设置示例 `settings.local.toml.example`。
 
 ## 文档
