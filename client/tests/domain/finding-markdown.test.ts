@@ -150,7 +150,7 @@ describe("a finding, as the read API answers it", () => {
     const files = (href: string): string | null => ({ "palette-01.webp": "/base/api/archive/4/attachments/8", "gallery.html": "/base/api/archive/4/attachments/7" })[href] ?? null;
     const html = findingHtml(t, "![Pearl](palette-01.webp)\n\n[**the page** opens](gallery.html) [the other file](other.html)", { images, files });
 
-    expect(html).toContain('<img src="/base/api/archive/4/attachments/8" alt="Pearl" loading="lazy">');
+    expect(html).toContain('<img src="/base/api/archive/4/attachments/8" alt="Pearl" loading="lazy" data-drawn-copies>');
     expect(html).toContain('<a href="/base/api/archive/4/attachments/7"><strong>the page</strong> opens</a>');
     expect(html).toContain('<a href="other.html">the other file</a>');
   });

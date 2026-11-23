@@ -4,6 +4,7 @@
 pub mod attachments;
 pub mod document_kinds;
 pub mod documents;
+pub mod drawn_copies;
 pub mod events;
 pub mod files;
 pub mod health;

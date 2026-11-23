@@ -2,6 +2,7 @@ import { isDiagram } from "bmo-ui/app/domain/diagram";
 import DOMPurify from "dompurify";
 import { Marked, Renderer, Tokenizer } from "marked";
 
+import { DRAWN_COPIES } from "./drawn-pictures";
 import { citeId, entryId } from "./footnotes";
 import { addressAsWritten, isWebAddress } from "./web-address";
 
@@ -417,7 +418,10 @@ const findings = new Marked({
       const found = isWebAddress(picture.href) ? comparableAddress(picture.href) : null;
       const address = found === null ? "" : ` data-picture-address="${escapeHtml(found)}"`;
 
-      return `<span class="markdown-figure"><img src="${escapeHtml(source)}" alt="${escapeHtml(text)}" loading="lazy"${address}>${caption}</span>`;
+      // A picture drawn from one of the document's kept files is drawn from its copies once it has loaded.
+      const kept = findingImages(comparableAddress(picture.href)) === null ? ` ${DRAWN_COPIES}` : "";
+
+      return `<span class="markdown-figure"><img src="${escapeHtml(source)}" alt="${escapeHtml(text)}" loading="lazy"${address}${kept}>${caption}</span>`;
     }
   }
 });

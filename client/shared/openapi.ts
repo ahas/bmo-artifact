@@ -1425,6 +1425,12 @@ export interface operations {
                  *     none is named.
                  */
                 scheme?: string | null;
+                /**
+                 * @description The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the
+                 *     ladder at or above it (docs/artifact.md, "A picture drawn small"); a file that is no picture, or a
+                 *     picture not shrunk to it, goes out as kept.
+                 */
+                width?: number | null;
             };
             header?: {
                 /** @description One byte range of the file. */
@@ -1497,6 +1503,12 @@ export interface operations {
                  *     none is named.
                  */
                 scheme?: string | null;
+                /**
+                 * @description The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the
+                 *     ladder at or above it (docs/artifact.md, "A picture drawn small"); a file that is no picture, or a
+                 *     picture not shrunk to it, goes out as kept.
+                 */
+                width?: number | null;
             };
             header?: never;
             path: {
@@ -2015,6 +2027,12 @@ export interface operations {
                  *     none is named.
                  */
                 scheme?: string | null;
+                /**
+                 * @description The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the
+                 *     ladder at or above it (docs/artifact.md, "A picture drawn small"); a file that is no picture, or a
+                 *     picture not shrunk to it, goes out as kept.
+                 */
+                width?: number | null;
             };
             header?: {
                 /** @description One byte range of the file. */
@@ -2253,6 +2271,12 @@ export interface operations {
                  *     none is named.
                  */
                 scheme?: string | null;
+                /**
+                 * @description The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the
+                 *     ladder at or above it (docs/artifact.md, "A picture drawn small"); a file that is no picture, or a
+                 *     picture not shrunk to it, goes out as kept.
+                 */
+                width?: number | null;
             };
             header?: {
                 /** @description One byte range of the file. */
@@ -2303,6 +2327,12 @@ export interface operations {
                  *     none is named.
                  */
                 scheme?: string | null;
+                /**
+                 * @description The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the
+                 *     ladder at or above it (docs/artifact.md, "A picture drawn small"); a file that is no picture, or a
+                 *     picture not shrunk to it, goes out as kept.
+                 */
+                width?: number | null;
             };
             header?: never;
             path: {

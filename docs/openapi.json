@@ -1794,6 +1794,21 @@
             }
           },
           {
+            "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
             "description": "One byte range of the file.",
             "in": "header",
             "name": "Range",
@@ -1936,6 +1951,21 @@
               "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
               "type": [
                 "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
                 "null"
               ]
             }
@@ -3038,6 +3068,21 @@
             }
           },
           {
+            "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
             "description": "One byte range of the file.",
             "in": "header",
             "name": "Range",
@@ -3511,6 +3556,21 @@
             }
           },
           {
+            "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          {
             "description": "One byte range of the file.",
             "in": "header",
             "name": "Range",
@@ -3608,6 +3668,21 @@
               "description": "The scheme a hosted page's prelude draws in: `light`, `dark` or `system`, the design's default where\nnone is named.",
               "type": [
                 "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "description": "The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the\nladder at or above it (docs/artifact.md, \"A picture drawn small\"); a file that is no picture, or a\npicture not shrunk to it, goes out as kept.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
                 "null"
               ]
             }

@@ -11,10 +11,12 @@ use axum::response::Response;
 use headers::{Header, Range};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
+use super::drawn_copies;
 use super::hosted_page::{
   KEPT_FILE_POLICY, PageSounds, SoundFile, hosted_page, hosted_page_policy, reader_scheme, writes_sound,
 };
 use crate::Refusal;
+use crate::helpers::picture;
 use crate::plumbing::http::{Call, Refused, Standing};
 use crate::readings::now_seconds;
 use crate::store::attachments;
@@ -117,6 +119,45 @@ pub async fn kept_file(
       *response.body_mut() = Body::from(bytes[from as usize..=to as usize].to_vec());
     }
   }
+
+  Ok(response)
+}
+
+fn is_picture(media_type: &str) -> bool {
+  media_type.trim_start().to_ascii_lowercase().starts_with("image/")
+}
+
+/// A kept picture as it is drawn at `width` pixels across (docs/artifact.md, "A picture drawn small"): its copy
+/// at the ladder's step, made once and kept in memory under the file and the moment it was written, or the file
+/// as kept where it is not shrunk to that step.
+pub async fn drawn_file(file: &KeptFile, width: u32, cache: &str) -> Result<Response, Refused> {
+  let step = picture::drawn_step(width);
+  let written = tokio::fs::metadata(&file.path).await.map_err(unread)?;
+  let moment = written
+    .modified()
+    .ok()
+    .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
+    .map_or(0, |since| since.as_nanos());
+  let key = format!("{step}|{}|{moment}|{}", written.len(), file.path);
+  let copy = match drawn_copies::kept(&key) {
+    Some(copy) => Some(copy),
+    None => {
+      let bytes = tokio::fs::read(&file.path).await.map_err(unread)?;
+      let made = tokio::task::spawn_blocking(move || picture::drawn(&bytes, step)).await.ok().flatten();
+
+      made.map(|(bytes, media_type)| drawn_copies::keep(key, bytes, media_type))
+    }
+  };
+  let Some(copy) = copy else {
+    return kept_file(file, false, None, cache).await;
+  };
+  let mut response = Response::new(Body::from(copy.bytes.to_vec()));
+  let headers = response.headers_mut();
+
+  set(headers, header::CONTENT_TYPE, copy.media_type);
+  set(headers, header::CACHE_CONTROL, cache);
+  set(headers, header::CONTENT_DISPOSITION, "inline");
+  set(headers, header::CONTENT_LENGTH, &copy.bytes.len().to_string());
 
   Ok(response)
 }
@@ -259,6 +300,8 @@ pub async fn send(
   let page = file.media_type.split(';').next().is_some_and(|kind| kind.trim() == "text/html");
   let mut response = if page && !download {
     hosted_file(standing, file, asked, document, reach).await?
+  } else if let Some(width) = asked.width.filter(|_| !download && is_picture(&file.media_type)) {
+    drawn_file(file, width, cache).await?
   } else {
     kept_file(file, download, asking.range.as_deref(), cache).await?
   };

@@ -359,6 +359,11 @@ pub struct ContentQuery {
   /// Send the file itself to keep, under its name.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub download: Option<bool>,
+  /// The width in screen pixels a kept picture is drawn at, answered with its copy at the first step of the
+  /// ladder at or above it (docs/artifact.md, "A picture drawn small"); a file that is no picture, or a
+  /// picture not shrunk to it, goes out as kept.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub width: Option<u32>,
 }
 
 /// One kind a document may be filed as.

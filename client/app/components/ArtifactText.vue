@@ -60,6 +60,7 @@ import { footnoteJumps } from "../domain/footnote-jumps";
 import { backMarkAt, citeId, entryId, markAt, sourceOf } from "../domain/footnotes";
 import { FINDING_BLOCK_PLACES, findingBlock } from "../domain/finding-blocks";
 import { findingReading, loadFindingReading } from "../domain/finding-load";
+import { drawKeptPictures } from "../domain/drawn-pictures";
 
 import type { FindingBlock } from "../domain/finding-blocks";
 import type { ImageSource } from "../domain/finding-markdown";
@@ -117,6 +118,7 @@ watch(
       emit("rendered", shown.value);
       void drawDiagrams(shown.value, dark.value);
       colourCode(shown.value, dark.value);
+      drawKeptPictures(shown.value);
     }
   },
   // A text mounted once the reading is already in the browser has its HTML from the start, so the

@@ -575,3 +575,66 @@ async fn the_kinds_answer_for_themselves_and_the_service_is_ready() {
 
   assert_eq!(health, json!({ "ready": true, "reason": null, "version": bmo_artifact::VERSION }));
 }
+
+// A kept picture asked for at a width is its copy at the ladder's first step at or above it, at its own shape, and
+// asked for at none, or at one past its own, is the file as kept (docs/artifact.md, "A picture drawn small").
+#[tokio::test]
+async fn a_kept_picture_asked_at_a_width_is_its_copy_at_the_ladder_step_and_the_kept_file_otherwise() {
+  let service = Service::new().await;
+  let id = service
+    .call(Method::POST, "/documents", Some(record("Drawn small", "![a figure](wide.png)")))
+    .await
+    .json()["id"]
+    .as_i64()
+    .expect("an id");
+  let mut wide = Vec::new();
+
+  image::RgbaImage::from_fn(600, 300, |x, y| image::Rgba([((x + y) % 2 * 255) as u8, 90, 160, 255]))
+    .write_to(&mut std::io::Cursor::new(&mut wide), image::ImageFormat::Png)
+    .expect("a png is written");
+
+  let picture = service
+    .call(
+      Method::POST,
+      &format!("/documents/{id}/attachments"),
+      Some(json!({ "name": "wide.png", "mediaType": "image/png", "content": STANDARD.encode(wide) })),
+    )
+    .await
+    .json()["id"]
+    .as_i64()
+    .expect("an id");
+  let path = format!("/documents/{id}/attachments/{picture}");
+  let kept = service.call(Method::GET, &path, None).await;
+  let copy = service.call(Method::GET, &format!("{path}?width=40"), None).await;
+  let again = service.call(Method::GET, &format!("{path}?width=40"), None).await;
+  let past = service.call(Method::GET, &format!("{path}?width=4000"), None).await;
+
+  assert_eq!(kept.header("content-type"), "image/avif");
+  assert_eq!((copy.status, copy.header("content-type")), (StatusCode::OK, "image/jpeg".to_owned()));
+
+  let drawn = image::load_from_memory(&copy.bytes).expect("a picture");
+
+  assert_eq!(bmo_artifact::helpers::picture::drawn_step(40), 47);
+  assert_eq!(
+    (drawn.width(), drawn.height()),
+    (47, 24),
+    "the step's width, at the picture's own shape"
+  );
+  assert_eq!(again.bytes, copy.bytes, "the copy is made once and kept");
+  assert_eq!(
+    (past.header("content-type"), past.bytes),
+    ("image/avif".to_owned(), kept.bytes),
+    "a width past the picture's own sends the file as kept"
+  );
+}
+
+#[test]
+fn the_ladder_runs_from_16_to_2048_each_step_at_most_a_quarter_wider() {
+  let steps = bmo_artifact::helpers::picture::drawn_steps();
+
+  assert_eq!((steps.first(), steps.last()), (Some(&16), Some(&2048)));
+  assert!(
+    steps.windows(2).all(|pair| pair[1] > pair[0] && pair[1] * 4 <= pair[0] * 5),
+    "{steps:?}"
+  );
+}

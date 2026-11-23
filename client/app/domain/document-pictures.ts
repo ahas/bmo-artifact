@@ -1,5 +1,6 @@
 import { countText } from "bmo-ui/app/domain/numbers";
 
+import { DRAWN_COPIES } from "./drawn-pictures";
 import { MOST_PICTURES, VIEWER_ADDRESS, VIEWER_PICTURES, pictureAddress } from "../../shared/document-pictures";
 import { isWebAddress } from "./web-address";
 
@@ -23,7 +24,8 @@ export function webPicture(href: string): string | null {
 // cannot load. Its caption is its own alternative text, else the caption of the figure it stands in;
 // its address is where it was found, where the document says so, else where it is shown from.
 export function viewerPicture(image: HTMLImageElement): DocumentPicture | null {
-  const src = image.currentSrc || image.src;
+  // A kept picture drawn from a copy opens whole from its own file (docs/artifact.md, "A picture drawn small").
+  const src = image.hasAttribute(DRAWN_COPIES) ? image.src : image.currentSrc || image.src;
 
   if (!VIEWER_ADDRESS.test(src) || image.getClientRects().length === 0) return null;
 

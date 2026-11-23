@@ -495,6 +495,29 @@ A picture in a document opens in the picture viewer, for a markdown document and
 - **One rule for both,** kept in the design's file, which the console bundle and the page's lines both
   read.
 
+## A picture drawn small
+
+A kept picture the body draws smaller than it is kept is drawn from a copy made near that size.
+
+- **Why:** a browser shrinks a picture by halving it as many times as fit and sampling the rest with no
+  filter, so a picture drawn between one and four times smaller than its file breaks into jagged edges
+  and ripples, and no stylesheet setting changes how it filters. A body column draws a kept picture of up
+  to 2048 pixels at a few hundred, the very span where it shows most.
+- **The copies:** the attachment routes answer a `width` asked of a kept picture with the picture shrunk
+  to the first step of one ladder at or above it, filtered with a Lanczos kernel, as JPEG where it is
+  opaque and PNG where it is not. The ladder starts at 16 pixels and each step is at most a quarter wider
+  than the one before, up to 2048. A width at or past the picture's own, a GIF or a WebP, which may move, a
+  file that is no picture and a download go out as kept. The copies made last are kept in memory within a
+  bound, under the file and the moment it was written.
+- **The choice:** once a kept picture the body draws has loaded, where it stands more than a quarter
+  smaller than its file on the screen's pixels, it names the steps below its own width as the widths it can
+  be drawn from, and the width it stands at; the browser draws it from the first covering that width at the
+  screen's density. Its own file is no candidate, since a browser keeps drawing a candidate it already holds
+  at a higher density than it needs. It keeps the width it stood at. A picture the body draws from the web,
+  and a page's own pictures, are drawn as they come.
+- **The viewer opens the kept file:** a picture drawn from a copy opens whole from its own address
+  (「Pictures open whole」), the bytes as they were kept.
+
 ## The files after the body
 
 A markdown document's files stand after its body, on the console's screen and on a share page alike, in the

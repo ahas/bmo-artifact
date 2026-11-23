@@ -117,3 +117,63 @@ pub fn archived(bytes: &[u8], archived: Archived) -> Option<Vec<u8>> {
 
   Some(out)
 }
+
+// The narrowest and the widest copy of a picture drawn small, and how much wider each step may be than the
+// one before (`docs/artifact.md`, "A picture drawn small").
+const FIRST_STEP: u32 = 16;
+const LAST_STEP: u32 = 2048;
+// How hard a drawn copy is squeezed where it is written as JPEG.
+const DRAWN_QUALITY: u8 = 86;
+
+/// The widths a picture drawn small is copied at, narrowest first, each at most a quarter wider than the one
+/// before.
+pub fn drawn_steps() -> Vec<u32> {
+  let mut steps = Vec::new();
+  let mut width = FIRST_STEP;
+
+  while width < LAST_STEP {
+    steps.push(width);
+    width = width * 5 / 4;
+  }
+
+  steps.push(LAST_STEP);
+  steps
+}
+
+/// The step a width asked for is answered at: the first at or above it, and the widest past the last.
+pub fn drawn_step(width: u32) -> u32 {
+  drawn_steps().into_iter().find(|step| *step >= width).unwrap_or(LAST_STEP)
+}
+
+/// A picture as it is drawn at `width` pixels across, at its own shape: upright, shrunk with a Lanczos kernel
+/// and written as JPEG where it is opaque and PNG where it is not, with the type it is written in. None where
+/// it is already no wider, may move (a GIF or a WebP) or is no picture this module reads.
+pub fn drawn(bytes: &[u8], width: u32) -> Option<(Vec<u8>, &'static str)> {
+  if matches!(image::guess_format(bytes), Ok(ImageFormat::Gif | ImageFormat::WebP)) {
+    return None;
+  }
+
+  let picture = decode(bytes, true).ok()?;
+
+  if picture.width() <= width {
+    return None;
+  }
+
+  let height = ((u64::from(picture.height()) * u64::from(width) + u64::from(picture.width()) / 2)
+    / u64::from(picture.width()))
+  .max(1) as u32;
+  let shrunk = picture.resize_exact(width, height, FilterType::Lanczos3);
+  let mut out = Vec::new();
+
+  if shrunk.to_rgba8().pixels().all(|pixel| pixel.0[3] == u8::MAX) {
+    let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, DRAWN_QUALITY);
+
+    shrunk.to_rgb8().write_with_encoder(encoder).ok()?;
+
+    Some((out, "image/jpeg"))
+  } else {
+    shrunk.write_to(&mut Cursor::new(&mut out), ImageFormat::Png).ok()?;
+
+    Some((out, "image/png"))
+  }
+}

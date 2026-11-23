@@ -262,11 +262,14 @@ A document the reader read last:
 |---|---|---|
 | `GET /documents/{documentId}/attachments` | query `after?`, `limit?` | 200, a page of attachments, in the order they were kept |
 | `POST /documents/{documentId}/attachments` | `name`, `mediaType`, `role?`, `content` in base64 | 201, the attachment |
-| `GET /documents/{documentId}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes |
+| `GET /documents/{documentId}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`, `width?`; the `Range` header | 200 or 206, the bytes |
 
 - **A file is kept as docs/artifact.md 「Attachments」 says:** its kind read from its bytes and its name, a
   picture kept upright as AVIF, a name the document already keeps refused `bad-request`. One file is at
   most 64 MiB, refused `too-large` past it.
+- **`width`** asks a kept picture drawn small: the copy at the first step of the ladder at or above it,
+  answered 200 whole, as docs/artifact.md 「A picture drawn small」 says; a width a picture is not shrunk to
+  sends the file as kept. The share and reading routes for an attachment take it alike.
 - **The bytes are served** with `Range` answered 206, an HTML file as a hosted page as the content route
   does, and every other file under the policy that lets nothing on it run. `download=true` sends it to
   keep. An attachment of another document is `not-found`.
@@ -325,7 +328,7 @@ what the route under `/documents/{documentId}` it stands for answers for that do
 | `GET /shares/{token}/content` | query `scheme?`, `language?`, `download?` | 200, the file |
 | `GET /shares/{token}/picture` | | 200, the cover picture as JPEG |
 | `GET /shares/{token}/attachments` | query `after?`, `limit?` | 200, a page of attachments |
-| `GET /shares/{token}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes, answering any origin |
+| `GET /shares/{token}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`, `width?`; the `Range` header | 200 or 206, the bytes, answering any origin |
 | `GET /shares/{token}/references` | query `after?`, `limit?` | 200, a page of references |
 | `GET /shares/{token}/references/{referenceId}` | | 200, the reference, its preview read |
 | `GET /shares/{token}/references/{referenceId}/image` | | 200, the page's preview picture |
@@ -380,7 +383,7 @@ console relays them with no session, as a sandboxed page asks for them with none
 
 | Route | Takes | Answers |
 |---|---|---|
-| `GET /readings/{token}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`; the `Range` header | 200 or 206, the bytes, answering any origin |
+| `GET /readings/{token}/attachments/{attachmentId}` | query `scheme?`, `language?`, `download?`, `width?`; the `Range` header | 200 or 206, the bytes, answering any origin |
 | `GET /player/{token}` | | 200, the player's script, the token being its file's name |
 
 - **A reading token whose signature does not hold, or whose time has passed,** is `not-found`, and so is an

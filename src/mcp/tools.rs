@@ -237,6 +237,7 @@ fn content() -> ArtifactTool {
         scheme: None,
         language: None,
         download: Some(true),
+        width: None,
       };
       let content = client.content(key.document_id, &asked).await?;
 
@@ -274,6 +275,7 @@ async fn drawn_by_its_body(client: &ArtifactClient, input: &AttachInput) -> Resu
     scheme: None,
     language: None,
     download: Some(true),
+    width: None,
   };
   let body = client.content(input.document_id, &asked).await?;
   let left = left_out(&String::from_utf8_lossy(&body.bytes), [name]);
