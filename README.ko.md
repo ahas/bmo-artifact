@@ -16,7 +16,7 @@
 | `skills/` | `bmo-artifact` 스킬 |
 | `client/` | 콘솔 번들 |
 | `tests/` | 저장소 검사를 포함한 테스트 |
-| `deploy/` | 중립적인 서비스 유닛 템플릿 |
+| `deploy/` | 중립적인 서비스 유닛 템플릿과 배포가 게시하는 앱 선언 |
 | `docs/` | 서비스 동작에 대한 기준 문서 |
 
 루트에는 Cargo 매니페스트, `VERSION`, `build.rs`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,

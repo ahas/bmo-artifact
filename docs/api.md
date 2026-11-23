@@ -719,6 +719,11 @@ flowchart TD
   screens under `/artifact`, the former screen path `/archive`, the service `artifact`, the role `member`,
   and the API prefix left at its default. No screen needs the owner key, reads the event stream or opens a
   socket, and no event is raised as a notice.
+- **The app.** The service name `artifact` is the key of the Artifact app the screens are, which a person's
+  settings switch on and off on the account service's delegation chain. The service ships no tool, so its
+  deployment publishes the app from `deploy/app.toml`, the `[app]` table alone, offered and on by default, with
+  `bmo pocket app` once the service answers ready (bmo-pocket's `docs/api.md`, 「An app on the delegation
+  chain」).
 - **The share reads** are the share link's own read, `GET /shares/{token}`, and every read of what it opens
   under it (「Share links」), the reading's attachment read and the player's script (「Readings」); the share
   head is `GET /shares/{token}/head`, which is no share read.

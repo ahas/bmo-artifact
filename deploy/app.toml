@@ -1,0 +1,12 @@
+# The Artifact app this service's console screen is. The service ships no tool, so this declaration holds the
+# `[app]` table alone, and its deployment publishes it on the delegation chain with `bmo pocket app
+# deploy/app.toml` once the service answers ready, so a person's settings can switch the screen (bmo-pocket's
+# docs/api.md, 「An app on the delegation chain」).
+
+[app]
+key = "artifact"
+name = "Artifact"
+description = "Keeps, searches and shares documents, from records and learning books to imported web pages and HTML pages."
+icon = "i-material-symbols-archive-outline"
+offered = true
+on = true

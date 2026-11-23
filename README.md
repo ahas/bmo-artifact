@@ -18,7 +18,7 @@ calls no other unit.
 | `skills/` | The `bmo-artifact` skill |
 | `client/` | The console bundle |
 | `tests/` | The tests, the repository checks among them |
-| `deploy/` | The neutral service unit template |
+| `deploy/` | The neutral service unit template, and the app declaration its deployment publishes |
 | `docs/` | The canonical statements of what the service does |
 
 At the root stand the Cargo manifest, `VERSION`, `build.rs`, `testbed.toml`, `install.toml`, `rustfmt.toml`,

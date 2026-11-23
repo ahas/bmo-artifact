@@ -84,6 +84,7 @@ client/                    the console bundle (see "The console bundle")
   tests/
 deploy/
   bmo-artifact.service     the neutral service unit template
+  app.toml                 the Artifact app's declaration, the `[app]` table alone, which the deployment publishes
 ```
 
 ## Plumbing
@@ -228,6 +229,8 @@ flowchart TD
 - the console probe a deployment runs once the service answers (bmo-testbed's `docs/deploy.md`, 「The console
   probe」), reached through `bmo-artifact console-reach`, which prints the address, the console's token and
   the service's token the release's settings name;
+- the step once the service answers: the Artifact app published on the account service's delegation chain from
+  `deploy/app.toml` with `bmo pocket app` (docs/api.md, 「The console」);
 - the deployment: the deploy tree under `~/.local/share/bmo-artifact`, the data root it shares with the
   services whose files stand under it, the link that gives a release its local settings, the one unit,
   and the health a deployment waits on.

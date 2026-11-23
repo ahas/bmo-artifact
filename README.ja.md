@@ -17,7 +17,7 @@ HTML ページを扱い、各ドキュメントはファイル、参照するペ
 | `skills/` | `bmo-artifact` スキル |
 | `client/` | コンソールバンドル |
 | `tests/` | リポジトリのチェックを含むテスト |
-| `deploy/` | 中立的なサービスユニットのテンプレート |
+| `deploy/` | 中立的なサービスユニットのテンプレートと、デプロイが公開するアプリ宣言 |
 | `docs/` | サービスの動作を定める正典ドキュメント |
 
 ルートには Cargo マニフェスト、`VERSION`、`build.rs`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、

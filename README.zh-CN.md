@@ -16,7 +16,7 @@
 | `skills/` | `bmo-artifact` 技能 |
 | `client/` | 控制台包 |
 | `tests/` | 测试，其中包括仓库检查 |
-| `deploy/` | 中性的服务单元模板 |
+| `deploy/` | 中性的服务单元模板，以及部署发布的应用声明 |
 | `docs/` | 描述服务行为的规范文档 |
 
 根目录下有 Cargo 清单、`VERSION`、`build.rs`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
