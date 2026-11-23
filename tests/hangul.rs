@@ -32,7 +32,10 @@ fn no_text_file_holds_hangul() {
   let mut found = Vec::new();
   let pack = language_pack();
 
-  for path in files_under(Path::new(ROOT)).into_iter().filter(|path| !path.starts_with(&pack) && !is_root_readme(path)) {
+  for path in files_under(Path::new(ROOT))
+    .into_iter()
+    .filter(|path| !path.starts_with(&pack) && !is_root_readme(path))
+  {
     // A file that is not UTF-8 is not text.
     let Ok(text) = fs::read_to_string(&path) else { continue };
 
