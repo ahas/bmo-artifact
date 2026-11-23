@@ -1,0 +1,13 @@
+{
+  "additionalProperties": false,
+  "description": "One share link, by its token.",
+  "properties": {
+    "token": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "token"
+  ],
+  "type": "object"
+}

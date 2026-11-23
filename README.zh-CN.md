@@ -11,7 +11,8 @@
 
 | 文件夹 | 内容 |
 |---|---|
-| `src/` | 库和唯一的可执行文件 `bmo-artifact`：路由、存储、客户端、MCP 服务器和命令 |
+| `src/` | 库和服务的可执行文件 `bmo-artifact`：路由、存储、客户端、MCP 服务器和命令 |
+| `tools/` | 工具宿主放置的工具：清单、模式和可执行文件 `artifact-tool` |
 | `lang/` | 文档措辞文件的英文默认值 |
 | `skills/` | `bmo-artifact` 技能 |
 | `client/` | 控制台包 |

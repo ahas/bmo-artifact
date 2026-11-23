@@ -1,4 +1,4 @@
-//! The one binary: the service, its command and its harness plugin (`docs/api.md`, "The command"). Its line
+//! The service's binary: the service, its command and its harness plugin (`docs/api.md`, "The command"). Its line
 //! is built from every command registered beside its own run.
 
 use std::process::ExitCode;

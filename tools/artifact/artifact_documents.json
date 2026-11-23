@@ -1,0 +1,65 @@
+{
+  "description": "What `GET /documents` is filtered and paged by.",
+  "properties": {
+    "after": {
+      "description": "Only documents newer than this one, by its id.",
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "before": {
+      "description": "Only documents older than this one, by its id.",
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "kind": {
+      "description": "One kind.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "label": {
+      "description": "`key:value` for documents whose label `key` is `value`, or `key` alone for those carrying it.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "limit": {
+      "description": "At most this many: 30 where none is given, 200 at most.",
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "picture": {
+      "description": "`true` for the documents keeping a picture alone, those `hasPicture` marks.",
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "q": {
+      "description": "A phrase matched whole and without regard to case in the title, the labels and the body.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scope": {
+      "description": "One scope.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "type": "object"
+}

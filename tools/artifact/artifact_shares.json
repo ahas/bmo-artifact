@@ -1,0 +1,30 @@
+{
+  "description": "What `GET /shares` is filtered and paged by.",
+  "properties": {
+    "after": {
+      "description": "Only the links made after this time, in epoch milliseconds: the last item's `createdAt`.",
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "documentId": {
+      "description": "One document's link.",
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "limit": {
+      "description": "At most this many: 30 where none is given, 200 at most.",
+      "format": "int64",
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "type": "object"
+}

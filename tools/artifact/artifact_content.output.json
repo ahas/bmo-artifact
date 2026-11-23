@@ -1,0 +1,27 @@
+{
+  "$defs": {
+    "ContentOutput": {
+      "description": "A document's file, in base64.",
+      "properties": {
+        "content": {
+          "description": "The file's bytes in base64.",
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "content",
+        "mediaType"
+      ],
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/ContentOutput"
+    }
+  ],
+  "type": "object"
+}

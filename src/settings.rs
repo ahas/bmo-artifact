@@ -230,6 +230,18 @@ impl Settings {
   /// none is given. Every path a setting names is made to stand on `dir`, so a relative one reads from
   /// there and not from wherever the process was started.
   pub fn read(dir: &Path, environment: Option<HashMap<String, String>>) -> Result<Self, SettingsError> {
+    Self::layered(dir, &dir.join(LOCAL_SETTINGS_FILE), false, environment)
+  }
+
+  /// The settings file in `dir`, the local file `local` over it, and `environment` over both, or this process's
+  /// environment where none is given; a local file that does not stand is refused where it is `required`. Every
+  /// path a setting names is made to stand on `dir`.
+  pub fn layered(
+    dir: &Path,
+    local: &Path,
+    required: bool,
+    environment: Option<HashMap<String, String>>,
+  ) -> Result<Self, SettingsError> {
     let environment = Environment::with_prefix(ENVIRONMENT_PREFIX)
       .prefix_separator("_")
       .separator("__")
@@ -237,7 +249,7 @@ impl Settings {
 
     let mut settings: Self = Config::builder()
       .add_source(File::from(dir.join(SETTINGS_FILE)).format(FileFormat::Toml))
-      .add_source(File::from(dir.join(LOCAL_SETTINGS_FILE)).format(FileFormat::Toml).required(false))
+      .add_source(File::from(local).format(FileFormat::Toml).required(required))
       .add_source(environment)
       .build()?
       .try_deserialize()?;

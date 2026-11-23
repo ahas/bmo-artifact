@@ -2,7 +2,9 @@
 
 ## Root
 
-The root holds one Rust crate and one console bundle. The bundle sits in its own subfolder.
+The root holds one Rust crate and one console bundle. The bundle sits in its own subfolder. The crate builds two
+executables: the service's binary, and the tool a tool host places, whose manifest and schemas stand under
+`tools/`.
 
 - **No repeated name.** The repository's folder is already named for what it is, so no folder inside
   it repeats that name.
@@ -23,7 +25,7 @@ testbed.toml
 src/
   lib.rs
   bin/
-    bmo-artifact.rs        the one binary: its line built from every registered command
+    bmo-artifact.rs        the service's binary: its line built from every registered command
   commands/                serve, migrate, health, openapi, mcp, nouns, version, html-read and console-reach, each registered beside its run
   settings.rs              every setting (docs/api.md, "Settings")
   pool.rs                  connection pools and how a statement is bound and run on them
@@ -54,8 +56,13 @@ src/
     files.rs               a kept file sent as kept or as a hosted page, under its isolation
     readers.rs             who a call reads for, and which documents that reader reaches and keeps
     hosted_page.rs         the sandboxed HTML page, its prelude and its bridges
-  mcp/                     the MCP server and its tools, each registered beside its call
+  mcp/                     the MCP server and its tools, each registered beside its call, and the call a tool host hands the placed tool
   helpers/                 the answer ceiling, a line's marks filled in, and a picture read and kept as AVIF
+tools/
+  artifact/                the tool a tool host places (docs/api.md, "The tool a tool host places")
+    tool.toml              its manifest: one entry for each harness tool
+    *.json                 each entry's input schema, and *.output.json its output schema, as the tools generate them
+    main.rs                its executable, `artifact-tool`: one call on standard input answered on standard output
 lang/
   documents.en.yaml        the document wording file's English default
 skills/
@@ -226,9 +233,12 @@ flowchart TD
 - the quick checks for the layout, the dependencies and the shared versions, with the base libraries,
   bmo-console-face, bmo-explorer and bmo-web's client allowed, and bmo-chat's shared versions as the ones held to;
 - the test database: the migration files that name its template, and the `migrate` command that makes it;
-- the one binary a release carries;
-- the steps before the flip: the document tables brought to the schema the release carries, and the console
+- the two executables a release carries: the service's binary and the placed tool's;
+- the steps before the flip: the document tables brought to the schema the release carries; the console
   bundle's module and the player folder built in the release, into the folders the settings name by default;
+  and the tool a tool host places, laid into one folder with the release's `settings.toml` and registered with
+  `bmo pocket put --placed --service bmo-artifact --allow documents.file` (docs/api.md, 「The tool a tool host
+  places」);
 - the console probe a deployment runs once the service answers (bmo-testbed's `docs/deploy.md`, 「The console
   probe」), reached through `bmo-artifact console-reach`, which prints the address, the console's token and
   the service's token the release's settings name;
@@ -271,6 +281,10 @@ belong to the testbed.
     the two reads this service makes from the users and units the test places, and the settings name it.
 - **The MCP server** is started as a harness starts it and held to its twelve tools; one test reaches a
   listening service through it, and one publishes a document from a file.
+- **The tool a tool host places** has its manifest held to the harness tools, entry by entry, and each schema
+  file to the schema the tool generates; its executable is handed calls as the tool host hands them, in a clean
+  environment, and is held to acting for the record's account, to refusing a record naming none and a file of
+  the caller's machine, and to reading the service's settings from a data root of the test's own.
 - **The console face** is stood up over a bundle folder of the test's own holding a module, a stylesheet,
   words and the layer of the bmo-ui release `client/vendor/` holds: the manifest it serves is read through
   bmo-chat's face reading over that release file and names that layer and this service's declaration, and

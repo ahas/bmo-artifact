@@ -1,6 +1,6 @@
-# The document service as one crate: the HTTP server, its client, its command and MCP server, and the
-# repository checks in `tests/`. The only manifest at the root; the console bundle keeps its own under
-# `client/`.
+# The document service as one crate: the HTTP server, its client, its command and MCP server, the tool a tool
+# host places, and the repository checks in `tests/`. The only manifest at the root; the console bundle keeps
+# its own under `client/`.
 [package]
 name = "bmo-artifact"
 description = "Documents kept, searched and shared: records, learning books, imported pages and HTML pages, with their attachments, references and share links."
@@ -14,6 +14,13 @@ autotests = false
 [[bin]]
 name = "bmo-artifact"
 path = "src/bin/bmo-artifact.rs"
+test = false
+
+# The tool a tool host places, beside its manifest and schemas under tools/artifact/ (docs/api.md, "The tool a
+# tool host places").
+[[bin]]
+name = "artifact-tool"
+path = "tools/artifact/main.rs"
 test = false
 
 [dependencies]

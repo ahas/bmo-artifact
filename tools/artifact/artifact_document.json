@@ -1,0 +1,14 @@
+{
+  "additionalProperties": false,
+  "description": "One document, by its number.",
+  "properties": {
+    "documentId": {
+      "format": "int64",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "documentId"
+  ],
+  "type": "object"
+}

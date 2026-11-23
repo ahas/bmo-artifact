@@ -13,6 +13,8 @@ flowchart TD
   H[A harness] -->|stdio| M[bmo-artifact mcp]
   C[Any other caller] -->|HTTP| S[The service]
   M -->|the client| S
+  P[A tool host] -->|one process a call| A[artifact-tool]
+  A -->|the client| S
   S --> D[(The document tables)]
   S --> F[A document's place: the file root, or a SharePoint library]
   S -->|bmo-explorer's client| E[Page reading]
@@ -612,7 +614,9 @@ value is written.
 
 ## The command
 
-`bmo-artifact` is one binary: the service, its command and its harness plugin alike.
+`bmo-artifact` is the service's binary: the service, its command and its harness plugin alike. The crate's
+other executable, `artifact-tool`, is the tool a tool host places (「The tool a tool host places」), which no
+person runs.
 
 - **`bmo-artifact serve`** settles the document tables and answers the routes.
 - **`bmo-artifact migrate`** brings the database the settings name up to the schema and prints how many
@@ -688,9 +692,11 @@ The plugin is `bmo-artifact`: the MCP server `bmo-artifact mcp` starts and the s
 `skills/bmo-artifact/SKILL.md`, which tells a harness when and how to use it. The server reaches the
 service at `--address`, or at the settings' `server.listen` where none is given, with the settings' token.
 Each tool is one call of the client, answered as structured content; a refusal is a tool result marked
-`isError` whose text is the route's status, `code` and `error`. A harness publishes what it wrote with
-`artifact_publish`, which hands it back the document's number and the link to hand to a reader; finds earlier
-documents with `artifact_search`; and opens a link on a document already filed with `artifact_share`.
+`isError` whose text is the route's status, `code` and `error`. A tool's input schema states what a caller may
+send, an argument the tool reads with a default left optional, and its output schema what the service answers.
+A harness publishes what it wrote with `artifact_publish`, which hands it back the document's number and the
+link to hand to a reader; finds earlier documents with `artifact_search`; and opens a link on a document already
+filed with `artifact_share`.
 
 **The server acts for the account `BMO_OWNER_ACCOUNT` holds in the environment it is started in,** naming it in
 `Owner-Key` on every call as the archive verb does (「The archive verb」): a supervisor of an account files its
@@ -721,6 +727,44 @@ after. A page's files and every file that is no picture are attached as handed.
 - **`artifact_publish`'s words come as `body`, or as the `path` of a file on the machine the harness runs
   on,** read whole and refused over the size one call may carry. Its link is absolute to the share address the
   settings name, so the harness hands the reader what the service answered and adds nothing to it.
+
+## The tool a tool host places
+
+The same harness tools are a placed tool of the tool host, bmo-pocket (bmo-pocket's `docs/authoring.md` and
+`docs/mcp-host.md`, 「Placed tools」), so a program whose machine holds neither the service's address nor its token,
+a supervisor's program on a person's PC or on an isolation node among them, reaches them through the tool host it
+is handed. Its folder is `tools/artifact/`; its executable is `artifact-tool`.
+
+- **One tool, `artifact`, of protocol 1 and mode `call`:** the host starts one process a call at home, in the
+  placed folder, hands it the call and the session record on standard input, and reads one tool result off its
+  standard output.
+- **Its entries stand in the namespace `artifact`,** one for each harness tool and named as it is, from
+  `artifact_attach` to `artifact_unshare` (「The harness plugin」), so a program calls the same name through the
+  tool host as through the MCP server. Each takes the tool's input and answers its output, the schema files beside
+  the manifest being what the tool generates, and states the tool's description. Those that call a `GET` route —
+  `artifact_documents`, `artifact_search`, `artifact_document`, `artifact_content` and `artifact_shares` — are
+  marked read-only; `artifact_unshare` is marked destructive and `artifact_import` as reaching outside the machine.
+- **Each entry asks the capability `documents.file`,** so a session is shown them only where its issuer grants it.
+- **Each call acts for the record's `ownerAccount`,** named in `Owner-Key` as the MCP server names
+  `BMO_OWNER_ACCOUNT`, so the documents it files are that account's and it finds and reads only what that account
+  reads (「Readers」). A record naming no account, or an empty one, is refused with a failed tool result saying the
+  session acts for no account: the hosted tools never reach every document.
+- **No file of the caller's machine is read.** The tool runs at home, so an argument naming a file on the machine
+  the caller stands on — `artifact_publish`'s `path` — is refused with a failed tool result saying so and naming
+  the argument the words go as instead, `body`; the entry's description says the same. A file attached goes as its
+  bytes in base64, as `artifact_attach` takes it.
+- **The service's address and token are the deployment's own settings, read at home by each call,** never handed
+  in the record, a variable or a log: the defaults from the `settings.toml` the deployment places beside the
+  executable, the deployment's local settings at `env/artifact.toml` under the data root laid over them, and the
+  call's environment over both (「Settings」). The data root is `BMO_DATA_DIR`, which the session's record hands
+  every call. A call handed no data root, or whose settings do not read, is a failed tool result after `ERROR: `,
+  naming the files and nothing of their values.
+- **A failed call is a failed tool result** whose text is the route's status, `code` and `error`, or the sentence
+  saying why nothing answered, as the MCP server's refusals are.
+- **The deployment places and registers it** before it flips the release: the executable, the release's
+  `settings.toml`, the manifest and the schema files laid into one folder and put with
+  `bmo pocket put --placed --service bmo-artifact --allow documents.file` (bmo-pocket's `docs/registry.md`,
+  「Put」), served from the tool host's next call.
 
 ## The console
 
@@ -841,7 +885,8 @@ The console bundle makes two calls of its own, through the console rather than t
 The settings are read at start in layers, each overriding the one before: the repository's
 `settings.toml`, then `settings.local.toml` beside it, then `BMO_ARTIFACT_<TABLE>__<KEY>` in the
 environment. A path a key names that is relative is read from the directory those settings stand in,
-wherever the process was started.
+wherever the process was started. The tool a tool host places reads the same keys with its local file at the
+data root's `env/artifact.toml` (「The tool a tool host places」).
 
 | Table | Key | What it is |
 |---|---|---|
@@ -890,6 +935,9 @@ worker:
   filed at a SharePoint place.
 - **Agency's chat line** starts `bmo-artifact mcp` in the supervisor's program, whose environment carries
   `BMO_OWNER_ACCOUNT`; whatever wraps the start keeps that variable, or the supervisor's documents are filed
-  with no owner.
+  with no owner. A supervisor whose program runs where the service's address and token are not, on a person's PC
+  or an isolation node, is handed the tool host's namespace `artifact` in its place (「The tool a tool host
+  places」), and its session's record names its account in `ownerAccount`, holds `documents.file`, and hands
+  `BMO_DATA_DIR` in its variables.
 - **bmo-ui's share dialog** has a link part and a member part and takes no part a host brings, so the document screen
   offers unit shares in a dialog of its own beside it (docs/artifact.md, 「Where a person reads it」).

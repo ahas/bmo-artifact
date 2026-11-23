@@ -1,0 +1,47 @@
+{
+  "$defs": {
+    "Share": {
+      "description": "A share link.",
+      "properties": {
+        "createdAt": {
+          "description": "Epoch milliseconds.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "documentId": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "expiresAt": {
+          "description": "Epoch milliseconds; null for a link with no end.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "token": {
+          "type": "string"
+        },
+        "url": {
+          "description": "The share address, a `/` and the token.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "token",
+        "documentId",
+        "url",
+        "createdAt",
+        "expiresAt"
+      ],
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/Share"
+    }
+  ],
+  "type": "object"
+}

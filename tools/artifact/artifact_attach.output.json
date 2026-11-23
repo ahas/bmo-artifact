@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "Attachment": {
+      "description": "One file a document keeps.",
+      "properties": {
+        "byteCount": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "createdAt": {
+          "description": "Epoch milliseconds.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "documentId": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "kind": {
+          "description": "What it is read as: `image`, `audio`, `video`, `text`, `page` or `file`.",
+          "type": "string"
+        },
+        "mediaType": {
+          "description": "Its type as kept.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name it is shown and named by in the body; a last part such as `-ko` before the extension is the\nlanguage it is in.",
+          "type": "string"
+        },
+        "role": {
+          "description": "The caller's word for its part in the document; `head` marks a file a reader is shown at a markdown\ndocument's head, a sound in the listen band. A page stands its sounds where it writes them.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "documentId",
+        "name",
+        "mediaType",
+        "kind",
+        "byteCount",
+        "role",
+        "createdAt"
+      ],
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/Attachment"
+    }
+  ],
+  "type": "object"
+}

@@ -1,0 +1,130 @@
+# The harness tools served by the tool host at home, each entry named as the MCP server's tool of the same work, so a
+# program standing on a machine that holds neither the service's address nor its token files and finds documents
+# as it does at home (docs/api.md, "The tool a tool host places"). Each call acts for the session record's
+# ownerAccount, and reads the service's settings from the placed settings.toml with the data root's
+# env/artifact.toml laid over it. The repository's tests hold the entries and their schema files to the tools the
+# crate generates.
+
+[tool]
+name = "artifact"
+protocol = 1
+language = "rust"
+build = 'cargo build --release --bin artifact-tool && cp "$BMO_CARGO_TARGET/release/artifact-tool" ../../settings.toml "$BMO_TOOL_OUT/"'
+check = 'cargo test --test main hosted_tool::'
+run = ["artifact-tool"]
+mode = "call"
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_attach"
+title = "Attach a file"
+description = "Attach a file to a document, a sound to be heard at its head among them."
+input = "artifact_attach.json"
+output = "artifact_attach.output.json"
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_content"
+title = "A document's file"
+description = "The document's body as filed."
+input = "artifact_content.json"
+output = "artifact_content.output.json"
+hints = { read_only = true }
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_document"
+title = "One document"
+description = "One document and its head."
+input = "artifact_document.json"
+output = "artifact_document.output.json"
+hints = { read_only = true }
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_documents"
+title = "List documents"
+description = "Documents by kind, scope, label and time; q searches their words."
+input = "artifact_documents.json"
+output = "artifact_documents.output.json"
+hints = { read_only = true }
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_file"
+title = "File a document"
+description = "File a document: a record, a learning book, an import or a page."
+input = "artifact_file.json"
+output = "artifact_file.output.json"
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_import"
+title = "Import a page"
+description = "Import a page: fetched through the explorer client and filed as a document."
+input = "artifact_import.json"
+output = "artifact_import.output.json"
+hints = { open_world = true }
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_publish"
+title = "Publish a document"
+description = "Publish a document as an artifact: file it and answer with a permanent share link to hand to a reader. Takes its title, a short description, and its words as markdown `body` or as the `path` of a file on this machine. The link has no end and opens with no console login; it keeps opening across restarts and redeployments, and it names the document rather than a body, so a rewrite keeps the same link serving the newest body. Run by a tool host at home, it reads no file of the caller's machine: `path` is refused, and the words go as `body`."
+input = "artifact_publish.json"
+output = "artifact_publish.output.json"
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_rewrite"
+title = "Rewrite a document"
+description = "Rewrite a document under its number; its share links stay."
+input = "artifact_rewrite.json"
+output = "artifact_rewrite.output.json"
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_search"
+title = "Search documents"
+description = "Search documents by words, newest first."
+input = "artifact_search.json"
+output = "artifact_search.output.json"
+hints = { read_only = true }
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_share"
+title = "Share a document"
+description = "Make a share link that ends at a time, or never; the standing link is answered when one is open."
+input = "artifact_share.json"
+output = "artifact_share.output.json"
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_shares"
+title = "List share links"
+description = "Share links, by document."
+input = "artifact_shares.json"
+output = "artifact_shares.output.json"
+hints = { read_only = true }
+capabilities = ["documents.file"]
+
+[[entry]]
+namespace = "artifact"
+name = "artifact_unshare"
+title = "End a share link"
+description = "End a share link."
+input = "artifact_unshare.json"
+output = "artifact_unshare.output.json"
+hints = { destructive = true }
+capabilities = ["documents.file"]

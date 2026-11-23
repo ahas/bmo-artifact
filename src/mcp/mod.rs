@@ -1,6 +1,8 @@
 //! The harness plugin's MCP server, `bmo-artifact mcp` (`docs/api.md`, "The harness plugin"): the tools over
-//! the service one client reaches, each call made through that client.
+//! the service one client reaches, each call made through that client. The same tools are the entries of the
+//! tool a tool host places (`hosted`).
 
+pub mod hosted;
 pub mod tool;
 pub mod tools;
 
@@ -13,7 +15,7 @@ use rmcp::model::{
 use rmcp::service::RequestContext;
 use rmcp::{ErrorData, RoleServer, ServerHandler, ServiceExt};
 use schemars::Schema;
-use schemars::generate::SchemaSettings;
+use schemars::generate::{SchemaGenerator, SchemaSettings};
 use serde_json::{Map, Value};
 
 use crate::client::ArtifactClient;
@@ -51,18 +53,27 @@ impl ArtifactServer {
   }
 }
 
-fn listed(tool: &ArtifactTool) -> Tool {
-  let mut generator = SchemaSettings::draft2020_12()
-    .for_serialize()
-    .with(|settings| settings.meta_schema = None)
-    .into_generator();
-  let input = tool.input(&mut generator);
-  let output = tool.output(&mut generator);
-  let definitions = generator.take_definitions(true);
-  let mut listed = Tool::new(tool.name, tool.description, standing_alone(input, &definitions));
+/// One tool as MCP lists it, its input and output each a schema of its own with its definitions inside: the input
+/// as a caller may write it, an argument the tool reads with a default left optional, and the output as the service
+/// answers it.
+pub fn listed(tool: &ArtifactTool) -> Tool {
+  let input =
+    generated(SchemaSettings::draft2020_12().for_deserialize(), |generator| tool.input(generator));
+  let output =
+    generated(SchemaSettings::draft2020_12().for_serialize(), |generator| tool.output(generator));
+  let mut listed = Tool::new(tool.name, tool.description, input);
 
-  listed.output_schema = Some(Arc::new(standing_alone(output, &definitions)));
+  listed.output_schema = Some(Arc::new(output));
   listed
+}
+
+/// The schema `make` writes under `settings`, standing on its own.
+fn generated(settings: SchemaSettings, make: impl FnOnce(&mut SchemaGenerator) -> Schema) -> JsonObject {
+  let mut generator = settings.with(|settings| settings.meta_schema = None).into_generator();
+  let schema = make(&mut generator);
+  let definitions = generator.take_definitions(true);
+
+  standing_alone(schema, &definitions)
 }
 
 /// A schema made to stand on its own: an object at its root, with every definition it refers to beside it.
@@ -131,7 +142,7 @@ impl ServerHandler for ArtifactServer {
 
 /// A failed call as a tool error whose text is the failure's content. It carries no structured content, which
 /// would be read against the tool's output schema.
-fn failed(failure: &ToolFailure) -> CallToolResult {
+pub(crate) fn failed(failure: &ToolFailure) -> CallToolResult {
   CallToolResult::error(vec![ContentBlock::text(failure.content().to_string())])
 }
 

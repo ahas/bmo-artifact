@@ -1,0 +1,14 @@
+{
+  "$defs": {
+    "Nothing": {
+      "description": "Nothing: the route answered 204.",
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/Nothing"
+    }
+  ],
+  "type": "object"
+}

@@ -1,0 +1,38 @@
+{
+  "description": "A document rewritten under its number.",
+  "properties": {
+    "body": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "documentId": {
+      "format": "int64",
+      "type": "integer"
+    },
+    "html": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "labels": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "title": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "documentId",
+    "labels"
+  ],
+  "type": "object"
+}

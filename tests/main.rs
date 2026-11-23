@@ -10,6 +10,7 @@ mod documents;
 mod hangul;
 mod helpers;
 mod hosted_page;
+mod hosted_tool;
 mod html_read;
 mod import;
 mod imports;

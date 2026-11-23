@@ -1,0 +1,32 @@
+{
+  "description": "A file attached to a document.",
+  "properties": {
+    "content": {
+      "description": "The file's bytes in base64.",
+      "type": "string"
+    },
+    "documentId": {
+      "format": "int64",
+      "type": "integer"
+    },
+    "mediaType": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "documentId",
+    "name",
+    "mediaType",
+    "content"
+  ],
+  "type": "object"
+}

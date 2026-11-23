@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "Document": {
+      "description": "One document.",
+      "properties": {
+        "actorName": {
+          "description": "Who filed it.",
+          "type": "string"
+        },
+        "attachmentCount": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "changedAt": {
+          "description": "Epoch milliseconds.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "createdAt": {
+          "description": "Epoch milliseconds.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "description": {
+          "description": "What it reads as before it is opened: a page's declared description, else the opening prose of its\nbody, cut at 160 characters; null where it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hasPicture": {
+          "description": "Whether it keeps a picture, so its cover picture has one to send.",
+          "type": "boolean"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "kind": {
+          "description": "One of the kinds `GET /document-kinds` lists.",
+          "type": "string"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The caller's own metadata.",
+          "type": "object"
+        },
+        "owner": {
+          "description": "The account key of the account that owns it, as `Owner-Key` named it when it was filed; null for a document\nwith no owner (`docs/artifact.md`, \"Owners\").",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "permission": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Permission"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "For an account reader that reads the document alone, through a share or as the administrator reading one\nanother account owns, the permission it reads it under; absent where the reader reaches it wholly, and in\nevery event (`docs/api.md`, \"Readers\")."
+        },
+        "scope": {
+          "description": "What it is held under; null where none was given.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "scope",
+        "actorName",
+        "owner",
+        "labels",
+        "description",
+        "attachmentCount",
+        "hasPicture",
+        "createdAt",
+        "changedAt"
+      ],
+      "type": "object"
+    },
+    "Permission": {
+      "description": "What a member a document is shared with may do with it (`docs/api.md`, \"Member shares\"): `read` is given,\nand `edit` is named so that asking for it is refused rather than misread.",
+      "enum": [
+        "read",
+        "edit"
+      ],
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/Document"
+    }
+  ],
+  "type": "object"
+}

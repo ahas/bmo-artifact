@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Documents searched by their words.",
+  "properties": {
+    "kind": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "q": {
+      "description": "The phrase, matched whole and without regard to case in the title, the labels and the body.",
+      "type": "string"
+    },
+    "scope": {
+      "default": null,
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "q"
+  ],
+  "type": "object"
+}

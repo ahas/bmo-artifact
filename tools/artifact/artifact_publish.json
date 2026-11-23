@@ -1,0 +1,59 @@
+{
+  "additionalProperties": false,
+  "description": "A document to publish: what it is called, what it reads as, and its words, given or read off this machine.",
+  "properties": {
+    "actorName": {
+      "description": "Who files it.",
+      "type": "string"
+    },
+    "body": {
+      "default": null,
+      "description": "Its words as markdown, for a record or a learning book; the page's HTML for a page.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "description": {
+      "default": null,
+      "description": "What it reads as before it is opened, in a line or two.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kind": {
+      "default": null,
+      "description": "The kind it is filed as: `record` where none is named, `learning` or `page` beside it.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "path": {
+      "default": null,
+      "description": "A file on this machine whose whole text is the body, or the HTML of a page, given instead of `body`.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scope": {
+      "default": null,
+      "description": "What it is held under, where the caller keeps one.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "description": "The document's title.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "actorName"
+  ],
+  "type": "object"
+}

@@ -28,8 +28,10 @@ repository = "bmo-chat"
 # crate, every target compiled, through its Cargo verb in the shared build directory, wherever a change marks it,
 # and the change check compiles every crate a change marks; a change that marks none has no Rust to judge.
 
+# The service's binary, and the executable of the tool a tool host places (docs/api.md, "The tool a tool host
+# places").
 [build]
-binaries = ["bmo-artifact"]
+binaries = ["bmo-artifact", "artifact-tool"]
 
 # The document service's own deploy tree, and the data root it shares with the services whose files
 # stand under it (docs/layout.md, 「Storage」). The release reads its own values from
@@ -74,4 +76,19 @@ phase = "after-health"
 command = '''
 set -eu
 bmo pocket app deploy/app.toml
+'''
+
+# The tool a tool host places, as one folder: its release executable, the release's settings.toml its calls read
+# the defaults from, its manifest and its schemas, registered with the tool host as this repository's own and
+# allowed the one capability its entries ask for (docs/api.md, "The tool a tool host places"; bmo-pocket's
+# docs/registry.md, "Put").
+[[deploy.step]]
+id = "register-artifact-tool"
+phase = "before-flip"
+command = '''
+set -eu
+rm -rf tools/artifact/.placed
+mkdir -p tools/artifact/.placed
+cp bin/artifact-tool settings.toml tools/artifact/tool.toml tools/artifact/*.json tools/artifact/.placed/
+bmo pocket put tools/artifact/.placed --placed --service bmo-artifact --allow documents.file
 '''

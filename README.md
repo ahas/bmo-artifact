@@ -13,7 +13,8 @@ calls no other unit.
 
 | Folder | Holds |
 |---|---|
-| `src/` | The library and `bmo-artifact`, the one binary: the routes, the store, the client, the MCP server and the commands |
+| `src/` | The library and `bmo-artifact`, the service's binary: the routes, the store, the client, the MCP server and the commands |
+| `tools/` | The tool a tool host places: its manifest, its schemas and its executable, `artifact-tool` |
 | `lang/` | The document wording file's English default |
 | `skills/` | The `bmo-artifact` skill |
 | `client/` | The console bundle |

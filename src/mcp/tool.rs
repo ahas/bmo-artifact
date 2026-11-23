@@ -50,6 +50,15 @@ impl ToolFailure {
   }
 }
 
+/// An argument naming a file on the machine the caller stands on, which the tool reads there, and the argument
+/// that carries the same words with no file. A tool run anywhere but on the caller's machine refuses it
+/// (`docs/api.md`, "The tool a tool host places").
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LocalFile {
+  pub argument: &'static str,
+  pub instead: &'static str,
+}
+
 /// A tool's answer: the route's answer as JSON, or why there is none.
 pub type Answered = Pin<Box<dyn Future<Output = Result<Value, ToolFailure>> + Send>>;
 
@@ -63,6 +72,7 @@ pub struct ArtifactTool {
   pub route: &'static str,
   input: fn(&mut SchemaGenerator) -> Schema,
   output: fn(&mut SchemaGenerator) -> Schema,
+  local_files: &'static [LocalFile],
   call: Call,
 }
 
@@ -86,6 +96,7 @@ impl ArtifactTool {
       route,
       input: I::json_schema,
       output: SchemaGenerator::subschema_for::<O>,
+      local_files: &[],
       call: Box::new(move |client, arguments| {
         let input = match serde_json::from_value::<I>(arguments) {
           Ok(input) => input,
@@ -104,6 +115,22 @@ impl ArtifactTool {
         })
       }),
     }
+  }
+
+  /// The same tool, naming the arguments it reads a file of the caller's machine by.
+  pub fn reading_files(mut self, local_files: &'static [LocalFile]) -> Self {
+    self.local_files = local_files;
+    self
+  }
+
+  /// The arguments it reads a file of the caller's machine by; none for most tools.
+  pub fn local_files(&self) -> &'static [LocalFile] {
+    self.local_files
+  }
+
+  /// Whether the tool changes nothing: the route it calls is a `GET`.
+  pub fn read_only(&self) -> bool {
+    self.route.starts_with("GET ")
   }
 
   /// The tool's input, its nested types referred to where `generator` keeps its definitions.

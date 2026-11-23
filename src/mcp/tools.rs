@@ -6,7 +6,7 @@ use base64::engine::general_purpose::STANDARD;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::tool::{ArtifactTool, ToolFailure};
+use super::tool::{ArtifactTool, LocalFile, ToolFailure};
 use crate::client::ArtifactClient;
 use crate::documents::cover::{left_out, left_out_refusal};
 use crate::documents::keeper::{SNIFF_BYTES, attachment_kind};
@@ -197,6 +197,10 @@ fn publish() -> ArtifactTool {
       Ok::<Publication, ToolFailure>(client.publish(&publish_input(input)?).await?)
     },
   )
+  .reading_files(&[LocalFile {
+    argument: "path",
+    instead: "body",
+  }])
 }
 
 crate::tool!(publish);

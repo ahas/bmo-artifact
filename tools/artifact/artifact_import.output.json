@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "Import": {
+      "description": "One import.",
+      "properties": {
+        "createdAt": {
+          "description": "Epoch milliseconds.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "documentId": {
+          "description": "The document it filed; null until it is filed.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "error": {
+          "description": "Why it failed; null otherwise.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/ImportState"
+        },
+        "url": {
+          "description": "The address asked for.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "state",
+        "documentId",
+        "error",
+        "createdAt"
+      ],
+      "type": "object"
+    },
+    "ImportState": {
+      "description": "Where an import stands.",
+      "enum": [
+        "fetching",
+        "filed",
+        "failed"
+      ],
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/Import"
+    }
+  ],
+  "type": "object"
+}

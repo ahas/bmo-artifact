@@ -1,0 +1,29 @@
+{
+  "description": "A page to import.",
+  "properties": {
+    "actorName": {
+      "type": "string"
+    },
+    "scope": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "title": {
+      "description": "The document's title; the page's own where none is given.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "url",
+    "actorName"
+  ],
+  "type": "object"
+}
