@@ -366,6 +366,17 @@ pub struct ContentQuery {
   pub width: Option<u32>,
 }
 
+/// How a document's cover picture is sent.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PictureQuery {
+  /// The width in screen pixels the cover is drawn at, answered with its copy at the first step of the ladder
+  /// at or above it (docs/artifact.md, "A picture drawn small"); the whole card where none is named or the card
+  /// is no wider.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub width: Option<u32>,
+}
+
 /// One kind a document may be filed as.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]

@@ -628,6 +628,49 @@ async fn a_kept_picture_asked_at_a_width_is_its_copy_at_the_ladder_step_and_the_
   );
 }
 
+// A document's cover asked at a width is its card's copy at the ladder's step, made once, and asked at none is the
+// card whole (docs/artifact.md, "A picture drawn small").
+#[tokio::test]
+async fn a_cover_asked_at_a_width_is_its_card_copy_at_the_ladder_step() {
+  let service = Service::new().await;
+  let id = service
+    .call(Method::POST, "/documents", Some(record("Covered", "![a figure](wide.png)")))
+    .await
+    .json()["id"]
+    .as_i64()
+    .expect("an id");
+  let mut wide = Vec::new();
+
+  image::RgbImage::from_fn(800, 400, |x, y| image::Rgb([((x + y) % 2 * 255) as u8, 90, 160]))
+    .write_to(&mut std::io::Cursor::new(&mut wide), image::ImageFormat::Png)
+    .expect("a png is written");
+  service
+    .call(
+      Method::POST,
+      &format!("/documents/{id}/attachments"),
+      Some(json!({ "name": "wide.png", "mediaType": "image/png", "content": STANDARD.encode(wide) })),
+    )
+    .await;
+
+  let path = format!("/documents/{id}/picture");
+  let whole = service.call(Method::GET, &path, None).await;
+  let copy = service.call(Method::GET, &format!("{path}?width=150"), None).await;
+  let again = service.call(Method::GET, &format!("{path}?width=150"), None).await;
+  let past = service.call(Method::GET, &format!("{path}?width=4000"), None).await;
+  let step = bmo_artifact::helpers::picture::drawn_step(150);
+  let drawn = image::load_from_memory(&copy.bytes).expect("a picture");
+
+  assert_eq!((copy.status, copy.header("content-type")), (StatusCode::OK, "image/jpeg".to_owned()));
+  assert_eq!(
+    (drawn.width(), drawn.height()),
+    (step, step.div_ceil(2)),
+    "the step's width, at the card's own shape"
+  );
+  assert_eq!(again.bytes, copy.bytes, "the copy is made once and kept");
+  assert_eq!(past.bytes, whole.bytes, "a width past the card's own sends the card whole");
+  assert_eq!(image::load_from_memory(&whole.bytes).expect("a picture").width(), 800);
+}
+
 #[test]
 fn the_ladder_runs_from_16_to_2048_each_step_at_most_a_quarter_wider() {
   let steps = bmo_artifact::helpers::picture::drawn_steps();

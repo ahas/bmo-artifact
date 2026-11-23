@@ -7,6 +7,7 @@ use axum::response::{IntoResponse, Response};
 use schemars::generate::SchemaGenerator;
 use serde_json::json;
 
+use super::drawn_copies;
 use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, inside_root, send};
 use super::readers::{Reader, kept, reached};
 use crate::Refusal;
@@ -14,11 +15,14 @@ use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
 use crate::documents::keeper::document_folder;
 use crate::events::EventKind;
+use crate::helpers::picture as pictures;
 use crate::kinds;
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, bytes_answer, id_parameter, json_answer, json_body, query};
 use crate::store::{attachments, documents, page_limit};
-use crate::wire::{ContentQuery, Document, DocumentChange, DocumentInput, DocumentPage, DocumentsQuery};
+use crate::wire::{
+  ContentQuery, Document, DocumentChange, DocumentInput, DocumentPage, DocumentsQuery, PictureQuery,
+};
 
 /// What a document that does not stand answers.
 pub fn absent(id: i64) -> Refused {
@@ -273,8 +277,10 @@ pub async fn content(
   send(standing, asking, &file, NO_STORE, id, reach).await
 }
 
-/// A document's cover picture as the card a link's preview shows.
-pub async fn picture(standing: &Standing, id: i64) -> Result<Response, Refused> {
+/// A document's cover picture as the card a link's preview shows, or, asked at a width, that card's copy at the
+/// ladder's step (docs/artifact.md, "A picture drawn small"), made once and kept in memory under the cover's file
+/// and the moment it was written.
+pub async fn picture(standing: &Standing, id: i64, width: Option<u32>) -> Result<Response, Refused> {
   let row = document(standing, id).await?;
   let body = match (kinds::kind(Some(&row.document.kind)).hosted(), &row.file) {
     (false, Some(path)) => tokio::fs::read_to_string(path).await.ok(),
@@ -282,16 +288,50 @@ pub async fn picture(standing: &Standing, id: i64) -> Result<Response, Refused> 
   };
   let none = || Refused::from(Refusal::absent(format!("document {id} has no picture")));
   let path = cover_file(standing.db().await?, id, body.as_deref()).await?.ok_or_else(none)?;
-  let bytes = tokio::fs::read(path).await.map_err(|_| none())?;
-  let card = tokio::task::spawn_blocking(move || cover_card(&bytes))
-    .await
-    .map_err(|why| Refused::from(Refusal::failed(why.to_string())))?
-    .ok_or_else(none)?;
+  let step = width.map(pictures::drawn_step);
+  let key = match (step, tokio::fs::metadata(&path).await) {
+    (Some(step), Ok(written)) => {
+      let moment = written
+        .modified()
+        .ok()
+        .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or(0, |since| since.as_nanos());
+
+      Some(format!("cover|{step}|{moment}|{}|{}", written.len(), path.display()))
+    }
+    _ => None,
+  };
+  let (card, media_type) = match key.as_deref().and_then(drawn_copies::kept) {
+    Some(copy) => (copy.bytes.to_vec(), copy.media_type),
+    None => {
+      let bytes = tokio::fs::read(&path).await.map_err(|_| none())?;
+      let made = tokio::task::spawn_blocking(move || {
+        let card = cover_card(&bytes)?;
+
+        Some(match step.and_then(|step| pictures::drawn(&card, step)) {
+          Some((copy, media_type)) => (copy, media_type, true),
+          None => (card, "image/jpeg", false),
+        })
+      })
+      .await
+      .map_err(|why| Refused::from(Refusal::failed(why.to_string())))?
+      .ok_or_else(none)?;
+
+      match (made, key) {
+        ((copy, media_type, true), Some(key)) => {
+          let kept = drawn_copies::keep(key, copy, media_type);
+
+          (kept.bytes.to_vec(), kept.media_type)
+        }
+        ((bytes, media_type, _), _) => (bytes, media_type),
+      }
+    }
+  };
   let mut response = Response::new(Body::from(card));
 
   response
     .headers_mut()
-    .insert(header::CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
+    .insert(header::CONTENT_TYPE, HeaderValue::from_static(media_type));
   response
     .headers_mut()
     .insert(header::CACHE_CONTROL, HeaderValue::from_static(PRIVATE_DAY));
@@ -337,16 +377,17 @@ impl Route for ReadPicture {
 
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = reached(&mut call).await?;
+    let asked: PictureQuery = call.query()?;
 
-    picture(call.standing(), id).await
+    picture(call.standing(), id, asked.width).await
   }
 
-  fn operation(&self, _generator: &mut SchemaGenerator) -> Operation {
+  fn operation(&self, generator: &mut SchemaGenerator) -> Operation {
     Operation {
       id: "listDocumentsPictureByDocumentId",
       tag: "documents",
       summary: "The document's cover picture.",
-      parameters: vec![id_parameter("documentId")],
+      parameters: [vec![id_parameter("documentId")], query::<PictureQuery>(generator)].concat(),
       body: None,
       answers: vec![(200, bytes_answer())],
       codes: &["unauthorized", "bad-request", "not-found", "upstream-failed"],

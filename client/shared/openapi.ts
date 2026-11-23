@@ -1639,7 +1639,14 @@ export interface operations {
     };
     listDocumentsPictureByDocumentId: {
         parameters: {
-            query?: never;
+            query?: {
+                /**
+                 * @description The width in screen pixels the cover is drawn at, answered with its copy at the first step of the ladder
+                 *     at or above it (docs/artifact.md, "A picture drawn small"); the whole card where none is named or the card
+                 *     is no wider.
+                 */
+                width?: number | null;
+            };
             header?: never;
             path: {
                 documentId: number;

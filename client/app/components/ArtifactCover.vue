@@ -3,16 +3,12 @@
      still reads as a strip. Its size and shape are the card's. -->
 <template>
   <div class="relative grid shrink-0 place-items-center overflow-hidden bg-elevated text-muted" data-cover>
-    <img
+    <ArtifactCoverPicture
       v-if="pictured"
-      :src="pictureAddress(props.document.id)"
-      alt=""
-      loading="lazy"
-      decoding="async"
-      class="absolute inset-0 size-full object-cover"
-      data-cover-picture
+      :address="pictureAddress(props.document.id)"
+      class="absolute inset-0 size-full"
       @error="broken = true"
-    >
+    />
     <UIcon v-else :name="kindIcon(props.kind)" class="size-8" data-cover-icon />
   </div>
 </template>

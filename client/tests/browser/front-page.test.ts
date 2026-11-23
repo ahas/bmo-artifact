@@ -89,6 +89,8 @@ const SHARED_TOKEN = "Tok3nAbc";
 const SHARED = [18, 20];
 // What the stand-in was asked to keep: each read of a document, and each share read with its visitor.
 const reads: number[] = [];
+// The widths each cover was asked at, by its document.
+const coverWidths = new Map<number, number[]>();
 const visitors: string[] = [];
 
 // A cover picture: a one-colour square.
@@ -154,7 +156,16 @@ async function answer(route: Route): Promise<void> {
 
       return route.fulfill({ status: 204 });
     }
-    if (rest === "/picture") return route.fulfill({ status: 200, contentType: "image/png", body: PICTURE });
+    if (rest === "/picture") {
+      const width = Number(query.get("width"));
+
+      coverWidths.set(fixture.id, [...(coverWidths.get(fixture.id) ?? []), width]);
+
+      // A square as wide as asked, as the service's copy of a card wider than the step is.
+      return width > 0
+        ? route.fulfill({ status: 200, contentType: "image/svg+xml", body: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${width}"><rect width="100%" height="100%" fill="#5a8"/></svg>` })
+        : route.fulfill({ status: 200, contentType: "image/png", body: PICTURE });
+    }
     if (rest === "/content") return route.fulfill({ status: 200, contentType: "text/markdown", body: `# ${fixture.title}\n\nWords of it.` });
     if (rest === "/attachments" || rest === "/references") return json(route, { items: [], more: false });
     if (rest === "") return json(route, documentOf(fixture));
@@ -275,6 +286,24 @@ describe.skipIf(!ready)("the front page in a browser", () => {
       expect(await cards.first().getAttribute("data-card")).toBe("18");
       expect(await cards.first().locator("[data-cover-picture]").count()).toBe(1);
       expect(await cards.nth(1).locator("[data-cover-icon]").count()).toBe(1);
+
+      // The lead's cover is asked at the copy covering its box on the screen's pixels, never whole.
+      const cover = (await cards.first().locator("[data-cover-picture]").boundingBox())!;
+      const density = await page.evaluate(() => window.devicePixelRatio || 1);
+      const asked = coverWidths.get(18) ?? [];
+
+      const need = Math.max(cover.width, cover.height) * density;
+
+      // The same document's cover stands smaller in its kind's row too, so the lead's is the widest asked; the box
+      // grows as the page settles, and the cover is asked again as it does.
+      const widest = () => Math.max(0, ...asked);
+
+      for (let waited = 0; widest() < need && waited < 5_000; waited += 100) await page.waitForTimeout(100);
+
+      const last = widest();
+
+      expect(last).toBeGreaterThanOrEqual(need);
+      expect(last).toBeLessThan(need * 1.25 + 1);
 
       const lead = (await cards.first().boundingBox())!;
       const beside = await Promise.all([1, 2, 3, 4].map(async (at) => (await cards.nth(at).boundingBox())!));

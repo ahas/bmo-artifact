@@ -165,7 +165,7 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
 | `PATCH /documents/{documentId}` | `title?`, `body?`, `html?`, `labels` | 200, the document |
 | `DELETE /documents/{documentId}` | | 204 |
 | `GET /documents/{documentId}/content` | query `scheme?`, `download?` | 200, the file |
-| `GET /documents/{documentId}/picture` | | 200, the cover picture as JPEG |
+| `GET /documents/{documentId}/picture` | query `width?` | 200, the cover picture as JPEG |
 | `POST /documents/{documentId}/reads` | | 204 |
 | `GET /document-reads` | query `limit?` | 200, a page of the documents most read |
 | `GET /document-reads/recent` | query `limit?` | 200, a page of the documents the reader read last |
@@ -204,7 +204,9 @@ blank `key` is refused `bad-request`. The values are the callers' own strings, m
   where the document has no file inside its folder.
 - **`GET /documents/{documentId}/picture`** sends the picture a link's preview card shows: the first its
   body draws by a kept file's name (docs/artifact.md, 「Attachments」), else the first it keeps, upright,
-  fitted inside 1200 pixels, never enlarged, laid on white, as JPEG. 404 `not-found` where it has none.
+  fitted inside 1200 pixels, never enlarged, laid on white, as JPEG. `width` asks it drawn small: that card's
+  copy at the first step of the ladder at or above it, as docs/artifact.md 「A picture drawn small」 says, the card
+  itself where it is no wider. 404 `not-found` where it has none.
 
 ### Reads
 

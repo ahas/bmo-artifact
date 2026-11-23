@@ -111,15 +111,12 @@
                stands above that link, so pressing it copies the number and opens nothing. -->
           <li v-for="item in items" :key="item.id">
             <div class="relative flex items-start gap-3 rounded-lg border border-default px-4 py-3 transition-colors hover:bg-elevated/50 active:bg-accented/50">
-              <img
+              <ArtifactCoverPicture
                 v-if="item.hasPicture && !unpictured.has(item.id)"
-                :src="pictureAddress(item.id)"
-                alt=""
-                loading="lazy"
-                decoding="async"
-                class="size-16 shrink-0 rounded-md border border-default bg-elevated object-cover sm:size-20"
+                :address="pictureAddress(item.id)"
+                class="size-16 shrink-0 rounded-md border border-default bg-elevated sm:size-20"
                 @error="unpictured.add(item.id)"
-              >
+              />
 
               <div class="flex min-w-0 flex-1 flex-col gap-2">
                 <NuxtLink :to="`/artifact/${item.id}`" class="line-clamp-2 text-sm font-medium break-words text-highlighted before:absolute before:inset-0 before:rounded-lg before:content-['']">

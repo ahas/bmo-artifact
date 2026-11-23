@@ -2244,6 +2244,21 @@
               "format": "int64",
               "type": "integer"
             }
+          },
+          {
+            "description": "The width in screen pixels the cover is drawn at, answered with its copy at the first step of the ladder\nat or above it (docs/artifact.md, \"A picture drawn small\"); the whole card where none is named or the card\nis no wider.",
+            "in": "query",
+            "name": "width",
+            "required": false,
+            "schema": {
+              "description": "The width in screen pixels the cover is drawn at, answered with its copy at the first step of the ladder\nat or above it (docs/artifact.md, \"A picture drawn small\"); the whole card where none is named or the card\nis no wider.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
           }
         ],
         "responses": {

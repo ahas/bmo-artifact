@@ -497,7 +497,7 @@ A picture in a document opens in the picture viewer, for a markdown document and
 
 ## A picture drawn small
 
-A kept picture the body draws smaller than it is kept is drawn from a copy made near that size.
+A kept picture the body draws smaller than it is kept, and a document's cover, are drawn from a copy made near the size they stand at.
 
 - **Why:** a browser shrinks a picture by halving it as many times as fit and sampling the rest with no
   filter, so a picture drawn between one and four times smaller than its file breaks into jagged edges
@@ -515,6 +515,12 @@ A kept picture the body draws smaller than it is kept is drawn from a copy made 
   screen's density. Its own file is no candidate, since a browser keeps drawing a candidate it already holds
   at a higher density than it needs. It keeps the width it stood at. A picture the body draws from the web,
   and a page's own pictures, are drawn as they come.
+- **A cover is asked at its box:** a document's cover fills a box of its own shape on the front page and in
+  the list, cropped to it, so it is asked at the width that covers the box on the screen's pixels: the box's
+  longer side before the picture has loaded, and, once its shape shows it is wider than the box, the box's
+  height times that shape. Nothing is fetched before the box is measured. The cover route answers that
+  width with its card's copy at the ladder's step, kept as a kept picture's copies are; a link's preview
+  card asks no width and gets the card whole.
 - **The viewer opens the kept file:** a picture drawn from a copy opens whole from its own address
   (「Pictures open whole」), the bytes as they were kept.
 

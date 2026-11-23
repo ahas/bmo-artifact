@@ -157,7 +157,7 @@ impl Route for ReadSharedPicture {
   async fn answer(&self, mut call: Call) -> Result<Response, Refused> {
     let id = opened(&mut call).await?;
 
-    picture(call.standing(), id).await
+    picture(call.standing(), id, None).await
   }
 
   fn operation(&self, _generator: &mut SchemaGenerator) -> Operation {
