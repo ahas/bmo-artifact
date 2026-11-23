@@ -16,6 +16,7 @@ pub mod m20261113_000001_member_shares;
 pub mod m20261116_000001_owners;
 pub mod m20261121_000001_reads;
 pub mod m20261123_000001_read_times;
+pub mod m20261124_000001_places;
 
 pub struct Migrator;
 
@@ -34,6 +35,7 @@ impl MigratorTrait for Migrator {
       Box::new(m20261116_000001_owners::Migration),
       Box::new(m20261121_000001_reads::Migration),
       Box::new(m20261123_000001_read_times::Migration),
+      Box::new(m20261124_000001_places::Migration),
     ]
   }
 }

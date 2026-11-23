@@ -85,6 +85,8 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "GET /imports/{importId}",
     "GET /scopes/{scope}",
     "DELETE /scopes/{scope}",
+    "GET /storage-places",
+    "PUT /storage/{link}",
   ]
   .into_iter()
   .map(str::to_owned)
@@ -109,6 +111,8 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   assert_eq!(reach("/document-reads/recent", "get"), "screen");
   assert_eq!(reach("/documents", "post"), "closed");
   assert_eq!(reach("/publications", "post"), "closed");
+  assert_eq!(reach("/storage-places", "get"), "screen");
+  assert_eq!(reach("/storage/{link}", "put"), "screen");
   assert_eq!(document["info"]["version"], bmo_artifact::VERSION);
   assert_eq!(document["x-calls"], serde_json::json!(["explorer", "web"]));
   assert_eq!(document["x-harness"]["plugin"], "bmo-artifact");

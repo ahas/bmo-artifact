@@ -6,8 +6,8 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use schemars::generate::SchemaGenerator;
 
-use super::documents::document;
-use super::files::{Asking, KeptFile, Opened, PRIVATE_DAY, Reach, inside_root, send};
+use super::documents::{document, locate};
+use super::files::{Asking, KeptFile, Opened, PRIVATE_DAY, Reach, send};
 use super::readers::{kept, reached};
 use crate::Refusal;
 use crate::documents::keeper::{Handed, keep};
@@ -44,17 +44,15 @@ pub async fn attachment_bytes(
   attachment: i64,
   reach: &Reach,
 ) -> Result<Response, Refused> {
+  let row = document(standing, id).await?;
   let kept = attachments::read(standing.db().await?, id, attachment)
     .await?
     .ok_or_else(|| Refusal::absent(format!("document {id} keeps no attachment {attachment}")))?;
-  if !inside_root(&standing.settings.files.root, &kept.path) {
-    return Err(
-      Refusal::absent(format!("document {id} keeps no attachment {attachment} on the disk")).into(),
-    );
-  }
+  let at = locate(standing, &row, &kept.path)
+    .map_err(|_| Refusal::absent(format!("document {id} keeps no attachment {attachment} at its place")))?;
 
   let file = KeptFile {
-    path: kept.path,
+    at,
     media_type: kept.attachment.media_type,
     name: kept.attachment.name,
   };
@@ -108,7 +106,7 @@ impl Route for Attach {
     let db = standing.db().await?;
     let kept = keep(
       db,
-      &standing.settings.files.root,
+      &standing.places,
       id,
       Handed {
         name: &input.name,

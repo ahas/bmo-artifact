@@ -196,6 +196,8 @@ pub struct Service {
   pub standing: Arc<Standing>,
   /// The account service the settings name, where the test stands one up.
   accounts: Option<String>,
+  /// The settings the test sets beside the ones every test's service stands on.
+  extra: Vec<(String, String)>,
   router: Router,
 }
 
@@ -208,6 +210,14 @@ impl Service {
   /// The service over a built bundle, asking the account service at `accounts` the readers' units.
   pub async fn with_accounts(accounts: &str) -> Self {
     Self::with_folders(&built_bundle(), &[], Some(accounts)).await
+  }
+
+  /// The service asking the account service at `accounts`, with these settings set beside the ones every test's
+  /// service stands on, each by its environment variable.
+  pub async fn with_settings(accounts: &str, extra: &[(&str, String)]) -> Self {
+    let extra = extra.iter().map(|(name, value)| ((*name).to_owned(), value.clone())).collect();
+
+    Self::with_extra(&built_bundle(), &[], Some(accounts), extra).await
   }
 
   /// The service over a console bundle folder holding these files, by name, and an empty player folder.
@@ -225,11 +235,23 @@ impl Service {
     player: &[(&str, &[u8])],
     accounts: Option<&str>,
   ) -> Self {
+    Self::with_extra(bundle, player, accounts, Vec::new()).await
+  }
+
+  async fn with_extra(
+    bundle: &[(&str, &[u8])],
+    player: &[(&str, &[u8])],
+    accounts: Option<&str>,
+    extra: Vec<(String, String)>,
+  ) -> Self {
     let scratch = Scratch::new().await;
     let files = tempfile::tempdir().expect("a file root");
     let console = folder_of(bundle);
     let player = folder_of(player);
-    let environment = environment(scratch.address(), files.path(), console.path(), player.path(), accounts);
+    let mut environment =
+      environment(scratch.address(), files.path(), console.path(), player.path(), accounts);
+
+    environment.extend(extra.iter().cloned());
     let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
     let web = Arc::new(Web::default());
     let standing =
@@ -244,6 +266,7 @@ impl Service {
       web,
       standing: Arc::new(standing),
       accounts: accounts.map(str::to_owned),
+      extra,
       router,
     }
   }
@@ -251,17 +274,17 @@ impl Service {
   /// The service stood up again over the same database and the same file root, as a stop and a start leave it,
   /// or a redeployment that keeps the store: its settings read afresh and its routes gathered again.
   pub fn restart(&mut self) {
-    let settings = Settings::read(
-      Path::new(ROOT),
-      Some(environment(
-        self.scratch.address(),
-        self.files.path(),
-        self.console.path(),
-        self.player.path(),
-        self.accounts.as_deref(),
-      )),
-    )
-    .expect("the settings read");
+    let mut environment = environment(
+      self.scratch.address(),
+      self.files.path(),
+      self.console.path(),
+      self.player.path(),
+      self.accounts.as_deref(),
+    );
+
+    environment.extend(self.extra.iter().cloned());
+
+    let settings = Settings::read(Path::new(ROOT), Some(environment)).expect("the settings read");
     let standing =
       Standing::with_reader(settings, Arc::clone(&self.web) as Arc<dyn PageReader>).expect("it stands");
 

@@ -39,6 +39,9 @@ pub struct Settings {
   /// Nothing set here marks no row naming no kind as an import.
   #[serde(default)]
   pub documents: Documents,
+  /// Nothing set here reaches Graph at its own address and names no page token road.
+  #[serde(default)]
+  pub sharepoint: SharePoint,
 }
 
 /// The HTTP server.
@@ -160,6 +163,38 @@ pub struct WordingFile {
 pub struct Documents {
   /// The prefix that marks a row naming no kind as an import; none marks no row so.
   pub kindless_import_prefix: Option<String>,
+}
+
+/// Microsoft Graph's own address.
+pub const GRAPH: &str = "https://graph.microsoft.com/v1.0";
+
+/// What the SharePoint place reaches (`docs/artifact.md`, "The SharePoint place"): Microsoft Graph, and
+/// bmo-ms-teams's page token road a person's Graph token is borrowed through.
+#[derive(Clone, Debug, Deserialize)]
+pub struct SharePoint {
+  /// Graph's base address.
+  #[serde(default = "graph")]
+  pub graph: String,
+  /// The page token road's base address; an empty one names none.
+  #[serde(default)]
+  pub tokens: String,
+  /// This service's own caller token on the page token road.
+  #[serde(default)]
+  pub token: String,
+}
+
+fn graph() -> String {
+  GRAPH.to_owned()
+}
+
+impl Default for SharePoint {
+  fn default() -> Self {
+    Self {
+      graph: graph(),
+      tokens: String::new(),
+      token: String::new(),
+    }
+  }
 }
 
 /// Why the settings could not be read.

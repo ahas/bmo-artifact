@@ -4,8 +4,6 @@
 //! `import` whose references are the page itself, the address asked where the page moved, and each outside
 //! page its body links to.
 
-use std::path::Path;
-
 use ego_tree::NodeId;
 use lol_html::{RewriteStrSettings, element, rewrite_str};
 use scraper::node::Text;
@@ -18,6 +16,7 @@ use super::keeper::{Handed, keep};
 use super::page_reading::collapsed;
 use crate::Refusal;
 use crate::helpers::marks::fill_marks;
+use crate::places::Places;
 use crate::reader::{PageReader, Picture};
 use crate::wire::{Attachment, DocumentInput, Labels};
 use crate::wording::Import;
@@ -206,7 +205,7 @@ fn main_markdown(html: &str, standings: &[Standing]) -> Result<String, String> {
 /// filed.
 pub async fn import_page(
   db: &DatabaseConnection,
-  root: &Path,
+  places: &Places,
   reader: &dyn PageReader,
   words: &Import,
   asked: Asked<'_>,
@@ -293,7 +292,7 @@ pub async fn import_page(
     labels: Labels::new(),
     description: None,
   };
-  let document_id = file_markdown(db, root, &input, asked.owner, references)
+  let document_id = file_markdown(db, places, &input, asked.owner, references)
     .await
     .map_err(|why: Refusal| why.detail)?;
   let mut attachments = Vec::new();
@@ -307,7 +306,7 @@ pub async fn import_page(
       url: address.as_deref(),
     };
 
-    if let Ok(kept) = keep(db, root, document_id, handed).await {
+    if let Ok(kept) = keep(db, places, document_id, handed).await {
       attachments.push(kept);
     }
   }

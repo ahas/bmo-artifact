@@ -2,8 +2,6 @@
 //! file's name (`docs/artifact.md`, "Attachments"), else the first picture it keeps, drawn as a link's
 //! preview card shows it.
 
-use std::path::PathBuf;
-
 use percent_encoding::percent_decode_str;
 use pulldown_cmark::{Event, Parser, Tag};
 use sea_orm::ConnectionTrait;
@@ -57,28 +55,24 @@ pub fn left_out_refusal(names: &[&str]) -> String {
   )
 }
 
-/// The kept file a document's cover is drawn from: the first picture its body draws, else the first it
+/// The path of the kept file a document's cover is drawn from: the first picture its body draws, else the first it
 /// keeps; none where it keeps no picture.
 pub async fn cover_file<C: ConnectionTrait>(
   db: &C,
   document_id: i64,
   body: Option<&str>,
-) -> Result<Option<PathBuf>, Refusal> {
+) -> Result<Option<String>, Refusal> {
   for target in body.map(drawn_names).unwrap_or_default() {
     for name in kept_names(&target) {
       if let Some(kept) = attachments::named(db, document_id, name).await?
         && kept.attachment.kind == "image"
       {
-        return Ok(Some(PathBuf::from(kept.path)));
+        return Ok(Some(kept.path));
       }
     }
   }
 
-  Ok(
-    attachments::first_of_kind(db, document_id, "image")
-      .await?
-      .map(|kept| PathBuf::from(kept.path)),
-  )
+  Ok(attachments::first_of_kind(db, document_id, "image").await?.map(|kept| kept.path))
 }
 
 /// The cover drawn as a preview card shows it: upright, inside its edge, laid on white, as JPEG. None where

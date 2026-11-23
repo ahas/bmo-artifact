@@ -1,18 +1,17 @@
 //! A document filed and rewritten (`docs/artifact.md`, "Filing a document"): its kind decides whether it
-//! takes a markdown body or HTML, its row and its body are written together with its file, and each distinct
-//! web link its body makes becomes one of its references. Nothing is written for a refusal.
-
-use std::path::{Path, PathBuf};
+//! takes a markdown body or HTML, its row and its body are written together with its file at the place the
+//! delegation chain chooses for its owner, and each distinct web link its body makes becomes one of its
+//! references. Nothing is written for a refusal.
 
 use pulldown_cmark::{Event, Parser, Tag, TagEnd};
 use sea_orm::{ConnectionTrait, DatabaseConnection, TransactionTrait};
 
-use super::keeper::{document_folder, write_private};
 use super::page_reading::{
   PICTURE_STEM, collapsed, cut_description, markdown_description, page_description, read_html,
 };
 use crate::Refusal;
 use crate::kinds::{self, Kind};
+use crate::places::{Located, Places};
 use crate::store::documents::{self, NewRow};
 use crate::store::references;
 use crate::wire::{DocumentChange, DocumentInput};
@@ -115,15 +114,9 @@ pub fn links_of(body: &str) -> Vec<(String, Option<String>)> {
   links
 }
 
-// The file written under the document's folder; its path.
-fn write_file(root: &Path, id: i64, written: &Written) -> Result<PathBuf, Refusal> {
-  let folder = document_folder(root, id);
-  let path = folder.join(written.file_name);
-
-  std::fs::create_dir_all(&folder).map_err(|why| Refusal::failed(why.to_string()))?;
-  write_private(&path, written.file.as_bytes()).map_err(|why| Refusal::failed(why.to_string()))?;
-
-  Ok(path)
+// The file written where it stands at its place.
+async fn write_file(at: &Located, written: &Written) -> Result<(), Refusal> {
+  at.place.write(&at.at, written.file.as_bytes().to_vec()).await
 }
 
 // The body as the document's one finding, and its references beside it.
@@ -141,7 +134,7 @@ async fn write_body<C: ConnectionTrait>(db: &C, id: i64, written: &Written) -> R
 /// references and file written together. Its number.
 pub async fn file(
   db: &DatabaseConnection,
-  root: &Path,
+  places: &Places,
   input: &DocumentInput,
   owner: Option<&str>,
 ) -> Result<i64, Refusal> {
@@ -167,13 +160,13 @@ pub async fn file(
     markdown(&input.title, body)?
   };
 
-  file_written(db, root, kind, input, owner, &written).await
+  file_written(db, places, kind, input, owner, &written).await
 }
 
 /// A document filed for `owner` out of what is already read of it, as an import files the page it read.
 pub async fn file_markdown(
   db: &DatabaseConnection,
-  root: &Path,
+  places: &Places,
   input: &DocumentInput,
   owner: Option<&str>,
   references: Vec<(String, Option<String>)>,
@@ -182,12 +175,12 @@ pub async fn file_markdown(
   let mut written = markdown(&input.title, input.body.as_deref().unwrap_or_default())?;
 
   written.references = references;
-  file_written(db, root, kind, input, owner, &written).await
+  file_written(db, places, kind, input, owner, &written).await
 }
 
 async fn file_written(
   db: &DatabaseConnection,
-  root: &Path,
+  places: &Places,
   kind: &dyn Kind,
   input: &DocumentInput,
   owner: Option<&str>,
@@ -195,6 +188,7 @@ async fn file_written(
 ) -> Result<i64, Refusal> {
   // The description the filer gives stands over the one read out of the body or the page.
   let given = input.description.as_deref().and_then(cut_description);
+  let chosen = places.choose(owner).await?;
   let tx = db.begin().await?;
   let id = documents::insert(
     &tx,
@@ -212,9 +206,15 @@ async fn file_written(
 
   write_body(&tx, id, written).await?;
 
-  let path = write_file(root, id, written)?;
+  let folder = chosen.place.folder(id, owner).await?;
+  let at = Located {
+    place: chosen.place,
+    at: format!("{folder}/{}", written.file_name),
+  };
 
-  documents::set_file(&tx, id, &path.to_string_lossy()).await?;
+  write_file(&at, written).await?;
+  documents::set_place(&tx, id, chosen.value.as_ref(), chosen.company).await?;
+  documents::set_file(&tx, id, &at.path()).await?;
   tx.commit().await?;
 
   Ok(id)
@@ -225,7 +225,7 @@ async fn file_written(
 /// refused as the kind's conflict.
 pub async fn rewrite(
   db: &DatabaseConnection,
-  root: &Path,
+  places: &Places,
   id: i64,
   change: &DocumentChange,
 ) -> Result<(), Refusal> {
@@ -268,9 +268,22 @@ pub async fn rewrite(
   if let Some(written) = &written {
     write_body(&tx, id, written).await?;
 
-    let path = write_file(root, id, written)?;
+    let owner = row.document.owner.as_deref();
+    let at = match &row.file {
+      Some(path) => places.locate(row.storage.as_ref(), owner, path)?,
+      None => {
+        let place = places.open(row.storage.as_ref(), owner)?;
+        let folder = place.folder(id, owner).await?;
 
-    documents::set_file(&tx, id, &path.to_string_lossy()).await?;
+        Located {
+          place,
+          at: format!("{folder}/{}", written.file_name),
+        }
+      }
+    };
+
+    write_file(&at, written).await?;
+    documents::set_file(&tx, id, &at.path()).await?;
   }
 
   tx.commit().await?;

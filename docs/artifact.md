@@ -24,7 +24,8 @@ repository.
   own work that files its result here, and a narration is a sound a client attaches with the role `head`.
   It knows no caller: a document's `scope`, `actorName` and `labels` are the caller's own strings. It keeps no
   organisation: which unit a person stands in, and which company a unit belongs to, is asked of the account
-  service each time it is needed.
+  service each time it is needed, but for the company a document was filed under, which the document keeps
+  with the place its files stand at (「Places」).
 
 ```mermaid
 flowchart TD
@@ -67,8 +68,9 @@ Every document has a kind, and the kind decides how it is filed and read.
 
 ## Where it lives
 
-A document is rows of this service's PostgreSQL database and files under the file root. The database's
-address and the file root are settings; no other unit reads or writes either.
+A document is rows of this service's PostgreSQL database and files at its place: the file root on this
+machine, or the place the owner's company chose (「Places」). The database's address and the file root are
+settings; no other unit reads or writes the database, and no other unit writes a document's files.
 
 - **The rows are the identity:** the list, the filters and the search are read from them.
 - **The file is what a person reads:** the markdown as filed, or the HTML.
@@ -80,7 +82,7 @@ address and the file root are settings; no other unit reads or writes either.
 
 | Table | One row per | What it holds |
 |---|---|---|
-| `searches` | document | its kind, title, scope, actor, owner, labels, description, its file's path, and its times |
+| `searches` | document | its kind, title, scope, actor, owner, labels, description, its file's path, the company and the place it was filed under, and its times |
 | `search_findings` | piece of a document's body | the body's words the search reads; a document filed here keeps its body as one piece |
 | `search_sources` | reference | the page's address and title, and the piece of the body that refers to it |
 | `archive_attachments` | kept file | what it is read as, its type, size, name, role, path and when it was kept |
@@ -109,21 +111,91 @@ address and the file root are settings; no other unit reads or writes either.
   there. `migrate` does not settle, since it may run before the tables exist.
 - **A share link's times are epoch seconds** in its row, and milliseconds on the wire.
 
-### The file root
+### Places
 
+- **A place is where a document's files are kept,** reached through one interface: a file written whole at a
+  location, a file read whole or in one byte range, a location let go of with everything under it, and whether
+  a location holds a file, with its size and a version that changes whenever the file is written.
+- **Each kind of place is its own module.** Each answers its name, a sentence saying what it is, the settings
+  it takes, how it judges a value naming it, and how it opens over a value it judged.
+  - One catalogue lists the modules, in the order `GET /storage-places` answers them.
+  - Nothing else names a kind: adding a kind is adding its module and its line in the catalogue.
+- **A file's path names its place and its location,** `<kind>:<location>`: `local:searches/42/document.md`
+  on this machine, `sharepoint:<site>/<drive>/<folder>/document.md` in a document library. A path that names
+  no kind is a location of the local place as it stands, so the files kept before places were named are read
+  where they are and never moved.
+- **The place is chosen when a document is filed,** by the setting `artifact.storage` of the account
+  service's delegation chain, resolved for the document's owner (「The setting」).
+  - A document with no owner, an owner the account service does not know, a chain that says nothing, and a
+    service whose settings name no account service, all file at the local place.
+  - Where the account service is named and fails, the filing is refused and nothing is written, so a document
+    whose company keeps its files elsewhere is never left on this machine instead.
+- **A document keeps what it was filed under:** its owner's company, the first unit of the owner's chain, and
+  the value that chose its place. Its file and every attachment stay at that place for the document's whole
+  life, a rewrite writing its file where it stands, so a change of the setting reaches the documents filed
+  after it, and reading a document asks nothing of the account service.
+- **Serving stays this service's.** Every read of a document's file or an attachment, in the console, through
+  a share link or through a reading, is answered here as before: the bytes are read at the document's place
+  and sent on as they come, a range asked passed to the place, and the links and who may read them are the
+  same whatever the place.
+- **Letting a document go lets go of its folder at its place,** after its rows; a place that cannot be
+  reached then leaves its files there.
+
+### The setting
+
+- **`artifact.storage` is a setting of the account service's delegation chain** (bmo-web's `docs/accounts.md`,
+  「The delegation chain」), declared by this service as its server stands, and again where a resolution finds it
+  undeclared: a `json` value, `nearest`, at the platform and at units, a unit's link written by its heads, with
+  no default.
+- **Its value is an object** naming the kind in `place` and that kind's settings beside it, as `{"place":
+  "local"}` or `{"place": "sharepoint", "site": …, "drive": …, "folder": …}`. Its link's value is written by
+  this service alone, after the kind judged it (docs/api.md, 「Storage places」), in the name of the person
+  writing it, so who may write a link and a lock above it are the account service's word. Its delegation is
+  written on the chain's own route, as any kind's is: a company that locks it decides it for every unit under
+  it.
+
+### The local place
+
+- **The kind `local` keeps a document's files under the file root on this machine,** and takes no settings.
 - **A document's folder** is `searches/<document id>/` under the file root.
   - A markdown document's file is `document.md` in it; a page's is `page.html`. The row names the file by
     its whole path, so a document's file never moves.
   - Every attachment is kept under `attachments/` in it, named by a digest of its name and its own name.
-- **Previews** of the pages documents refer to are kept under `web-cache/`.
+- **Previews** of the pages documents refer to are kept under `web-cache/` whatever a document's place.
 - **Every file is served only from inside the file root,** every link resolved.
+
+### The SharePoint place
+
+- **The kind `sharepoint` keeps a document's files in a SharePoint document library,** as a Teams team's files
+  are kept, through Microsoft Graph. Its settings:
+  - `site`, the Graph id of the site, and `drive`, the Graph id of its document library;
+  - `folder`, where a document's folder stands in the library: a path whose `{login}` is the owner's login and
+    whose `{document}` is the document's number, which it names at least once, as `04. BMO_ARTIFACT/{login}/
+    {document}`;
+  - `account`, the account whose Teams page lends the token, where it names one; the document's owner where it
+    does not.
+  - A value with another field, a site or drive holding a `/`, or a folder that climbs out of the library or
+    names no `{document}`, is refused.
+- **A document's folder** is the folder its settings lay out, the owner's login asked of the account service as
+  the document is filed; its file and its attachments stand in it as they do in a local folder.
+- **A file is written whole,** one call up to 4 MiB and through an upload session in parts above it, replacing
+  what stands at its location; the library makes the folders on the way. A read is the library's content read,
+  a range asked passed on, the bytes taken from the address the library sends it to; whether a file stands, its
+  size and its version are its item's. Letting a folder go lets go of everything under it.
+- **The token is borrowed from a person's own Teams page** through bmo-ms-teams's page token road (docs/api.md,
+  「What this service calls」), for the account the settings name, else the owner, with `Files.ReadWrite.All` or
+  `Sites.ReadWrite.All`. It reaches the library as that person, so the person must reach the library and their
+  node must be up with Teams signed in; otherwise the call is refused as a failed upstream, saying why. The token
+  is kept in memory until a minute before it ends and written nowhere.
 
 ## Filing a document
 
 - **The kind decides what is filed.** A `page` takes HTML and no body; every other kind takes a markdown
   body and no HTML.
 - **Nothing is written for a refusal.** The kind, the title, the body or HTML and the actor are checked
-  before the row exists, and the row, its body, its references and its file are written together.
+  before the row exists, and the row, its body, its references and its file are written together: the file is
+  written at the document's place before the rows are committed, and a place that refuses it refuses the
+  filing, with no row left.
 - **The title** is the one given; a page whose title is left empty takes its own `title` element, and a
   page with neither is refused.
 - **The description** is what the document reads as before it is opened:

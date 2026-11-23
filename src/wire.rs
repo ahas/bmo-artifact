@@ -677,3 +677,80 @@ pub struct DryRunQuery {
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub dry_run: Option<bool>,
 }
+
+/// The shape a storage place's field takes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum StorageFieldShape {
+  Text,
+  Number,
+}
+
+/// One setting a kind of place takes beside its name.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageField {
+  pub key: String,
+  pub shape: StorageFieldShape,
+  /// Whether a value naming the place must give it.
+  pub required: bool,
+}
+
+/// One kind of place a document's files may be kept at (`docs/artifact.md`, "Places").
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StoragePlace {
+  pub name: String,
+  /// What it is, in one English sentence.
+  pub description: String,
+  pub fields: Vec<StorageField>,
+}
+
+/// Every kind of place, in the catalogue's order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StoragePlaces {
+  pub places: Vec<StoragePlace>,
+}
+
+/// A link's storage value written: an object naming its kind in `place` and its settings beside it, or null to
+/// follow the link above.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageInput {
+  #[serde(default)]
+  pub value: Option<Value>,
+}
+
+/// One rule of a link of the delegation chain: whom it names and its value.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageRule {
+  pub who: String,
+  pub value: Value,
+}
+
+/// A link's entry of the storage setting, as the account service answers it.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct StorageEntry {
+  pub kind: String,
+  /// `platform` or `unit:<id>`.
+  pub link: String,
+  /// The link's own value, none where it follows above.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub value: Option<Value>,
+  /// `allow`, `lock` or `inherit`.
+  pub delegation: String,
+  #[serde(default)]
+  pub rules: Vec<StorageRule>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub set_by: Option<String>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub set_at: Option<i64>,
+  /// The farthest link above holding a lock, where one does.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub locked_by: Option<String>,
+  /// Whether the caller may change the entry now.
+  pub writable: bool,
+}

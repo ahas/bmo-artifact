@@ -14,8 +14,8 @@ use crate::wire::{
   DocumentKindPage, DocumentPage, DocumentReadsPage, DocumentReadsQuery, DocumentsQuery, DryRunQuery,
   EventPage, EventsQuery, Health, Import, ImportInput, LabelValuePage, LabelValuesQuery, MemberShare,
   MemberShareChange, MemberShareInput, MemberSharePage, PageQuery, Publication, RecentReadsPage, Reference,
-  ReferencePage, ScopeHolding, Share, ShareInput, SharePage, SharesQuery, UnitShareInput, UnitSharePage,
-  WireError,
+  ReferencePage, ScopeHolding, Share, ShareInput, SharePage, SharesQuery, StorageEntry, StorageInput,
+  StoragePlaces, UnitShareInput, UnitSharePage, WireError,
 };
 
 // Everything but the unreserved characters is written percent-encoded in a path segment.
@@ -417,5 +417,19 @@ impl ArtifactClient {
     query: &DryRunQuery,
   ) -> Result<ScopeHolding, ClientFailure> {
     Self::json(self.request(Method::DELETE, &format!("/scopes/{}", segment(scope))).query(query)).await
+  }
+
+  /// `GET /storage-places`.
+  pub async fn storage_places(&self) -> Result<StoragePlaces, ClientFailure> {
+    Self::json(self.request(Method::GET, "/storage-places")).await
+  }
+
+  /// `PUT /storage/{link}`, in the name of the account the client acts for.
+  pub async fn write_storage(
+    &self,
+    link: &str,
+    input: &StorageInput,
+  ) -> Result<StorageEntry, ClientFailure> {
+    Self::json(self.request(Method::PUT, &format!("/storage/{}", segment(link))).json(input)).await
   }
 }

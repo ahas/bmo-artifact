@@ -3,12 +3,9 @@
 //! download, and nothing on it is ever let run, except an HTML page, which runs as a page in a sandbox of
 //! its own origin and goes out with its prelude.
 
-use std::ops::Bound;
-
 use axum::body::Body;
 use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::Response;
-use headers::{Header, Range};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
 use super::drawn_copies;
@@ -17,6 +14,7 @@ use super::hosted_page::{
 };
 use crate::Refusal;
 use crate::helpers::picture;
+use crate::places::Located;
 use crate::plumbing::http::{Call, Refused, Standing};
 use crate::readings::now_seconds;
 use crate::store::attachments;
@@ -30,49 +28,16 @@ pub const NO_STORE: &str = "no-store";
 // What a file's name is written with in a download's header: every byte but the unreserved ones encoded.
 const NAME: &AsciiSet = &NON_ALPHANUMERIC.remove(b'-').remove(b'.').remove(b'_').remove(b'~');
 
-/// A file on the disk as it goes out: where it is, its type and the name it is saved under.
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// A kept file as it goes out: where it is kept, its type and the name it is saved under.
+#[derive(Clone, Debug)]
 pub struct KeptFile {
-  pub path: String,
+  pub at: Located,
   pub media_type: String,
   pub name: String,
 }
 
-/// Whether a kept file stands inside the file root, every link resolved: a file is served from nowhere
-/// else.
-pub fn inside_root(root: &std::path::Path, path: &str) -> bool {
-  match (std::fs::canonicalize(path), std::fs::canonicalize(root)) {
-    (Ok(real), Ok(root)) => real.starts_with(root),
-    _ => false,
-  }
-}
-
-/// The stretch of a file the Range header asks for, both ends counted in, none where it asks for none or for
-/// none a file of `bytes` holds, the whole file being the answer then.
-pub fn range_of(asked: Option<&str>, bytes: u64) -> Option<(u64, u64)> {
-  let value = HeaderValue::from_str(asked?.trim()).ok()?;
-  let range = Range::decode(&mut std::iter::once(&value)).ok()?;
-  let (start, end) = range.satisfiable_ranges(bytes).next()?;
-  let from = match start {
-    Bound::Included(from) => from,
-    Bound::Excluded(from) => from + 1,
-    Bound::Unbounded => 0,
-  };
-  let to = match end {
-    Bound::Included(to) => to.min(bytes.checked_sub(1)?),
-    Bound::Excluded(to) => to.checked_sub(1)?.min(bytes.checked_sub(1)?),
-    Bound::Unbounded => bytes.checked_sub(1)?,
-  };
-
-  (from <= to && from < bytes).then_some((from, to))
-}
-
-fn unread(why: std::io::Error) -> Refused {
-  if why.kind() == std::io::ErrorKind::NotFound {
-    Refusal::absent("the file is not on the disk").into()
-  } else {
-    Refusal::failed(format!("the file could not be read: {why}")).into()
-  }
+fn unread(why: Refusal) -> Refused {
+  why.into()
 }
 
 fn set(headers: &mut HeaderMap, name: header::HeaderName, value: &str) {
@@ -88,9 +53,8 @@ pub async fn kept_file(
   range: Option<&str>,
   cache: &str,
 ) -> Result<Response, Refused> {
-  let bytes = tokio::fs::read(&file.path).await.map_err(unread)?;
-  let total = bytes.len() as u64;
-  let asked = range_of(range, total);
+  let reading = file.at.read(range).await.map_err(unread)?;
+  let total = reading.total;
   let mut response = Response::new(Body::empty());
   let headers = response.headers_mut();
 
@@ -107,18 +71,16 @@ pub async fn kept_file(
     },
   );
 
-  match asked {
-    None => {
-      set(headers, header::CONTENT_LENGTH, &total.to_string());
-      *response.body_mut() = Body::from(bytes);
-    }
+  match reading.span {
+    None => set(headers, header::CONTENT_LENGTH, &total.to_string()),
     Some((from, to)) => {
       set(headers, header::CONTENT_LENGTH, &(to - from + 1).to_string());
       set(headers, header::CONTENT_RANGE, &format!("bytes {from}-{to}/{total}"));
       *response.status_mut() = StatusCode::PARTIAL_CONTENT;
-      *response.body_mut() = Body::from(bytes[from as usize..=to as usize].to_vec());
     }
   }
+
+  *response.body_mut() = Body::from_stream(reading.body);
 
   Ok(response)
 }
@@ -132,17 +94,17 @@ fn is_picture(media_type: &str) -> bool {
 /// as kept where it is not shrunk to that step.
 pub async fn drawn_file(file: &KeptFile, width: u32, cache: &str) -> Result<Response, Refused> {
   let step = picture::drawn_step(width);
-  let written = tokio::fs::metadata(&file.path).await.map_err(unread)?;
-  let moment = written
-    .modified()
-    .ok()
-    .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
-    .map_or(0, |since| since.as_nanos());
-  let key = format!("{step}|{}|{moment}|{}", written.len(), file.path);
+  let written = file
+    .at
+    .exists()
+    .await
+    .map_err(unread)?
+    .ok_or_else(|| Refused::from(Refusal::absent("the file is not at its place")))?;
+  let key = format!("{step}|{}|{}|{}", written.bytes, written.version, file.at.path());
   let copy = match drawn_copies::kept(&key) {
     Some(copy) => Some(copy),
     None => {
-      let bytes = tokio::fs::read(&file.path).await.map_err(unread)?;
+      let bytes = file.at.whole().await.map_err(unread)?;
       let made = tokio::task::spawn_blocking(move || picture::drawn(&bytes, step)).await.ok().flatten();
 
       made.map(|(bytes, media_type)| drawn_copies::keep(key, bytes, media_type))
@@ -251,7 +213,7 @@ pub async fn hosted_file(
   document: i64,
   reach: &Reach,
 ) -> Result<Response, Refused> {
-  let html = tokio::fs::read_to_string(&file.path).await.map_err(unread)?;
+  let html = String::from_utf8_lossy(&file.at.whole().await.map_err(unread)?).into_owned();
   let sounds = if writes_sound(&html) {
     Some(page_sounds(standing, document, reach, asked.language.as_deref()).await?)
   } else {

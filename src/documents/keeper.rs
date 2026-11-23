@@ -1,8 +1,8 @@
 //! One file kept beside a document (`docs/artifact.md`, "Attachments"): read for what it is from its bytes
-//! and its name, written under the document's own folder, a picture redrawn the way a kept picture is, and
-//! its row written. Nothing is written for a refusal.
+//! and its name, written under the document's own folder at the document's place, a picture redrawn the way a
+//! kept picture is, and its row written. Nothing is written for a refusal.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::LazyLock;
 
 use regex::{Regex, RegexBuilder};
@@ -12,7 +12,9 @@ use unicode_normalization::UnicodeNormalization;
 
 use crate::Refusal;
 use crate::helpers::picture;
+use crate::places::{Located, Places, local};
 use crate::store::attachments::{self, NewAttachment};
+use crate::store::documents;
 use crate::wire::Attachment;
 
 /// What a kept file is read as: `image`, `audio`, `video`, `text`, `page` or `file`.
@@ -44,9 +46,33 @@ pub struct Handed<'a> {
   pub url: Option<&'a str>,
 }
 
-/// The folder a document's files stand in under the file root.
-pub fn document_folder(root: &Path, document_id: i64) -> PathBuf {
-  root.join("searches").join(document_id.to_string())
+/// The folder a document's files stand in at its place: the folder its own file stands in, the local folder of
+/// its number where it keeps none.
+async fn document_folder<C: ConnectionTrait>(
+  db: &C,
+  places: &Places,
+  document_id: i64,
+) -> Result<Located, Refusal> {
+  let row = documents::read(db, document_id)
+    .await?
+    .ok_or_else(|| Refusal::absent(format!("there is no document {document_id}")))?;
+  let owner = row.document.owner.as_deref();
+
+  Ok(match &row.file {
+    Some(path) => {
+      let file = places.locate(row.storage.as_ref(), owner, path)?;
+      let folder = file.at.rsplit_once('/').map_or(String::new(), |(folder, _)| folder.to_owned());
+
+      Located {
+        place: file.place,
+        at: folder,
+      }
+    }
+    None => Located {
+      place: places.local(),
+      at: local::document_folder(document_id),
+    },
+  })
 }
 
 /// One file kept beside a document: refused where it has no name, is over the ceiling or bears a name the
@@ -54,7 +80,7 @@ pub fn document_folder(root: &Path, document_id: i64) -> PathBuf {
 /// row written. The attachment as the API answers it.
 pub async fn keep<C: ConnectionTrait>(
   db: &C,
-  root: &Path,
+  places: &Places,
   document_id: i64,
   handed: Handed<'_>,
 ) -> Result<Attachment, Refusal> {
@@ -88,7 +114,11 @@ pub async fn keep<C: ConnectionTrait>(
     .map(|byte| format!("{byte:02x}"))
     .collect::<String>()[..12]
     .to_owned();
-  let folder = document_folder(root, document_id).join("attachments");
+  let folder = document_folder(db, places, document_id).await?;
+  let at = |name: String| Located {
+    place: std::sync::Arc::clone(&folder.place),
+    at: format!("{}/attachments/{name}", folder.at),
+  };
   let extension = Path::new(name)
     .extension()
     .map(|ext| format!(".{}", ext.to_string_lossy().to_lowercase()))
@@ -108,19 +138,15 @@ pub async fn keep<C: ConnectionTrait>(
       .unwrap_or_default();
 
     match redrawn {
-      Some(avif) => (
-        avif,
-        KEPT_PICTURE_TYPE.to_owned(),
-        folder.join(format!("{digest}-{}.avif", file_name(&stem))),
-      ),
-      None => (bytes, kind, folder.join(format!("{digest}-{}{extension}", file_name(&stem)))),
+      Some(avif) => (avif, KEPT_PICTURE_TYPE.to_owned(), at(format!("{digest}-{}.avif", file_name(&stem)))),
+      None => (bytes, kind, at(format!("{digest}-{}{extension}", file_name(&stem)))),
     }
   } else {
-    (handed.bytes, kind, folder.join(format!("{digest}-{}", file_name(name))))
+    (handed.bytes, kind, at(format!("{digest}-{}", file_name(name))))
   };
+  let byte_count = i64::try_from(bytes.len()).unwrap_or(i64::MAX);
 
-  std::fs::create_dir_all(&folder).map_err(|why| Refusal::failed(why.to_string()))?;
-  write_private(&target, &bytes).map_err(|why| Refusal::failed(why.to_string()))?;
+  target.place.write(&target.at, bytes).await?;
 
   attachments::insert(
     db,
@@ -128,35 +154,14 @@ pub async fn keep<C: ConnectionTrait>(
       document_id,
       media,
       url: handed.url,
-      path: &target.to_string_lossy(),
+      path: &target.path(),
       media_type: &kind,
-      byte_count: i64::try_from(bytes.len()).unwrap_or(i64::MAX),
+      byte_count,
       name,
       role: handed.role.map(str::trim).filter(|role| !role.is_empty()),
     },
   )
   .await
-}
-
-/// A file written whole and owner-only, through a staged file beside it, so a reader never sees half of it.
-pub fn write_private(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-  use std::io::Write as _;
-  use std::os::unix::fs::OpenOptionsExt as _;
-
-  let staged = path.with_file_name(format!(
-    "{}.{}.tmp",
-    path.file_name().unwrap_or_default().to_string_lossy(),
-    std::process::id()
-  ));
-
-  std::fs::OpenOptions::new()
-    .write(true)
-    .create(true)
-    .truncate(true)
-    .mode(0o600)
-    .open(&staged)?
-    .write_all(bytes)?;
-  std::fs::rename(&staged, path)
 }
 
 // What each file ending names, where a file's own bytes do not settle what it is.

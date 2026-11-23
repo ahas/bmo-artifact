@@ -25,6 +25,7 @@ use crate::accounts::Accounts;
 use crate::console;
 use crate::documents::preview::PreviewCache;
 use crate::events::Publisher;
+use crate::places::Places;
 use crate::player::Player;
 use crate::plumbing::openapi::Operation;
 use crate::plumbing::refusal::Refusal;
@@ -200,6 +201,8 @@ pub struct Standing {
   pub reader: Arc<dyn PageReader>,
   /// The account service the settings name, where a reader's units and a share's company are asked.
   pub accounts: Accounts,
+  /// Where documents' files are kept (`docs/artifact.md`, "Places").
+  pub places: Places,
   /// The previews of the pages a document refers to, read through the reader and kept under the file root.
   pub previews: Arc<PreviewCache>,
   /// Where events are published.
@@ -243,6 +246,7 @@ impl Standing {
     let player = Arc::new(Player::read(&settings.player.folder));
     let readings = ReadingKey::of(&settings.server.token);
     let accounts = Accounts::of(&settings.accounts);
+    let places = Places::new(&settings, &accounts);
 
     Ok(Self {
       settings,
@@ -250,6 +254,7 @@ impl Standing {
       wording,
       reader,
       accounts,
+      places,
       previews,
       events: Publisher::default(),
       console,

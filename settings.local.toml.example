@@ -31,3 +31,7 @@ file = "/srv/bmo-artifact/documents.yaml"
 
 [documents]
 kindless_import_prefix = "Import: "
+
+[sharepoint]
+tokens = "http://127.0.0.1:3240"
+token = "artifact-page-token-caller"

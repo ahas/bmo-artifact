@@ -517,8 +517,32 @@ async fn a_unit_read_the_account_service_does_not_answer_is_refused() {
   // An account service that answers nothing: the owner's own read never asks it, and a read a unit share decides
   // is refused rather than guessed.
   let service = Service::with_accounts("http://127.0.0.1:9").await;
-  let mine = id_of(&filed(&service, "Mine", Some(OWNER)).await);
-  let theirs = id_of(&filed(&service, "Theirs", Some(ASIDE)).await);
+
+  // Filing an owned document asks the account service where its files are kept, so none is filed while it answers
+  // nothing; the two documents are filed with no owner and given their owners in the table.
+  let refused = service
+    .call_with(
+      Method::POST,
+      "/documents",
+      Some(
+        json!({ "kind": "record", "title": "Mine", "body": "Words.", "actorName": "tester", "labels": {} }),
+      ),
+      &[("owner-key", OWNER)],
+    )
+    .await;
+
+  assert_eq!(refused.status, StatusCode::BAD_GATEWAY, "{}", refused.json());
+
+  let mine = id_of(&filed(&service, "Mine", None).await);
+  let theirs = id_of(&filed(&service, "Theirs", None).await);
+
+  for (id, owner) in [(mine, OWNER), (theirs, ASIDE)] {
+    service
+      .scratch
+      .run(r#"UPDATE "searches" SET "owner" = $1 WHERE "id" = $2"#, vec![owner.into(), id.into()])
+      .await;
+  }
+
   let db = service.standing.db().await.expect("the database");
 
   unit_shares::add(db, theirs, &[COMPANY], 0).await.expect("the unit share is kept");

@@ -8,15 +8,15 @@ use schemars::generate::SchemaGenerator;
 use serde_json::json;
 
 use super::drawn_copies;
-use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, inside_root, send};
+use super::files::{Asking, KeptFile, NO_STORE, Opened, PRIVATE_DAY, Reach, send};
 use super::readers::{Reader, kept, reached};
 use crate::Refusal;
 use crate::documents::cover::{cover_card, cover_file};
 use crate::documents::filing;
-use crate::documents::keeper::document_folder;
 use crate::events::EventKind;
 use crate::helpers::picture as pictures;
 use crate::kinds;
+use crate::places::{Located, local};
 use crate::plumbing::http::{Call, ConsoleReach, Refused, Route, Standing, answer};
 use crate::plumbing::openapi::{Operation, bytes_answer, id_parameter, json_answer, json_body, query};
 use crate::store::{attachments, documents, page_limit};
@@ -78,7 +78,7 @@ impl Route for FileDocument {
     let input: DocumentInput = call.json().await?;
     let standing = call.standing();
     let db = standing.db().await?;
-    let id = filing::file(db, &standing.settings.files.root, &input, reader.owner()).await?;
+    let id = filing::file(db, &standing.places, &input, reader.owner()).await?;
     let filed = document(standing, id).await?.document;
 
     standing
@@ -145,7 +145,7 @@ impl Route for ChangeDocument {
     let standing = call.standing();
     let db = standing.db().await?;
 
-    filing::rewrite(db, &standing.settings.files.root, id, &change).await?;
+    filing::rewrite(db, &standing.places, id, &change).await?;
 
     let changed = document(standing, id).await?.document;
 
@@ -176,8 +176,16 @@ crate::route!(ChangeDocument);
 /// `share.deleted` and the document a `document.deleted` under the scope it was held in.
 pub async fn let_go(standing: &Standing, id: i64, scope: Option<&str>) -> Result<(), Refused> {
   let db = standing.db().await?;
+  let folder = documents::read(db, id).await?.and_then(|row| document_folder(standing, &row));
   let tokens = documents::delete(db, id).await?;
-  let _ = std::fs::remove_dir_all(document_folder(&standing.settings.files.root, id));
+
+  // The local folder of its number goes whatever its place, as a document kept before places were named keeps
+  // its attachments there; the folder at its place goes after its rows, and one that cannot be reached stays.
+  let _ = standing.places.local().delete(&local::document_folder(id)).await;
+
+  if let Some(folder) = folder {
+    let _ = folder.place.delete(&folder.at).await;
+  }
 
   for token in tokens {
     standing
@@ -225,6 +233,22 @@ impl Route for ReleaseDocument {
 
 crate::route!(ReleaseDocument);
 
+// The folder a document's own file stands in at its place, none where it keeps no file there.
+fn document_folder(standing: &Standing, row: &documents::Row) -> Option<Located> {
+  let file = locate(standing, row, row.file.as_deref()?).ok()?;
+  let (folder, _) = file.at.rsplit_once('/')?;
+
+  (file.place.kind() != local::NAME).then(|| Located {
+    place: file.place.clone(),
+    at: folder.to_owned(),
+  })
+}
+
+/// A file of a document's, at the place the document was filed under.
+pub fn locate(standing: &Standing, row: &documents::Row, path: &str) -> Result<Located, Refused> {
+  Ok(standing.places.locate(row.storage.as_ref(), row.document.owner.as_deref(), path)?)
+}
+
 /// The file a document reads from: for a page, the HTML it keeps; for any other kind, its markdown.
 pub async fn document_file(standing: &Standing, row: &documents::Row) -> Result<KeptFile, Refused> {
   let id = row.document.id;
@@ -234,10 +258,11 @@ pub async fn document_file(standing: &Standing, row: &documents::Row) -> Result<
   if hosted {
     // A page filed before its HTML was the document's own file keeps it among its attachments.
     if let Some(kept) = attachments::first_of_kind(standing.db().await?, id, "page").await?
-      && inside_root(&standing.settings.files.root, &kept.path)
+      && let Ok(at) = locate(standing, row, &kept.path)
+      && at.exists().await.ok().flatten().is_some()
     {
       return Ok(KeptFile {
-        path: kept.path,
+        at,
         media_type: "text/html".to_owned(),
         name: kept.attachment.name,
       });
@@ -245,19 +270,17 @@ pub async fn document_file(standing: &Standing, row: &documents::Row) -> Result<
   }
 
   let path = row.file.clone().ok_or_else(missing)?;
-  if !inside_root(&standing.settings.files.root, &path) {
-    return Err(missing());
-  }
+  let at = locate(standing, row, &path).map_err(|_| missing())?;
 
   Ok(if hosted {
     KeptFile {
-      path,
+      at,
       media_type: "text/html".to_owned(),
       name: format!("document-{id}.html"),
     }
   } else {
     KeptFile {
-      path,
+      at,
       media_type: "text/markdown; charset=utf-8".to_owned(),
       name: format!("document-{id}.md"),
     }
@@ -283,28 +306,26 @@ pub async fn content(
 pub async fn picture(standing: &Standing, id: i64, width: Option<u32>) -> Result<Response, Refused> {
   let row = document(standing, id).await?;
   let body = match (kinds::kind(Some(&row.document.kind)).hosted(), &row.file) {
-    (false, Some(path)) => tokio::fs::read_to_string(path).await.ok(),
+    (false, Some(path)) => match locate(standing, &row, path) {
+      Ok(at) => at.whole().await.ok().map(|bytes| String::from_utf8_lossy(&bytes).into_owned()),
+      Err(_) => None,
+    },
     _ => None,
   };
   let none = || Refused::from(Refusal::absent(format!("document {id} has no picture")));
   let path = cover_file(standing.db().await?, id, body.as_deref()).await?.ok_or_else(none)?;
+  let at = locate(standing, &row, &path).map_err(|_| none())?;
   let step = width.map(pictures::drawn_step);
-  let key = match (step, tokio::fs::metadata(&path).await) {
-    (Some(step), Ok(written)) => {
-      let moment = written
-        .modified()
-        .ok()
-        .and_then(|at| at.duration_since(std::time::UNIX_EPOCH).ok())
-        .map_or(0, |since| since.as_nanos());
-
-      Some(format!("cover|{step}|{moment}|{}|{}", written.len(), path.display()))
+  let key = match (step, at.exists().await) {
+    (Some(step), Ok(Some(written))) => {
+      Some(format!("cover|{step}|{}|{}|{}", written.version, written.bytes, at.path()))
     }
     _ => None,
   };
   let (card, media_type) = match key.as_deref().and_then(drawn_copies::kept) {
     Some(copy) => (copy.bytes.to_vec(), copy.media_type),
     None => {
-      let bytes = tokio::fs::read(&path).await.map_err(|_| none())?;
+      let bytes = at.whole().await.map_err(|_| none())?;
       let made = tokio::task::spawn_blocking(move || {
         let card = cover_card(&bytes)?;
 

@@ -14,9 +14,11 @@ flowchart TD
   C[Any other caller] -->|HTTP| S[The service]
   M -->|the client| S
   S --> D[(The document tables)]
-  S --> F[The file root]
+  S --> F[A document's place: the file root, or a SharePoint library]
   S -->|bmo-explorer's client| E[Page reading]
   S -->|bmo-web's client| W[The account service]
+  S -->|its page token road| T[bmo-ms-teams]
+  S -->|Microsoft Graph| F
 ```
 
 ## Versioning
@@ -64,7 +66,8 @@ flowchart TD
 | 422 | `read-only` | a member share asked with a permission other than `read` (「Member shares」) |
 | 422 | `other-company` | a member or a unit outside the company the document's owner stands in (「Member shares」, 「Unit shares」) |
 | 500 | `failed` | the service failed: its store or its file root; the sentence is the failure |
-| 502 | `upstream-failed` | the account service failed, or the settings name none, where a call needs it (「What this service calls」) |
+| 502 | `upstream-failed` | the account service, the page token road or a document's place failed, or the settings name none, where a call needs it (「What this service calls」) |
+| 4xx | the account service's | a storage write the delegation chain refused, with the status and the code it answered: 400 `bad-link` or `bad-value`, 403 `forbidden`, 404 `not-found`, 409 `locked` (「Storage places」) |
 
 
 ### Lists
@@ -114,7 +117,7 @@ A call reads for one of two readers, and the reader decides which documents it r
 
 ## Documents
 
-A document is one row of the document tables and one file under the file root (docs/artifact.md, 「Where it
+A document is one row of the document tables and one file at its place (docs/artifact.md, 「Where it
 lives」).
 
 | Field | Holds |
@@ -535,6 +538,30 @@ whole」).
 - **An import still `fetching` when the service stops** is `failed` when it starts again, its error saying
   the service stopped before the page was read.
 
+## Storage places
+
+Where a document's files are kept is chosen by the delegation chain's `artifact.storage` (docs/artifact.md,
+「Places」 and 「The setting」). These routes are the place kinds a screen offers and the one way that setting's
+value is written.
+
+| Route | Takes | Answers |
+|---|---|---|
+| `GET /storage-places` | | 200, `places`: every kind of place, in the catalogue's order, each `name`, `description` and `fields`, each field `key`, `shape` (`text` or `number`) and `required` |
+| `PUT /storage/{link}` | `Owner-Key`; `value`, an object naming its kind in `place` and its settings beside it, or null to follow the link above | 200, the link's entry as the account service answers it: `kind`, `link`, `value?`, `delegation`, `rules`, `setBy?`, `setAt?`, `lockedBy?`, `writable` |
+
+- **Both are a screen's call** the console's token reaches, as the service's token does: bmo-web's organisation
+  screen calls them for the person signed in.
+- **A link** is the chain's: `platform` or `unit:<id>`.
+- **The value is judged by the kind it names** and written as the kind answers it, fields trimmed. A value naming
+  no kind, a field the kind does not take, a field missing or out of its shape, is refused 400 `bad-request` with
+  the sentence naming it, and nothing is written.
+- **It is written in the name of the account `Owner-Key` names,** as the unit that declared the setting, so the
+  account service judges who writes the link and whether a lock above withholds it: its refusal is answered with
+  its own status and code (「Codes」). A call naming no account is refused 403 `forbidden`, and one where the
+  settings name no account service 502 `upstream-failed`.
+- **The delegation is not written here:** whether the links below may change the setting is written on the
+  account service's chain routes, as any kind's is.
+
 ## Scopes
 
 | Route | Takes | Answers |
@@ -747,7 +774,9 @@ flowchart TD
 | Unit | Through | For |
 |---|---|---|
 | bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.5 | an import's page and figures; a reference's preview and picture |
-| the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company |
+| the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company; the setting `artifact.storage`, declared, resolved for a document's owner and written for a link; an owner's login |
+| bmo-ms-teams | its page token road, `POST /page-tokens` | the Graph token a person's own Teams page holds, for the SharePoint place |
+| Microsoft Graph | HTTPS, with that token | a SharePoint place's files written, read, asked after and let go of |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
   (bmo-explorer's `docs/api.md`, 「The client」). It checks every address before it connects and paces each
@@ -764,6 +793,25 @@ flowchart TD
     document may be shared with (「Unit shares」).
   - A 404 is a user or a unit that does not stand; any other failure is refused 502 `upstream-failed`. Nothing it
     answers is kept: each read asks again, so a move or a new unit counts from the next call on.
+- **The delegation chain is reached the same way,** for the setting this service declares (docs/artifact.md, 「The
+  setting」):
+  - `PUT /chain/kinds/artifact.storage`, the declaration, as the server stands and again where a resolution
+    answers 404 `no-such-kind`;
+  - `GET /chain/kinds/artifact.storage/resolve?person=`, as a document of an owner is filed: the value is the
+    place, and the first unit of the answer's `path` the company the document keeps; a person who does not stand
+    is answered with the local place;
+  - `PUT /chain/kinds/artifact.storage/links/{link}/value` with `Owner-Key` and `Declared-By` `artifact`, for
+    `PUT /storage/{link}`;
+  - `GET /users/{user}`, the owner's login, as a SharePoint document's folder is laid out.
+- **bmo-ms-teams's page token road** is reached at the settings' `sharepoint.tokens` with `sharepoint.token`, the
+  caller token of this service's own the deployment gives it there (bmo-ms-teams's `docs/api.md`, 「The page
+  token road」), its body `account` and `scopes` `Files.ReadWrite.All` and `Sites.ReadWrite.All`, its answer
+  `token` and `expiresAt` read and nothing else. bmo-ms-teams is a private unit, so no client crate of it is a
+  dependency this repository can name: the route is called as its own documents fix it. A refusal is said back as
+  502 `upstream-failed` with its sentence.
+- **Microsoft Graph** is reached at the settings' `sharepoint.graph`, under `/sites/{site}/drives/{drive}/root:/
+  {path}`: `PUT …:/content` and `POST …:/createUploadSession` to write, `GET …:/content` with `Range` to read,
+  `GET` of the item to ask after a file and `DELETE` of the item to let a folder go.
 
 The console bundle makes two calls of its own, through the console rather than through this service:
 
@@ -809,6 +857,9 @@ wherever the process was started.
 | `explorer` | `data_root` | the data root bmo-explorer's client is opened over |
 | `accounts` | `address` | the account service's base address (「What this service calls」); none where none is named, and then no reader stands in any unit, and a unit share and a member share of an owned document are refused |
 | `accounts` | `token` | the account service's server token, presented as its bearer |
+| `sharepoint` | `graph` | Microsoft Graph's base address; `https://graph.microsoft.com/v1.0` where none is named |
+| `sharepoint` | `tokens` | bmo-ms-teams's base address, where the page token road answers; none where none is named, and then a SharePoint place is refused 502 `upstream-failed` |
+| `sharepoint` | `token` | this service's own caller token on the page token road |
 | `share` | `address` | the address a link's `url` stands under |
 | `wording` | `file` | the document wording file; the English default in `lang/` where none is named |
 
@@ -833,6 +884,11 @@ worker:
   under the scope it writes.
 - **The deployment's settings** name the account service's address and its server token under `accounts`, or no
   reader reads through a unit share and no owned document is shared with a member or a unit.
+- **bmo-web's client crate** carries `PUT /chain/kinds/{key}/links/{link}/value` with `Owner-Key` and
+  `Declared-By`, which `PUT /storage/{link}` writes through; this service is built against a bmo-web that has it.
+- **bmo-ms-teams's configuration** names this service among the page token road's callers
+  (`BMO_TEAMS_PAGE_TOKEN_CALLERS`), with the token the deployment's `sharepoint.token` holds, before a document is
+  filed at a SharePoint place.
 - **Agency's chat line** starts `bmo-artifact mcp` in the supervisor's program, whose environment carries
   `BMO_OWNER_ACCOUNT`; whatever wraps the start keeps that variable, or the supervisor's documents are filed
   with no owner.

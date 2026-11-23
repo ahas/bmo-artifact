@@ -67,7 +67,7 @@ pub(super) const COLUMNS: &str = concat!(
   keeps_picture!(),
   r#" AS "has_picture",
   d."started_at" * 1000 AS "created_at", COALESCE(d."changed_at", d."started_at" * 1000) AS "changed_at",
-  d."document""#
+  d."document", d."storage"::text AS "storage", d."company""#
 );
 
 // A row that left a document: one that names its file and is not marked as having written none. Every
@@ -75,11 +75,15 @@ pub(super) const COLUMNS: &str = concat!(
 pub(crate) const LEFT_A_DOCUMENT: &str =
   r#"NULLIF(d."document", '') IS NOT NULL AND COALESCE(d."documented", 1) <> 0"#;
 
-/// A document's row as the API answers it, with the file it reads from.
+/// A document's row as the API answers it, with the file it reads from and what it was filed under.
 pub struct Row {
   pub document: Document,
-  /// The document's file under the file root, none where it keeps none.
+  /// The path of the document's file at its place, none where it keeps none.
   pub file: Option<String>,
+  /// The storage value that chose its place, none for the local place (`docs/artifact.md`, "Places").
+  pub storage: Option<serde_json::Value>,
+  /// The company its owner stood in as it was filed.
+  pub company: Option<i64>,
 }
 
 pub(super) fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
@@ -103,6 +107,10 @@ pub(super) fn row_of(row: &QueryResult) -> Result<Row, Refusal> {
       permission: None,
     },
     file: row.try_get::<Option<String>>("", "document")?.filter(|file| !file.is_empty()),
+    storage: row
+      .try_get::<Option<String>>("", "storage")?
+      .and_then(|storage| serde_json::from_str(&storage).ok()),
+    company: row.try_get("", "company")?,
   })
 }
 
@@ -358,6 +366,22 @@ pub async fn rewrite<C: ConnectionTrait>(
   .map(drop)
 }
 
+/// The company and the place a document is filed under, set as it is filed.
+pub async fn set_place<C: ConnectionTrait>(
+  db: &C,
+  id: i64,
+  storage: Option<&serde_json::Value>,
+  company: Option<i64>,
+) -> Result<(), Refusal> {
+  run(
+    db,
+    r#"UPDATE "searches" SET "storage" = $1::text::jsonb, "company" = $2 WHERE "id" = $3"#,
+    vec![storage.map(serde_json::Value::to_string).into(), company.into(), id.into()],
+  )
+  .await
+  .map(drop)
+}
+
 /// The file a document reads from, set.
 pub async fn set_file<C: ConnectionTrait>(db: &C, id: i64, file: &str) -> Result<(), Refusal> {
   run(
@@ -388,7 +412,7 @@ pub async fn set_body<C: ConnectionTrait>(db: &C, id: i64, text: &str) -> Result
   .map_err(Refusal::from)
 }
 
-/// The files a document keeps under the file root, and its rows, let go of: its references, its body, its
+/// A document's rows let go of: its references, its body, its
 /// attachments, its member and unit shares, its reads, its share links and itself, its link leaving a note of what it opened. The share tokens it
 /// held.
 pub async fn delete<C: ConnectionTrait>(db: &C, id: i64) -> Result<Vec<String>, Refusal> {

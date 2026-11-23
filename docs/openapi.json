@@ -1066,6 +1066,158 @@
         ],
         "type": "object"
       },
+      "StorageEntry": {
+        "description": "A link's entry of the storage setting, as the account service answers it.",
+        "properties": {
+          "delegation": {
+            "description": "`allow`, `lock` or `inherit`.",
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "link": {
+            "description": "`platform` or `unit:<id>`.",
+            "type": "string"
+          },
+          "lockedBy": {
+            "description": "The farthest link above holding a lock, where one does.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rules": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/StorageRule"
+            },
+            "type": "array"
+          },
+          "setAt": {
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "setBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {
+            "description": "The link's own value, none where it follows above."
+          },
+          "writable": {
+            "description": "Whether the caller may change the entry now.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "link",
+          "delegation",
+          "rules",
+          "writable"
+        ],
+        "type": "object"
+      },
+      "StorageField": {
+        "description": "One setting a kind of place takes beside its name.",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "required": {
+            "description": "Whether a value naming the place must give it.",
+            "type": "boolean"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/StorageFieldShape"
+          }
+        },
+        "required": [
+          "key",
+          "shape",
+          "required"
+        ],
+        "type": "object"
+      },
+      "StorageFieldShape": {
+        "description": "The shape a storage place's field takes.",
+        "enum": [
+          "text",
+          "number"
+        ],
+        "type": "string"
+      },
+      "StorageInput": {
+        "description": "A link's storage value written: an object naming its kind in `place` and its settings beside it, or null to\nfollow the link above.",
+        "properties": {
+          "value": {
+            "default": null
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "StoragePlace": {
+        "description": "One kind of place a document's files may be kept at (`docs/artifact.md`, \"Places\").",
+        "properties": {
+          "description": {
+            "description": "What it is, in one English sentence.",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/StorageField"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "fields"
+        ],
+        "type": "object"
+      },
+      "StoragePlaces": {
+        "description": "Every kind of place, in the catalogue's order.",
+        "properties": {
+          "places": {
+            "items": {
+              "$ref": "#/components/schemas/StoragePlace"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "places"
+        ],
+        "type": "object"
+      },
+      "StorageRule": {
+        "description": "One rule of a link of the delegation chain: whom it names and its value.",
+        "properties": {
+          "value": true,
+          "who": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "who",
+          "value"
+        ],
+        "type": "object"
+      },
       "UnitShare": {
         "description": "One organisation unit a document is shared with.",
         "properties": {
@@ -4099,6 +4251,91 @@
         ],
         "x-console": "open"
       }
+    },
+    "/storage-places": {
+      "get": {
+        "operationId": "listStoragePlaces",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoragePlaces"
+                }
+              }
+            },
+            "description": "The kinds of place a document's files may be kept at, each with the settings it takes."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "The kinds of place a document's files may be kept at, each with the settings it takes.",
+        "tags": [
+          "storage"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "forbidden"
+        ],
+        "x-console": "screen"
+      }
+    },
+    "/storage/{link}": {
+      "put": {
+        "operationId": "writeStorageByLink",
+        "parameters": [
+          {
+            "description": "The chain's link: `platform` or `unit:<id>`.",
+            "in": "path",
+            "name": "link",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageEntry"
+                }
+              }
+            },
+            "description": "Judge a link's storage value by the place it names and write it on the delegation chain in the caller's name."
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Judge a link's storage value by the place it names and write it on the delegation chain in the caller's name.",
+        "tags": [
+          "storage"
+        ],
+        "x-codes": [
+          "unauthorized",
+          "bad-request",
+          "bad-link",
+          "bad-value",
+          "forbidden",
+          "not-found",
+          "locked",
+          "upstream-failed"
+        ],
+        "x-console": "screen"
+      }
     }
   },
   "security": [
@@ -4142,6 +4379,9 @@
     },
     {
       "name": "shares"
+    },
+    {
+      "name": "storage"
     },
     {
       "name": "units"

@@ -28,7 +28,7 @@ impl Route for PublishDocument {
     let input: DocumentInput = call.json().await?;
     let standing = call.standing();
     let db = standing.db().await?;
-    let id = filing::file(db, &standing.settings.files.root, &input, reader.owner()).await?;
+    let id = filing::file(db, &standing.places, &input, reader.owner()).await?;
     let filed = document(standing, id).await?.document;
 
     standing

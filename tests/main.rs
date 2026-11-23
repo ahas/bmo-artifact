@@ -21,6 +21,7 @@ mod openapi;
 mod owners;
 mod page_reading;
 mod picture_ground;
+mod places;
 mod publications;
 mod readings;
 mod reads;

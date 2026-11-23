@@ -36,7 +36,7 @@ async fn run(standing: Arc<Standing>, asked: imports::Asked) -> Result<(), Refus
   let scope = asked.scope.as_deref();
   let read = import_page(
     db,
-    &standing.settings.files.root,
+    &standing.places,
     standing.reader.as_ref(),
     &standing.wording.import,
     Asked {

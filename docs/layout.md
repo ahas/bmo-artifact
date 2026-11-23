@@ -32,7 +32,7 @@ src/
   client.rs                the service's own Rust client, one method a route
   events.rs                the event kinds and the publisher every change goes through
   reader.rs                the page reader, over bmo-explorer's client
-  accounts.rs              the account service, over bmo-web's client: the units a reader stands under, a company and its tree
+  accounts.rs              the account service, over bmo-web's client: the units a reader stands under, a company and its tree, the storage setting
   wording.rs               the document wording file and its English default
   design.rs                the document design read from client/design/document.json, and a page's sheet
   console.rs               the declaration and bundle folder the console face is built from, and how a deployment reaches it
@@ -41,6 +41,7 @@ src/
   store/                   the statements on the document tables, by resource, and the clock their columns keep
     migration/             the migrations and the migrator
   kinds/                   the catalogue, and the five kinds: search, record, learning, import, page
+  places/                  the place interface, the catalogue, and the two kinds: local, sharepoint
   documents/
     filing.rs              a document filed and rewritten: its row, body, references and file
     keeper.rs              a file kept beside a document, read for what it is
@@ -193,7 +194,8 @@ flowchart TD
   repository's; the redesign, which adds a document's scope, actor, labels, description and change time,
   an attachment's role, and the imports and events; the research profiles' table taken away; the notes ended
   share links leave; the member shares; the owners and the unit shares; the reads; and when each read was last
-  opened, a read kept before standing at the start of its day. A
+  opened, a read kept before standing at the start of its day; and the company and the place a document was filed
+  under. A
   migration a database may already have run is never rewritten or removed, since the migrator refuses a
   database whose record names a migration it does not know. `bmo-artifact migrate` brings the database
   the settings name up to date.
@@ -202,7 +204,8 @@ flowchart TD
 - **Statements** bind each number at its widest width, so the driver never refuses a statement it has
   prepared because a value comes in a different width; a statement prepared before a table's shape changed
   under the process is run once more on a fresh connection.
-- **File root.** The folder holding `searches/<document id>/` and `web-cache/` is a setting.
+- **File root.** The folder holding `searches/<document id>/` and `web-cache/` is a setting; it is the local
+  place's (`docs/artifact.md`, 「Places」).
 
 ## Version
 

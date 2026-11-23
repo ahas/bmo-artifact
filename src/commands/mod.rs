@@ -144,6 +144,16 @@ impl Verb for Serve {
 
     abandon(&standing).await.map_err(|why| VerbError::Refused(why.error))?;
 
+    // The storage setting is declared as the server stands, and again wherever a resolution finds it undeclared,
+    // so an account service that is down now holds the server back from nothing.
+    let accounts = standing.accounts.clone();
+
+    tokio::spawn(async move {
+      if let Err(why) = accounts.declare_storage().await {
+        eprintln!("the storage setting was not declared on the delegation chain: {why}");
+      }
+    });
+
     match &standing.console {
       Ok(Some(_)) => {}
       Ok(None) => eprintln!("no console token is set; the service serves no console face"),
