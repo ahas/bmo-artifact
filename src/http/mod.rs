@@ -17,6 +17,7 @@ pub mod readers;
 pub mod readings;
 pub mod reads;
 pub mod references;
+pub mod removal;
 pub mod scopes;
 pub mod share_head;
 pub mod share_reads;

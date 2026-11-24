@@ -488,6 +488,30 @@ The units a document may be shared with are its owner's company's tree, read fro
   through it stops reading at once; a unit it is not shared with is `not-found`.
 - **A unit share goes with its document,** and with the scope that held it. No event is raised for one.
 
+## Removing an account or a unit
+
+The platform administrator deleting an account or an organisation unit for good takes what the service keeps of it
+(docs/artifact.md, 「Owners」). The service's token reaches these routes, and the console's under the screens' guard
+with `Owner-Role` `administrator` alone; a console call with any other role is refused 403 `forbidden`. An account
+and a unit are their ids as the account service names them, positive whole numbers; any other is refused 400
+`bad-request`.
+
+| Route | Does |
+|---|---|
+| `GET /accounts/{account}/removal` | `counts`: what the removal below would take now, changing nothing |
+| `DELETE /accounts/{account}` | `removed`: what it took |
+| `GET /org-units/{unit}/removal` | `counts`; a `company` query is taken and not read |
+| `DELETE /org-units/{unit}` | `removed` |
+
+- **An account's removal** lets go of every document it owns, each as `DELETE /documents/{documentId}` lets go of
+  one, with its files at its place, its attachments, its references and its share link, each publishing what that
+  route publishes; takes the account off every document shared with it (「Member shares」); and forgets the imports it
+  asked for and its reads. Its kinds are `documents`, `member-shares`, `imports` and `reads`.
+- **A unit's removal** takes the unit off every document shared with it (「Unit shares」); the documents stay with
+  their owners. Its one kind is `unit-shares`.
+- **Every kind is always answered,** zero where nothing stands, and a second removal takes nothing, so a removal
+  broken half-way is finished by calling again. A document with no owner is never an account's.
+
 ## Publications
 
 A publication files a document and opens a link with no end to it in one call: what a document is handed to

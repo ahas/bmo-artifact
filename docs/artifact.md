@@ -278,6 +278,10 @@ settings; no other unit reads or writes the database, and no other unit writes a
 - **An owner who leaves** keeps their documents: what was shared stays read through its shares, and what was never
   shared is sealed, since the departed account signs in no more and no other account but the administrator reads
   it.
+- **An account deleted for good takes its documents with it.** The platform administrator's removal of an account
+  lets go of every document it owns as one document is let go of, takes it off every document shared with it, and
+  forgets its imports and its reads; a unit's removal takes the unit off every document shared with it (docs/api.md,
+  「Removing an account or a unit」).
 
 ## Share links
 

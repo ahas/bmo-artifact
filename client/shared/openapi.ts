@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/accounts/{account}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove the account for good: its documents let go of, its shares, imports and reads forgotten. */
+        delete: operations["deleteAccountsByAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{account}/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What removing the account for good would take now; nothing changes. */
+        get: operations["getAccountsRemovalByAccount"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/document-kinds": {
         parameters: {
             query?: never;
@@ -402,6 +436,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/org-units/{unit}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove the unit for good: it is taken off every document shared with it. */
+        delete: operations["deleteOrgUnitsByUnit"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/org-units/{unit}/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What removing the unit for good would take now; nothing changes. */
+        get: operations["getOrgUnitsRemovalByUnit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/player/{token}": {
         parameters: {
             query?: never;
@@ -715,6 +783,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description What an account's removal counts and takes (`docs/api.md`, 「Removing an account or a unit」). */
+        AccountHeld: {
+            /**
+             * Format: int64
+             * @description The documents it owns.
+             */
+            documents: number;
+            /**
+             * Format: int64
+             * @description The imports it asked for.
+             */
+            imports: number;
+            /**
+             * Format: int64
+             * @description The documents of other accounts shared with it.
+             */
+            "member-shares": number;
+            /**
+             * Format: int64
+             * @description Its reads of documents.
+             */
+            reads: number;
+        };
         /** @description One file a document keeps. */
         Attachment: {
             /** Format: int64 */
@@ -1059,6 +1150,22 @@ export interface components {
             items: components["schemas"]["Reference"][];
             more: boolean;
         };
+        /** @description What a removal would take now. */
+        RemovalCounts: {
+            counts: components["schemas"]["UnitHeld"];
+        };
+        /** @description What a removal would take now. */
+        RemovalCounts2: {
+            counts: components["schemas"]["AccountHeld"];
+        };
+        /** @description What a removal took. */
+        Removed: {
+            removed: components["schemas"]["AccountHeld"];
+        };
+        /** @description What a removal took. */
+        Removed2: {
+            removed: components["schemas"]["UnitHeld"];
+        };
         /** @description How many members of each resource a scope holds. */
         ScopeCounts: {
             /** Format: int64 */
@@ -1190,6 +1297,14 @@ export interface components {
             value: unknown;
             who: string;
         };
+        /** @description What a unit's removal counts and takes. */
+        UnitHeld: {
+            /**
+             * Format: int64
+             * @description The documents shared with it.
+             */
+            "unit-shares": number;
+        };
         /** @description One organisation unit a document is shared with. */
         UnitShare: {
             /** Format: int64 */
@@ -1236,6 +1351,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    deleteAccountsByAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Remove the account for good: its documents let go of, its shares, imports and reads forgotten. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Removed"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getAccountsRemovalByAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What removing the account for good would take now; nothing changes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovalCounts2"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
     listDocumentKinds: {
         parameters: {
             query?: {
@@ -2054,6 +2215,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LabelValuePage"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    deleteOrgUnitsByUnit: {
+        parameters: {
+            query?: {
+                company?: string | null;
+            };
+            header?: never;
+            path: {
+                unit: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Remove the unit for good: it is taken off every document shared with it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Removed2"];
+                };
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    getOrgUnitsRemovalByUnit: {
+        parameters: {
+            query?: {
+                company?: string | null;
+            };
+            header?: never;
+            path: {
+                unit: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What removing the unit for good would take now; nothing changes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RemovalCounts"];
                 };
             };
             default: components["responses"]["Error"];

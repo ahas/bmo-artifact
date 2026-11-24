@@ -10,6 +10,7 @@ pub mod migration;
 pub mod reach;
 pub mod reads;
 pub mod references;
+pub mod removal;
 pub mod scopes;
 pub mod shares;
 pub mod unit_shares;

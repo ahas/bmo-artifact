@@ -754,3 +754,44 @@ pub struct StorageEntry {
   /// Whether the caller may change the entry now.
   pub writable: bool,
 }
+
+/// What an account's removal counts and takes (`docs/api.md`, 「Removing an account or a unit」).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub struct AccountHeld {
+  /// The documents it owns.
+  pub documents: i64,
+  /// The documents of other accounts shared with it.
+  pub member_shares: i64,
+  /// The imports it asked for.
+  pub imports: i64,
+  /// Its reads of documents.
+  pub reads: i64,
+}
+
+/// What a unit's removal counts and takes.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub struct UnitHeld {
+  /// The documents shared with it.
+  pub unit_shares: i64,
+}
+
+/// What a removal would take now.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct RemovalCounts<T> {
+  pub counts: T,
+}
+
+/// What a removal took.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Removed<T> {
+  pub removed: T,
+}
+
+/// The company a unit's removal may name, which the service does not read.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema)]
+pub struct UnitRemovalQuery {
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub company: Option<String>,
+}

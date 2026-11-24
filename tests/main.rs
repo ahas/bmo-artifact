@@ -26,6 +26,7 @@ mod places;
 mod publications;
 mod readings;
 mod reads;
+mod removal;
 mod settings;
 mod share_head;
 mod shares;

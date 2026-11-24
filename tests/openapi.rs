@@ -87,6 +87,10 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
     "DELETE /scopes/{scope}",
     "GET /storage-places",
     "PUT /storage/{link}",
+    "GET /accounts/{account}/removal",
+    "DELETE /accounts/{account}",
+    "GET /org-units/{unit}/removal",
+    "DELETE /org-units/{unit}",
   ]
   .into_iter()
   .map(str::to_owned)
