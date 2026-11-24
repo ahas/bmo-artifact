@@ -196,16 +196,15 @@ flowchart TD
 
 - **Database.** PostgreSQL, at the address the settings name. The document tables, `imports` and
   `events` are this repository's own (`docs/artifact.md`, "Where it lives").
-- **Schema.** The migrations run in order: the document tables in the shape the earlier archive declares
-  them; the research profiles' table, then the pair that makes and takes away two tables no longer this
-  repository's; the redesign, which adds a document's scope, actor, labels, description and change time,
-  an attachment's role, and the imports and events; the research profiles' table taken away; the notes ended
-  share links leave; the member shares; the owners and the unit shares; the reads; and when each read was last
-  opened, a read kept before standing at the start of its day; and the company and the place a document was filed
-  under. A
-  migration a database may already have run is never rewritten or removed, since the migrator refuses a
-  database whose record names a migration it does not know. `bmo-artifact migrate` brings the database
-  the settings name up to date.
+- **Schema.** The schema starts at the 1.0.0 baseline, one migration that makes the document tables,
+  `imports`, `events`, the shares, the reads and their indexes; every later change to the schema is a
+  migration after it. A migration a database may already have run is never rewritten or removed, since the
+  migrator refuses a database whose record names a migration it does not know. An install from before 1.0.0
+  is taken as it stands: a database whose record names every migration of the last release before 1.0.0, and
+  nothing else, already holds the baseline's schema, so the record is rewritten to name the baseline alone, in
+  one transaction, and no table and no row is touched; one whose record names only part of them is refused,
+  with the migration it stopped at, and is brought to the last release before 1.0.0 by that release first.
+  `bmo-artifact migrate` brings the database the settings name up to date.
 - **Settling** happens once in each process, before the first statement on the document tables
   (`docs/artifact.md`, "The tables"). `migrate` does not settle, since it may run before the tables exist.
 - **Statements** bind each number at its widest width, so the driver never refuses a statement it has

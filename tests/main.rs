@@ -4,6 +4,7 @@
 mod support;
 
 mod archive_doc;
+mod baseline;
 mod console;
 mod dependencies;
 mod documents;
