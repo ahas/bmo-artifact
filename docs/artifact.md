@@ -688,8 +688,8 @@ its name stands among them too, so it can be saved.
   - Where the screen is wide, a side column stands beside the newest and the sections from the top of the page
     down: first the kinds as a navigation list under 「Kinds」 (`artifact.front.kinds`), 「All」
     (`artifact.front.all_kinds`) first, each item opening the list narrowed by its kind; then the documents the
-    reader read last (「Reads」), ten at most, the last read first, each its title on one line, under the title
-    「Recently read」 (`artifact.front.recent_read`); then the documents most read in the last seven days, ten at
+    reader read last (「Reads」), five at most, the last read first, each its title on one line, under the title
+    「Recently read」 (`artifact.front.recent_read`); then the documents most read in the last seven days, five at
     most, each its rank and its title on one line, under the title 「Most read」 (`artifact.front.most_read`) and the
     caption 「Last 7 days」 (`artifact.front.most_read_span`). Each is a titled list with a line under its title and
     no frame or ground of its own: cards are for the documents. With no read in the seven days, the recently read

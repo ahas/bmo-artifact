@@ -156,7 +156,7 @@ const NEWEST_BESIDE = 4;
 // How many documents a kind's strip asks for: the most one row of it holds.
 const STRIP_LENGTH = 4;
 // How many of the recently read and of the most read stand.
-const READ_LENGTH = 10;
+const READ_LENGTH = 5;
 // The days a lead card's picture is looked for in.
 const LEAD_DAYS = 7;
 // How many sections and read lines a skeleton keeps the place of, before the catalogue and the reads say.
