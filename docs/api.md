@@ -25,10 +25,11 @@ flowchart TD
 
 ## Versioning
 
-- **The repository has one version,** in `VERSION`, the Cargo manifest and the console bundle's package,
-  which `GET /health`, the OpenAPI document and the MCP server's `serverInfo` all answer.
-- **It is numbered as bmo-chat's `docs/conventions.md` says (「Versions」):** before the first release
-  `0.1.0`, then `0.1.0-rev.<n>`, one revision a version bump, whatever the change.
+- **The version is the set's** (bmo-chat's `docs/conventions.md`, 「Versions」): a build reads it off the git
+  tag when it is made, which the testbed hands it as `BMO_VERSION`, and `GET /health`, the MCP server's
+  `serverInfo` and `--version` answer it.
+- **The Cargo manifest's version, the console bundle's package version and the OpenAPI document's** are a
+  placeholder that never moves; no change moves a version.
 
 ## The wire
 

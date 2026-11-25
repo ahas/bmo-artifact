@@ -80,7 +80,7 @@ pub fn openapi() -> Value {
 
   json!({
     "openapi": "3.1.0",
-    "info": { "title": "bmo-artifact", "version": crate::VERSION, "description": DESCRIPTION },
+    "info": { "title": "bmo-artifact", "version": env!("CARGO_PKG_VERSION"), "description": DESCRIPTION },
     "servers": [{ "url": "/", "description": "the artifact service" }],
     "security": [{ "bearer": [] }],
     "x-layer": "upstream",

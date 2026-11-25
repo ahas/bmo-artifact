@@ -20,7 +20,7 @@
 | `deploy/` | 中性的服务单元模板，以及部署发布的应用声明 |
 | `docs/` | 描述服务行为的规范文档 |
 
-根目录下有 Cargo 清单、`VERSION`、`build.rs`、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
+根目录下有 Cargo 清单、`testbed.toml`、`install.toml`、`rustfmt.toml`、`CLAUDE.md`、
 `PERSONAL-DATA.md`、`LICENSE`、`settings.toml`，以及部署时提供的本地设置示例 `settings.local.toml.example`。
 
 ## 文档
@@ -35,8 +35,8 @@
 
 ## 版本
 
-- **整个仓库只有一个版本，** 首次发行前为 `0.1.0`，之后为 `0.1.0-rev.<n>`。它保存在 `VERSION` 中，crate 和
-  控制台包的版本与之相同，健康检查路由、OpenAPI 文档和 MCP 服务器都返回这个版本。
+- **版本属于整个套件，** 在构建时从 git 标签读取；健康检查路由、MCP 服务器和 `--version` 都返回这个版本，crate 和
+  控制台包的版本只是永不变动的占位值。
 
 ## 命令
 

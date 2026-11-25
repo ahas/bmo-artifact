@@ -20,7 +20,7 @@
 | `deploy/` | 중립적인 서비스 유닛 템플릿과 배포가 게시하는 앱 선언 |
 | `docs/` | 서비스 동작에 대한 기준 문서 |
 
-루트에는 Cargo 매니페스트, `VERSION`, `build.rs`, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
+루트에는 Cargo 매니페스트, `testbed.toml`, `install.toml`, `rustfmt.toml`, `CLAUDE.md`,
 `PERSONAL-DATA.md`, `LICENSE`, `settings.toml`, 그리고 배포 시 주는 로컬 설정의 예시인
 `settings.local.toml.example`이 있습니다.
 
@@ -36,9 +36,8 @@
 
 ## 버전
 
-- **저장소 전체에 버전은 하나이며,** 첫 릴리스 전에는 `0.1.0`, 그다음 `0.1.0-rev.<n>`입니다. `VERSION`에 들어
-  있고, 크레이트와 콘솔 번들 패키지의 버전도 이와 같으며, 헬스 라우트, OpenAPI 문서, MCP 서버가 이 버전으로
-  응답합니다.
+- **버전은 세트 전체의 것이며,** 빌드할 때 git 태그에서 읽습니다. 헬스 라우트, MCP 서버, `--version`이 이 버전으로
+  응답하고, 크레이트와 콘솔 번들 패키지의 버전은 움직이지 않는 자리표시 값입니다.
 
 ## 명령
 

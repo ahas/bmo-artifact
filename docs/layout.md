@@ -13,11 +13,9 @@ executables: the service's binary, and the tool a tool host places, whose manife
 
 ```
 Cargo.toml
-VERSION
 LICENSE
 README.md
 CLAUDE.md
-build.rs
 rustfmt.toml
 settings.toml
 settings.local.toml.example
@@ -215,10 +213,10 @@ flowchart TD
 
 ## Version
 
-- `VERSION` at the root holds the version string; `Cargo.toml` and `client/package.json` both mirror it.
-  `build.rs` embeds it into the binary and fails the build where `Cargo.toml` disagrees with it.
-- It is numbered as bmo-chat's `docs/conventions.md` says (「Versions」): before the first release
-  `0.1.0`, then `0.1.0-rev.<n>`, one revision a version bump, whatever the change.
+- The version is the set's, read off the git tag when a build is made and handed to it as `BMO_VERSION`
+  (bmo-chat's `docs/conventions.md`, 「Versions」); the binary compiles it in, and names the manifest's
+  version where a build was made without it.
+- `Cargo.toml` and `client/package.json` name a placeholder version that never moves.
 
 ## The deploy declaration
 

@@ -22,7 +22,7 @@ calls no other unit.
 | `deploy/` | The neutral service unit template, and the app declaration its deployment publishes |
 | `docs/` | The canonical statements of what the service does |
 
-At the root stand the Cargo manifest, `VERSION`, `build.rs`, `testbed.toml`, `install.toml`, `rustfmt.toml`,
+At the root stand the Cargo manifest, `testbed.toml`, `install.toml`, `rustfmt.toml`,
 `CLAUDE.md`, `PERSONAL-DATA.md`, `LICENSE`, `settings.toml` and `settings.local.toml.example`, the example
 of the local settings a deployment gives.
 
@@ -38,9 +38,9 @@ of the local settings a deployment gives.
 
 ## Version
 
-- **One version for the whole repository,** `0.1.0` and then `0.1.0-rev.<n>` before the first release.
-  `VERSION` holds it, the crate and the console bundle's package equal it, and the health route, the
-  OpenAPI document and the MCP server answer it.
+- **The version is the set's,** read off the git tag when a build is made; the health route, the MCP server
+  and `--version` answer it, and the crate's and the console bundle's package versions are a placeholder that
+  never moves.
 
 ## Commands
 
