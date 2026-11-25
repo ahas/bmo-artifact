@@ -144,6 +144,7 @@ pub fn setting() -> ChainKind {
     levels: vec![ChainLevel::Platform, ChainLevel::Unit],
     unit_permission: "manage".to_owned(),
     person_writer: ChainPersonWriter::Heads,
+    person_raises: false,
   }
 }
 
