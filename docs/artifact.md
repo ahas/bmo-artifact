@@ -649,7 +649,10 @@ its name stands among them too, so it can be saved.
     the document of that number. A document's other labels — the keywords, the rule, the question, the run a
     filer names it by — are search metadata, no part of a row and never a badge anywhere in the list: a phrase
     still finds a document by them. A row holds to the list's width at every width; its words wrap or are cut,
-    and the list never scrolls sideways;
+    and the list never scrolls sideways. The list is read a page at a time, the next page as its end comes into
+    view (bmo-ui's `NextPageFoot`, its `docs/design.md`, 「Lists」): placeholder rows stand at the end while a page
+    is on its way, a page that fails leaves the documents already read and stands its reason with a retry in its
+    place, and nothing stands under the last document; nothing is pressed to read more;
   - one document at `/artifact/<id>`: the screen's own row under the bar, one line at every width, holding at its
     left end the way back, named 「Back」 (`artifact.action.back`) in its tooltip, to where the reader came from, the
     front page or the list as it was narrowed, and the front page where the reader came from no screen of these,

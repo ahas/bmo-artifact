@@ -184,9 +184,9 @@
           </li>
         </ul>
 
-        <div v-if="more" class="flex justify-center">
-          <UButton size="sm" color="neutral" variant="subtle" :label="$t('artifact.action.more')" :loading="loading" @click="readMore" />
-        </div>
+        <NextPageFoot v-if="loaded" inset="" :more="more" :busy="loading" :next="readMore" :failed-words="$t('artifact.error.list_failed')" :loading-label="$t('artifact.status.document_loading')" list-class="flex flex-col gap-2">
+          <ArtifactRowSkeleton />
+        </NextPageFoot>
       </div>
     </template>
   </UDashboardPanel>
@@ -320,39 +320,32 @@ function listedLabel(): string | undefined {
   return categoryChoice.value === ALL ? undefined : categoryFilter(categoryChoice.value);
 }
 
-async function read(before?: number): Promise<void> {
+// The list's first page under the narrowing, with the shares and the categories the rows and the filter read.
+async function read(): Promise<void> {
   const mine = ++generation;
 
   loading.value = true;
   failed.value = "";
 
-  if (before === undefined) {
-    void readLiveShares().then(
-      (links) => {
-        if (mine === generation) shares.value = links;
-      },
-      () => undefined
-    );
-    void readLabelValues(CATEGORY_LABEL).then(
-      (words) => {
-        if (mine === generation) categories.value = words;
-      },
-      () => undefined
-    );
-  }
+  void readLiveShares().then(
+    (links) => {
+      if (mine === generation) shares.value = links;
+    },
+    () => undefined
+  );
+  void readLabelValues(CATEGORY_LABEL).then(
+    (words) => {
+      if (mine === generation) categories.value = words;
+    },
+    () => undefined
+  );
 
   try {
-    const page = await readDocuments({
-      kind: kindChoice.value === ALL ? undefined : kindChoice.value,
-      label: listedLabel(),
-      q: searched.value === "" ? undefined : searched.value,
-      before,
-      limit: DOCUMENTS_PAGE_SIZE
-    });
+    const page = await readDocuments(listAsk());
 
     if (mine !== generation) return;
 
-    items.value = before === undefined ? page.items : [...items.value, ...page.items];
+    items.value = page.items;
     more.value = page.more;
     loaded.value = true;
   } catch (error) {
@@ -455,8 +448,31 @@ function reread(): void {
   else void read();
 }
 
-function readMore(): void {
-  void read(items.value[items.value.length - 1]?.id);
+// What the list asks of the service: the narrowing, and the document a page starts before where it is a next page.
+function listAsk(before?: number): Parameters<typeof readDocuments>[0] {
+  return {
+    kind: kindChoice.value === ALL ? undefined : kindChoice.value,
+    label: listedLabel(),
+    q: searched.value === "" ? undefined : searched.value,
+    before,
+    limit: DOCUMENTS_PAGE_SIZE
+  };
+}
+
+// One page more, before the last document held, read as the list's end comes into view; a failure is thrown to the
+// foot, which keeps the documents already read and offers the retry in the failed page's place.
+async function readMore(): Promise<void> {
+  const before = items.value[items.value.length - 1]?.id;
+  const mine = generation;
+
+  if (before === undefined) return;
+
+  const page = await readDocuments(listAsk(before));
+
+  if (mine !== generation) return;
+
+  items.value = [...items.value, ...page.items];
+  more.value = page.more;
 }
 
 useHead({ title: computed(() => t("artifact.title.screen")) });
