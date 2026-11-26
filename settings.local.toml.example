@@ -35,3 +35,8 @@ kindless_import_prefix = "Import: "
 [sharepoint]
 tokens = "http://127.0.0.1:3240"
 token = "artifact-page-token-caller"
+
+[node]
+address = "http://127.0.0.1:3210"
+token = "node-service-token"
+caller_token = "artifact-node-caller"

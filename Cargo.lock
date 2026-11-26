@@ -505,6 +505,7 @@ dependencies = [
  "base64 0.22.1",
  "bmo-console-face",
  "bmo-explorer",
+ "bmo-node-client",
  "bmo-web-client",
  "chrono",
  "clap",
@@ -605,6 +606,18 @@ dependencies = [
  "toml 0.8.23",
  "url",
  "yuv",
+]
+
+[[package]]
+name = "bmo-node-client"
+version = "0.1.0-rev.2"
+dependencies = [
+ "futures-util",
+ "reqwest",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sse-stream",
 ]
 
 [[package]]
@@ -4715,6 +4728,19 @@ dependencies = [
  "thiserror 2.0.21",
  "tracing",
  "url",
+]
+
+[[package]]
+name = "sse-stream"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c25ac7aff0abd1dbc474536e40416e1102c7dd9bfba0b9861c6d357f835dcfb4"
+dependencies = [
+ "bytes",
+ "futures-util",
+ "http-body",
+ "http-body-util",
+ "pin-project-lite",
 ]
 
 [[package]]

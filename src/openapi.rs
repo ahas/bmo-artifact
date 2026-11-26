@@ -85,7 +85,7 @@ pub fn openapi() -> Value {
     "security": [{ "bearer": [] }],
     "x-layer": "upstream",
     "x-stage": 3,
-    "x-calls": ["explorer", "web"],
+    "x-calls": ["explorer", "node", "web"],
     "x-harness": { "plugin": "bmo-artifact", "mcp": "bmo-artifact mcp", "entry": ENTRY },
     "tags": tags.iter().map(|tag| json!({ "name": tag })).collect::<Vec<_>>(),
     "paths": paths,

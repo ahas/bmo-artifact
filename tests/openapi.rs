@@ -118,7 +118,7 @@ fn it_states_every_route_event_and_tool_at_the_repository_version() {
   assert_eq!(reach("/storage-places", "get"), "screen");
   assert_eq!(reach("/storage/{link}", "put"), "screen");
   assert_eq!(document["info"]["version"], env!("CARGO_PKG_VERSION"));
-  assert_eq!(document["x-calls"], serde_json::json!(["explorer", "web"]));
+  assert_eq!(document["x-calls"], serde_json::json!(["explorer", "node", "web"]));
   assert_eq!(document["x-harness"]["plugin"], "bmo-artifact");
   assert_eq!(document["x-events"].as_array().map(Vec::len), Some(8));
 

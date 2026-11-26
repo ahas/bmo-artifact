@@ -121,9 +121,10 @@ settings; no other unit reads or writes the database, and no other unit writes a
   - One catalogue lists the modules, in the order `GET /storage-places` answers them.
   - Nothing else names a kind: adding a kind is adding its module and its line in the catalogue.
 - **A file's path names its place and its location,** `<kind>:<location>`: `local:searches/42/document.md`
-  on this machine, `sharepoint:<site>/<drive>/<folder>/document.md` in a document library. A path that names
-  no kind is a location of the local place as it stands, so the files kept before places were named are read
-  where they are and never moved.
+  on this machine, `sharepoint:<site>/<drive>/<folder>/document.md` in a document library,
+  `sync:C:/Sync/BMO/kim/42/document.md` in a synced folder on a person's node. A path that
+  names no kind is a location of the local place as it stands, so the files kept before places were named are
+  read where they are and never moved.
 - **The place is chosen when a document is filed,** by the setting `artifact.storage` of the account
   service's delegation chain, resolved for the document's owner (「The setting」).
   - A document with no owner, an owner the account service does not know, a chain that says nothing, and a
@@ -187,6 +188,33 @@ settings; no other unit reads or writes the database, and no other unit writes a
   `Sites.ReadWrite.All`. It reaches the library as that person, so the person must reach the library and the
   page-token service must be able to lend their token; otherwise the call is refused as a failed upstream, saying
   why. The token is kept in memory until a minute before it ends and written nowhere.
+
+### The synced place
+
+- **The kind `sync` keeps a document's files in a folder on one person's node,** which that person's own
+  sync client carries to the library; nothing of this platform's reaches Microsoft. Its settings:
+  - `node`, the node's name as the node service lists it;
+  - `folder`, where a document's folder stands on that node: the whole path of the synced folder, from a
+    drive or the root and written with `/` whatever the node's host, and below it a path whose `{login}` is
+    the owner's login and whose `{document}` is the document's number, which it names at least once, as
+    `C:/Sync/BMO/{login}/{document}`;
+  - A value with another field, a node name holding a path, a folder written with a backslash or an
+    apostrophe, a relative folder, a folder that climbs out by `..` or names no `{document}`, is refused.
+- **A document's folder** is the folder its settings lay out, the owner's login asked of the account service as
+  the document is filed and its `/` within made a `_`; its file and every attachment stand in it as they do in
+  a local folder.
+- **Every call goes through the node service** (docs/api.md, 「What this service calls」), made as the
+  document's owner. A file is written whole in one transfer: its bytes stream to the node's hub, the node's
+  agent weighs them and checks their digest and renames them into place only whole, replacing what stood; the
+  folders along the way are opened by one command in the node host's own shell before it. A read takes the
+  file's bytes back over the same road and cuts the stretch a range asks from them. Whether a file stands, with
+  its size and the moment it was written as its version, is one stat command; letting a folder go is one
+  removal command that takes everything under it, whether it stood or not.
+- **The node must be the document owner's own** and must let this service's caller: the node service judges
+  the caller's token, the node's callers and whose node it is, as it does for any command. A document with no
+  owner files nowhere at a synced place: every call names the person it is made for. Where the settings name no
+  node service, or the service or the node fails to answer, the call is refused as a failed upstream, saying
+  why.
 
 ## Filing a document
 

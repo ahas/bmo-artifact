@@ -16,11 +16,13 @@ flowchart TD
   P[A tool host] -->|one process a call| A[artifact-tool]
   A -->|the client| S
   S --> D[(The document tables)]
-  S --> F[A document's place: the file root, or a SharePoint library]
+  S --> F[A document's place: the file root, a SharePoint library, or a synced folder on a node]
   S -->|bmo-explorer's client| E[Page reading]
   S -->|bmo-web's client| W[The account service]
   S -->|its page token road| T[An optional page-token service]
   S -->|Microsoft Graph| F
+  S -->|bmo-node's client| N[The node service]
+  N -->|its hub's transfer, and one command| F
 ```
 
 ## Versioning
@@ -846,6 +848,7 @@ flowchart TD
 | the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company; the setting `artifact.storage`, declared, resolved for a document's owner and written for a link; an owner's login |
 | an optional page-token service | its page token road, `POST /page-tokens` | the Graph token it lends for a person, for the SharePoint place |
 | Microsoft Graph | HTTPS, with that token | a SharePoint place's files written, read, asked after and let go of |
+| bmo-node | its published client crate, `bmo_node_client`, at 0.1.0-rev.2 | a synced place's one read of the node's host; one command each to open a folder, to state a file and to let one go; a file's bytes written to the node and read back |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
   (bmo-explorer's `docs/api.md`, 「The client」). It checks every address before it connects and paces each
@@ -880,6 +883,18 @@ flowchart TD
 - **Microsoft Graph** is reached at the settings' `sharepoint.graph`, under `/sites/{site}/drives/{drive}/root:/
   {path}`: `PUT …:/content` and `POST …:/createUploadSession` to write, `GET …:/content` with `Range` to read,
   `GET` of the item to ask after a file and `DELETE` of the item to let a folder go.
+- **The node service is reached at the settings' `node.address`,** its reads asked with `node.token` and its
+  runs and file transfers made as this service's own caller, `node.caller_token` (bmo-node's `docs/api.md`,
+  「Runs」 and 「File transfer」), for the document's owner and nothing else:
+  - `GET /nodes/{nodeName}/target`, the language the node's host takes a command in;
+  - `POST /nodes/{nodeName}/runs`, one command in that language: opening the folders along a path, stating a
+    file's size and the moment it was written, letting a folder go;
+  - `POST /nodes/{nodeName}/file`, a file's whole bytes with their count and sha256 declared, which the
+    node's hub carries to the node and its agent renames into place only whole;
+  - `GET /nodes/{nodeName}/file`, a file's whole bytes back, whose count the `Content-Length` names.
+  The node service judges every one of them (a file the node does not hold is its own 404, answered here as
+  absent); any other refusal is said back as 502 `upstream-failed` with its sentence. The node service is a
+  unit of this set, so its client crate stands among the dependencies this repository's check holds.
 
 The console bundle makes two calls of its own, through the console rather than through this service:
 

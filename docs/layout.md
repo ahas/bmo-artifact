@@ -41,7 +41,7 @@ src/
   store/                   the statements on the document tables, by resource, and the clock their columns keep
     migration/             the migrations and the migrator
   kinds/                   the catalogue, and the five kinds: search, record, learning, import, page
-  places/                  the place interface, the catalogue, and the two kinds: local, sharepoint
+  places/                  the place interface, the catalogue, and the three kinds: local, sharepoint, sync
   documents/
     filing.rs              a document filed and rewritten: its row, body, references and file
     keeper.rs              a file kept beside a document, read for what it is

@@ -1,9 +1,11 @@
-//! Places (`docs/artifact.md`, "Places", "The setting", "The local place" and "The SharePoint place"; `docs/api.md`,
-//! "Storage places"): the local place written, read in a range and let go of; a storage value judged by the kind it
-//! names; a document of an owner whose chain names a SharePoint library filed, read, attached to in one call and
-//! through an upload session, read in a range and let go of there, through stand-ins of the account service, the page
-//! token road and Microsoft Graph; a filing refused whole where no token is lent; and a link's storage value
-//! judged and written on the chain in the caller's name.
+//! Places (`docs/artifact.md`, "Places", "The setting", "The local place", "The SharePoint place" and "The
+//! synced place"; `docs/api.md`, "Storage places"): the local place written, read in a range and let go of; a
+//! storage value judged by the kind it names; a document of an owner whose chain names a SharePoint library
+//! filed, read, attached to in one call and through an upload session, read in a range and let go of there,
+//! through stand-ins of the account service, the page token road and Microsoft Graph; a document of an owner
+//! whose chain names a synced folder on a node filed, written whole by one transfer, read in a range, replaced
+//! and let go of there, through a stand-in of the node service; a filing refused whole where no token is lent;
+//! and a link's storage value judged and written on the chain in the caller's name.
 
 use crate::support;
 
@@ -596,7 +598,7 @@ async fn a_links_storage_value_is_judged_and_written_in_the_callers_name() {
     .filter_map(|place| place["name"].as_str().map(str::to_owned))
     .collect();
 
-  assert_eq!(names, ["local", "sharepoint"]);
+  assert_eq!(names, ["local", "sharepoint", "sync"]);
 
   let value = json!({ "place": "sharepoint", "site": "site-1 ", "drive": "drive-1", "folder": "04. BMO_ARTIFACT/{login}/{document}" });
   let written = service
@@ -645,4 +647,416 @@ async fn a_links_storage_value_is_judged_and_written_in_the_callers_name() {
 
   assert_eq!(locked.status, StatusCode::CONFLICT);
   assert_eq!(locked.json()["code"], "locked");
+}
+
+/// The node a synced value names.
+const NODE: &str = "node-a";
+/// The token the node service's own reads are asked with on the stand-in.
+const NODE_TOKEN: &str = "node-service";
+
+fn synced_value() -> Value {
+  json!({ "place": "sync", "node": NODE, "folder": "/OneDrive/Docs/{login}/{document}" })
+}
+
+/// What the stand-in of the node service holds: the files on the node by their path, the commands it was
+/// made, the transfers it carried, and the moment each file was last written.
+#[derive(Default)]
+struct Machine {
+  files: Mutex<HashMap<String, Vec<u8>>>,
+  moments: Mutex<HashMap<String, u64>>,
+  commands: Mutex<Vec<String>>,
+  /// Each transfer in: the path, the count it declared and its digest.
+  uploads: Mutex<Vec<(String, u64, String)>>,
+  /// Where set, the node answers a folder opening as ended otherwise.
+  refuses: Mutex<bool>,
+}
+
+fn admitted_node(headers: &HeaderMap, token: &str) -> bool {
+  headers.get(header::AUTHORIZATION).and_then(|value| value.to_str().ok())
+    == Some(format!("Bearer {token}").as_str())
+}
+
+// The path a command between single quotes acts on, as the synced place writes them.
+fn quoted(command: &str) -> String {
+  command.rsplit_once("' -- '").map_or_else(
+    || command.split('\'').nth(1).unwrap_or("").to_owned(),
+    |(_, rest)| rest.trim_end_matches('\'').to_owned(),
+  )
+}
+
+async fn node_target(
+  State(machine): State<Arc<Machine>>,
+  headers: HeaderMap,
+  Path(name): Path<String>,
+) -> Response {
+  assert!(admitted_node(&headers, NODE_TOKEN), "whose host a node is is its service's own read");
+
+  if name != NODE {
+    return refused(StatusCode::NOT_FOUND, "not-found");
+  }
+
+  let _ = machine;
+
+  Json(json!({
+    "nodeName": NODE,
+    "kind": "hub",
+    "shell": "posix",
+    "sshOptions": [],
+    "sshArgs": [],
+  }))
+  .into_response()
+}
+
+async fn node_run(
+  State(machine): State<Arc<Machine>>,
+  Path(name): Path<String>,
+  headers: HeaderMap,
+  Json(asked): Json<Value>,
+) -> Response {
+  assert!(admitted_node(&headers, CALLER), "a run is made with the caller's own token");
+  assert_eq!(name, NODE);
+  assert_eq!(asked["account"], OWNER, "every command is made as the document's owner");
+
+  let command = asked["command"].as_str().expect("a command").to_owned();
+
+  machine.commands.lock().expect("the commands").push(command.clone());
+
+  let said = |stdout: &str, code: i64| {
+    Json(json!({
+      "node": NODE,
+      "shell": "linux",
+      "exitCode": code,
+      "stdout": stdout,
+      "stderr": if code == 0 { "" } else { "refused by the stand-in" },
+      "stdoutCut": false,
+      "stderrCut": false,
+    }))
+  };
+
+  let path = quoted(&command);
+  let files = machine.files.lock().expect("the files");
+
+  if command.starts_with("mkdir") || command.starts_with("New-Item") {
+    return if *machine.refuses.lock().expect("the answer") {
+      said("", 1).into_response()
+    } else {
+      said("", 0).into_response()
+    };
+  }
+
+  if command.starts_with("stat") || command.contains("Test-Path") {
+    return match files.get(&path) {
+      Some(bytes) => {
+        let moment = machine.moments.lock().expect("the moments").get(&path).copied().unwrap_or(1);
+
+        said(&format!("{} 1700000000.{moment:09}", bytes.len()), 0).into_response()
+      }
+      None => said("", 1).into_response(),
+    };
+  }
+
+  if command.starts_with("rm") || command.contains("Remove-Item") {
+    drop(files);
+    let mut files = machine.files.lock().expect("the files");
+    let under = format!("{path}/");
+
+    files.retain(|kept, _| *kept != path && !kept.starts_with(&under));
+
+    return said("", 0).into_response();
+  }
+
+  said("", 0).into_response()
+}
+
+async fn node_upload(
+  State(machine): State<Arc<Machine>>,
+  Path(name): Path<String>,
+  headers: HeaderMap,
+  Query(asked): Query<HashMap<String, String>>,
+  body: Bytes,
+) -> Response {
+  assert!(admitted_node(&headers, CALLER), "a transfer is made with the caller's own token");
+  assert_eq!(name, NODE);
+  assert_eq!(asked.get("account").map(String::as_str), Some(OWNER));
+
+  let path = asked.get("path").expect("a path").clone();
+  let total: u64 = asked.get("total").expect("a total").parse().expect("a count");
+  let checksum = asked.get("checksum").expect("a checksum").clone();
+
+  assert_eq!(total as usize, body.len(), "the declared count is the body's own");
+
+  let read = {
+    use sha2::{Digest as _, Sha256};
+
+    let mut digest = Sha256::new();
+
+    digest.update(&body);
+
+    digest.finalize().iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+  };
+
+  assert_eq!(checksum, read, "the declared digest is the body's own");
+
+  machine
+    .uploads
+    .lock()
+    .expect("the uploads")
+    .push((path.clone(), total, checksum.clone()));
+  machine.files.lock().expect("the files").insert(path.clone(), body.to_vec());
+
+  *machine.moments.lock().expect("the moments").entry(path.clone()).or_insert(0) += 1;
+
+  Json(json!({ "node": NODE, "path": path, "total": total, "checksum": checksum })).into_response()
+}
+
+async fn node_download(
+  State(machine): State<Arc<Machine>>,
+  Path(name): Path<String>,
+  headers: HeaderMap,
+  Query(asked): Query<HashMap<String, String>>,
+) -> Response {
+  assert!(admitted_node(&headers, CALLER));
+  assert_eq!(name, NODE);
+  assert_eq!(asked.get("account").map(String::as_str), Some(OWNER));
+
+  match machine.files.lock().expect("the files").get(asked.get("path").expect("a path")) {
+    Some(bytes) => {
+      (StatusCode::OK, [(header::CONTENT_TYPE, "application/octet-stream")], bytes.clone()).into_response()
+    }
+    None => refused(StatusCode::NOT_FOUND, "not-found"),
+  }
+}
+
+async fn node_listening(machine: &Arc<Machine>) -> String {
+  let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("a port");
+  let address = format!("http://{}", listener.local_addr().expect("an address"));
+  let router = Router::new()
+    .route("/nodes/{nodeName}/target", get(node_target))
+    .route("/nodes/{nodeName}/runs", post(node_run))
+    .route("/nodes/{nodeName}/file", post(node_upload).get(node_download))
+    .layer(DefaultBodyLimit::disable())
+    .with_state(Arc::clone(machine));
+
+  tokio::spawn(async move { axum::serve(listener, router).await });
+  address
+}
+
+// The service over the stand-ins, its chain naming the synced folder for the owner.
+async fn over_a_node() -> (Service, Arc<Chain>, Arc<Machine>) {
+  let chain = Arc::new(Chain::default());
+
+  *chain.value.lock().expect("the value") = Some(synced_value());
+
+  let accounts = chain_listening(&chain).await;
+  let machine = Arc::new(Machine::default());
+  let node = node_listening(&machine).await;
+  let service = Service::with_settings(
+    &accounts,
+    &[
+      ("BMO_ARTIFACT_NODE__ADDRESS", node.clone()),
+      ("BMO_ARTIFACT_NODE__TOKEN", NODE_TOKEN.to_owned()),
+      ("BMO_ARTIFACT_NODE__CALLER_TOKEN", CALLER.to_owned()),
+    ],
+  )
+  .await;
+
+  (service, chain, machine)
+}
+
+#[test]
+fn a_synced_value_is_judged_by_its_kind() {
+  assert_eq!(
+    judged(&json!({ "place": "sync", "node": " node-a ", "folder": "/OneDrive/Docs/{login}/{document}/" }))
+      .expect("judged"),
+    json!({ "place": "sync", "node": "node-a", "folder": "/OneDrive/Docs/{login}/{document}" })
+  );
+
+  assert_eq!(
+    judged(&json!({ "place": "sync", "node": "node-a", "folder": "/OneDrive - Company/{document}" }))
+      .expect("judged"),
+    json!({ "place": "sync", "node": "node-a", "folder": "/OneDrive - Company/{document}" }),
+    "a synced folder's name may hold spaces"
+  );
+  assert_eq!(
+    judged(
+      &json!({ "place": "sync", "node": "node-a", "folder": "C:/Sync/BMO - Company/{login}/{document}" })
+    )
+    .expect("judged"),
+    json!({ "place": "sync", "node": "node-a", "folder": "C:/Sync/BMO - Company/{login}/{document}" }),
+    "a Windows path from a drive is whole"
+  );
+
+  for refused_value in [
+    json!({ "place": "sync", "folder": "OneDrive/{document}" }),
+    json!({ "place": "sync", "node": "node-a" }),
+    json!({ "place": "sync", "node": "a/b", "folder": "{document}" }),
+    json!({ "place": "sync", "node": "node-a", "folder": "OneDrive\\Docs\\{document}" }),
+    json!({ "place": "sync", "node": "node-a", "folder": "O'Brien/{document}" }),
+    json!({ "place": "sync", "node": "node-a", "folder": "../{document}" }),
+    json!({ "place": "sync", "node": "node-a", "folder": "/OneDrive/{login}" }),
+    json!({ "place": "sync", "node": "node-a", "folder": "OneDrive/{document}" }),
+    json!({ "place": "sync", "node": "node-a", "folder": "{document}", "root": "/elsewhere" }),
+  ] {
+    assert!(judged(&refused_value).is_err(), "{refused_value} is refused");
+  }
+}
+
+#[tokio::test]
+async fn a_document_of_an_owner_whose_chain_names_a_synced_folder_is_kept_and_read_there() {
+  if support::is_skipped("a_document_of_an_owner_whose_chain_names_a_synced_folder_is_kept_and_read_there")
+  {
+    return;
+  }
+
+  let (service, _chain, machine) = over_a_node().await;
+  let made = service
+    .call_with(
+      Method::POST,
+      "/documents",
+      Some(json!({ "kind": "record", "title": "Synced away", "body": "Words kept on the node.", "actorName": "tester", "labels": {} })),
+      &as_owner(),
+    )
+    .await;
+
+  assert_eq!(made.status, StatusCode::CREATED, "{}", made.json());
+
+  let id = made.json()["id"].as_i64().expect("an id");
+  let folder = format!("/OneDrive/Docs/{LOGIN}/{id}");
+  let file = format!("{folder}/document.md");
+
+  assert_eq!(
+    machine.files.lock().expect("the files").get(&file).map(Vec::as_slice),
+    Some(b"Words kept on the node.".as_slice())
+  );
+  assert!(
+    machine
+      .commands
+      .lock()
+      .expect("the commands")
+      .iter()
+      .any(|command| command.starts_with("mkdir -p -- '") && command.contains(&folder)),
+    "the folders along the way were opened by one command"
+  );
+  assert_eq!(machine.uploads.lock().expect("the uploads").len(), 1, "the file went whole");
+  assert!(
+    !service.files.path().join(format!("searches/{id}")).exists(),
+    "nothing is left on this machine"
+  );
+  assert_eq!(
+    service.scratch.count(
+      r#"SELECT COUNT(*) FROM "searches" WHERE "id" = $1 AND "storage"->>'place' = 'sync' AND "document" = $2"#,
+      vec![id.into(), format!("sync:{file}").into()],
+    )
+    .await,
+    1
+  );
+
+  let content = service
+    .call_with(Method::GET, &format!("/documents/{id}/content"), None, &as_owner())
+    .await;
+
+  assert_eq!(content.status, StatusCode::OK);
+  assert_eq!(content.bytes, b"Words kept on the node.");
+
+  // An attachment over what one command could carry still goes in one whole transfer.
+  let big: Vec<u8> = (0..2 * 1024 * 1024).map(|at| (at % 251) as u8).collect();
+  let attached = service
+    .call_with(
+      Method::POST,
+      &format!("/documents/{id}/attachments"),
+      Some(json!({ "name": "big.bin", "mediaType": "application/octet-stream", "content": STANDARD.encode(&big) })),
+      &as_owner(),
+    )
+    .await;
+
+  assert_eq!(attached.status, StatusCode::CREATED, "{}", attached.json());
+  assert_eq!(machine.uploads.lock().expect("the uploads").len(), 2);
+  assert!(
+    machine
+      .files
+      .lock()
+      .expect("the files")
+      .iter()
+      .any(|(kept, bytes)| kept.starts_with(&format!("{folder}/attachments/")) && *bytes == big),
+    "the attachment stands under the document's folder, wherever its digest named it"
+  );
+
+  let attachment_id = attached.json()["id"].as_i64().expect("an attachment id");
+  let part = service
+    .call_with(
+      Method::GET,
+      &format!("/documents/{id}/attachments/{attachment_id}"),
+      None,
+      &[("owner-key", OWNER), ("range", "bytes=3-5")],
+    )
+    .await;
+
+  assert_eq!(part.status, StatusCode::PARTIAL_CONTENT);
+  assert_eq!(part.header("content-range"), format!("bytes 3-5/{}", big.len()));
+  assert_eq!(&part.bytes[..], &big[3..6]);
+
+  // A rewrite replaces the file where it stands, by the same whole transfer.
+  let changed = service
+    .call_with(
+      Method::PATCH,
+      &format!("/documents/{id}"),
+      Some(json!({ "body": "Words rewritten on the node.", "labels": {} })),
+      &as_owner(),
+    )
+    .await;
+
+  assert_eq!(changed.status, StatusCode::OK, "{}", changed.json());
+  assert_eq!(
+    machine.files.lock().expect("the files").get(&file).map(Vec::as_slice),
+    Some(b"Words rewritten on the node.".as_slice())
+  );
+
+  // The document and its whole folder are let go of by one removal command.
+  let gone = service.call_with(Method::DELETE, &format!("/documents/{id}"), None, &as_owner()).await;
+
+  assert_eq!(gone.status, StatusCode::NO_CONTENT, "{}", gone.json());
+
+  let files = machine.files.lock().expect("the files");
+
+  assert!(
+    files.keys().all(|kept| !kept.starts_with(&format!("{folder}/"))),
+    "the folder went with its file and its attachment: {files:?}"
+  );
+  assert!(
+    machine
+      .commands
+      .lock()
+      .expect("the commands")
+      .iter()
+      .any(|command| command.starts_with("rm -rf -- '") && command.contains(&folder)),
+    "the folder was let go of by one command"
+  );
+}
+
+#[tokio::test]
+async fn a_filing_to_a_synced_place_is_refused_whole_where_the_folder_cannot_be_opened() {
+  let (service, _chain, machine) = over_a_node().await;
+
+  *machine.refuses.lock().expect("the answer") = true;
+
+  let made = service
+    .call_with(
+      Method::POST,
+      "/documents",
+      Some(json!({ "kind": "record", "title": "Nowhere", "body": "Words with nowhere kept.", "actorName": "tester", "labels": {} })),
+      &as_owner(),
+    )
+    .await;
+
+  assert_eq!(made.status, StatusCode::BAD_GATEWAY, "{}", made.json());
+  assert_eq!(made.json()["code"], "upstream-failed");
+  assert!(machine.uploads.lock().expect("the uploads").is_empty(), "no file was carried");
+  assert_eq!(
+    service
+      .scratch
+      .count(r#"SELECT COUNT(*) FROM "searches" WHERE "owner" = $1"#, vec![OWNER.into()])
+      .await,
+    0,
+    "and no document was filed"
+  );
 }

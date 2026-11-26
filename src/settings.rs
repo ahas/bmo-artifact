@@ -42,6 +42,9 @@ pub struct Settings {
   /// Nothing set here reaches Graph at its own address and names no page token road.
   #[serde(default)]
   pub sharepoint: SharePoint,
+  /// Nothing set here names no node service: a synced place reaches nothing.
+  #[serde(default)]
+  pub node: Node,
 }
 
 /// The HTTP server.
@@ -185,6 +188,21 @@ pub struct SharePoint {
 
 fn graph() -> String {
   GRAPH.to_owned()
+}
+
+/// The node service a synced place goes through (`docs/artifact.md`, "The synced place"): where it answers,
+/// with what token its reads are asked, and with what caller token its runs and file transfers are made.
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct Node {
+  /// The node service's base address; an empty one names none.
+  #[serde(default)]
+  pub address: String,
+  /// The node service's own token, for the one read of whose host a node is.
+  #[serde(default)]
+  pub token: String,
+  /// This service's own caller token, which makes runs and carries files.
+  #[serde(default)]
+  pub caller_token: String,
 }
 
 impl Default for SharePoint {

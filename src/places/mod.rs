@@ -4,6 +4,7 @@
 
 pub mod local;
 pub mod sharepoint;
+pub mod sync;
 
 use std::ops::Bound;
 use std::sync::Arc;
@@ -108,7 +109,7 @@ pub trait PlaceKind: Sync {
 
 /// Every kind of place, in the order `GET /storage-places` answers them. Adding a kind is adding its module and its
 /// line here.
-pub static PLACES: [&dyn PlaceKind; 2] = [&local::Local, &sharepoint::SharePoint];
+pub static PLACES: [&dyn PlaceKind; 3] = [&local::Local, &sharepoint::SharePoint, &sync::Sync];
 
 /// The kind of place named `name`.
 pub fn kind_named(name: &str) -> Option<&'static dyn PlaceKind> {
