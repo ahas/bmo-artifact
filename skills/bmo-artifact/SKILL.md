@@ -1,6 +1,6 @@
 ---
 name: bmo-artifact
-description: Keep, find and share documents with the bmo-artifact MCP server. Use when a task should leave a document a person reads later (a record, study notes, an HTML page, a web page brought in whole), when a document written for somebody has to be handed over as a permanent link rather than a file, when earlier documents have to be found again by their words, when a file such as a picture or a sound belongs beside a document, or when someone has to be handed a link that opens a document; and when building or checking a caller of the artifact service.
+description: How the bmo-artifact MCP tools file, find, rewrite and publish documents, attach files to them and share them by link, with the arguments each takes.
 ---
 
 # bmo-artifact
@@ -51,7 +51,10 @@ A document written for somebody is handed over as a link, never as a file attach
 
 - Its input is `title`, `description` (a line or two on what it holds), and its words as markdown `body`
   or as the `path` of a file on the machine the harness runs on, read whole; `kind` is `record` where none
-  is named, `learning` or `page` beside it, and `scope` and `actorName` are as `artifact_file` takes them.
+  is named, `learning` or `page` beside it, and `scope` is as `artifact_file` takes it. `title` and `actorName`
+  are required.
+- It takes no labels: a document that needs a `category` or other labels is filed with `artifact_file`, or
+  given them afterwards with `artifact_rewrite`, and shared with `artifact_share`.
 - Its answer is the document and its link: `document.id` is the document's number, and `share.url` is the
   address to hand over, absolute already. Give that address as it came back, adding nothing to it.
 - The link has no end and opens with no console login. It names the document rather than a body, so a
