@@ -844,11 +844,11 @@ flowchart TD
 
 | Unit | Through | For |
 |---|---|---|
-| bmo-explorer | its published client crate, `bmo_explorer::client`, at 0.1.0-rev.5 | an import's page and figures; a reference's preview and picture |
-| the account service, bmo-web's server | its published client crate, `bmo_web_client`, at 0.1.0-rev.1 | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company; the setting `artifact.storage`, declared, resolved for a document's owner and written for a link; an owner's login |
+| bmo-explorer | its published client crate, `bmo_explorer::client` | an import's page and figures; a reference's preview and picture |
+| the account service, bmo-web's server | its published client crate, `bmo_web_client` | the unit a reader stands in and the units above it; the company a member, a unit and a document's owner stand in; the units of an owner's company; the setting `artifact.storage`, declared, resolved for a document's owner and written for a link; an owner's login |
 | an optional page-token service | its page token road, `POST /page-tokens` | the Graph token it lends for a person, for the SharePoint place |
 | Microsoft Graph | HTTPS, with that token | a SharePoint place's files written, read, asked after and let go of |
-| bmo-node | its published client crate, `bmo_node_client`, at 0.1.0-rev.2 | a synced place's one read of the node's host; one command each to open a folder, to state a file and to let one go; a file's bytes written to the node and read back |
+| bmo-node | its published client crate, `bmo_node_client` | a synced place's one read of the node's host; one command each to open a folder, to state a file and to let one go; a file's bytes written to the node and read back |
 
 - **The client is opened over the data root the settings name,** where bmo-explorer keeps its own folder
   (bmo-explorer's `docs/api.md`, 「The client」). It checks every address before it connects and paces each
