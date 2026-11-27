@@ -3,7 +3,7 @@
 held_by = "artifact"
 
 [[memory]]
-key = "when"
+key = "artifact.when"
 type = "tip"
 recall_condition = "a document or report for a person"
 text = "File it with artifact_publish and hand over the share link, never the file."
